@@ -1,0 +1,56 @@
+# Local development services for Amiri Agent.
+#
+#   docker compose up -d postgres            # the database (data kept in the amiri-pgdata volume)
+#   docker compose --profile ticker up -d    # also call the server's /internal/tick every 15 min,
+#                                            # as Cloud Scheduler does in Google Cloud
+#
+# Postgres 16 with pgvector: the same major version and extension as AlloyDB and
+# Cloud SQL, so the server's SQL runs unchanged on both.
+name: amiri
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: amiri-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${AMIRI_PG_USER:-amiri}
+      POSTGRES_PASSWORD: ${AMIRI_PG_PASSWORD:-amiri}
+      POSTGRES_DB: amiri
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "${AMIRI_PG_PORT:-5432}:5432"
+    volumes:
+      - amiri-pgdata:/var/lib/postgresql/data
+      - ./infra/local/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AMIRI_PG_USER:-amiri} -d amiri"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Stands in for Cloud Scheduler: POST /internal/tick every 15 minutes to the
+  # server running on the host (uv run amiri-server).
+  ticker:
+    image: curlimages/curl:8.11.1
+    container_name: amiri-ticker
+    profiles: ["ticker"]
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          curl -s -X POST "$${TICK_URL}" -H 'content-type: application/json' -d '{}' || true
+          echo
+          sleep "$${TICK_EVERY_SECONDS}"
+        done
+    environment:
+      TICK_URL: ${AMIRI_TICK_URL:-http://host.docker.internal:8000/internal/tick}
+      TICK_EVERY_SECONDS: ${AMIRI_TICK_EVERY_SECONDS:-900}
+
+volumes:
+  amiri-pgdata:
+    name: amiri-pgdata
