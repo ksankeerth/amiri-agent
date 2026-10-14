@@ -1,0 +1,1227 @@
+openapi: 3.1.0
+info:
+  title: Monitor agent - Check API
+  description: 'Runs one check for one monitor (contract 2.0).
+
+    The request carries the monitor''s specification, the institution from its profile, the check''s
+
+    window and its web search budget; in a simulation, the headlines to read instead (provided_news).
+
+
+    The agent searches the web (Gemini with Google Search grounding, with fallback across models), reads
+
+    each source page''s own publication time and title (code), and reports news_match findings: stories
+
+    that meet one of the monitor''s "tell me if" lines. Only pages dated inside the window (less a grace,
+
+    PAGE_DATE_GRACE_HOURS) and not in recent_urls can support a finding. Numbers, names and quotes are
+
+    checked against the evidence, and a reviewer model reads every finding.
+
+
+    Flow: POST /checks starts a run and returns 202 at once; GET /checks/{run_id} returns its status,
+
+    and the result once finished. The same run_id never starts a second run; runs are kept 24 hours.
+
+
+    Private data: spec.private and institution.notes only help judge relevance; a web search query
+
+    containing a private word is refused. Timestamps are RFC 3339 UTC; dates are YYYY-MM-DD.
+
+    '
+  version: 2.0.0
+paths:
+  /checks:
+    post:
+      tags:
+      - checks
+      summary: Start Check
+      operationId: start_check_checks_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckRequest'
+            example:
+              run_id: chk-mon-gulf-jobs-20261012-1000
+              monitor:
+                monitor_id: mon-gulf-jobs
+                version: 3
+                spec:
+                  about:
+                    name: Gulf jobs and security
+                    owner: Retail banking
+                    also_notify:
+                    - Treasury
+                    check_frequency: 60
+                    kind: events
+                    key_dates:
+                    - date: '2026-11-01'
+                      label: Saudi labour quota rules take effect
+                      lead_days: 7
+                    review_by: '2027-01-31'
+                  public:
+                    watch:
+                    - name: Saudi Arabia
+                      type: place
+                      other_forms:
+                      - KSA
+                      - Saudi
+                      not_confused_with: []
+                    - name: United Arab Emirates
+                      type: place
+                      other_forms:
+                      - UAE
+                      - Dubai
+                      not_confused_with: []
+                    - name: migrant workers
+                      type: topic
+                      other_forms:
+                      - foreign workers
+                      - expatriate workers
+                      not_confused_with: []
+                    in_one_sentence: Events in the Gulf that could cut jobs or pay for Sri Lankan and Indian migrant
+                      workers.
+                    tell_me_if:
+                    - Conflict or attacks affect a Gulf state where many South Asian migrants work
+                    - A Gulf state announces job cuts, visa limits or wage controls for foreign workers
+                    - Flights or money-transfer channels from the Gulf are disrupted
+                    ignore:
+                    - Routine labour statistics with no change
+                    example_headlines:
+                      match:
+                      - headline: Saudi Arabia cuts foreign worker quotas in construction
+                        line: 2
+                      not_match:
+                      - Saudi Aramco reports quarterly profit
+                    places:
+                    - SA
+                    - AE
+                    - QA
+                    - KW
+                    - LK
+                    - IN-KL
+                    languages:
+                    - en
+                    - ar
+                    sources:
+                      mode: any_reputable
+                      check_first:
+                      - arabnews.com
+                      - gulfnews.com
+                  private:
+                    exposure:
+                    - id: segment:migrant-families
+                      how_it_reaches_us: Their remittances fund our savings book.
+                    - id: product:migrant-savings
+                      how_it_reaches_us: Inflows fall if Gulf jobs go.
+                    serious:
+                    - Any cut affecting more than 10,000 workers
+                    notes: ''
+                  alert_level: 6
+              institution:
+                name: Serendib Commercial Bank
+                institution_type: bank
+                country: LK
+                country_name: Sri Lanka
+                currency: LKR
+                time_zone: Asia/Colombo
+                summary: 'Mid-size commercial bank: retail deposits, SME lending, pawning; branches in South India.'
+                segments:
+                - id: migrant-families
+                  label: Migrant-worker families
+                  note: Households with a member working abroad, mostly in the Gulf.
+                products:
+                - id: migrant-savings
+                  name: Migrant Family Savings
+                  category: savings
+                  product_type: savings_account
+                flows:
+                - id: remit-sa
+                  kind: remittances_in
+                  local: LK
+                  counterpart: SA
+                corridors:
+                - SA
+                - AE
+                rivals:
+                - id: coastal-remit
+                  name: Coastal Remit
+                  aliases:
+                  - CoastalRemit
+                regulators:
+                - id: cbsl
+                  name: Central Bank of Sri Lanka
+                  aliases:
+                  - CBSL
+              window:
+                since: '2026-10-12T09:00:00Z'
+                until: '2026-10-12T10:00:00Z'
+              web_search:
+                max_queries: 3
+              recent_urls:
+              - https://www.arabnews.com/node/2590001
+        required: true
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckStatus'
+        '200':
+          description: This run_id already exists with the same body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckStatus'
+        '409':
+          description: This run_id already exists with a different body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: The run could not be accepted; retry with the same run_id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /checks/{run_id}:
+    get:
+      tags:
+      - checks
+      summary: Get Check
+      operationId: get_check_checks__run_id__get
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Run Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckStatus'
+              examples:
+                completed:
+                  value:
+                    run_id: chk-mon-gulf-jobs-20261012-1000
+                    monitor_id: mon-gulf-jobs
+                    monitor_version: 3
+                    status: completed
+                    created_at: '2026-10-12T10:00:02Z'
+                    started_at: '2026-10-12T10:00:03Z'
+                    finished_at: '2026-10-12T10:00:41Z'
+                    result:
+                      stop_reason: finished
+                      summary: Saudi Arabia cut quotas for foreign construction workers.
+                      findings:
+                      - kind: news_match
+                        title: Saudi Arabia cuts quotas for foreign construction workers
+                        explanation: Arab News reported "Saudi Arabia cuts quotas for foreign construction workers"
+                          at 08:40 UTC on 12 Oct.
+                        tell_me_if_lines:
+                        - 2
+                        evidence:
+                          web:
+                          - url: https://www.arabnews.com/node/2591234
+                            title: null
+                          news: []
+                        places:
+                        - SA
+                        key_date: '2026-11-01'
+                      sources:
+                      - ref: https://www.arabnews.com/node/2591234
+                        url: https://www.arabnews.com/node/2591234
+                        title: Saudi Arabia cuts quotas for foreign construction workers
+                        outlet: arabnews.com
+                        published_at: '2026-10-12T08:40:00Z'
+                      coverage:
+                        web_queries: 2
+                        pages_seen: 7
+                        pages_dated: 6
+                        pages_in_window: 2
+                        already_reported: 1
+                        provided_news: 0
+                      tool_trace: []
+                      usage:
+                        model: gemini-3.5-flash-lite
+                        model_calls: 4
+                        tool_calls: 3
+                        duration_ms: 38000
+                running:
+                  value:
+                    run_id: chk-mon-gulf-jobs-20261012-1000
+                    monitor_id: mon-gulf-jobs
+                    monitor_version: 3
+                    status: running
+                    created_at: '2026-10-12T10:00:02Z'
+                    started_at: '2026-10-12T10:00:03Z'
+                failed:
+                  value:
+                    run_id: chk-mon-gulf-jobs-20261012-1000
+                    monitor_id: mon-gulf-jobs
+                    monitor_version: 3
+                    status: failed
+                    created_at: '2026-10-12T10:00:02Z'
+                    started_at: '2026-10-12T10:00:03Z'
+                    finished_at: '2026-10-12T10:00:09Z'
+                    error: Every model was unavailable (quota exceeded). Start a new check.
+        '404':
+          description: No run with this run_id, or it is older than 24 hours.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    CheckRequest:
+      properties:
+        run_id:
+          type: string
+          maxLength: 64
+          minLength: 1
+          title: Run Id
+        monitor:
+          $ref: '#/components/schemas/Monitor'
+        institution:
+          $ref: '#/components/schemas/Institution'
+        window:
+          $ref: '#/components/schemas/Window'
+          description: News published in this window is new for this check.
+        web_search:
+          anyOf:
+          - $ref: '#/components/schemas/WebSearchScope'
+          - type: 'null'
+          description: Required unless provided_news is given.
+        provided_news:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/ProvidedNews'
+            type: array
+          - type: 'null'
+          title: Provided News
+          description: 'A simulation''s headlines: the check reads these and searches nothing.'
+        recent_urls:
+          items:
+            type: string
+          type: array
+          title: Recent Urls
+          description: Pages this monitor already reported.
+        limits:
+          anyOf:
+          - $ref: '#/components/schemas/Limits'
+          - type: 'null'
+      additionalProperties: false
+      type: object
+      required:
+      - run_id
+      - monitor
+      - institution
+      - window
+      title: CheckRequest
+    CheckResult:
+      properties:
+        stop_reason:
+          type: string
+          enum:
+          - finished
+          - step_limit
+          - timeout
+          title: Stop Reason
+        summary:
+          type: string
+          title: Summary
+        findings:
+          items:
+            $ref: '#/components/schemas/Finding'
+          type: array
+          title: Findings
+        sources:
+          items:
+            $ref: '#/components/schemas/Source'
+          type: array
+          title: Sources
+          description: Every page or headline the findings cite.
+        coverage:
+          $ref: '#/components/schemas/Coverage'
+        tool_trace:
+          items:
+            $ref: '#/components/schemas/ToolCall'
+          type: array
+          title: Tool Trace
+        usage:
+          $ref: '#/components/schemas/Usage'
+      additionalProperties: false
+      type: object
+      required:
+      - stop_reason
+      - summary
+      - findings
+      - coverage
+      - tool_trace
+      - usage
+      title: CheckResult
+    CheckStatus:
+      properties:
+        run_id:
+          type: string
+          maxLength: 64
+          minLength: 1
+          title: Run Id
+        monitor_id:
+          type: string
+          title: Monitor Id
+        monitor_version:
+          type: integer
+          title: Monitor Version
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - completed
+          - stopped_early
+          - failed
+          title: Status
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        started_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Started At
+        finished_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Finished At
+        result:
+          anyOf:
+          - $ref: '#/components/schemas/CheckResult'
+          - type: 'null'
+        error:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error
+      additionalProperties: false
+      type: object
+      required:
+      - run_id
+      - monitor_id
+      - monitor_version
+      - status
+      - created_at
+      title: CheckStatus
+    Coverage:
+      properties:
+        web_queries:
+          type: integer
+          minimum: 0.0
+          title: Web Queries
+        web_failed:
+          type: integer
+          minimum: 0.0
+          title: Web Failed
+          description: Searches that failed (quota, outage); none of them was read.
+          default: 0
+        pages_seen:
+          type: integer
+          minimum: 0.0
+          title: Pages Seen
+        pages_dated:
+          type: integer
+          minimum: 0.0
+          title: Pages Dated
+        pages_in_window:
+          type: integer
+          minimum: 0.0
+          title: Pages In Window
+        already_reported:
+          type: integer
+          minimum: 0.0
+          title: Already Reported
+        provided_news:
+          type: integer
+          minimum: 0.0
+          title: Provided News
+      additionalProperties: false
+      type: object
+      required:
+      - web_queries
+      - pages_seen
+      - pages_dated
+      - pages_in_window
+      - already_reported
+      - provided_news
+      title: Coverage
+    Error:
+      properties:
+        error:
+          type: string
+          title: Error
+        run_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Run Id
+      additionalProperties: false
+      type: object
+      required:
+      - error
+      title: Error
+    Evidence:
+      properties:
+        web:
+          items:
+            $ref: '#/components/schemas/WebRef'
+          type: array
+          title: Web
+        news:
+          items:
+            $ref: '#/components/schemas/NewsRef'
+          type: array
+          title: News
+      additionalProperties: false
+      type: object
+      title: Evidence
+    ExampleHeadlines:
+      properties:
+        match:
+          items:
+            $ref: '#/components/schemas/ExampleMatch'
+          type: array
+          title: Match
+        not_match:
+          items:
+            type: string
+          type: array
+          title: Not Match
+      additionalProperties: false
+      type: object
+      title: ExampleHeadlines
+    ExampleMatch:
+      properties:
+        headline:
+          type: string
+          title: Headline
+        line:
+          type: integer
+          minimum: 1.0
+          title: Line
+      additionalProperties: false
+      type: object
+      required:
+      - headline
+      - line
+      title: ExampleMatch
+    ExposureChoice:
+      properties:
+        id:
+          type: string
+          pattern: ^(product|segment|flow|rival|regulator|counterparty|risk):.+$
+          title: Id
+        how_it_reaches_us:
+          type: string
+          title: How It Reaches Us
+          default: ''
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      title: ExposureChoice
+    Finding:
+      properties:
+        kind:
+          type: string
+          const: news_match
+          title: Kind
+          default: news_match
+        title:
+          type: string
+          title: Title
+        explanation:
+          type: string
+          title: Explanation
+        tell_me_if_lines:
+          items:
+            type: integer
+            minimum: 1.0
+          type: array
+          title: Tell Me If Lines
+        evidence:
+          $ref: '#/components/schemas/Evidence'
+        places:
+          items:
+            type: string
+            pattern: ^([A-Z]{2}(-[A-Z0-9]{1,3})?|[a-z]+:[a-z0-9_-]+)$
+          type: array
+          title: Places
+          description: From the monitor's places only.
+        key_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Key Date
+          description: One of the monitor's key dates, when the news is about it.
+      additionalProperties: false
+      type: object
+      required:
+      - title
+      - explanation
+      - tell_me_if_lines
+      - evidence
+      title: Finding
+    Flow:
+      properties:
+        id:
+          type: string
+          title: Id
+        kind:
+          type: string
+          title: Kind
+        local:
+          type: string
+          title: Local
+        counterpart:
+          type: string
+          title: Counterpart
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - kind
+      - local
+      - counterpart
+      title: Flow
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    Institution:
+      properties:
+        name:
+          type: string
+          title: Name
+        institution_type:
+          type: string
+          enum:
+          - bank
+          - insurer
+          title: Institution Type
+        country:
+          type: string
+          pattern: ^[A-Z]{2}$
+          title: Country
+        country_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Country Name
+        currency:
+          type: string
+          pattern: ^[A-Z]{3}$
+          title: Currency
+        time_zone:
+          type: string
+          title: Time Zone
+          default: UTC
+        summary:
+          type: string
+          title: Summary
+          default: ''
+        segments:
+          items:
+            $ref: '#/components/schemas/Segment'
+          type: array
+          title: Segments
+        products:
+          items:
+            $ref: '#/components/schemas/Product'
+          type: array
+          title: Products
+        flows:
+          items:
+            $ref: '#/components/schemas/Flow'
+          type: array
+          title: Flows
+        corridors:
+          items:
+            type: string
+          type: array
+          title: Corridors
+        rivals:
+          items:
+            $ref: '#/components/schemas/Named'
+          type: array
+          title: Rivals
+        regulators:
+          items:
+            $ref: '#/components/schemas/Named'
+          type: array
+          title: Regulators
+        counterparties:
+          items:
+            $ref: '#/components/schemas/Named'
+          type: array
+          title: Counterparties
+        risks:
+          items:
+            $ref: '#/components/schemas/Named'
+          type: array
+          title: Risks
+        notes:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Notes
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - institution_type
+      - country
+      - currency
+      title: Institution
+      description: The institution, from its profile (the same context the investigation gets).
+    KeyDate:
+      properties:
+        date:
+          type: string
+          format: date
+          title: Date
+        label:
+          type: string
+          title: Label
+        lead_days:
+          type: integer
+          enum:
+          - 1
+          - 3
+          - 7
+          title: Lead Days
+      additionalProperties: false
+      type: object
+      required:
+      - date
+      - label
+      - lead_days
+      title: KeyDate
+    Limits:
+      properties:
+        max_steps:
+          type: integer
+          maximum: 20.0
+          minimum: 1.0
+          title: Max Steps
+          default: 15
+        timeout_seconds:
+          type: integer
+          maximum: 600.0
+          minimum: 10.0
+          title: Timeout Seconds
+          default: 300
+      additionalProperties: false
+      type: object
+      title: Limits
+    Monitor:
+      properties:
+        monitor_id:
+          type: string
+          maxLength: 64
+          title: Monitor Id
+        version:
+          type: integer
+          minimum: 1.0
+          title: Version
+        spec:
+          $ref: '#/components/schemas/MonitorSpec'
+      additionalProperties: false
+      type: object
+      required:
+      - monitor_id
+      - version
+      - spec
+      title: Monitor
+    MonitorSpec:
+      properties:
+        about:
+          $ref: '#/components/schemas/SpecAbout'
+        public:
+          $ref: '#/components/schemas/SpecPublic'
+        private:
+          $ref: '#/components/schemas/SpecPrivate'
+        alert_level:
+          type: integer
+          maximum: 10.0
+          minimum: 0.0
+          title: Alert Level
+      additionalProperties: false
+      type: object
+      required:
+      - about
+      - public
+      - alert_level
+      title: MonitorSpec
+    Named:
+      properties:
+        id:
+          type: string
+          title: Id
+        name:
+          type: string
+          title: Name
+        aliases:
+          items:
+            type: string
+          type: array
+          title: Aliases
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - name
+      title: Named
+      description: A profile item the monitor can name as an exposure.
+    NewsRef:
+      properties:
+        item_id:
+          type: string
+          title: Item Id
+      additionalProperties: false
+      type: object
+      required:
+      - item_id
+      title: NewsRef
+    Product:
+      properties:
+        id:
+          type: string
+          title: Id
+        name:
+          type: string
+          title: Name
+        category:
+          type: string
+          title: Category
+        product_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Product Type
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - name
+      - category
+      title: Product
+    ProvidedNews:
+      properties:
+        id:
+          type: string
+          pattern: ^[A-Za-z0-9_.:-]{1,64}$
+          title: Id
+        title:
+          type: string
+          title: Title
+        published_at:
+          type: string
+          format: date-time
+          title: Published At
+        outlet:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Outlet
+        url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Url
+        body:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Body
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - title
+      - published_at
+      title: ProvidedNews
+      description: 'A headline given to the check (a simulation): read instead of searching the web.'
+    Segment:
+      properties:
+        id:
+          type: string
+          title: Id
+        label:
+          type: string
+          title: Label
+        note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Note
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - label
+      title: Segment
+    Source:
+      properties:
+        ref:
+          type: string
+          title: Ref
+        url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Url
+        title:
+          type: string
+          title: Title
+        outlet:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Outlet
+        published_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Published At
+      additionalProperties: false
+      type: object
+      required:
+      - ref
+      - title
+      title: Source
+      description: 'A cited page or headline as code read it: what the server stores as evidence.'
+    Sources:
+      properties:
+        mode:
+          type: string
+          enum:
+          - any_reputable
+          - trusted_only
+          title: Mode
+          default: any_reputable
+        check_first:
+          items:
+            type: string
+          type: array
+          title: Check First
+      additionalProperties: false
+      type: object
+      title: Sources
+    SpecAbout:
+      properties:
+        name:
+          type: string
+          title: Name
+        owner:
+          type: string
+          title: Owner
+        also_notify:
+          items:
+            type: string
+          type: array
+          title: Also Notify
+        check_frequency:
+          type: integer
+          enum:
+          - 15
+          - 60
+          - 360
+          - 1440
+          title: Check Frequency
+        kind:
+          type: string
+          enum:
+          - events
+          - trend
+          title: Kind
+          default: events
+        key_dates:
+          items:
+            $ref: '#/components/schemas/KeyDate'
+          type: array
+          title: Key Dates
+        review_by:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Review By
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - owner
+      - check_frequency
+      title: SpecAbout
+    SpecPrivate:
+      properties:
+        exposure:
+          items:
+            $ref: '#/components/schemas/ExposureChoice'
+          type: array
+          title: Exposure
+        serious:
+          items:
+            type: string
+          type: array
+          title: Serious
+        notes:
+          type: string
+          title: Notes
+          default: ''
+      additionalProperties: false
+      type: object
+      title: SpecPrivate
+    SpecPublic:
+      properties:
+        watch:
+          items:
+            $ref: '#/components/schemas/WatchChip'
+          type: array
+          minItems: 1
+          title: Watch
+        in_one_sentence:
+          type: string
+          title: In One Sentence
+        tell_me_if:
+          items:
+            type: string
+          type: array
+          minItems: 1
+          title: Tell Me If
+        ignore:
+          items:
+            type: string
+          type: array
+          title: Ignore
+        example_headlines:
+          $ref: '#/components/schemas/ExampleHeadlines'
+        places:
+          items:
+            type: string
+            pattern: ^([A-Z]{2}(-[A-Z0-9]{1,3})?|[a-z]+:[a-z0-9_-]+)$
+          type: array
+          title: Places
+          description: 'Where it matters: ISO 3166 or gazetteer codes.'
+        languages:
+          items:
+            type: string
+            pattern: ^[a-z]{2}$
+          type: array
+          minItems: 1
+          title: Languages
+          description: ISO 639-1 codes of the news to read.
+        sources:
+          $ref: '#/components/schemas/Sources'
+      additionalProperties: false
+      type: object
+      required:
+      - watch
+      - in_one_sentence
+      - tell_me_if
+      title: SpecPublic
+    ToolCall:
+      properties:
+        step:
+          type: integer
+          minimum: 1.0
+          title: Step
+        tool:
+          type: string
+          enum:
+          - web_search
+          - list_provided_news
+          - finish
+          title: Tool
+        args:
+          additionalProperties: true
+          type: object
+          title: Args
+        status:
+          type: string
+          enum:
+          - ok
+          - blocked
+          - error
+          title: Status
+        message:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Message
+        result:
+          title: Result
+      additionalProperties: false
+      type: object
+      required:
+      - step
+      - tool
+      - args
+      - status
+      title: ToolCall
+    Usage:
+      properties:
+        model:
+          type: string
+          title: Model
+        model_calls:
+          type: integer
+          minimum: 0.0
+          title: Model Calls
+        tool_calls:
+          type: integer
+          minimum: 0.0
+          title: Tool Calls
+        duration_ms:
+          type: integer
+          minimum: 0.0
+          title: Duration Ms
+      additionalProperties: false
+      type: object
+      required:
+      - model
+      - model_calls
+      - tool_calls
+      - duration_ms
+      title: Usage
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+    WatchChip:
+      properties:
+        name:
+          type: string
+          title: Name
+        type:
+          type: string
+          enum:
+          - organisation
+          - place
+          - region
+          - person
+          - sector
+          - regulation
+          - topic
+          title: Type
+        other_forms:
+          items:
+            type: string
+          type: array
+          title: Other Forms
+        not_confused_with:
+          items:
+            type: string
+          type: array
+          title: Not Confused With
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - type
+      title: WatchChip
+    WebRef:
+      properties:
+        url:
+          type: string
+          pattern: ^https?://
+          title: Url
+        title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Title
+      additionalProperties: false
+      type: object
+      required:
+      - url
+      title: WebRef
+    WebSearchScope:
+      properties:
+        max_queries:
+          type: integer
+          maximum: 10.0
+          minimum: 1.0
+          title: Max Queries
+          default: 3
+      additionalProperties: false
+      type: object
+      title: WebSearchScope
+    Window:
+      properties:
+        since:
+          type: string
+          format: date-time
+          title: Since
+        until:
+          type: string
+          format: date-time
+          title: Until
+      additionalProperties: false
+      type: object
+      required:
+      - since
+      - until
+      title: Window
