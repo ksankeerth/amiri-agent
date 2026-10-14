@@ -21,7 +21,7 @@ import httpx
 from app import settings
 from app.assistant.agent import parse_sse
 
-CATALOGUE = settings.PROJECT.parent / "design" / "setup-agent-scenarios.json"
+CATALOGUE = settings.PROJECT / "tests" / "fixtures" / "setup-agent-scenarios.json"
 SEED = settings.PROJECT / "app" / "seeds" / "serendib_bank.json"
 STARTS = {
     "bank_min": {"name": "Scenario Bank", "institution_type": "bank", "subtype": "commercial", "home_country": "LK",
@@ -81,7 +81,9 @@ class Runner:
             s = (await self.c.post("/api/v1/assistant/sessions", json={"institution_id": iid}, headers={"X-Amiri-Actor": user})).json()
             sid = s["session_id"]
         except (httpx.HTTPError, KeyError) as e:
-            res["error"] = f"setup failed: {e}"
+            hint = (" (each scenario makes its own institution: run the server with SINGLE_INSTITUTION=false)"
+                    if isinstance(e, httpx.HTTPStatusError) and e.response.status_code == 409 else "")
+            res["error"] = f"setup failed: {e}{hint}"
             return res
         for i, t in enumerate(sc["turns"]):
             text, exp = t.get("user", ""), t.get("expect", {})

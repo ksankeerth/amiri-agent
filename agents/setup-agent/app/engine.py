@@ -1,0 +1,101 @@
+"""One turn: route the message, then let the track answer.
+
+Events, in order: an empty `text_delta` at once (the turn has started), `track` when the track changes, `track_notes` for facts meant for other
+tracks, then the track's own events (message, question, proposal, track_concluded), and
+`usage` last. Nothing here raises into the stream: a failure ends the turn with an
+`error` event the server shows, and the forms still work.
+"""
+
+import asyncio
+import logging
+from collections.abc import AsyncIterator, Callable
+
+from google.auth.exceptions import DefaultCredentialsError
+from google.genai import errors
+from pydantic import BaseModel
+
+from app import router, settings
+from app.contract import (
+    ErrorEv,
+    MessageEv,
+    Note,
+    TextDeltaEv,
+    TrackEv,
+    TrackNotesEv,
+    TurnIn,
+    UsageEv,
+)
+from app.router import Route
+from app.server_api import ServerError
+from app.sessions import Session
+from app.tracks import TRACKS
+
+logger = logging.getLogger(__name__)
+
+
+class Usage:
+    def __init__(self) -> None:
+        self.model_calls = self.input_tokens = self.output_tokens = 0
+
+
+Responder = Callable[[Session, TurnIn, Route, Usage], AsyncIterator[BaseModel]]
+
+
+async def not_built(s: Session, turn: TurnIn, r: Route, usage: Usage) -> AsyncIterator[BaseModel]:
+    """Until the track loop exists (app/track_loop.py, next): says so instead of pretending."""
+    yield MessageEv(text=f"I'm in the {TRACKS[r.track].label} track, but its conversation isn't built yet. "
+                         "The forms on this page do everything in the meantime.")
+
+
+_responder: Responder = not_built
+
+
+def set_responder(fn: Responder) -> None:
+    global _responder
+    _responder = fn
+
+
+def offtopic_reply(track: str | None) -> str:
+    back = f" Back to {TRACKS[track].label.lower()}: " if track and track in TRACKS and track not in ("question",) else " "
+    return ("I can only help set up Amiri Agent for your institution: who you are, where you operate, your customers, "
+            f"products, flows, rules, rivals, risks and monitors.{back}what would you like to do next?")
+
+
+async def run_turn(s: Session, turn: TurnIn) -> AsyncIterator[BaseModel]:
+    usage = Usage()
+    yield TextDeltaEv(text="")  # the turn has started (the first event is due within 10 s; deltas aren't stored)
+    try:
+        async with asyncio.timeout(settings.number("TURN_TIMEOUT_SECONDS")):
+            if not (turn.text and turn.text.strip()) and not turn.answer:
+                yield ErrorEv(code="empty_turn", message="A turn needs a message or an answer.")
+                return
+            current = turn.current_track or s.current_track
+            r = await router.route(text=turn.text, is_answer=turn.answer is not None, requested=turn.requested_track,
+                                   current=current, has_institution=turn.institution_id is not None)
+            usage.model_calls += r.model_calls
+            if r.changed:
+                yield TrackEv(track=r.track, reason=r.reason[:300] or None)
+            if r.notes:
+                yield TrackNotesEv(notes=[Note(**n) for n in r.notes])
+            s.current_track = r.track
+            if r.offtopic:
+                yield MessageEv(text=offtopic_reply(current))
+            else:
+                async for ev in _responder(s, turn, r, usage):
+                    yield ev
+    except TimeoutError:
+        yield ErrorEv(code="turn_timeout", message="This took too long and was stopped. Try again, or a shorter message.")
+    except ServerError as e:
+        yield ErrorEv(code="server_unavailable", message=str(e))
+    except errors.APIError as e:
+        why = "out of quota" if e.code == 429 else "busy" if e.code and e.code >= 500 else f"error {e.code}"
+        yield ErrorEv(code="models_unavailable", message=f"Every model was unavailable ({why}). The forms still work.")
+    except DefaultCredentialsError:
+        yield ErrorEv(code="models_unavailable", message="The setup agent has no model credentials (GEMINI_API_KEY or "
+                                                         "Vertex AI). The forms still work.")
+    except Exception as e:  # never a broken stream
+        logger.exception("turn %s failed", turn.turn_id)
+        yield ErrorEv(code="agent_failed", message=f"The setup agent failed ({type(e).__name__}).")
+    finally:
+        s.turns += 1
+    yield UsageEv(model_calls=usage.model_calls, input_tokens=usage.input_tokens, output_tokens=usage.output_tokens)
