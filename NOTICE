@@ -1,0 +1,17 @@
+Amiri Agent
+Copyright 2026 The Amiri Agent authors
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes software and data developed by others:
+
+- Country boundaries in the web app come from the world-atlas package
+  (Mike Bostock, ISC License), which redistributes Natural Earth vector data
+  (naturalearthdata.com, public domain).
+- Market prices are fetched at run time from Twelve Data under the account holder's own
+  plan; no price data is included in this repository.
+- Reference data in server/app/reference (regulators, flows, hazards, routes, the gazetteer)
+  is compiled for this project from public sources; figures marked "sample" are examples,
+  not statistics.
+
+The demo institution (Serendib Commercial Bank) and everything about it is invented.
