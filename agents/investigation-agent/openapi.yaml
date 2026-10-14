@@ -1,0 +1,859 @@
+openapi: 3.1.0
+info:
+  title: Investigation Agent - Investigation API
+  version: 0.3.0
+  description: |
+    Turns a batch of findings into hypotheses and validation tasks for one
+    institution (a bank or an insurer). amiri-server sends the request: the
+    findings (one shape for every source: a market series move, a Radar story or
+    a monitor's news match), the institution from its
+    profile (with its flows), and its products in Metrics Spec terms.
+
+    The agent reads the institution's data coverage and business calendar
+    through amiri-server (GET {server_url}/api/v1/internal/coverage and
+    /calendar; never metric values) and follows fixed investigation tracks:
+      1. classify each finding: themes with a direction. Skipped when the
+         finding's source set its themes (market series, Radar).
+      2. code reads where each finding is about (home or abroad, and how it
+         reaches home) from its place codes and the institution's flows
+      3. code groups findings into events, sets the anchor time, and lists every
+         product type x angle x mechanism the events touch
+      4. screen each candidate (kept or rejected, with a reason)
+      5. form hypotheses, then code builds the validation tasks
+    Without metrics validation (validation: false) it stops at hypotheses and
+    the report: what could be affected and what to watch. Every result carries
+    the report, a readable investigation built by code.
+    The model only makes choices from fixed lists; it never writes a number,
+    metric name, threshold, date or direction. A separate validator later runs
+    each task and gives one verdict.
+
+    Flow (same as the check API):
+      1. POST /investigations starts a run and returns 202 immediately.
+      2. GET /investigations/{run_id} returns immediately: the status while the
+         run is in progress, the result once it has finished.
+
+    The same run_id never starts a second run. Runs are kept for 24 hours.
+
+    Any country: the institution's home country, time zone, base currency and
+    the countries it operates in (footprint) come in the request. Every
+    validation window is a range of local business dates (from inclusive,
+    until exclusive) in the institution's time zone, on its data source's
+    calendar, anchored to the finding's own time. An fx move names the
+    currency that moved; it counts for the book in that currency. Timestamps
+    are RFC 3339 with a time zone. Nothing is relative to "now".
+
+    Current scope: no authentication.
+servers:
+  - url: http://localhost:8000
+    description: Local
+
+paths:
+  /investigations:
+    post:
+      operationId: startInvestigation
+      summary: Start an investigation
+      description: |
+        Returns 202 once the run is accepted. Sending the same run_id again
+        returns that run's status (200) without starting a new run, or 409 if
+        the body differs (tracks_version included).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvestigationRequest'
+            example:
+              run_id: inv-2026-10-06-0001
+              institution_id: serendib-bank
+              server_url: http://localhost:8000
+              institution:
+                name: Serendib Commercial Bank
+                institution_type: bank
+                country: LK
+                country_name: Sri Lanka
+                currency: LKR
+                time_zone: Asia/Colombo
+                footprint:
+                  - {country: IN, currency: INR}
+                summary: Mid-size commercial bank serving retail households, migrant-worker families, SMEs, exporters and importers.
+                segments:
+                  - {id: migrant-families, label: Migrant-worker families, note: Households with a member working abroad.}
+                  - {id: exporters-smes, label: 'Exporters, importers and SMEs', note: Many import on LCs.}
+                rivals: [Kandy Merchant Bank]
+                regulators: [Central Bank of Sri Lanka]
+                flows:
+                  - {kind: remittances_in, local: LK, counterpart: AE}
+                  - {kind: exports, local: LK, counterpart: US}
+                corridors: [AE, SA]
+              products:
+                - {product_id: migrant-savings, name: Migrant Family Savings, category: savings, product_type: savings_account}
+                - {product_id: term-deposits, name: Term Deposits, category: savings, product_type: term_deposit}
+                - {product_id: pawning, name: Pawning, category: gold_loan, product_type: gold_loan}
+                - {product_id: personal-loans, name: Personal Loans, category: retail_loan, product_type: personal_loan}
+                - {product_id: sme-loans, name: SME Loans, category: business_loan, product_type: working_capital}
+                - {product_id: corporate-loans, name: Corporate Loans, category: business_loan, product_type: term_loan}
+                - {product_id: trade-finance, name: Trade Finance, category: trade_finance, product_type: import_lc}
+              findings:
+                - finding_id: f-ts-usd_lkr-2026100608
+                  institution_id: serendib-bank
+                  source: timeseries
+                  source_ref: {series_id: usd_lkr}
+                  kind: signal_move
+                  title: USD/LKR up 1.45% in 1 trading day (5.0x typical)
+                  explanation: USD/LKR was 333.64 at 06 Oct 08:00 UTC, up 1.45% from 328.88 at 05 Oct 08:00 UTC. A typical trading day moves 0.29%, so a 1 trading day move this size is 5.0 times typical (it fires at 3).
+                  score: 83
+                  themes: [{theme: fx, direction: weaker, currency: LKR}]
+                  places: [LK]
+                  evidence:
+                    signals:
+                      - series_id: usd_lkr
+                        symbol: USD/LKR
+                        interval: 1h
+                        direction: up
+                        start_at: '2026-10-05T08:30:00Z'
+                        end_at: '2026-10-06T08:30:00Z'
+                        ref_level: 328.88
+                        obs_level: 333.64
+                        change_pct: 1.45
+                        z: 5.0
+                        typical_daily_move_pct: 0.29
+                        window_days: 1
+                        description: USD/LKR rose from 328.88 to 333.64 (+1.45%) over 1 trading day to 08:30 UTC on 6 Oct, 5.0x its typical move.
+                    headlines: []
+                    web: []
+      responses:
+        '202':
+          description: Run accepted.
+          headers:
+            Location: {$ref: '#/components/headers/Location'}
+            Retry-After: {$ref: '#/components/headers/RetryAfter'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InvestigationStatus'}
+              example: {run_id: inv-2026-10-06-0001, status: queued, created_at: '2026-10-06T09:00:02Z'}
+        '200':
+          description: This run_id already exists with the same body; its current status.
+          headers:
+            Location: {$ref: '#/components/headers/Location'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InvestigationStatus'}
+        '409':
+          description: This run_id already exists with a different body.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+        '422':
+          description: |
+            Invalid request. No run was created. Besides the schema:
+              - finding_id and product_id are each unique
+              - every finding has at least one piece of evidence, and no
+                implied themes (code adds those)
+            Products the tracks don't cover yet (trade finance, remittances,
+            payments, ...) are accepted and listed in the result's
+            untracked_products.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ValidationError'}
+        '500':
+          description: The run could not be accepted. No run was created; retry with the same run_id.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+
+  /investigations/{run_id}:
+    get:
+      operationId: getInvestigation
+      summary: Get an investigation's status and result
+      description: Returns immediately. While queued or running there is no result; poll again after Retry-After.
+      parameters:
+        - name: run_id
+          in: path
+          required: true
+          schema: {type: string, minLength: 1, maxLength: 64}
+      responses:
+        '200':
+          description: The run's status, with result once finished or error if it failed.
+          headers:
+            Retry-After: {$ref: '#/components/headers/RetryAfter'}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InvestigationStatus'}
+              examples:
+                completed:
+                  value:
+                    run_id: inv-2026-10-06-0001
+                    status: completed
+                    created_at: '2026-10-06T09:00:02Z'
+                    started_at: '2026-10-06T09:00:03Z'
+                    finished_at: '2026-10-06T09:01:10Z'
+                    result:
+                      stop_reason: finished
+                      tracks_version: builtin-v2.1
+                      untracked_products:
+                        - {product_id: trade-finance, product_type: import_lc, reason: No investigation tracks for trade_finance / import_lc yet.}
+                      classifications:
+                        - {finding_id: f-ts-usd_lkr-2026100608, themes: [{theme: fx, direction: weaker, currency: LKR}], country: home}
+                      events:
+                        - event_id: e-1
+                          finding_ids: [f-ts-usd_lkr-2026100608]
+                          themes: [{theme: fx, direction: weaker, currency: LKR}]
+                          country: home
+                          anchor: '2026-10-05T08:30:00Z'
+                          anchor_basis: move_start
+                          size: {value: 1.45, unit: pct}
+                      out_of_scope: []
+                      screening:
+                        - {event_id: e-1, product_type: business_loan, angle: fx_mismatch, decision: kept, product_ids: [sme-loans, corporate-loans], mechanism_ids: [business_loan.fx_mismatch.imports, business_loan.fx_mismatch.importer_collections], reason: Both books lend to importers who pay for goods in dollars.}
+                        - {event_id: e-1, product_type: business_loan, angle: utilization, decision: kept, product_ids: [sme-loans], mechanism_ids: [business_loan.utilization.importers], reason: SMEs fund dearer imports from their overdraft lines first.}
+                      hypotheses:
+                        - hypothesis_id: h-1
+                          event_id: e-1
+                          finding_ids: [f-ts-usd_lkr-2026100608]
+                          product_id: sme-loans
+                          product_type: business_loan
+                          angle: fx_mismatch
+                          mechanism_id: business_loan.fx_mismatch.imports
+                          chain_label: Importers' costs rise, so they open fewer letters of credit
+                          statement: "The LKR weakened (1.45%). Expected: importers' costs rise, so they open fewer letters of credit (segment: importer)."
+                          segment: {dimension: segment, value: importer}
+                          expected: {metric: lc_openings, direction: fall, size: medium, timing: weeks}
+                      tasks:
+                        - task_id: t-1
+                          hypothesis_id: h-1
+                          event_id: e-1
+                          finding_ids: [f-ts-usd_lkr-2026100608]
+                          data_source_id: serendib-reference-api
+                          product_id: sme-loans
+                          source_product_id: sme_loan
+                          metric: lc_openings
+                          unit: count
+                          aggregation: count per week
+                          filter: {segment: importer, size_band: sme}
+                          date_basis: local_business_date
+                          time_zone: Asia/Colombo
+                          calendar_id: lk-banks
+                          anchor: '2026-10-05T08:30:00Z'
+                          watch: {from: '2026-10-06', until: '2026-11-18'}
+                          baseline: {from: '2024-10-07', until: '2026-10-05', basis: rolling_seasonal_ratio}
+                          reporting_lag_days: 1
+                          method: seasonal_ratio
+                          thresholds:
+                            - {statistic: percentile, op: '<=', value: 5}
+                            - {statistic: pct_change, op: '<=', value: -5}
+                          expected_direction: fall
+                          adverse_direction: fall
+                          expected_size: medium
+                          min_volume: 10
+                          phase: effect
+                          currency_basis: original
+                          vintage_rule: same_age
+                          segment_frozen_at: '2026-09-28'
+                          masking: []
+                          dominance_limit: 0.5
+                          owner: business_credit
+                          book_size: {value: 18.4, unit: LKR bn}
+                      context: []
+                      tool_trace: []
+                      usage: {model: gemini-3.5-flash-lite, model_calls: 9, tool_calls: 8, duration_ms: 67000}
+                running:
+                  value: {run_id: inv-2026-10-06-0001, status: running, created_at: '2026-10-06T09:00:02Z', started_at: '2026-10-06T09:00:03Z'}
+                failed:
+                  value: {run_id: inv-2026-10-06-0001, status: failed, created_at: '2026-10-06T09:00:02Z', started_at: '2026-10-06T09:00:03Z', finished_at: '2026-10-06T09:00:09Z', error: Every model was unavailable (quota exceeded). Start a new run.}
+        '404':
+          description: No run with this run_id, or it is older than 24 hours.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Error'}
+
+components:
+  headers:
+    Location:
+      description: URL of the run, e.g. /investigations/inv-2026-10-06-0001.
+      schema: {type: string}
+    RetryAfter:
+      description: Seconds to wait before polling again.
+      schema: {type: integer, minimum: 1}
+
+  schemas:
+    Slug:
+      type: string
+      pattern: '^[a-z][a-z0-9_-]{1,79}$'
+    UtcDateTime:
+      type: string
+      format: date-time
+      description: RFC 3339 with a time zone; times without one are rejected.
+    BusinessDate:
+      type: string
+      format: date
+      description: A local business date (the institution's time zone).
+    Theme:
+      type: string
+      description: Metrics Spec v1.0 theme ids.
+      enum: [fx, rates, prices, commodities, remittance, regulation, competitor, macro, sector, disaster, trust, markets]
+    ProductType:
+      type: string
+      enum: [savings, fc_deposit, retirement, pawning, retail_loan, leasing, credit_card, business_loan, trade_finance, agri_loan, remittance, payments, customer_fx, wealth, bancassurance, life, health, motor, travel, property, marine, agriculture, micro_insurance, liability]
+    Move:
+      type: string
+      enum: [rise, fall]
+
+    # ---------------------------------------------------------- request
+    InvestigationRequest:
+      type: object
+      additionalProperties: false
+      required: [run_id, institution_id, server_url, institution, products, findings]
+      properties:
+        run_id: {type: string, minLength: 1, maxLength: 64}
+        institution_id: {type: string, minLength: 1, maxLength: 64}
+        server_url: {type: string, pattern: '^https?://', description: 'amiri-server: the agent reads coverage and the calendar there.'}
+        institution: {$ref: '#/components/schemas/Institution'}
+        products:
+          type: array
+          minItems: 1
+          items: {$ref: '#/components/schemas/Product'}
+        findings:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items: {$ref: '#/components/schemas/Finding'}
+        place_info:
+          type: object
+          additionalProperties: {$ref: '#/components/schemas/PlaceInfo'}
+          description: Country and regions of place codes in the findings, from the server's gazetteer (city:jaffna -> LK, LK-4, LK-41).
+        tracks_version:
+          type: [string, 'null']
+          description: Which tracks to use; null or absent means the agent's built-in tracks.
+        as_of:
+          oneOf: [{$ref: '#/components/schemas/UtcDateTime'}, {type: 'null'}]
+          description: The run's now (a sandbox's virtual time); default the real time.
+        validation:
+          type: boolean
+          default: true
+          description: Metrics validation is on, so build validation tasks. Off - stop at hypotheses and the report (mode report_only).
+        extend:
+          oneOf: [{$ref: '#/components/schemas/Extend'}, {type: 'null'}]
+          description: A development brought new themes to an open event - build hypotheses for these only, under its id.
+        limits: {$ref: '#/components/schemas/Limits'}
+
+    Institution:
+      type: object
+      additionalProperties: false
+      required: [name, institution_type, country, currency, time_zone, summary]
+      properties:
+        name: {type: string}
+        institution_type: {type: string, enum: [bank, insurer]}
+        country: {type: string, pattern: '^[A-Z]{2}$', description: Home country, ISO 3166-1.}
+        country_name: {type: [string, 'null']}
+        currency: {type: string, pattern: '^[A-Z]{3}$', description: Base currency, ISO 4217.}
+        time_zone: {type: string, description: 'IANA time zone; local dates and business days are in it.'}
+        footprint:
+          type: array
+          items: {$ref: '#/components/schemas/FootprintCountry'}
+          description: Countries other than home where it operates (branches, subsidiaries).
+        summary: {type: string}
+        segments:
+          type: array
+          items: {$ref: '#/components/schemas/Segment'}
+        rivals: {type: array, items: {type: string}}
+        regulators: {type: array, items: {type: string}}
+        flows:
+          type: array
+          items: {$ref: '#/components/schemas/Flow'}
+          description: From the profile; code reads how foreign news reaches home from them.
+        corridors: {type: array, items: {type: string}, description: Remittance corridor countries.}
+        notes: {type: [string, 'null']}
+
+    FootprintCountry:
+      type: object
+      additionalProperties: false
+      required: [country]
+      properties:
+        country: {type: string, pattern: '^[A-Z]{2}$'}
+        currency: {type: [string, 'null'], pattern: '^[A-Z]{3}$', description: 'Its currency, ISO 4217.'}
+
+    PlaceInfo:
+      type: object
+      additionalProperties: false
+      required: [country]
+      properties:
+        country: {type: string, pattern: '^[A-Z]{2}$'}
+        region_l1: {type: [string, 'null'], description: ISO 3166-2 first level.}
+        region_l2: {type: [string, 'null']}
+
+    Flow:
+      type: object
+      additionalProperties: false
+      required: [kind, local, counterpart]
+      properties:
+        kind: {type: string, description: 'remittances_in, remittances_out, exports, imports, ...'}
+        local: {type: string, description: A place code at home or in the footprint.}
+        counterpart: {type: string, description: A place code abroad.}
+
+    Segment:
+      type: object
+      additionalProperties: false
+      required: [id, label]
+      properties:
+        id: {type: string}
+        label: {type: string}
+        note: {type: [string, 'null']}
+
+    Finding:
+      type: object
+      additionalProperties: false
+      description: |
+        One finding from any source. When the source set
+        themes (market series, Radar), the agent uses them and doesn't classify.
+      required: [finding_id, source, kind, title, explanation, score, evidence]
+      properties:
+        finding_id: {$ref: '#/components/schemas/Slug'}
+        institution_id: {type: [string, 'null']}
+        source: {type: string, enum: [timeseries, radar, monitor]}
+        source_ref: {type: object, description: '{series_id} | {radar_run_id, story_fingerprint} | {monitor_id, monitor_version, check_run_id}'}
+        kind: {type: string, enum: [signal_move, story, news_match]}
+        title: {type: string}
+        explanation: {type: string}
+        score: {type: number, minimum: 0, maximum: 100}
+        themes: {type: array, maxItems: 4, items: {$ref: '#/components/schemas/ThemeTag'}}
+        places: {type: array, items: {type: string}, description: Place codes (ISO 3166 or the gazetteer's).}
+        evidence: {$ref: '#/components/schemas/FindingEvidence'}
+        effective_from:
+          type: [string, 'null']
+          format: date
+          description: When the event takes effect (a tax from 1 April). The anchor if given.
+        period:
+          oneOf: [{$ref: '#/components/schemas/Period'}, {type: 'null'}]
+          description: The period the finding covers (September remittances). Its start is the anchor if there is no effective_from.
+        created_at:
+          oneOf: [{$ref: '#/components/schemas/UtcDateTime'}, {type: 'null'}]
+
+    FindingEvidence:
+      type: object
+      additionalProperties: false
+      description: At least one of signals, headlines or web.
+      properties:
+        signals: {type: array, items: {$ref: '#/components/schemas/SignalRecord'}}
+        headlines: {type: array, items: {$ref: '#/components/schemas/Headline'}}
+        web: {type: array, items: {$ref: '#/components/schemas/WebPage'}}
+
+    SignalRecord:
+      type: object
+      additionalProperties: false
+      description: A market move, as the server's series detector wrote it.
+      required: [series_id, symbol, direction, start_at, end_at, ref_level, obs_level, change_pct, description]
+      properties:
+        series_id: {type: string}
+        symbol: {type: string}
+        interval: {type: string, default: 1h}
+        direction: {type: string, enum: [up, down]}
+        start_at: {$ref: '#/components/schemas/UtcDateTime'}
+        end_at: {$ref: '#/components/schemas/UtcDateTime'}
+        ref_level: {type: number}
+        obs_level: {type: number}
+        change_pct: {type: number}
+        z: {type: [number, 'null']}
+        typical_daily_move_pct: {type: [number, 'null']}
+        window_days: {type: [integer, 'null']}
+        description: {type: string}
+
+    Headline:
+      type: object
+      additionalProperties: false
+      required: [title, published_at]
+      properties:
+        title: {type: string}
+        published_at: {$ref: '#/components/schemas/UtcDateTime'}
+        outlet: {type: [string, 'null']}
+        url: {type: [string, 'null']}
+
+    WebPage:
+      type: object
+      additionalProperties: false
+      required: [url]
+      properties:
+        url: {type: string, pattern: '^https?://'}
+        title: {type: [string, 'null']}
+
+    Period:
+      type: object
+      additionalProperties: false
+      required: [start, end]
+      properties:
+        start: {type: string, format: date}
+        end: {type: string, format: date}
+
+    Product:
+      type: object
+      additionalProperties: false
+      required: [product_id, name, category]
+      description: A product of the institution's profile, in Metrics Spec v1.0 terms. Code maps it to the tracks' product type.
+      properties:
+        product_id: {$ref: '#/components/schemas/Slug'}
+        name: {type: string}
+        category: {type: string}
+        product_type: {type: [string, 'null']}
+        countries:
+          type: array
+          items: {type: string, pattern: '^[A-Z]{2}$'}
+          description: Where it is booked; empty means home and every footprint country.
+
+    Extend:
+      type: object
+      additionalProperties: false
+      required: [event_id, themes]
+      properties:
+        event_id: {$ref: '#/components/schemas/Slug'}
+        themes: {type: array, minItems: 1, maxItems: 4, items: {$ref: '#/components/schemas/ThemeTag'}}
+
+    Limits:
+      type: object
+      additionalProperties: false
+      properties:
+        max_model_calls: {type: integer, minimum: 5, maximum: 200, default: 80}
+        max_tasks: {type: integer, minimum: 1, maximum: 50, default: 15}
+        max_types_per_event: {type: integer, minimum: 1, maximum: 13, default: 8}
+        max_angles_per_type: {type: integer, minimum: 1, maximum: 5, default: 2}
+        timeout_seconds: {type: integer, minimum: 30, maximum: 1800, default: 600}
+
+    # --------------------------------------------------------- response
+    InvestigationStatus:
+      type: object
+      additionalProperties: false
+      required: [run_id, status, created_at]
+      description: result only when the run has finished; error only when it failed.
+      properties:
+        run_id: {type: string}
+        status:
+          type: string
+          enum: [queued, running, completed, stopped_early, failed]
+          description: |
+            queued        - accepted, not started
+            running       - in progress
+            completed     - finished; result is set
+            stopped_early - a limit ended it; result is set and may be partial
+            failed        - could not run; error is set
+        created_at: {$ref: '#/components/schemas/UtcDateTime'}
+        started_at: {$ref: '#/components/schemas/UtcDateTime'}
+        finished_at: {$ref: '#/components/schemas/UtcDateTime'}
+        result: {$ref: '#/components/schemas/InvestigationResult'}
+        error: {type: string}
+
+    InvestigationResult:
+      type: object
+      additionalProperties: false
+      required: [stop_reason, tracks_version, classifications, events, out_of_scope, screening, hypotheses, tasks, context, tool_trace, usage]
+      properties:
+        stop_reason: {type: string, enum: [finished, call_limit, timeout]}
+        tracks_version: {type: string}
+        mode: {type: string, enum: [tasks, report_only], default: tasks, description: 'report_only: metrics validation is off; no tasks.'}
+        report: {type: string, description: 'The investigation for people (markdown, built by code from the result).'}
+        as_of:
+          oneOf: [{$ref: '#/components/schemas/UtcDateTime'}, {type: 'null'}]
+        extended_event_id: {type: [string, 'null'], description: The open event this run added to (extend).}
+        untracked_products: {type: array, items: {$ref: '#/components/schemas/Untracked'}}
+        classifications: {type: array, items: {$ref: '#/components/schemas/Classification'}}
+        events: {type: array, items: {$ref: '#/components/schemas/Event'}}
+        out_of_scope: {type: array, items: {$ref: '#/components/schemas/OutOfScope'}}
+        screening: {type: array, items: {$ref: '#/components/schemas/Screening'}}
+        hypotheses: {type: array, items: {$ref: '#/components/schemas/Hypothesis'}}
+        tasks: {type: array, items: {$ref: '#/components/schemas/ValidationTask'}}
+        context: {type: array, items: {$ref: '#/components/schemas/ContextItem'}}
+        tool_trace: {type: array, items: {$ref: '#/components/schemas/ToolCall'}}
+        usage: {$ref: '#/components/schemas/Usage'}
+
+    Untracked:
+      type: object
+      additionalProperties: false
+      required: [product_id, product_type, reason]
+      description: A product the tracks don't cover yet; never screened.
+      properties:
+        product_id: {$ref: '#/components/schemas/Slug'}
+        product_type: {type: [string, 'null']}
+        reason: {type: string, minLength: 1, maxLength: 400}
+
+    ThemeTag:
+      type: object
+      additionalProperties: false
+      required: [theme, direction]
+      description: |
+        direction must suit the theme: fx weaker|stronger (with currency); rates, prices,
+        commodities, remittance up|down; regulation tax|central_bank_direction|
+        central_bank_relief|insurance_regulator_rule|import_control_tighter|
+        import_control_looser|tariff; competitor cheaper|new_product|partner_switch;
+        macro worse|better; sector shock|boost; disaster domestic|abroad; trust
+        own|rival|system; markets equity_down|equity_up|bonds_down|bonds_up.
+      properties:
+        theme: {$ref: '#/components/schemas/Theme'}
+        direction: {type: string}
+        item: {type: [string, 'null'], enum: [fuel, electricity, food, general, gold, crops, oil, flood, storm, earthquake, drought, fire, epidemic, haze, null], description: 'prices: fuel, electricity, food, general; commodities: gold, crops, oil; disaster: flood, storm, earthquake, drought, fire, epidemic, haze'}
+        sector: {type: [string, 'null'], description: sector only}
+        currency: {type: [string, 'null'], pattern: '^[A-Z]{3}$', description: 'fx only: the currency that moved (default the base currency; XXX for one the institution does not book in).'}
+        implied: {type: boolean, default: false, description: Added by code from another theme.}
+
+    Size:
+      type: object
+      additionalProperties: false
+      required: [value, unit]
+      properties:
+        value: {type: number}
+        unit: {type: string, enum: [pct, bp]}
+
+    Classification:
+      type: object
+      additionalProperties: false
+      required: [finding_id, themes, country]
+      properties:
+        finding_id: {$ref: '#/components/schemas/Slug'}
+        themes: {type: array, maxItems: 4, items: {$ref: '#/components/schemas/ThemeTag'}}
+        country: {type: string, enum: [home, footprint, other, global], description: 'home: the home country; footprint: a country it operates in.'}
+        channel: {type: string, enum: [remittance, sector, none], default: none}
+
+    Event:
+      type: object
+      additionalProperties: false
+      required: [event_id, finding_ids, themes, country, anchor, anchor_basis]
+      description: Findings about the same move, grouped and netted by code.
+      properties:
+        event_id: {$ref: '#/components/schemas/Slug'}
+        title: {type: string, description: 'The event in words, by code (The LKR weakened (1.45%)).'}
+        finding_ids: {type: array, minItems: 1, items: {$ref: '#/components/schemas/Slug'}}
+        themes: {type: array, minItems: 1, items: {$ref: '#/components/schemas/ThemeTag'}}
+        country: {type: string, enum: [home, footprint, other, global]}
+        country_code: {type: [string, 'null'], description: The footprint country, when country is footprint.}
+        anchor: {$ref: '#/components/schemas/UtcDateTime'}
+        anchor_basis: {type: string, enum: [effective_from, period_start, move_start, published_at]}
+        size:
+          oneOf: [{$ref: '#/components/schemas/Size'}, {type: 'null'}]
+        typical_daily_move_pct: {type: [number, 'null'], description: "The moved series' typical daily move; % minimums scale with it."}
+        places: {type: array, items: {type: string}}
+        regions: {type: array, items: {type: string}, description: ISO 3166-2 codes from the places.}
+        countries: {type: array, items: {type: string}, description: ISO 3166-1 codes of the places.}
+
+    OutOfScope:
+      type: object
+      additionalProperties: false
+      required: [finding_id, reason]
+      properties:
+        finding_id: {$ref: '#/components/schemas/Slug'}
+        reason: {type: string, enum: [not_home_country, no_theme, below_min_size, merged_into_event, after_as_of]}
+        event_id: {type: [string, 'null']}
+        note: {type: [string, 'null'], maxLength: 400}
+
+    Screening:
+      type: object
+      additionalProperties: false
+      required: [event_id, product_type, angle, decision, reason]
+      description: One decision per event x product type x angle. Kept decisions name their products.
+      properties:
+        event_id: {$ref: '#/components/schemas/Slug'}
+        product_type: {$ref: '#/components/schemas/ProductType'}
+        angle: {type: string}
+        decision: {type: string, enum: [kept, rejected, cut_by_cap]}
+        product_ids: {type: array, items: {$ref: '#/components/schemas/Slug'}}
+        mechanism_ids: {type: array, items: {type: string}}
+        reason: {type: string, minLength: 1, maxLength: 400}
+
+    Hypothesis:
+      type: object
+      additionalProperties: false
+      required: [hypothesis_id, event_id, finding_ids, product_id, product_type, angle, mechanism_id, chain_label, statement, expected]
+      properties:
+        hypothesis_id: {$ref: '#/components/schemas/Slug'}
+        event_id: {$ref: '#/components/schemas/Slug'}
+        finding_ids: {type: array, minItems: 1, items: {$ref: '#/components/schemas/Slug'}}
+        product_id: {$ref: '#/components/schemas/Slug'}
+        product_type: {$ref: '#/components/schemas/ProductType'}
+        angle: {type: string}
+        mechanism_id: {type: string}
+        chain_label: {type: string, description: "The mechanism's effect, for the impact chain (code, not model text)."}
+        statement: {type: string, description: Built by code from the mechanism.}
+        segment:
+          oneOf: [{$ref: '#/components/schemas/SegmentFilter'}, {type: 'null'}]
+        expected: {$ref: '#/components/schemas/Expectation'}
+
+    SegmentFilter:
+      type: object
+      additionalProperties: false
+      required: [dimension, value]
+      properties:
+        dimension: {type: string}
+        value: {type: string}
+
+    Expectation:
+      type: object
+      additionalProperties: false
+      required: [metric, direction, size, timing]
+      properties:
+        metric: {type: string}
+        direction: {$ref: '#/components/schemas/Move'}
+        size: {type: string, enum: [small, medium, large]}
+        timing: {type: string, enum: [days, weeks, months]}
+
+    BusinessDates:
+      type: object
+      additionalProperties: false
+      required: [from, until]
+      description: Local business dates; from inclusive, until exclusive.
+      properties:
+        from: {$ref: '#/components/schemas/BusinessDate'}
+        until: {$ref: '#/components/schemas/BusinessDate'}
+
+    Baseline:
+      type: object
+      additionalProperties: false
+      required: [from, until, basis]
+      description: |
+        The business dates the baseline is drawn from, and how:
+          aligned_prior_spans    - the 8 aligned spans before the anchor (recent_vs_prior)
+          rolling_seasonal_ratio - rolling aligned spans over the prior 24 months (seasonal_ratio)
+          anchor_level           - the level at the anchor, same position in the month (level_change)
+          baseline_slope         - the slope over the 12 month-ends before (trend)
+      properties:
+        from: {$ref: '#/components/schemas/BusinessDate'}
+        until: {$ref: '#/components/schemas/BusinessDate'}
+        basis: {type: string, enum: [aligned_prior_spans, rolling_seasonal_ratio, anchor_level, baseline_slope]}
+
+    Threshold:
+      type: object
+      additionalProperties: false
+      required: [statistic, op, value]
+      properties:
+        statistic: {type: string, enum: [robust_z, percentile, pct_change, pp_change, pct_of_gross_inflow, slope_change, forecast_gap_pp]}
+        op: {type: string, enum: ['>=', '<=']}
+        value: {type: number}
+
+    MaskRule:
+      type: object
+      additionalProperties: false
+      required: [metric, rise_pp]
+      description: Mask the verdict if this metric rises more than rise_pp above its baseline (e.g. moratorium_enrolled +2pp).
+      properties:
+        metric: {type: string}
+        rise_pp: {type: number, exclusiveMinimum: 0}
+
+    Amount:
+      type: object
+      additionalProperties: false
+      required: [value, unit]
+      properties:
+        value: {type: number}
+        unit: {type: string}
+
+    ValidationTask:
+      type: object
+      additionalProperties: false
+      description: |
+        One check for the validator, which gives exactly one verdict: confirms,
+        contradicts, no_effect, insufficient_data, masked or not_yet. All
+        thresholds must hold. A banker is alerted only when the observed move is
+        in adverse_direction. The baseline ends before the watch starts. Metric
+        definitions, units, lags and the validation rules come from the
+        Metrics Spec the server holds.
+      required: [task_id, hypothesis_id, event_id, finding_ids, data_source_id, product_id, metric, unit, aggregation, anchor, time_zone, watch, baseline, reporting_lag_days, method, thresholds, expected_direction, adverse_direction, expected_size, owner]
+      properties:
+        task_id: {$ref: '#/components/schemas/Slug'}
+        hypothesis_id: {$ref: '#/components/schemas/Slug'}
+        event_id: {$ref: '#/components/schemas/Slug'}
+        finding_ids: {type: array, minItems: 1, items: {$ref: '#/components/schemas/Slug'}}
+        data_source_id: {type: string, description: The institution's approved data source (from coverage).}
+        product_id: {$ref: '#/components/schemas/Slug'}
+        source_product_id: {type: [string, 'null'], description: The same product in the data source's catalog.}
+        metric: {type: string}
+        unit: {type: string}
+        currency: {type: [string, 'null']}
+        aggregation: {type: string}
+        filter: {type: object, additionalProperties: {type: string}}
+        date_basis: {type: string, enum: [local_business_date], default: local_business_date}
+        time_zone: {type: string, description: The institution's IANA time zone.}
+        calendar_id: {type: [string, 'null'], description: "The data source's calendar the business days came from."}
+        anchor: {$ref: '#/components/schemas/UtcDateTime'}
+        announced_at:
+          type: [string, 'null']
+          format: date
+          description: For a dated rule's anticipation phase, when it was announced (the validator's growth window ends before it).
+        watch: {$ref: '#/components/schemas/BusinessDates'}
+        baseline: {$ref: '#/components/schemas/Baseline'}
+        reporting_lag_days: {type: integer, minimum: 0}
+        method: {type: string, enum: [recent_vs_prior, seasonal_ratio, level_change, trend]}
+        thresholds: {type: array, minItems: 1, items: {$ref: '#/components/schemas/Threshold'}}
+        threshold_set_id: {type: [string, 'null'], description: 'The catalog threshold set the thresholds came from: <metric>.<expected_size>.'}
+        expected_direction: {$ref: '#/components/schemas/Move'}
+        adverse_direction: {$ref: '#/components/schemas/Move'}
+        expected_size: {type: string, enum: [small, medium, large]}
+        min_volume: {type: [integer, 'null']}
+        phase: {type: string, enum: [effect, anticipation], default: effect, description: For dated rules, before (anticipation) or after (effect) the effective date.}
+        currency_basis: {type: string, enum: [original, base], default: original, description: Judge in the metric's own currency (USD for remittances, LCs, travel claims).}
+        vintage_rule: {type: string, enum: [same_age], default: same_age, description: Watch and baseline values are compared as known at the same age after their period ended.}
+        segment_frozen_at:
+          type: [string, 'null']
+          format: date
+          description: Segment membership is fixed as of this date (the start of the week before the event; one date per event).
+        masking: {type: array, items: {$ref: '#/components/schemas/MaskRule'}}
+        dominance_limit: {type: number, exclusiveMinimum: 0, maximum: 1, default: 0.5, description: If one contributor drives more than this share of the move, the verdict is insufficient_data.}
+        catalog_version: {type: [string, 'null'], description: The server catalog version the task was built from.}
+        owner:
+          type: string
+          enum: [treasury, retail_banking, retail_credit, business_credit, pawning, cards, underwriting, claims, actuarial, investments]
+        book_size:
+          oneOf: [{$ref: '#/components/schemas/Amount'}, {type: 'null'}]
+        scope_note: {type: [string, 'null'], maxLength: 400, description: "E.g. the event is in a footprint country and the data can't isolate that book."}
+
+    ContextItem:
+      type: object
+      additionalProperties: false
+      required: [context_id, event_id, data_source_id, product_id, angle, metric, as_of, why]
+      description: A number to report with an event, with no verdict (exposure shares, structural angles).
+      properties:
+        context_id: {$ref: '#/components/schemas/Slug'}
+        event_id: {$ref: '#/components/schemas/Slug'}
+        data_source_id: {type: string}
+        product_id: {$ref: '#/components/schemas/Slug'}
+        angle: {type: string}
+        metric: {type: string}
+        filter: {type: object, additionalProperties: {type: string}}
+        as_of: {$ref: '#/components/schemas/BusinessDate'}
+        why: {type: string, minLength: 1, maxLength: 400}
+
+    ToolCall:
+      type: object
+      additionalProperties: false
+      required: [step, tool, args, status]
+      properties:
+        step: {type: integer, minimum: 1}
+        tool: {type: string, enum: [get_coverage, get_calendar, classify_finding, screen, add_hypothesis, finish]}
+        args: {type: object}
+        status: {type: string, enum: [ok, blocked, error]}
+        message: {type: [string, 'null']}
+        result: {description: The tool output the model saw.}
+
+    Usage:
+      type: object
+      additionalProperties: false
+      required: [model, model_calls, tool_calls, duration_ms]
+      properties:
+        model: {type: string}
+        model_calls: {type: integer, minimum: 0}
+        tool_calls: {type: integer, minimum: 0}
+        duration_ms: {type: integer, minimum: 0}
+
+    Error:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error: {type: string}
+        run_id: {type: [string, 'null']}
+
+    ValidationError:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              loc: {type: array, items: {}}
+              msg: {type: string}
+              type: {type: string}

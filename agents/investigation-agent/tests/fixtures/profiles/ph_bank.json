@@ -1,0 +1,19 @@
+{
+  "institution": {"institution_id": "ph-bank", "name": "Visayas Rural and Commercial Bank", "institution_type": "bank",
+                  "home_country": "PH", "base_currency": "PHP", "time_zone": "Asia/Manila"},
+  "sections": {
+    "products": [
+      {"id": "savings", "name": "Peso Savings", "category": "savings", "product_type": "savings_account", "status": "active", "currencies": ["PHP"]},
+      {"id": "crop-loans", "name": "Crop Production Loans", "category": "agri_loan", "product_type": "crop_loan", "status": "active"},
+      {"id": "sme-loans", "name": "SME Working Capital", "category": "business_loan", "product_type": "working_capital", "status": "active"},
+      {"id": "ofw-remittances", "name": "OFW Remittances", "category": "remittances", "product_type": "inward_remittance", "status": "active", "currencies": ["USD"]},
+      {"id": "fx-desk", "name": "Customer FX", "category": "fx", "product_type": "spot_fx", "status": "active"},
+      {"id": "bancassurance", "name": "Bancassurance", "category": "distribution", "product_type": "bancassurance", "status": "active"}
+    ],
+    "flows": [
+      {"kind": "remittances_in", "local": "PH", "counterpart": "SA"},
+      {"kind": "remittances_in", "local": "PH", "counterpart": "AE"},
+      {"kind": "remittances_in", "local": "PH", "counterpart": "US"}
+    ]
+  }
+}

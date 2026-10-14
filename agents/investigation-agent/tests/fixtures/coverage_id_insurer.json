@@ -1,0 +1,1567 @@
+{
+ "data_source": {
+  "data_source_id": "metrics-spec",
+  "name": "Assumed from Metrics Spec 1.0.0",
+  "catalog_version": "1.0.0",
+  "spec_version": "1.0.0",
+  "assumed": true
+ },
+ "products": [
+  {
+   "product_id": "home-cover",
+   "name": "Home and Fire",
+   "category": "property",
+   "product_type": "home",
+   "source_product_id": null,
+   "book_size": null,
+   "metrics": [
+    {
+     "metric": "claims_per_1000",
+     "name": "Claims per 1,000 insured locations",
+     "question": "Did a disaster drive up claims where we insure?",
+     "kind": "rate",
+     "unit": "per_1000",
+     "currency": null,
+     "grain": "weekly",
+     "lag_days": 14,
+     "adverse": "rise",
+     "adverse_allowed": [
+      "rise"
+     ],
+     "method": "seasonal_ratio",
+     "min_volume": 1000,
+     "dimensions": {
+      "peril": [
+       "flood",
+       "storm",
+       "earthquake",
+       "fire",
+       "drought",
+       "pest_disease",
+       "other",
+       "unknown"
+      ],
+      "region_l1": [
+       "ID-AC",
+       "ID-BA",
+       "ID-BB",
+       "ID-BE",
+       "ID-BT",
+       "ID-GO",
+       "ID-JA",
+       "ID-JB",
+       "ID-JI",
+       "ID-JK",
+       "ID-JT",
+       "ID-KB",
+       "ID-KI",
+       "ID-KR",
+       "ID-KS",
+       "ID-KT",
+       "ID-KU",
+       "ID-LA",
+       "ID-MA",
+       "ID-MU",
+       "ID-NB",
+       "ID-NT",
+       "ID-PA",
+       "ID-PB",
+       "ID-PD",
+       "ID-PE",
+       "ID-PS",
+       "ID-PT",
+       "ID-RI",
+       "ID-SA",
+       "ID-SB",
+       "ID-SG",
+       "ID-SN",
+       "ID-SR",
+       "ID-SS",
+       "ID-ST",
+       "ID-SU",
+       "ID-YO",
+       "unknown"
+      ],
+      "region_l2": [
+       "unknown"
+      ]
+     },
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 25
+      }
+     },
+     "history_from": null,
+     "stable_age_days": 90,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": 10,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "median_claim_cost",
+     "name": "Median claim cost",
+     "question": "What does a typical claim cost (context for rebuild costs)?",
+     "kind": "level",
+     "unit": "IDR",
+     "currency": "IDR",
+     "grain": "monthly",
+     "lag_days": 30,
+     "adverse": null,
+     "adverse_allowed": [],
+     "method": "context",
+     "min_volume": null,
+     "dimensions": {
+      "peril": [
+       "flood",
+       "storm",
+       "earthquake",
+       "fire",
+       "drought",
+       "pest_disease",
+       "other",
+       "unknown"
+      ]
+     },
+     "thresholds": {},
+     "history_from": null,
+     "stable_age_days": null,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": null,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "sum_insured",
+     "name": "Sum insured",
+     "question": "How much do we insure in the affected area?",
+     "kind": "stock",
+     "unit": "IDR",
+     "currency": "IDR",
+     "grain": "monthly",
+     "lag_days": 15,
+     "adverse": null,
+     "adverse_allowed": [],
+     "method": "context",
+     "min_volume": null,
+     "dimensions": {
+      "region_l1": [
+       "ID-AC",
+       "ID-BA",
+       "ID-BB",
+       "ID-BE",
+       "ID-BT",
+       "ID-GO",
+       "ID-JA",
+       "ID-JB",
+       "ID-JI",
+       "ID-JK",
+       "ID-JT",
+       "ID-KB",
+       "ID-KI",
+       "ID-KR",
+       "ID-KS",
+       "ID-KT",
+       "ID-KU",
+       "ID-LA",
+       "ID-MA",
+       "ID-MU",
+       "ID-NB",
+       "ID-NT",
+       "ID-PA",
+       "ID-PB",
+       "ID-PD",
+       "ID-PE",
+       "ID-PS",
+       "ID-PT",
+       "ID-RI",
+       "ID-SA",
+       "ID-SB",
+       "ID-SG",
+       "ID-SN",
+       "ID-SR",
+       "ID-SS",
+       "ID-ST",
+       "ID-SU",
+       "ID-YO",
+       "unknown"
+      ],
+      "region_l2": [
+       "unknown"
+      ]
+     },
+     "thresholds": {},
+     "history_from": null,
+     "stable_age_days": null,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": null,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "new_policies",
+     "name": "New policies",
+     "question": "Are we writing fewer new property policies?",
+     "kind": "count",
+     "unit": "count",
+     "currency": null,
+     "grain": "weekly",
+     "lag_days": 7,
+     "adverse": "fall",
+     "adverse_allowed": [
+      "fall"
+     ],
+     "method": "seasonal_ratio",
+     "min_volume": 20,
+     "dimensions": {
+      "sales_channel": [
+       "agency",
+       "broker",
+       "bancassurance",
+       "direct",
+       "digital",
+       "partner",
+       "unknown"
+      ],
+      "region_l1": [
+       "ID-AC",
+       "ID-BA",
+       "ID-BB",
+       "ID-BE",
+       "ID-BT",
+       "ID-GO",
+       "ID-JA",
+       "ID-JB",
+       "ID-JI",
+       "ID-JK",
+       "ID-JT",
+       "ID-KB",
+       "ID-KI",
+       "ID-KR",
+       "ID-KS",
+       "ID-KT",
+       "ID-KU",
+       "ID-LA",
+       "ID-MA",
+       "ID-MU",
+       "ID-NB",
+       "ID-NT",
+       "ID-PA",
+       "ID-PB",
+       "ID-PD",
+       "ID-PE",
+       "ID-PS",
+       "ID-PT",
+       "ID-RI",
+       "ID-SA",
+       "ID-SB",
+       "ID-SG",
+       "ID-SN",
+       "ID-SR",
+       "ID-SS",
+       "ID-ST",
+       "ID-SU",
+       "ID-YO",
+       "unknown"
+      ]
+     },
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     },
+     "history_from": null,
+     "stable_age_days": 14,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": 20,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "gwp",
+     "name": "Gross written premium",
+     "question": "How large is the book?",
+     "kind": "flow",
+     "unit": "IDR",
+     "currency": "IDR",
+     "grain": "monthly",
+     "lag_days": 15,
+     "adverse": null,
+     "adverse_allowed": [],
+     "method": "book_size",
+     "min_volume": null,
+     "dimensions": {
+      "region_l1": [
+       "ID-AC",
+       "ID-BA",
+       "ID-BB",
+       "ID-BE",
+       "ID-BT",
+       "ID-GO",
+       "ID-JA",
+       "ID-JB",
+       "ID-JI",
+       "ID-JK",
+       "ID-JT",
+       "ID-KB",
+       "ID-KI",
+       "ID-KR",
+       "ID-KS",
+       "ID-KT",
+       "ID-KU",
+       "ID-LA",
+       "ID-MA",
+       "ID-MU",
+       "ID-NB",
+       "ID-NT",
+       "ID-PA",
+       "ID-PB",
+       "ID-PD",
+       "ID-PE",
+       "ID-PS",
+       "ID-PT",
+       "ID-RI",
+       "ID-SA",
+       "ID-SB",
+       "ID-SG",
+       "ID-SN",
+       "ID-SR",
+       "ID-SS",
+       "ID-ST",
+       "ID-SU",
+       "ID-YO",
+       "unknown"
+      ]
+     },
+     "thresholds": {},
+     "history_from": null,
+     "stable_age_days": null,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": null,
+     "mask_family": false,
+     "masked_by": null
+    }
+   ]
+  },
+  {
+   "product_id": "motor",
+   "name": "Private Motor",
+   "category": "motor",
+   "product_type": "private_motor",
+   "source_product_id": null,
+   "book_size": null,
+   "metrics": [
+    {
+     "metric": "claims_per_1000",
+     "name": "Claims per 1,000 vehicles",
+     "question": "Are more motor claims coming in (a flood, more traffic)?",
+     "kind": "rate",
+     "unit": "per_1000",
+     "currency": null,
+     "grain": "weekly",
+     "lag_days": 14,
+     "adverse": "rise",
+     "adverse_allowed": [
+      "rise"
+     ],
+     "method": "seasonal_ratio",
+     "min_volume": 1000,
+     "dimensions": {
+      "claim_type": [
+       "collision",
+       "third_party",
+       "theft",
+       "natural_peril",
+       "glass_other",
+       "unknown",
+       "inpatient",
+       "outpatient",
+       "day_care",
+       "maternity",
+       "dental_optical",
+       "critical_illness",
+       "accident",
+       "medical",
+       "trip_cancellation",
+       "baggage_delay",
+       "other"
+      ],
+      "peril": [
+       "flood",
+       "storm",
+       "earthquake",
+       "fire",
+       "drought",
+       "pest_disease",
+       "other",
+       "unknown"
+      ],
+      "vehicle_type": [
+       "two_wheeler",
+       "three_wheeler",
+       "car",
+       "light_commercial",
+       "heavy_commercial",
+       "bus",
+       "agricultural",
+       "other",
+       "unknown"
+      ],
+      "cover": [
+       "comprehensive",
+       "third_party_only",
+       "third_party_fire_theft",
+       "unknown"
+      ],
+      "region_l1": [
+       "ID-AC",
+       "ID-BA",
+       "ID-BB",
+       "ID-BE",
+       "ID-BT",
+       "ID-GO",
+       "ID-JA",
+       "ID-JB",
+       "ID-JI",
+       "ID-JK",
+       "ID-JT",
+       "ID-KB",
+       "ID-KI",
+       "ID-KR",
+       "ID-KS",
+       "ID-KT",
+       "ID-KU",
+       "ID-LA",
+       "ID-MA",
+       "ID-MU",
+       "ID-NB",
+       "ID-NT",
+       "ID-PA",
+       "ID-PB",
+       "ID-PD",
+       "ID-PE",
+       "ID-PS",
+       "ID-PT",
+       "ID-RI",
+       "ID-SA",
+       "ID-SB",
+       "ID-SG",
+       "ID-SN",
+       "ID-SR",
+       "ID-SS",
+       "ID-ST",
+       "ID-SU",
+       "ID-YO",
+       "unknown"
+      ],
+      "region_l2": [
+       "unknown"
+      ]
+     },
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 25
+      }
+     },
+     "history_from": null,
+     "stable_age_days": 90,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": 10,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "parts_cost_index",
+     "name": "Parts cost index",
+     "question": "Are imported parts getting dearer?",
+     "kind": "level",
+     "unit": "index",
+     "currency": null,
+     "grain": "monthly",
+     "lag_days": 15,
+     "adverse": "rise",
+     "adverse_allowed": [
+      "rise"
+     ],
+     "method": "level_change",
+     "min_volume": 20,
+     "dimensions": {
+      "vehicle_type": [
+       "two_wheeler",
+       "three_wheeler",
+       "car",
+       "light_commercial",
+       "heavy_commercial",
+       "bus",
+       "agricultural",
+       "other",
+       "unknown"
+      ]
+     },
+     "thresholds": {
+      "small": {
+       "pct_change": 3
+      },
+      "medium": {
+       "pct_change": 3
+      },
+      "large": {
+       "pct_change": 3
+      }
+     },
+     "history_from": null,
+     "stable_age_days": 30,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": null,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "median_claim_cost",
+     "name": "Median claim cost",
+     "question": "What does a typical own-damage claim cost now (context)?",
+     "kind": "level",
+     "unit": "IDR",
+     "currency": "IDR",
+     "grain": "monthly",
+     "lag_days": 30,
+     "adverse": null,
+     "adverse_allowed": [],
+     "method": "context",
+     "min_volume": null,
+     "dimensions": {
+      "vehicle_type": [
+       "two_wheeler",
+       "three_wheeler",
+       "car",
+       "light_commercial",
+       "heavy_commercial",
+       "bus",
+       "agricultural",
+       "other",
+       "unknown"
+      ]
+     },
+     "thresholds": {},
+     "history_from": null,
+     "stable_age_days": null,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": null,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "new_policies",
+     "name": "New policies",
+     "question": "Are we insuring fewer new vehicles (import rules, prices)?",
+     "kind": "count",
+     "unit": "count",
+     "currency": null,
+     "grain": "weekly",
+     "lag_days": 7,
+     "adverse": "fall",
+     "adverse_allowed": [
+      "fall"
+     ],
+     "method": "seasonal_ratio",
+     "min_volume": 20,
+     "dimensions": {
+      "vehicle_type": [
+       "two_wheeler",
+       "three_wheeler",
+       "car",
+       "light_commercial",
+       "heavy_commercial",
+       "bus",
+       "agricultural",
+       "other",
+       "unknown"
+      ],
+      "cover": [
+       "comprehensive",
+       "third_party_only",
+       "third_party_fire_theft",
+       "unknown"
+      ],
+      "new_used": [
+       "new",
+       "used",
+       "unknown"
+      ],
+      "sales_channel": [
+       "agency",
+       "broker",
+       "bancassurance",
+       "direct",
+       "digital",
+       "partner",
+       "unknown"
+      ]
+     },
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     },
+     "history_from": null,
+     "stable_age_days": 14,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": 20,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "renewal_rate",
+     "name": "Renewal rate",
+     "question": "Are fewer vehicle owners renewing with us?",
+     "kind": "ratio",
+     "unit": "percent",
+     "currency": null,
+     "grain": "weekly",
+     "lag_days": 37,
+     "adverse": "fall",
+     "adverse_allowed": [
+      "fall"
+     ],
+     "method": "level_change",
+     "min_volume": 200,
+     "dimensions": {
+      "vehicle_type": [
+       "two_wheeler",
+       "three_wheeler",
+       "car",
+       "light_commercial",
+       "heavy_commercial",
+       "bus",
+       "agricultural",
+       "other",
+       "unknown"
+      ],
+      "cover": [
+       "comprehensive",
+       "third_party_only",
+       "third_party_fire_theft",
+       "unknown"
+      ]
+     },
+     "thresholds": {
+      "small": {
+       "pp_change": 2.0
+      },
+      "medium": {
+       "pp_change": 2.0
+      },
+      "large": {
+       "pp_change": 2.0
+      }
+     },
+     "history_from": null,
+     "stable_age_days": 14,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": null,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "gwp",
+     "name": "Gross written premium",
+     "question": "How large is the book?",
+     "kind": "flow",
+     "unit": "IDR",
+     "currency": "IDR",
+     "grain": "monthly",
+     "lag_days": 15,
+     "adverse": null,
+     "adverse_allowed": [],
+     "method": "book_size",
+     "min_volume": null,
+     "dimensions": {
+      "cover": [
+       "comprehensive",
+       "third_party_only",
+       "third_party_fire_theft",
+       "unknown"
+      ]
+     },
+     "thresholds": {},
+     "history_from": null,
+     "stable_age_days": null,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": null,
+     "mask_family": false,
+     "masked_by": null
+    }
+   ]
+  },
+  {
+   "product_id": "crop-cover",
+   "name": "Rice Crop Cover",
+   "category": "agriculture",
+   "product_type": "crop_indemnity",
+   "source_product_id": null,
+   "book_size": null,
+   "metrics": [
+    {
+     "metric": "new_policies",
+     "name": "New policies (enrolments)",
+     "question": "Are fewer farmers insuring this season?",
+     "kind": "count",
+     "unit": "count",
+     "currency": null,
+     "grain": "monthly",
+     "lag_days": 15,
+     "adverse": "fall",
+     "adverse_allowed": [
+      "fall"
+     ],
+     "method": "seasonal_ratio",
+     "min_volume": 50,
+     "dimensions": {
+      "crop_group": [
+       "cereals",
+       "vegetables_melons",
+       "fruit_nuts",
+       "oilseeds",
+       "roots_tubers",
+       "beverage_spice",
+       "leguminous",
+       "sugar",
+       "other_crops",
+       "livestock",
+       "aquaculture",
+       "unknown"
+      ],
+      "scheme": [
+       "public_subsidised",
+       "private",
+       "unknown"
+      ],
+      "region_l1": [
+       "ID-AC",
+       "ID-BA",
+       "ID-BB",
+       "ID-BE",
+       "ID-BT",
+       "ID-GO",
+       "ID-JA",
+       "ID-JB",
+       "ID-JI",
+       "ID-JK",
+       "ID-JT",
+       "ID-KB",
+       "ID-KI",
+       "ID-KR",
+       "ID-KS",
+       "ID-KT",
+       "ID-KU",
+       "ID-LA",
+       "ID-MA",
+       "ID-MU",
+       "ID-NB",
+       "ID-NT",
+       "ID-PA",
+       "ID-PB",
+       "ID-PD",
+       "ID-PE",
+       "ID-PS",
+       "ID-PT",
+       "ID-RI",
+       "ID-SA",
+       "ID-SB",
+       "ID-SG",
+       "ID-SN",
+       "ID-SR",
+       "ID-SS",
+       "ID-ST",
+       "ID-SU",
+       "ID-YO",
+       "unknown"
+      ],
+      "region_l2": [
+       "unknown"
+      ]
+     },
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 10
+      }
+     },
+     "history_from": null,
+     "stable_age_days": 30,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": 20,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "sum_insured",
+     "name": "Sum insured",
+     "question": "How much crop and livestock value do we cover where a disaster hit?",
+     "kind": "stock",
+     "unit": "IDR",
+     "currency": "IDR",
+     "grain": "monthly",
+     "lag_days": 15,
+     "adverse": null,
+     "adverse_allowed": [],
+     "method": "context",
+     "min_volume": null,
+     "dimensions": {
+      "crop_group": [
+       "cereals",
+       "vegetables_melons",
+       "fruit_nuts",
+       "oilseeds",
+       "roots_tubers",
+       "beverage_spice",
+       "leguminous",
+       "sugar",
+       "other_crops",
+       "livestock",
+       "aquaculture",
+       "unknown"
+      ],
+      "region_l1": [
+       "ID-AC",
+       "ID-BA",
+       "ID-BB",
+       "ID-BE",
+       "ID-BT",
+       "ID-GO",
+       "ID-JA",
+       "ID-JB",
+       "ID-JI",
+       "ID-JK",
+       "ID-JT",
+       "ID-KB",
+       "ID-KI",
+       "ID-KR",
+       "ID-KS",
+       "ID-KT",
+       "ID-KU",
+       "ID-LA",
+       "ID-MA",
+       "ID-MU",
+       "ID-NB",
+       "ID-NT",
+       "ID-PA",
+       "ID-PB",
+       "ID-PD",
+       "ID-PE",
+       "ID-PS",
+       "ID-PT",
+       "ID-RI",
+       "ID-SA",
+       "ID-SB",
+       "ID-SG",
+       "ID-SN",
+       "ID-SR",
+       "ID-SS",
+       "ID-ST",
+       "ID-SU",
+       "ID-YO",
+       "unknown"
+      ],
+      "region_l2": [
+       "unknown"
+      ]
+     },
+     "thresholds": {},
+     "history_from": null,
+     "stable_age_days": null,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": null,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "claims_per_1000",
+     "name": "Claims per 1,000 policies",
+     "question": "Did drought, flood or pests trigger more claims or index payouts?",
+     "kind": "rate",
+     "unit": "per_1000",
+     "currency": null,
+     "grain": "monthly",
+     "lag_days": 30,
+     "adverse": "rise",
+     "adverse_allowed": [
+      "rise"
+     ],
+     "method": "seasonal_ratio",
+     "min_volume": 1000,
+     "dimensions": {
+      "peril": [
+       "flood",
+       "storm",
+       "earthquake",
+       "fire",
+       "drought",
+       "pest_disease",
+       "other",
+       "unknown"
+      ],
+      "crop_group": [
+       "cereals",
+       "vegetables_melons",
+       "fruit_nuts",
+       "oilseeds",
+       "roots_tubers",
+       "beverage_spice",
+       "leguminous",
+       "sugar",
+       "other_crops",
+       "livestock",
+       "aquaculture",
+       "unknown"
+      ],
+      "region_l1": [
+       "ID-AC",
+       "ID-BA",
+       "ID-BB",
+       "ID-BE",
+       "ID-BT",
+       "ID-GO",
+       "ID-JA",
+       "ID-JB",
+       "ID-JI",
+       "ID-JK",
+       "ID-JT",
+       "ID-KB",
+       "ID-KI",
+       "ID-KR",
+       "ID-KS",
+       "ID-KT",
+       "ID-KU",
+       "ID-LA",
+       "ID-MA",
+       "ID-MU",
+       "ID-NB",
+       "ID-NT",
+       "ID-PA",
+       "ID-PB",
+       "ID-PD",
+       "ID-PE",
+       "ID-PS",
+       "ID-PT",
+       "ID-RI",
+       "ID-SA",
+       "ID-SB",
+       "ID-SG",
+       "ID-SN",
+       "ID-SR",
+       "ID-SS",
+       "ID-ST",
+       "ID-SU",
+       "ID-YO",
+       "unknown"
+      ],
+      "region_l2": [
+       "unknown"
+      ]
+     },
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 25
+      }
+     },
+     "history_from": null,
+     "stable_age_days": 90,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": 10,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "gwp",
+     "name": "Gross written premium",
+     "question": "How large is the book?",
+     "kind": "flow",
+     "unit": "IDR",
+     "currency": "IDR",
+     "grain": "monthly",
+     "lag_days": 15,
+     "adverse": null,
+     "adverse_allowed": [],
+     "method": "book_size",
+     "min_volume": null,
+     "dimensions": {
+      "scheme": [
+       "public_subsidised",
+       "private",
+       "unknown"
+      ]
+     },
+     "thresholds": {},
+     "history_from": null,
+     "stable_age_days": null,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": null,
+     "mask_family": false,
+     "masked_by": null
+    }
+   ]
+  },
+  {
+   "product_id": "micro-health",
+   "name": "Micro Health",
+   "category": "micro_insurance",
+   "product_type": "micro_health",
+   "source_product_id": null,
+   "book_size": null,
+   "metrics": [
+    {
+     "metric": "new_policies",
+     "name": "New policies",
+     "question": "Are fewer low-income households taking cover?",
+     "kind": "count",
+     "unit": "count",
+     "currency": null,
+     "grain": "weekly",
+     "lag_days": 7,
+     "adverse": "fall",
+     "adverse_allowed": [
+      "fall"
+     ],
+     "method": "seasonal_ratio",
+     "min_volume": 20,
+     "dimensions": {
+      "sales_channel": [
+       "agency",
+       "broker",
+       "bancassurance",
+       "direct",
+       "digital",
+       "partner",
+       "unknown"
+      ],
+      "region_l1": [
+       "ID-AC",
+       "ID-BA",
+       "ID-BB",
+       "ID-BE",
+       "ID-BT",
+       "ID-GO",
+       "ID-JA",
+       "ID-JB",
+       "ID-JI",
+       "ID-JK",
+       "ID-JT",
+       "ID-KB",
+       "ID-KI",
+       "ID-KR",
+       "ID-KS",
+       "ID-KT",
+       "ID-KU",
+       "ID-LA",
+       "ID-MA",
+       "ID-MU",
+       "ID-NB",
+       "ID-NT",
+       "ID-PA",
+       "ID-PB",
+       "ID-PD",
+       "ID-PE",
+       "ID-PS",
+       "ID-PT",
+       "ID-RI",
+       "ID-SA",
+       "ID-SB",
+       "ID-SG",
+       "ID-SN",
+       "ID-SR",
+       "ID-SS",
+       "ID-ST",
+       "ID-SU",
+       "ID-YO",
+       "unknown"
+      ]
+     },
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     },
+     "history_from": null,
+     "stable_age_days": 37,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": 20,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "premium_collection_rate",
+     "name": "Premium collection rate",
+     "question": "Are households missing small premium payments (an early stress signal)?",
+     "kind": "ratio",
+     "unit": "percent",
+     "currency": null,
+     "grain": "weekly",
+     "lag_days": 12,
+     "adverse": "fall",
+     "adverse_allowed": [
+      "fall"
+     ],
+     "method": "level_change",
+     "min_volume": 200,
+     "dimensions": {
+      "collection_method": [
+       "bank_debit",
+       "card",
+       "payroll",
+       "mobile_wallet",
+       "airtime",
+       "agent_cash",
+       "other",
+       "unknown"
+      ],
+      "region_l1": [
+       "ID-AC",
+       "ID-BA",
+       "ID-BB",
+       "ID-BE",
+       "ID-BT",
+       "ID-GO",
+       "ID-JA",
+       "ID-JB",
+       "ID-JI",
+       "ID-JK",
+       "ID-JT",
+       "ID-KB",
+       "ID-KI",
+       "ID-KR",
+       "ID-KS",
+       "ID-KT",
+       "ID-KU",
+       "ID-LA",
+       "ID-MA",
+       "ID-MU",
+       "ID-NB",
+       "ID-NT",
+       "ID-PA",
+       "ID-PB",
+       "ID-PD",
+       "ID-PE",
+       "ID-PS",
+       "ID-PT",
+       "ID-RI",
+       "ID-SA",
+       "ID-SB",
+       "ID-SG",
+       "ID-SN",
+       "ID-SR",
+       "ID-SS",
+       "ID-ST",
+       "ID-SU",
+       "ID-YO",
+       "unknown"
+      ]
+     },
+     "thresholds": {
+      "small": {
+       "pp_change": 1.0
+      },
+      "medium": {
+       "pp_change": 1.0
+      },
+      "large": {
+       "pp_change": 1.0
+      }
+     },
+     "history_from": null,
+     "stable_age_days": 30,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": null,
+     "mask_family": true,
+     "masked_by": {
+      "family": "premium_relief",
+      "metrics": [],
+      "else_break_kind": "relief",
+      "relief_kind": "premium_grace_extension"
+     }
+    },
+    {
+     "metric": "lapse_rate",
+     "name": "Lapse rate",
+     "question": "Are more micro policies lapsing?",
+     "kind": "rate",
+     "unit": "per_1000",
+     "currency": null,
+     "grain": "monthly",
+     "lag_days": 45,
+     "adverse": "rise",
+     "adverse_allowed": [
+      "rise"
+     ],
+     "method": "trend",
+     "min_volume": 1000,
+     "dimensions": {
+      "collection_method": [
+       "bank_debit",
+       "card",
+       "payroll",
+       "mobile_wallet",
+       "airtime",
+       "agent_cash",
+       "other",
+       "unknown"
+      ]
+     },
+     "thresholds": {
+      "small": {
+       "forecast_gap_pp": 1.0
+      },
+      "medium": {
+       "forecast_gap_pp": 1.0
+      },
+      "large": {
+       "forecast_gap_pp": 1.0
+      }
+     },
+     "history_from": null,
+     "stable_age_days": 90,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": null,
+     "mask_family": true,
+     "masked_by": {
+      "family": "premium_relief",
+      "metrics": [],
+      "else_break_kind": "relief",
+      "relief_kind": "premium_grace_extension"
+     }
+    },
+    {
+     "metric": "claims_per_1000",
+     "name": "Claims per 1,000 insured",
+     "question": "Are more claims coming in (an epidemic, a disaster)?",
+     "kind": "rate",
+     "unit": "per_1000",
+     "currency": null,
+     "grain": "monthly",
+     "lag_days": 30,
+     "adverse": "rise",
+     "adverse_allowed": [
+      "rise"
+     ],
+     "method": "seasonal_ratio",
+     "min_volume": 1000,
+     "dimensions": {
+      "region_l1": [
+       "ID-AC",
+       "ID-BA",
+       "ID-BB",
+       "ID-BE",
+       "ID-BT",
+       "ID-GO",
+       "ID-JA",
+       "ID-JB",
+       "ID-JI",
+       "ID-JK",
+       "ID-JT",
+       "ID-KB",
+       "ID-KI",
+       "ID-KR",
+       "ID-KS",
+       "ID-KT",
+       "ID-KU",
+       "ID-LA",
+       "ID-MA",
+       "ID-MU",
+       "ID-NB",
+       "ID-NT",
+       "ID-PA",
+       "ID-PB",
+       "ID-PD",
+       "ID-PE",
+       "ID-PS",
+       "ID-PT",
+       "ID-RI",
+       "ID-SA",
+       "ID-SB",
+       "ID-SG",
+       "ID-SN",
+       "ID-SR",
+       "ID-SS",
+       "ID-ST",
+       "ID-SU",
+       "ID-YO",
+       "unknown"
+      ]
+     },
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 25
+      }
+     },
+     "history_from": null,
+     "stable_age_days": 90,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": 10,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "gwp",
+     "name": "Gross written premium",
+     "question": "How large is the book?",
+     "kind": "flow",
+     "unit": "IDR",
+     "currency": "IDR",
+     "grain": "monthly",
+     "lag_days": 15,
+     "adverse": null,
+     "adverse_allowed": [],
+     "method": "book_size",
+     "min_volume": null,
+     "dimensions": {},
+     "thresholds": {},
+     "history_from": null,
+     "stable_age_days": null,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": null,
+     "mask_family": false,
+     "masked_by": null
+    }
+   ]
+  },
+  {
+   "product_id": "cargo",
+   "name": "Marine Cargo",
+   "category": "marine",
+   "product_type": "marine_cargo",
+   "source_product_id": null,
+   "book_size": null,
+   "metrics": [
+    {
+     "metric": "insured_shipments",
+     "name": "Insured shipments",
+     "question": "Are our cargo clients shipping less (tariffs, a weaker currency, a port closure)?",
+     "kind": "count",
+     "unit": "count",
+     "currency": null,
+     "grain": "monthly",
+     "lag_days": 30,
+     "adverse": "fall",
+     "adverse_allowed": [
+      "fall"
+     ],
+     "method": "seasonal_ratio",
+     "min_volume": 20,
+     "dimensions": {
+      "trade_direction": [
+       "import",
+       "export",
+       "domestic",
+       "unknown"
+      ],
+      "commodity_group": [],
+      "corridor": [
+       "CN",
+       "SG",
+       "unknown"
+      ]
+     },
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 8
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 8
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 8
+      }
+     },
+     "history_from": null,
+     "stable_age_days": 60,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": 20,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "gwp",
+     "name": "Gross written premium",
+     "question": "How large is the book?",
+     "kind": "flow",
+     "unit": "IDR",
+     "currency": "IDR",
+     "grain": "monthly",
+     "lag_days": 15,
+     "adverse": null,
+     "adverse_allowed": [],
+     "method": "book_size",
+     "min_volume": null,
+     "dimensions": {},
+     "thresholds": {},
+     "history_from": null,
+     "stable_age_days": null,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": null,
+     "mask_family": false,
+     "masked_by": null
+    }
+   ]
+  }
+ ],
+ "groups": [
+  {
+   "group_id": "group-insurer-company",
+   "category": "insurer_company",
+   "name": "All insurer company level",
+   "institution_wide": true,
+   "metrics": [
+    {
+     "metric": "solvency_ratio",
+     "name": "Solvency ratio (published)",
+     "question": "Where does published capital stand (context for investment shocks)?",
+     "kind": "ratio",
+     "unit": "percent",
+     "currency": null,
+     "grain": "quarterly",
+     "lag_days": 45,
+     "adverse": null,
+     "adverse_allowed": [],
+     "method": "context",
+     "min_volume": null,
+     "dimensions": {},
+     "thresholds": {},
+     "history_from": null,
+     "stable_age_days": null,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": null,
+     "mask_family": false,
+     "masked_by": null
+    },
+    {
+     "metric": "reinsurance_cost",
+     "name": "Reinsurance cost",
+     "question": "How much do we pay for reinsurance, in the currencies it is priced in?",
+     "kind": "flow",
+     "unit": "IDR",
+     "currency": "IDR",
+     "grain": "quarterly",
+     "lag_days": 45,
+     "adverse": null,
+     "adverse_allowed": [],
+     "method": "context",
+     "min_volume": null,
+     "dimensions": {
+      "currency": [
+       "IDR"
+      ]
+     },
+     "thresholds": {},
+     "history_from": null,
+     "stable_age_days": null,
+     "min_denominator": null,
+     "counts": false,
+     "min_base": null,
+     "mask_family": false,
+     "masked_by": null
+    }
+   ]
+  }
+ ],
+ "unmatched": {
+  "profile": [],
+  "source": []
+ }
+}

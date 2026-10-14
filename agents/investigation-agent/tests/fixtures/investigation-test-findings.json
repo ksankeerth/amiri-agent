@@ -1,0 +1,124 @@
+{
+  "about": "Stress-test findings for the investigation agent. Each has the expected outcome. 'type:savings' means every product of that type. Treat historical figures as illustrations, not facts.",
+  "cases": [
+    {
+      "id": "T1", "name": "base FX move",
+      "finding": {"id": "f1", "kind": "big_move", "title": "USD/LKR +1.45% in 24h", "explanation": "Rupee weakened 297.9 → 302.2 on importer demand",
+                  "signal": {"series": "USD/LKR", "from": "2026-10-05T08:30:00Z", "peak_at": "2026-10-06T08:30:00Z", "change_pct": 1.45}},
+      "expected": {
+        "themes": ["fx:weaker"],
+        "must_screen_in": [{"product": "sme_loan", "angle": "fx_mismatch"}, {"product": "corporate_loan", "angle": "fx_mismatch"}, {"product": "sme_loan", "angle": "utilization"}],
+        "must_screen_out": [
+          {"product": "pawning_loan", "angle": "collateral", "why": "weaker rupee raises LKR gold value; LTV falls"},
+          {"product": "elders_savings", "angle": "flows", "why": "no remittance link; 1.45% too small"},
+          {"product": "motor", "angle": "claim_severity", "why": "expected pass-through <1%, below detectable"}],
+        "must_not_happen": ["sme_loan cut by the cap while 4 savings products are kept", "net_deposits task with direction rise on a 14-day daily window", "baseline ending at peak_at, so it includes the move"]}
+    },
+    {
+      "id": "T2", "name": "duplicate of T1",
+      "finding": {"id": "f2", "kind": "news", "title": "Rupee slides past Rs. 302 as importers scramble for dollars", "explanation": "Same move as f1, reported by a local business daily",
+                  "headline": {"published_at": "2026-10-06T10:15:00Z"}},
+      "expected": {
+        "themes": ["fx:weaker"], "must_screen_in": [], "must_screen_out": [],
+        "note": "merged into f1's event; hypotheses cite finding_ids [f1, f2]",
+        "must_not_happen": ["a second set of hypotheses or tasks", "two confirmations counted for one move", "tasks anchored at 10:15Z alongside f1's tasks"]}
+    },
+    {
+      "id": "T3", "name": "misleading headline: foreign central bank",
+      "finding": {"id": "f3", "kind": "news", "title": "Central bank cuts policy rate by 25 basis points", "explanation": "Repo-rate cut announced in Mumbai; carried by a Colombo news site",
+                  "headline": {"published_at": "2026-10-08T04:45:00Z"}},
+      "expected": {
+        "themes": [], "must_screen_in": [],
+        "must_screen_out": [{"product": "pawning_loan", "angle": "pricing", "why": "foreign policy rate"}, {"product": "housing_loan", "angle": "prepayment", "why": "foreign policy rate"}],
+        "must_not_happen": ["any validation task", "rates:down applied to Sri Lankan products", "a remittance angle invented to justify relevance"]}
+    },
+    {
+      "id": "T4", "name": "gold up: good news that looks like stress",
+      "finding": {"id": "f4", "kind": "big_move", "title": "Gold 22K +4.1% in 5 days", "explanation": "Colombo 22-carat price per sovereign up with world gold and the weaker rupee",
+                  "signal": {"series": "gold_22k_lkr_per_sovereign", "from": "2026-10-12T06:00:00Z", "peak_at": "2026-10-16T06:00:00Z", "change_pct": 4.1}},
+      "expected": {
+        "themes": ["commodities:up"], "must_screen_in": [], "note": "collateral improves; no adverse angle",
+        "must_screen_out": [{"product": "pawning_loan", "angle": "collateral", "why": "LTV falls"}, {"product": "pawning_loan", "angle": "redemption", "why": "needs a large gold fall"}],
+        "must_not_happen": ["new_pawns or avg_ticket_size rise reported as household stress", "collateral hypothesis using a gold-fall mechanism"]}
+    },
+    {
+      "id": "T5", "name": "one event spanning two themes: flood plus moratorium",
+      "finding": {"id": "f5", "kind": "news", "title": "Floods in Ratnapura and Kalutara; CBSL asks banks to offer 3-month moratorium", "explanation": "120,000 displaced; relief for affected borrowers",
+                  "headline": {"published_at": "2026-11-25T04:00:00Z", "districts": ["Ratnapura", "Kalutara"]}},
+      "expected": {
+        "themes": ["disaster:domestic", "regulation:central_bank_relief"],
+        "must_screen_in": [{"product": "home_fire", "angle": "catastrophe"}, {"product": "business_property", "angle": "catastrophe"}, {"product": "motor", "angle": "claim_frequency"}, {"product": "housing_loan", "angle": "segment"}, {"product": "sme_loan", "angle": "repayment_stress"}, {"product": "type:savings", "angle": "channel"}, {"product": "family_health", "angle": "claim_frequency"}, {"product": "business_property", "angle": "rebuild_cost"}],
+        "must_screen_out": [{"product": "travel", "angle": "claims", "why": "domestic event"}, {"product": "endowment", "angle": "investment", "why": "no rate or market link"}, {"product": "pawning_loan", "angle": "collateral", "why": "gold unaffected"}],
+        "must_not_happen": ["dpd_30_plus fall during the moratorium reported as 'stress contradicted'", "region filter not in the catalog (e.g. 'Southern')", "regulation dropped so the moratorium is ignored", "death_claims judged on days timing"]}
+    },
+    {
+      "id": "T6", "name": "holiday week: rate cut before New Year",
+      "finding": {"id": "f6", "kind": "news", "title": "CBSL cuts Overnight Policy Rate by 25bp", "explanation": "Effective close of business; announced 07:30 SLT",
+                  "headline": {"published_at": "2026-04-08T02:00:00Z"}},
+      "expected": {
+        "themes": ["rates:down"],
+        "must_screen_in": [{"product": "term_deposit", "angle": "rate_competitiveness"}, {"product": "elders_savings", "angle": "rate_competitiveness"}, {"product": "pawning_loan", "angle": "pricing"}, {"product": "housing_loan", "angle": "prepayment"}, {"product": "endowment", "angle": "investment"}],
+        "must_screen_out": [{"product": "personal_loan", "angle": "repayment_stress", "why": "only rates mechanism needs a rate rise"}, {"product": "sme_loan", "angle": "repayment_stress", "why": "rates mechanism needs a rate rise"}],
+        "must_not_happen": ["deposit_inflow fall flagged on 13-14 Apr (New Year holidays)", "withdrawals on 9-10 Apr before New Year attributed to the cut", "new_pawns surge before Avurudu attributed to pawning pricing", "Good Friday or Poya days treated as normal weekdays in the baseline"]}
+    },
+    {
+      "id": "T7", "name": "tiny volumes, plus rates/markets ambiguity",
+      "finding": {"id": "f7", "kind": "big_move", "title": "364-day T-bill yield +85bp at weekly auction", "explanation": "Weighted average 8.10% → 8.95%; bond yields up 60-90bp",
+                  "signal": {"series": "tbill_364d_yield", "peak_at": "2026-10-14T11:30:00Z", "change_bp": 85}},
+      "expected": {
+        "themes": ["rates:up", "markets:bonds_down"],
+        "must_screen_in": [{"product": "term_deposit", "angle": "rate_competitiveness"}, {"product": "retirement_plan", "angle": "fund_returns"}, {"product": "endowment", "angle": "investment"}, {"product": "personal_loan", "angle": "repayment_stress"}, {"product": "startup_loan", "angle": "repayment_stress"}],
+        "must_screen_out": [{"product": "housing_loan", "angle": "prepayment", "why": "rates up reduce refinancing"}, {"product": "personal_loan", "angle": "demand", "why": "needs a rate cut"}],
+        "must_not_happen": ["z-score or ±2pp verdict on startup_loan with <20 loans (must be insufficient_data or aggregated)", "only one of rates/markets chosen, losing fund_returns or investment", "a startup verdict justified via the equity market"]}
+    },
+    {
+      "id": "T8", "name": "tax regulation with a future effective date",
+      "finding": {"id": "f8", "kind": "news", "title": "Budget 2027: WHT on deposit interest raised 5 percentage points from 1 April 2027", "explanation": "Applies to all individual depositors",
+                  "headline": {"published_at": "2026-11-13T09:30:00Z", "effective_from": "2027-04-01"}},
+      "expected": {
+        "themes": ["regulation:tax"],
+        "must_screen_in": [{"product": "elders_savings", "angle": "flows"}, {"product": "term_deposit", "angle": "rate_competitiveness"}],
+        "must_screen_out": [{"product": "motor", "angle": "portfolio", "why": "not a vehicle or import rule"}],
+        "must_not_happen": ["watch window starting 13 Nov 2026 instead of around 1 Apr 2027", "bank run returns zero candidates and reports no impact", "FDs locked in during March before the change read as 'contradicts'"]}
+    },
+    {
+      "id": "T9", "name": "good macro news; time zone crosses the date",
+      "finding": {"id": "f9", "kind": "news", "title": "IMF Executive Board completes review of Sri Lanka's EFF; about US$ 350mn released", "explanation": "Programme on track",
+                  "headline": {"published_at": "2026-11-30T21:40:00Z"}},
+      "expected": {
+        "themes": ["macro:better"], "must_screen_in": [], "note": "positive news; at most an fx follow-on expectation",
+        "must_screen_out": [{"product": "sme_loan", "angle": "repayment_stress", "why": "good news"}, {"product": "endowment", "angle": "lapses", "why": "good news"}, {"product": "retirement_plan", "angle": "early_withdrawals", "why": "good news"}],
+        "must_not_happen": ["stress mechanism chosen for good news", "classified as regulation", "first check day = 30 Nov (local date is 1 Dec)"]}
+    },
+    {
+      "id": "T10", "name": "electricity tariff: prices plus regulation, future date",
+      "finding": {"id": "f10", "kind": "news", "title": "PUCSL approves 18% electricity tariff increase from 1 January 2027", "explanation": "Domestic and industrial tariffs",
+                  "headline": {"published_at": "2026-12-18T08:00:00Z", "effective_from": "2027-01-01"}},
+      "expected": {
+        "themes": ["prices:up", "regulation:tariff"],
+        "must_screen_in": [{"product": "sme_loan", "angle": "utilization"}, {"product": "sme_loan", "angle": "repayment_stress"}, {"product": "pawning_loan", "angle": "demand"}],
+        "must_screen_out": [{"product": "motor", "angle": "claim_frequency", "why": "electricity, not fuel"}, {"product": "family_health", "angle": "claim_severity", "why": "no import-cost link"}, {"product": "motor", "angle": "portfolio", "why": "not vehicle regulation"}],
+        "must_not_happen": ["watch anchored 18 Dec, with Christmas and year-end inside the window", "classified as regulation only, giving only motor·portfolio", "January school-season withdrawals attributed to the tariff"]}
+    },
+    {
+      "id": "T11", "name": "a rival's trust event: inflows are not stress",
+      "finding": {"id": "f11", "kind": "news", "title": "CBSL cancels licence of Example Finance PLC", "explanation": "Depositors to be paid up to the deposit insurance limit",
+                  "headline": {"published_at": "2026-10-21T13:00:00Z"}},
+      "expected": {
+        "themes": ["trust:rival"],
+        "must_screen_in": [{"product": "term_deposit", "angle": "flows"}, {"product": "elders_savings", "angle": "flows"}],
+        "must_screen_out": [{"product": "type:savings", "angle": "channel", "why": "not our outage"}, {"product": "retirement_plan", "angle": "early_withdrawals", "why": "not our fund"}],
+        "must_not_happen": ["deposit_inflow rise labelled adverse or 'contradicts'", "our outflows attributed to contagion without evidence"]}
+    },
+    {
+      "id": "T12", "name": "a finding that covers a period: monthly remittance figures",
+      "finding": {"id": "f12", "kind": "news", "title": "Workers' remittances US$ 610mn in September, down 6% year on year", "explanation": "CBSL monthly data",
+                  "headline": {"published_at": "2026-10-12T05:00:00Z", "period_start": "2026-09-01", "period_end": "2026-09-30"}},
+      "expected": {
+        "themes": ["remittance:down"],
+        "must_screen_in": [{"product": "pawning_loan", "angle": "demand"}, {"product": "type:savings", "angle": "segment"}, {"product": "housing_loan", "angle": "repayment_stress"}],
+        "must_screen_out": [{"product": "type:savings", "angle": "flows", "why": "the flows FX mechanism is about the rate, not remittance volume"}, {"product": "travel", "angle": "claims", "why": "unrelated"}, {"product": "migrant_worker_travel", "angle": "demand", "why": "departures are not remittance amounts"}],
+        "must_not_happen": ["watch window starting 12 Oct, leaving September out", "same-weekday daily test on a monthly series"]}
+    }
+  ]
+}

@@ -1,0 +1,160 @@
+{
+  "run_id": "inv-big-move-local",
+  "institution_id": "scen-bank",
+  "server_url": "http://127.0.0.1:8000",
+  "institution": {
+    "name": "Serendib Commercial Bank",
+    "institution_type": "bank",
+    "country": "LK",
+    "country_name": "Sri Lanka",
+    "currency": "LKR",
+    "time_zone": "Asia/Colombo",
+    "summary": "A Sri Lankan commercial bank serving retail households, migrant-worker families, pensioners, SMEs, importers, exporters and large corporates.",
+    "rivals": [
+      "HSBC Sri Lanka"
+    ],
+    "regulators": [
+      "Central Bank of Sri Lanka"
+    ],
+    "flows": [
+      {
+        "kind": "remittances_in",
+        "local": "LK",
+        "counterpart": "AE"
+      }
+    ],
+    "corridors": [
+      "AE",
+      "SA",
+      "QA",
+      "KW"
+    ]
+  },
+  "products": [
+    {
+      "product_id": "youth_savings",
+      "name": "Youth Savings Account",
+      "category": "savings",
+      "product_type": "savings_account"
+    },
+    {
+      "product_id": "elders_savings",
+      "name": "Elders Savings Account",
+      "category": "savings",
+      "product_type": "savings_account"
+    },
+    {
+      "product_id": "term_deposit",
+      "name": "Term Deposit",
+      "category": "savings",
+      "product_type": "term_deposit"
+    },
+    {
+      "product_id": "migrant_savings",
+      "name": "Migrant Family Savings Account",
+      "category": "savings",
+      "product_type": "savings_account"
+    },
+    {
+      "product_id": "pawning_loan",
+      "name": "Pawning Loan",
+      "category": "gold_loan",
+      "product_type": "gold_loan"
+    },
+    {
+      "product_id": "personal_loan",
+      "name": "Personal Loan",
+      "category": "retail_loan",
+      "product_type": "personal_loan"
+    },
+    {
+      "product_id": "vehicle_leasing",
+      "name": "Vehicle Leasing",
+      "category": "vehicle_finance",
+      "product_type": "vehicle_lease"
+    },
+    {
+      "product_id": "credit_card",
+      "name": "Credit Card",
+      "category": "cards",
+      "product_type": "credit_card"
+    },
+    {
+      "product_id": "sme_loan",
+      "name": "SME Loan",
+      "category": "business_loan",
+      "product_type": "working_capital"
+    },
+    {
+      "product_id": "corporate_loan",
+      "name": "Corporate Loan",
+      "category": "business_loan",
+      "product_type": "term_loan"
+    },
+    {
+      "product_id": "startup_loan",
+      "name": "Startup Loan",
+      "category": "business_loan",
+      "product_type": "term_loan"
+    }
+  ],
+  "findings": [
+    {
+      "finding_id": "f-ts-usd_lkr-2026100608",
+      "source": "timeseries",
+      "source_ref": {
+        "series_id": "usd_lkr"
+      },
+      "kind": "signal_move",
+      "title": "USD/LKR up 1.45% in 1 trading day (5.0x typical)",
+      "explanation": "USD/LKR rose from 328.88 to 333.64 (+1.45%) over 1 trading day to 08:30 UTC on 6 Oct.",
+      "score": 70,
+      "themes": [
+        {
+          "theme": "fx",
+          "direction": "weaker",
+          "currency": "LKR"
+        }
+      ],
+      "places": [
+        "LK"
+      ],
+      "evidence": {
+        "signals": [
+          {
+            "series_id": "usd_lkr",
+            "symbol": "USD/LKR",
+            "direction": "up",
+            "start_at": "2026-10-05T08:30:00Z",
+            "end_at": "2026-10-06T08:30:00Z",
+            "ref_level": 328.88,
+            "obs_level": 333.64,
+            "change_pct": 1.4473,
+            "window_days": 1,
+            "description": "USD/LKR rose from 328.88 to 333.64 (+1.45%) over 1 trading day to 08:30 UTC on 6 Oct, 5.0x its typical move."
+          }
+        ]
+      }
+    },
+    {
+      "finding_id": "f-fx-news",
+      "source": "monitor",
+      "source_ref": {
+        "monitor_id": "mon-test"
+      },
+      "kind": "news_match",
+      "title": "Rupee falls past 333 as importer dollar demand surges",
+      "explanation": "Importers bought dollars; the rupee fell past 333.",
+      "score": 70,
+      "evidence": {
+        "headlines": [
+          {
+            "title": "Rupee falls past 333 as importer dollar demand surges",
+            "published_at": "2026-10-06T08:06:00Z",
+            "outlet": "Daily Mirror"
+          }
+        ]
+      }
+    }
+  ]
+}

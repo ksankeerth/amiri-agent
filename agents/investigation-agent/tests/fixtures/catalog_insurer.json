@@ -1,0 +1,230 @@
+{
+  "server": "insurer",
+  "catalog_version": "v2.1",
+  "aliases": {},
+  "threshold_note": "One value for every expected size until placebo runs on the institution's own history support splitting them.",
+  "vintages_kept": true,
+  "products": [
+    {
+      "product_id": "motor",
+      "product_type": "motor",
+      "name": "Motor Insurance",
+      "book_size": {
+        "value": 9500000000.0,
+        "unit": "LKR GWP"
+      },
+      "metrics": [
+        {
+          "metric": "claims_per_1000",
+          "kind": "rate",
+          "unit": "per 1,000 vehicles",
+          "currency": null,
+          "grain": "weekly",
+          "lag_days": 14,
+          "adverse": "rise",
+          "method": "seasonal_ratio",
+          "min_volume": 10,
+          "dimensions": {
+            "claim_type": [
+              "natural_peril",
+              "own_damage",
+              "third_party"
+            ],
+            "region_l2": [
+              "LK-51",
+              "LK-11",
+              "LK-13",
+              "LK-91",
+              "unknown"
+            ],
+            "region_l1": [
+              "LK-5",
+              "LK-9",
+              "LK-1"
+            ]
+          },
+          "exposure_dims": [
+            "region_l2"
+          ],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [
+            "rise"
+          ],
+          "stable_age_days": 90,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": 10.0,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "percentile": 5.0,
+              "pct_change": 25.0
+            },
+            "medium": {
+              "percentile": 5.0,
+              "pct_change": 25.0
+            },
+            "large": {
+              "percentile": 5.0,
+              "pct_change": 25.0
+            }
+          }
+        },
+        {
+          "metric": "new_policies",
+          "kind": "count",
+          "unit": "count",
+          "currency": null,
+          "grain": "weekly",
+          "lag_days": 7,
+          "adverse": "fall",
+          "method": "seasonal_ratio",
+          "min_volume": 20,
+          "dimensions": {
+            "cover": [
+              "comprehensive",
+              "third_party"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [
+            "fall"
+          ],
+          "stable_age_days": 14,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": 20.0,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "percentile": 5.0,
+              "pct_change": 5.0
+            },
+            "medium": {
+              "percentile": 5.0,
+              "pct_change": 5.0
+            },
+            "large": {
+              "percentile": 5.0,
+              "pct_change": 5.0
+            }
+          }
+        },
+        {
+          "metric": "parts_cost_index",
+          "kind": "level",
+          "unit": "index",
+          "currency": null,
+          "grain": "monthly",
+          "lag_days": 15,
+          "adverse": "rise",
+          "method": "level_change",
+          "min_volume": 1,
+          "dimensions": {},
+          "exposure_dims": [],
+          "history_from": "2023-09-01",
+          "adverse_allowed": [
+            "rise"
+          ],
+          "stable_age_days": 30,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "pct_change": 3.0
+            },
+            "medium": {
+              "pct_change": 3.0
+            },
+            "large": {
+              "pct_change": 3.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "product_id": "home_fire",
+      "product_type": "property",
+      "name": "Home and Fire Insurance",
+      "book_size": {
+        "value": 2800000000.0,
+        "unit": "LKR GWP"
+      },
+      "metrics": [
+        {
+          "metric": "claims_per_1000",
+          "kind": "rate",
+          "unit": "per 1,000 policies",
+          "currency": null,
+          "grain": "weekly",
+          "lag_days": 14,
+          "adverse": "rise",
+          "method": "seasonal_ratio",
+          "min_volume": 10,
+          "dimensions": {
+            "region_l2": [
+              "LK-51",
+              "LK-11",
+              "LK-13",
+              "LK-91",
+              "unknown"
+            ],
+            "peril": [
+              "fire",
+              "flood",
+              "storm"
+            ],
+            "region_l1": [
+              "LK-5",
+              "LK-9",
+              "LK-1"
+            ]
+          },
+          "exposure_dims": [
+            "region_l2"
+          ],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [
+            "rise"
+          ],
+          "stable_age_days": 90,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": 10.0,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "percentile": 5.0,
+              "pct_change": 25.0
+            },
+            "medium": {
+              "percentile": 5.0,
+              "pct_change": 25.0
+            },
+            "large": {
+              "percentile": 5.0,
+              "pct_change": 25.0
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "reference_series": [
+    "usd_lkr_mid",
+    "gold_lkr_per_gram"
+  ],
+  "rules": {
+    "dates": "Asia/Colombo business dates; periods are [from, until)",
+    "aggregates_only": true,
+    "suppressed_when": "fewer than 10 records, or one contributor above 50% of the value"
+  }
+}

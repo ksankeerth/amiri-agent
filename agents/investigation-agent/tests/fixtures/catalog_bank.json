@@ -1,0 +1,1282 @@
+{
+  "server": "bank",
+  "catalog_version": "v2.1",
+  "aliases": {},
+  "threshold_note": "One value for every expected size until placebo runs on the institution's own history support splitting them.",
+  "vintages_kept": true,
+  "products": [
+    {
+      "product_id": "youth_savings",
+      "product_type": "savings",
+      "name": "Youth Savings Account",
+      "book_size": {
+        "value": 42000000000.0,
+        "unit": "LKR"
+      },
+      "metrics": [
+        {
+          "metric": "deposit_inflow",
+          "kind": "flow",
+          "unit": "LKR",
+          "currency": "LKR",
+          "grain": "daily",
+          "lag_days": 1,
+          "adverse": "fall",
+          "method": "recent_vs_prior",
+          "min_volume": 30,
+          "dimensions": {
+            "segment": [
+              "other",
+              "remittance_linked",
+              "salaried",
+              "student"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-01",
+          "adverse_allowed": [
+            "fall"
+          ],
+          "stable_age_days": 7,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "robust_z": 3.0,
+              "pct_change": 15.0
+            },
+            "medium": {
+              "robust_z": 3.0,
+              "pct_change": 15.0
+            },
+            "large": {
+              "robust_z": 3.0,
+              "pct_change": 15.0
+            }
+          }
+        },
+        {
+          "metric": "withdrawals",
+          "kind": "flow",
+          "unit": "LKR",
+          "currency": "LKR",
+          "grain": "daily",
+          "lag_days": 1,
+          "adverse": "rise",
+          "method": "recent_vs_prior",
+          "min_volume": 30,
+          "dimensions": {
+            "segment": [
+              "other",
+              "remittance_linked",
+              "salaried",
+              "student"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-01",
+          "adverse_allowed": [
+            "rise"
+          ],
+          "stable_age_days": 7,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "robust_z": 3.0,
+              "pct_change": 15.0
+            },
+            "medium": {
+              "robust_z": 3.0,
+              "pct_change": 15.0
+            },
+            "large": {
+              "robust_z": 3.0,
+              "pct_change": 15.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "product_id": "elders_savings",
+      "product_type": "savings",
+      "name": "Elders Savings Account",
+      "book_size": {
+        "value": 96000000000.0,
+        "unit": "LKR"
+      },
+      "metrics": [
+        {
+          "metric": "deposit_inflow",
+          "kind": "flow",
+          "unit": "LKR",
+          "currency": "LKR",
+          "grain": "daily",
+          "lag_days": 1,
+          "adverse": "fall",
+          "method": "recent_vs_prior",
+          "min_volume": 30,
+          "dimensions": {
+            "region_l1": [
+              "LK-1",
+              "unknown"
+            ],
+            "segment": [
+              "other",
+              "pensioner"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-01",
+          "adverse_allowed": [
+            "fall"
+          ],
+          "stable_age_days": 7,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "robust_z": 3.0,
+              "pct_change": 15.0
+            },
+            "medium": {
+              "robust_z": 3.0,
+              "pct_change": 15.0
+            },
+            "large": {
+              "robust_z": 3.0,
+              "pct_change": 15.0
+            }
+          }
+        },
+        {
+          "metric": "withdrawals",
+          "kind": "flow",
+          "unit": "LKR",
+          "currency": "LKR",
+          "grain": "daily",
+          "lag_days": 1,
+          "adverse": "rise",
+          "method": "recent_vs_prior",
+          "min_volume": 30,
+          "dimensions": {
+            "region_l1": [
+              "LK-1",
+              "unknown"
+            ],
+            "segment": [
+              "other",
+              "pensioner"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-01",
+          "adverse_allowed": [
+            "rise"
+          ],
+          "stable_age_days": 7,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "robust_z": 3.0,
+              "pct_change": 15.0
+            },
+            "medium": {
+              "robust_z": 3.0,
+              "pct_change": 15.0
+            },
+            "large": {
+              "robust_z": 3.0,
+              "pct_change": 15.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "product_id": "term_deposit",
+      "product_type": "savings",
+      "name": "Term Deposit",
+      "book_size": {
+        "value": 310000000000.0,
+        "unit": "LKR"
+      },
+      "metrics": [
+        {
+          "metric": "td_non_renewal_outflow",
+          "kind": "flow",
+          "unit": "LKR",
+          "currency": "LKR",
+          "grain": "weekly",
+          "lag_days": 2,
+          "adverse": "rise",
+          "method": "seasonal_ratio",
+          "min_volume": 50,
+          "dimensions": {
+            "tenor_band": [
+              "long",
+              "short"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [
+            "rise"
+          ],
+          "stable_age_days": 7,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": 50.0,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "percentile": 5.0,
+              "pct_change": 10.0
+            },
+            "medium": {
+              "percentile": 5.0,
+              "pct_change": 10.0
+            },
+            "large": {
+              "percentile": 5.0,
+              "pct_change": 10.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "product_id": "migrant_savings",
+      "product_type": "savings",
+      "name": "Migrant Family Savings Account",
+      "book_size": {
+        "value": 64000000000.0,
+        "unit": "LKR"
+      },
+      "metrics": [
+        {
+          "metric": "inward_remittance_credits",
+          "kind": "flow",
+          "unit": "USD",
+          "currency": "USD",
+          "grain": "daily",
+          "lag_days": 5,
+          "adverse": "fall",
+          "method": "seasonal_ratio",
+          "min_volume": 100,
+          "dimensions": {
+            "corridor": [
+              "AE",
+              "QA",
+              "SA",
+              "other"
+            ],
+            "segment": [
+              "remittance_linked"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-01",
+          "adverse_allowed": [
+            "fall"
+          ],
+          "stable_age_days": 7,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": 100.0,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "percentile": 5.0,
+              "pct_change": 4.0
+            },
+            "medium": {
+              "percentile": 5.0,
+              "pct_change": 4.0
+            },
+            "large": {
+              "percentile": 5.0,
+              "pct_change": 4.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "product_id": "pawning_loan",
+      "product_type": "pawning",
+      "name": "Pawning Loan",
+      "book_size": {
+        "value": 58000000000.0,
+        "unit": "LKR"
+      },
+      "metrics": [
+        {
+          "metric": "new_pledges",
+          "kind": "count",
+          "unit": "count",
+          "currency": null,
+          "grain": "daily",
+          "lag_days": 1,
+          "adverse": "rise",
+          "method": "seasonal_ratio",
+          "min_volume": 30,
+          "dimensions": {
+            "region_l1": [
+              "LK-2",
+              "LK-9",
+              "LK-1",
+              "unknown"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-01",
+          "adverse_allowed": [
+            "rise",
+            "fall"
+          ],
+          "stable_age_days": 7,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": 30.0,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "percentile": 5.0,
+              "pct_change": 5.0
+            },
+            "medium": {
+              "percentile": 5.0,
+              "pct_change": 5.0
+            },
+            "large": {
+              "percentile": 5.0,
+              "pct_change": 5.0
+            }
+          }
+        },
+        {
+          "metric": "redemptions",
+          "kind": "count",
+          "unit": "count",
+          "currency": null,
+          "grain": "daily",
+          "lag_days": 1,
+          "adverse": "fall",
+          "method": "seasonal_ratio",
+          "min_volume": 30,
+          "dimensions": {
+            "region_l1": [
+              "LK-2",
+              "LK-9",
+              "LK-1",
+              "unknown"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-01",
+          "adverse_allowed": [
+            "fall"
+          ],
+          "stable_age_days": 7,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": 30.0,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "percentile": 5.0,
+              "pct_change": 5.0
+            },
+            "medium": {
+              "percentile": 5.0,
+              "pct_change": 5.0
+            },
+            "large": {
+              "percentile": 5.0,
+              "pct_change": 5.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "product_id": "personal_loan",
+      "product_type": "retail_loan",
+      "name": "Personal Loan",
+      "book_size": {
+        "value": 120000000000.0,
+        "unit": "LKR"
+      },
+      "metrics": [
+        {
+          "metric": "installment_collection_rate",
+          "kind": "ratio",
+          "unit": "%",
+          "currency": null,
+          "grain": "weekly",
+          "lag_days": 2,
+          "adverse": "fall",
+          "method": "level_change",
+          "min_volume": 200,
+          "dimensions": {
+            "region_l2": [
+              "LK-51",
+              "LK-11",
+              "LK-13",
+              "LK-91",
+              "unknown"
+            ],
+            "employer_sector": [
+              "government",
+              "private"
+            ],
+            "region_l1": [
+              "LK-5",
+              "LK-9",
+              "LK-1"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [
+            "fall"
+          ],
+          "stable_age_days": 30,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": true,
+          "masked_by": [
+            "moratorium_enrolled"
+          ],
+          "thresholds": {
+            "small": {
+              "pp_change": 0.5
+            },
+            "medium": {
+              "pp_change": 0.5
+            },
+            "large": {
+              "pp_change": 0.5
+            }
+          }
+        },
+        {
+          "metric": "moratorium_enrolled",
+          "kind": "ratio",
+          "unit": "%",
+          "currency": null,
+          "grain": "weekly",
+          "lag_days": 14,
+          "adverse": null,
+          "method": "masking",
+          "min_volume": 200,
+          "dimensions": {
+            "region_l2": [
+              "LK-51",
+              "LK-11",
+              "LK-13",
+              "LK-91",
+              "unknown"
+            ],
+            "region_l1": [
+              "LK-5",
+              "LK-9",
+              "LK-1"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [],
+          "stable_age_days": 14,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {},
+            "medium": {},
+            "large": {}
+          }
+        },
+        {
+          "metric": "restructure_requests",
+          "kind": "rate",
+          "unit": "per 1,000 loans",
+          "currency": null,
+          "grain": "weekly",
+          "lag_days": 14,
+          "adverse": "rise",
+          "method": "seasonal_ratio",
+          "min_volume": 200,
+          "dimensions": {
+            "region_l2": [
+              "LK-51",
+              "LK-11",
+              "LK-13",
+              "LK-91",
+              "unknown"
+            ],
+            "region_l1": [
+              "LK-5",
+              "LK-9",
+              "LK-1"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [
+            "rise"
+          ],
+          "stable_age_days": 30,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": 10.0,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "percentile": 5.0,
+              "pct_change": 30.0
+            },
+            "medium": {
+              "percentile": 5.0,
+              "pct_change": 30.0
+            },
+            "large": {
+              "percentile": 5.0,
+              "pct_change": 30.0
+            }
+          }
+        },
+        {
+          "metric": "roll_rate_to_30",
+          "kind": "ratio",
+          "unit": "%",
+          "currency": null,
+          "grain": "monthly",
+          "lag_days": 15,
+          "adverse": "rise",
+          "method": "trend",
+          "min_volume": 50,
+          "dimensions": {
+            "region_l2": [
+              "LK-51",
+              "LK-11",
+              "LK-13",
+              "LK-91",
+              "unknown"
+            ],
+            "employer_sector": [
+              "government",
+              "private"
+            ],
+            "region_l1": [
+              "LK-5",
+              "LK-9",
+              "LK-1"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-01",
+          "adverse_allowed": [
+            "rise"
+          ],
+          "stable_age_days": 45,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": true,
+          "masked_by": [
+            "moratorium_enrolled"
+          ],
+          "thresholds": {
+            "small": {
+              "forecast_gap_pp": 0.15
+            },
+            "medium": {
+              "forecast_gap_pp": 0.15
+            },
+            "large": {
+              "forecast_gap_pp": 0.15
+            }
+          }
+        }
+      ]
+    },
+    {
+      "product_id": "vehicle_leasing",
+      "product_type": "leasing",
+      "name": "Vehicle Leasing",
+      "book_size": {
+        "value": 75000000000.0,
+        "unit": "LKR"
+      },
+      "metrics": [
+        {
+          "metric": "new_leases",
+          "kind": "count",
+          "unit": "count",
+          "currency": null,
+          "grain": "weekly",
+          "lag_days": 1,
+          "adverse": "fall",
+          "method": "seasonal_ratio",
+          "min_volume": 20,
+          "dimensions": {
+            "new_used": [
+              "new",
+              "used"
+            ],
+            "vehicle_type": [
+              "car",
+              "three_wheeler",
+              "van"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [
+            "fall"
+          ],
+          "stable_age_days": 7,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": 20.0,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "percentile": 5.0,
+              "pct_change": 8.0
+            },
+            "medium": {
+              "percentile": 5.0,
+              "pct_change": 8.0
+            },
+            "large": {
+              "percentile": 5.0,
+              "pct_change": 8.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "product_id": "credit_card",
+      "product_type": "credit_card",
+      "name": "Credit Card",
+      "book_size": {
+        "value": 18000000000.0,
+        "unit": "LKR"
+      },
+      "metrics": [
+        {
+          "metric": "card_payment_rate",
+          "kind": "ratio",
+          "unit": "%",
+          "currency": null,
+          "grain": "weekly",
+          "lag_days": 2,
+          "adverse": "fall",
+          "method": "level_change",
+          "min_volume": 200,
+          "dimensions": {},
+          "exposure_dims": [],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [
+            "fall"
+          ],
+          "stable_age_days": 7,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": true,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "pp_change": 1.0
+            },
+            "medium": {
+              "pp_change": 1.0
+            },
+            "large": {
+              "pp_change": 1.0
+            }
+          }
+        },
+        {
+          "metric": "revolving_share",
+          "kind": "ratio",
+          "unit": "%",
+          "currency": null,
+          "grain": "monthly",
+          "lag_days": 10,
+          "adverse": "rise",
+          "method": "trend",
+          "min_volume": 200,
+          "dimensions": {},
+          "exposure_dims": [],
+          "history_from": "2023-09-01",
+          "adverse_allowed": [
+            "rise"
+          ],
+          "stable_age_days": 30,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": true,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "forecast_gap_pp": 0.5
+            },
+            "medium": {
+              "forecast_gap_pp": 0.5
+            },
+            "large": {
+              "forecast_gap_pp": 0.5
+            }
+          }
+        }
+      ]
+    },
+    {
+      "product_id": "sme_loan",
+      "product_type": "business_loan",
+      "name": "SME Loan",
+      "book_size": {
+        "value": 140000000000.0,
+        "unit": "LKR"
+      },
+      "metrics": [
+        {
+          "metric": "facility_utilization",
+          "kind": "ratio",
+          "unit": "%",
+          "currency": null,
+          "grain": "weekly",
+          "lag_days": 1,
+          "adverse": "rise",
+          "method": "level_change",
+          "min_volume": 30,
+          "dimensions": {
+            "sector": [
+              "manufacturing",
+              "other",
+              "trade"
+            ],
+            "segment": [
+              "importer",
+              "other"
+            ],
+            "size_band": [
+              "sme"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [
+            "rise"
+          ],
+          "stable_age_days": 7,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "pp_change": 0.6
+            },
+            "medium": {
+              "pp_change": 0.6
+            },
+            "large": {
+              "pp_change": 0.6
+            }
+          }
+        },
+        {
+          "metric": "import_bills",
+          "kind": "count",
+          "unit": "count",
+          "currency": null,
+          "grain": "weekly",
+          "lag_days": 1,
+          "adverse": "fall",
+          "method": "seasonal_ratio",
+          "min_volume": 10,
+          "dimensions": {
+            "sector": [
+              "manufacturing",
+              "other",
+              "trade"
+            ],
+            "segment": [
+              "importer",
+              "other"
+            ],
+            "size_band": [
+              "sme"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [
+            "fall"
+          ],
+          "stable_age_days": 7,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": 20.0,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "percentile": 5.0,
+              "pct_change": 4.0
+            },
+            "medium": {
+              "percentile": 5.0,
+              "pct_change": 4.0
+            },
+            "large": {
+              "percentile": 5.0,
+              "pct_change": 4.0
+            }
+          }
+        },
+        {
+          "metric": "installment_collection_rate",
+          "kind": "ratio",
+          "unit": "%",
+          "currency": null,
+          "grain": "weekly",
+          "lag_days": 2,
+          "adverse": "fall",
+          "method": "level_change",
+          "min_volume": 200,
+          "dimensions": {
+            "sector": [
+              "manufacturing",
+              "other",
+              "trade"
+            ],
+            "segment": [
+              "importer",
+              "other"
+            ],
+            "size_band": [
+              "sme"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [
+            "fall"
+          ],
+          "stable_age_days": 30,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": true,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "pp_change": 0.5
+            },
+            "medium": {
+              "pp_change": 0.5
+            },
+            "large": {
+              "pp_change": 0.5
+            }
+          }
+        },
+        {
+          "metric": "lc_openings",
+          "kind": "count",
+          "unit": "count",
+          "currency": null,
+          "grain": "weekly",
+          "lag_days": 1,
+          "adverse": "fall",
+          "method": "seasonal_ratio",
+          "min_volume": 10,
+          "dimensions": {
+            "sector": [
+              "manufacturing",
+              "other",
+              "trade"
+            ],
+            "segment": [
+              "importer",
+              "other"
+            ],
+            "size_band": [
+              "sme"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [
+            "fall"
+          ],
+          "stable_age_days": 7,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": 20.0,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "percentile": 5.0,
+              "pct_change": 5.0
+            },
+            "medium": {
+              "percentile": 5.0,
+              "pct_change": 5.0
+            },
+            "large": {
+              "percentile": 5.0,
+              "pct_change": 5.0
+            }
+          }
+        },
+        {
+          "metric": "returned_cheque_rate",
+          "kind": "ratio",
+          "unit": "%",
+          "currency": null,
+          "grain": "weekly",
+          "lag_days": 2,
+          "adverse": "rise",
+          "method": "level_change",
+          "min_volume": 30,
+          "dimensions": {
+            "region_l2": [
+              "LK-81",
+              "LK-51",
+              "LK-11",
+              "LK-13",
+              "LK-91",
+              "unknown"
+            ],
+            "size_band": [
+              "sme"
+            ],
+            "region_l1": [
+              "LK-5",
+              "LK-9",
+              "LK-8",
+              "LK-1"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [
+            "rise"
+          ],
+          "stable_age_days": 14,
+          "min_denominator": 50.0,
+          "counts": true,
+          "min_base": null,
+          "mask_family": true,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "pp_change": 1.5
+            },
+            "medium": {
+              "pp_change": 1.5
+            },
+            "large": {
+              "pp_change": 1.5
+            }
+          }
+        },
+        {
+          "metric": "roll_rate_to_30",
+          "kind": "ratio",
+          "unit": "%",
+          "currency": null,
+          "grain": "monthly",
+          "lag_days": 15,
+          "adverse": "rise",
+          "method": "trend",
+          "min_volume": 50,
+          "dimensions": {
+            "sector": [
+              "manufacturing",
+              "other",
+              "trade"
+            ],
+            "segment": [
+              "importer",
+              "other"
+            ],
+            "size_band": [
+              "sme"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-01",
+          "adverse_allowed": [
+            "rise"
+          ],
+          "stable_age_days": 45,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": true,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "forecast_gap_pp": 0.15
+            },
+            "medium": {
+              "forecast_gap_pp": 0.15
+            },
+            "large": {
+              "forecast_gap_pp": 0.15
+            }
+          }
+        }
+      ]
+    },
+    {
+      "product_id": "corporate_loan",
+      "product_type": "business_loan",
+      "name": "Corporate Loan",
+      "book_size": {
+        "value": 260000000000.0,
+        "unit": "LKR"
+      },
+      "metrics": [
+        {
+          "metric": "facility_utilization",
+          "kind": "ratio",
+          "unit": "%",
+          "currency": null,
+          "grain": "weekly",
+          "lag_days": 1,
+          "adverse": "rise",
+          "method": "level_change",
+          "min_volume": 30,
+          "dimensions": {
+            "sector": [
+              "manufacturing",
+              "other",
+              "trade"
+            ],
+            "segment": [
+              "importer",
+              "other"
+            ],
+            "size_band": [
+              "corporate"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [
+            "rise"
+          ],
+          "stable_age_days": 7,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "pp_change": 0.6
+            },
+            "medium": {
+              "pp_change": 0.6
+            },
+            "large": {
+              "pp_change": 0.6
+            }
+          }
+        },
+        {
+          "metric": "lc_openings",
+          "kind": "count",
+          "unit": "count",
+          "currency": null,
+          "grain": "weekly",
+          "lag_days": 1,
+          "adverse": "fall",
+          "method": "seasonal_ratio",
+          "min_volume": 10,
+          "dimensions": {
+            "sector": [
+              "manufacturing",
+              "other",
+              "trade"
+            ],
+            "segment": [
+              "importer",
+              "other"
+            ],
+            "size_band": [
+              "corporate"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-04",
+          "adverse_allowed": [
+            "fall"
+          ],
+          "stable_age_days": 7,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": 20.0,
+          "mask_family": false,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "percentile": 5.0,
+              "pct_change": 5.0
+            },
+            "medium": {
+              "percentile": 5.0,
+              "pct_change": 5.0
+            },
+            "large": {
+              "percentile": 5.0,
+              "pct_change": 5.0
+            }
+          }
+        },
+        {
+          "metric": "roll_rate_to_30",
+          "kind": "ratio",
+          "unit": "%",
+          "currency": null,
+          "grain": "monthly",
+          "lag_days": 15,
+          "adverse": "rise",
+          "method": "trend",
+          "min_volume": 50,
+          "dimensions": {
+            "sector": [
+              "manufacturing",
+              "other",
+              "trade"
+            ],
+            "segment": [
+              "importer",
+              "other"
+            ],
+            "size_band": [
+              "corporate"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-01",
+          "adverse_allowed": [
+            "rise"
+          ],
+          "stable_age_days": 45,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": true,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "forecast_gap_pp": 0.15
+            },
+            "medium": {
+              "forecast_gap_pp": 0.15
+            },
+            "large": {
+              "forecast_gap_pp": 0.15
+            }
+          }
+        }
+      ]
+    },
+    {
+      "product_id": "startup_loan",
+      "product_type": "business_loan",
+      "name": "Startup Loan",
+      "book_size": {
+        "value": 2100000000.0,
+        "unit": "LKR"
+      },
+      "metrics": [
+        {
+          "metric": "roll_rate_to_30",
+          "kind": "ratio",
+          "unit": "%",
+          "currency": null,
+          "grain": "monthly",
+          "lag_days": 15,
+          "adverse": "rise",
+          "method": "trend",
+          "min_volume": 50,
+          "dimensions": {
+            "size_band": [
+              "startup"
+            ]
+          },
+          "exposure_dims": [],
+          "history_from": "2023-09-01",
+          "adverse_allowed": [
+            "rise"
+          ],
+          "stable_age_days": 45,
+          "min_denominator": null,
+          "counts": false,
+          "min_base": null,
+          "mask_family": true,
+          "masked_by": [],
+          "thresholds": {
+            "small": {
+              "forecast_gap_pp": 0.15
+            },
+            "medium": {
+              "forecast_gap_pp": 0.15
+            },
+            "large": {
+              "forecast_gap_pp": 0.15
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "reference_series": [
+    "usd_lkr_mid",
+    "gold_lkr_per_gram"
+  ],
+  "rules": {
+    "dates": "Asia/Colombo business dates; periods are [from, until)",
+    "aggregates_only": true,
+    "suppressed_when": "fewer than 10 records, or one contributor above 50% of the value"
+  }
+}

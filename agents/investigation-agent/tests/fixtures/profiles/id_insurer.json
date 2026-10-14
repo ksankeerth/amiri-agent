@@ -1,0 +1,17 @@
+{
+  "institution": {"institution_id": "id-insurer", "name": "Nusantara General Insurance", "institution_type": "insurer",
+                  "home_country": "ID", "base_currency": "IDR", "time_zone": "Asia/Jakarta"},
+  "sections": {
+    "products": [
+      {"id": "home-cover", "name": "Home and Fire", "category": "property", "product_type": "home", "status": "active"},
+      {"id": "motor", "name": "Private Motor", "category": "motor", "product_type": "private_motor", "status": "active"},
+      {"id": "crop-cover", "name": "Rice Crop Cover", "category": "agriculture", "product_type": "crop_indemnity", "status": "active"},
+      {"id": "micro-health", "name": "Micro Health", "category": "micro_insurance", "product_type": "micro_health", "status": "active"},
+      {"id": "cargo", "name": "Marine Cargo", "category": "marine", "product_type": "marine_cargo", "status": "active"}
+    ],
+    "flows": [
+      {"kind": "exports", "local": "ID", "counterpart": "CN"},
+      {"kind": "imports", "local": "ID", "counterpart": "SG"}
+    ]
+  }
+}
