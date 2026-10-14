@@ -1,0 +1,16 @@
+# secrets stay local; .env.example is committed
+.env
+.env.*
+!.env.example
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+# keys, should one ever land here
+*-key.json
+service-account*.json
+credentials*.json
+.DS_Store

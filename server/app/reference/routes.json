@@ -1,0 +1,24 @@
+{
+  "_about": "Main sea lanes for South Asian trade, as point lists (lat, lon), with the chokepoints and ports they pass in order. Hand-drawn for the prototype.",
+  "version": "2026-10-12",
+  "routes": [
+    {"route_id": "colombo-suez-europe", "name": "Colombo – Suez – Europe", "kind": "sea_lane",
+     "points": [[6.9, 79.85], [8.5, 72], [12.8, 60], [12.6, 50], [12.6, 43.4], [18.5, 39.5], [25.5, 35.5], [30.0, 32.55], [33.3, 28], [35.5, 18], [37.6, 9], [35.95, -5.6], [40, -9.5], [47.5, -6], [49.8, -2], [51.95, 4.1]],
+     "places": ["port:colombo", "sea:arabian-sea", "chk:bab-el-mandeb", "sea:red-sea", "chk:suez", "chk:gibraltar", "port:rotterdam"]},
+    {"route_id": "gibraltar-new-york", "name": "Gibraltar – New York", "kind": "sea_lane",
+     "points": [[35.95, -5.6], [36.5, -20], [38, -40], [39.5, -60], [40.4, -73.8]],
+     "places": ["chk:gibraltar", "port:new-york"]},
+    {"route_id": "colombo-cape-europe", "name": "Colombo – Cape of Good Hope – Europe (Red Sea diversion)", "kind": "sea_lane",
+     "points": [[6.9, 79.85], [-5, 70], [-20, 50], [-34.36, 18.47], [-20, 5], [0, -10], [20, -20], [35.95, -5.6], [47.5, -6], [51.95, 4.1]],
+     "places": ["port:colombo", "chk:cape-good-hope", "chk:gibraltar", "port:rotterdam"]},
+    {"route_id": "colombo-hormuz-gulf", "name": "Colombo – Hormuz – Gulf", "kind": "sea_lane",
+     "points": [[6.9, 79.85], [11, 72], [18, 64], [23.2, 59], [26.6, 56.4], [25.6, 54.5]],
+     "places": ["port:colombo", "sea:arabian-sea", "chk:hormuz", "sea:persian-gulf", "port:jebel-ali"]},
+    {"route_id": "colombo-malacca-shanghai", "name": "Colombo – Malacca – Shanghai", "kind": "sea_lane",
+     "points": [[6.9, 79.85], [5.8, 88], [6.2, 95], [4.8, 98.5], [2.6, 101], [1.25, 103.8], [4, 106], [9, 111], [17, 116], [24.5, 121], [30.8, 122.2]],
+     "places": ["port:colombo", "sea:bay-of-bengal", "chk:malacca", "port:singapore", "sea:south-china-sea", "chk:taiwan-strait", "port:shanghai"]},
+    {"route_id": "chennai-malacca-east-asia", "name": "Chennai – Malacca – East Asia", "kind": "sea_lane",
+     "points": [[13.09, 80.29], [10, 88], [6.2, 95], [2.6, 101], [1.25, 103.8], [9, 111], [22, 114.2]],
+     "places": ["port:chennai", "sea:bay-of-bengal", "chk:malacca", "port:singapore", "sea:south-china-sea"]}
+  ]
+}

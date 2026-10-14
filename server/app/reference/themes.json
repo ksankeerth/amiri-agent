@@ -1,0 +1,24 @@
+{
+  "_about": "Directions per theme. The theme ids are Metrics Spec v1.0's (vocabularies.themes); Amiri Agent adds the directions. Shared by the series, Radar, monitors and the investigation.",
+  "themes": {
+    "fx": {"directions": {"weaker": "the currency weakens", "stronger": "the currency strengthens"}, "currency": true},
+    "rates": {"directions": {"up": "rates rise", "down": "rates fall"}},
+    "prices": {"directions": {"up": "prices rise", "down": "prices fall"}, "items": ["fuel", "electricity", "food", "general"]},
+    "commodities": {"directions": {"up": "the commodity's price rises", "down": "the commodity's price falls"}, "items": ["gold", "crops", "oil"]},
+    "remittance": {"directions": {"up": "remittances rise", "down": "remittances fall"}},
+    "regulation": {"directions": {
+      "tax": "a tax change",
+      "central_bank_direction": "a central-bank direction or rule",
+      "central_bank_relief": "central-bank relief: moratorium, concessions",
+      "insurance_regulator_rule": "an insurance regulator's rule",
+      "import_control_tighter": "import controls tightened",
+      "import_control_looser": "import controls eased",
+      "tariff": "a tariff change"}},
+    "competitor": {"directions": {"cheaper": "a rival cuts its price", "new_product": "a rival launches a product", "partner_switch": "a partner switches to a rival"}},
+    "macro": {"directions": {"worse": "the economic outlook worsens", "better": "the economic outlook improves"}},
+    "sector": {"directions": {"shock": "a shock to one sector", "boost": "a boost to one sector"}, "sector": true},
+    "disaster": {"directions": {"domestic": "a disaster where the institution operates", "abroad": "a disaster abroad"}, "items": ["flood", "storm", "earthquake", "drought", "fire", "epidemic", "haze"]},
+    "trust": {"directions": {"own": "a trust event at this institution", "rival": "a trust event at a rival", "system": "a trust event in the whole system"}},
+    "markets": {"directions": {"equity_down": "equities fall", "equity_up": "equities rise", "bonds_down": "bond prices fall", "bonds_up": "bond prices rise"}}
+  }
+}

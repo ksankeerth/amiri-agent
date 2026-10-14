@@ -1,0 +1,7146 @@
+{
+ "spec_version": "1.0.0",
+ "categories": [
+  {
+   "id": "savings",
+   "institution": "bank",
+   "name": "Deposits and accounts",
+   "product_types": [
+    {
+     "id": "current_account",
+     "typical_products": "current and checking accounts, including business current accounts",
+     "islamic_variant": "qard or wadiah current accounts"
+    },
+    {
+     "id": "savings_account",
+     "typical_products": "passbook and online savings; youth, child, senior and migrant-worker savings",
+     "islamic_variant": "wadiah or mudarabah savings accounts"
+    },
+    {
+     "id": "term_deposit",
+     "typical_products": "fixed and time deposits, retail certificates of deposit",
+     "islamic_variant": "mudarabah or wakala term investment accounts, commodity murabaha deposits"
+    },
+    {
+     "id": "fc_deposit",
+     "typical_products": "resident and non-resident foreign-currency accounts (e.g. NRFC and PFCA in Sri Lanka, FCNR(B) in India, domiciliary accounts in Nigeria and Ghana, USD accounts in Latin America)",
+     "islamic_variant": "foreign-currency wadiah or mudarabah accounts"
+    }
+   ]
+  },
+  {
+   "id": "wealth",
+   "institution": "bank",
+   "name": "Investment and retirement products sold to customers",
+   "product_types": [
+    {
+     "id": "retirement_plan",
+     "typical_products": "bank-administered provident, pension and retirement savings plans",
+     "islamic_variant": "Shariah-compliant retirement plans"
+    },
+    {
+     "id": "investment_funds",
+     "typical_products": "mutual funds, unit trusts and UCITS funds distributed to customers",
+     "islamic_variant": "Shariah funds"
+    },
+    {
+     "id": "structured_products",
+     "typical_products": "structured deposits and notes",
+     "islamic_variant": "Shariah-compliant structured products (e.g. wa'd-based)"
+    },
+    {
+     "id": "securities_sold",
+     "typical_products": "government bills and bonds, retail bonds sold to customers",
+     "islamic_variant": "sukuk"
+    }
+   ]
+  },
+  {
+   "id": "gold_loan",
+   "institution": "bank",
+   "name": "Gold-secured loans",
+   "product_types": [
+    {
+     "id": "gold_loan",
+     "typical_products": "pawning and gold loans by banks (Sri Lanka, India, Bangladesh, Turkey), jewellery-secured loans",
+     "islamic_variant": "rahn-based gold financing, qard hasan secured by gold"
+    }
+   ]
+  },
+  {
+   "id": "retail_loan",
+   "institution": "bank",
+   "name": "Retail lending",
+   "product_types": [
+    {
+     "id": "personal_loan",
+     "typical_products": "unsecured personal instalment loans",
+     "islamic_variant": "tawarruq or commodity-murabaha personal finance"
+    },
+    {
+     "id": "housing_loan",
+     "typical_products": "mortgages and home-equity loans",
+     "islamic_variant": "murabaha, ijarah or diminishing-musharakah home finance"
+    },
+    {
+     "id": "education_loan",
+     "typical_products": "student and education loans",
+     "islamic_variant": "qard or murabaha education finance"
+    },
+    {
+     "id": "other_secured_consumer",
+     "typical_products": "loans against deposits, securities or insurance policies",
+     "islamic_variant": "financing secured on investment accounts"
+    },
+    {
+     "id": "personal_overdraft",
+     "typical_products": "personal overdrafts and unsecured credit lines (credit cards excluded)",
+     "islamic_variant": "tawarruq-based credit lines"
+    }
+   ]
+  },
+  {
+   "id": "vehicle_finance",
+   "institution": "bank",
+   "name": "Vehicle finance",
+   "product_types": [
+    {
+     "id": "vehicle_lease",
+     "typical_products": "finance leases and hire purchase of vehicles",
+     "islamic_variant": "ijarah muntahia bittamleek"
+    },
+    {
+     "id": "auto_loan",
+     "typical_products": "loans secured on the vehicle",
+     "islamic_variant": "murabaha vehicle finance"
+    }
+   ]
+  },
+  {
+   "id": "cards",
+   "institution": "bank",
+   "name": "Cards",
+   "product_types": [
+    {
+     "id": "credit_card",
+     "typical_products": "revolving credit cards",
+     "islamic_variant": "ujrah- or tawarruq-based credit cards"
+    },
+    {
+     "id": "charge_card",
+     "typical_products": "cards repaid in full each cycle",
+     "islamic_variant": null
+    },
+    {
+     "id": "debit_card",
+     "typical_products": "cards on current or savings accounts",
+     "islamic_variant": null
+    },
+    {
+     "id": "prepaid_card",
+     "typical_products": "prepaid and gift cards issued by the bank",
+     "islamic_variant": null
+    }
+   ]
+  },
+  {
+   "id": "business_loan",
+   "institution": "bank",
+   "name": "Business lending",
+   "product_types": [
+    {
+     "id": "working_capital",
+     "typical_products": "overdrafts, revolving credit lines, short-term loans",
+     "islamic_variant": "murabaha, salam or istisna working-capital finance"
+    },
+    {
+     "id": "term_loan",
+     "typical_products": "term, equipment, project and commercial real-estate loans",
+     "islamic_variant": "ijarah, diminishing musharakah, murabaha"
+    },
+    {
+     "id": "program_lending",
+     "typical_products": "government-guaranteed and refinance-scheme loans (e.g. SME credit-guarantee schemes)",
+     "islamic_variant": null
+    }
+   ]
+  },
+  {
+   "id": "agri_loan",
+   "institution": "bank",
+   "name": "Agricultural lending",
+   "product_types": [
+    {
+     "id": "crop_loan",
+     "typical_products": "seasonal crop-production loans and farmer credit cards (e.g. India's Kisan Credit Card), repaid after harvest",
+     "islamic_variant": "salam and murabaha crop finance"
+    },
+    {
+     "id": "agri_term_loan",
+     "typical_products": "farm equipment, irrigation, livestock and plantation loans",
+     "islamic_variant": "ijarah and diminishing musharakah for equipment"
+    },
+    {
+     "id": "agri_value_chain",
+     "typical_products": "warehouse-receipt and value-chain finance to farmers and aggregators",
+     "islamic_variant": "salam with parallel salam"
+    }
+   ]
+  },
+  {
+   "id": "trade_finance",
+   "institution": "bank",
+   "name": "Trade finance",
+   "product_types": [
+    {
+     "id": "import_lc",
+     "typical_products": "documentary credits issued for importers",
+     "islamic_variant": "LCs under murabaha or wakala"
+    },
+    {
+     "id": "import_collections",
+     "typical_products": "documentary collections (D/P, D/A) and open-account import payments handled",
+     "islamic_variant": null
+    },
+    {
+     "id": "export_finance",
+     "typical_products": "export LC advising and confirmation, export bills, pre- and post-shipment finance",
+     "islamic_variant": "salam or istisna export finance"
+    }
+   ]
+  },
+  {
+   "id": "payments",
+   "institution": "bank",
+   "name": "Payments and digital channels",
+   "product_types": [
+    {
+     "id": "digital_banking",
+     "typical_products": "mobile and internet banking",
+     "islamic_variant": null
+    },
+    {
+     "id": "self_service",
+     "typical_products": "ATMs, cash-deposit machines and kiosks",
+     "islamic_variant": null
+    },
+    {
+     "id": "agent_banking",
+     "typical_products": "banking agents and correspondents",
+     "islamic_variant": null
+    },
+    {
+     "id": "domestic_payments",
+     "typical_products": "instant payments, RTGS, ACH, cheques, bill payments",
+     "islamic_variant": null
+    },
+    {
+     "id": "merchant_acquiring",
+     "typical_products": "card and QR acquiring for merchants",
+     "islamic_variant": null
+    }
+   ]
+  },
+  {
+   "id": "remittances",
+   "institution": "bank",
+   "name": "Remittances",
+   "product_types": [
+    {
+     "id": "inward_remittance",
+     "typical_products": "inward international personal transfers paid to accounts, in cash or to wallets",
+     "islamic_variant": null
+    },
+    {
+     "id": "outward_remittance",
+     "typical_products": "outward international personal transfers sent by customers",
+     "islamic_variant": null
+    }
+   ]
+  },
+  {
+   "id": "fx",
+   "institution": "bank",
+   "name": "Foreign exchange for customers",
+   "product_types": [
+    {
+     "id": "spot_fx",
+     "typical_products": "customer conversions between accounts, cash exchange, FX payments debited to base-currency accounts",
+     "islamic_variant": "spot exchange (sarf) settled same day"
+    }
+   ]
+  },
+  {
+   "id": "distribution",
+   "institution": "bank",
+   "name": "Insurance distribution (bancassurance)",
+   "product_types": [
+    {
+     "id": "bancassurance",
+     "typical_products": "life, health, general and credit-protection insurance sold through the bank for partner insurers",
+     "islamic_variant": "takaful sold through Islamic banks (bancatakaful)"
+    }
+   ]
+  },
+  {
+   "id": "life",
+   "institution": "insurer",
+   "name": "Life insurance and family takaful",
+   "product_types": [
+    {
+     "id": "term_life",
+     "typical_products": "level and decreasing term",
+     "islamic_variant": "family takaful (protection)"
+    },
+    {
+     "id": "savings_life",
+     "typical_products": "endowment, whole life, education plans",
+     "islamic_variant": "family takaful (savings)"
+    },
+    {
+     "id": "unit_linked",
+     "typical_products": "unit-linked and investment-linked policies",
+     "islamic_variant": "investment-linked family takaful"
+    },
+    {
+     "id": "annuity",
+     "typical_products": "immediate and deferred annuities",
+     "islamic_variant": null
+    },
+    {
+     "id": "credit_life",
+     "typical_products": "credit life and mortgage protection, individual and group",
+     "islamic_variant": "credit-related family takaful"
+    },
+    {
+     "id": "group_life",
+     "typical_products": "employer group life",
+     "islamic_variant": "group family takaful"
+    }
+   ]
+  },
+  {
+   "id": "health",
+   "institution": "insurer",
+   "name": "Health and personal accident",
+   "product_types": [
+    {
+     "id": "individual_health",
+     "typical_products": "individual and family hospital and medical cover",
+     "islamic_variant": "health takaful"
+    },
+    {
+     "id": "group_health",
+     "typical_products": "employer group medical",
+     "islamic_variant": "group health takaful"
+    },
+    {
+     "id": "personal_accident",
+     "typical_products": "personal accident and accident & health",
+     "islamic_variant": null
+    }
+   ]
+  },
+  {
+   "id": "motor",
+   "institution": "insurer",
+   "name": "Motor",
+   "product_types": [
+    {
+     "id": "private_motor",
+     "typical_products": "private cars",
+     "islamic_variant": "motor takaful"
+    },
+    {
+     "id": "commercial_motor",
+     "typical_products": "vans, trucks, buses and fleets",
+     "islamic_variant": "commercial motor takaful"
+    },
+    {
+     "id": "two_three_wheeler",
+     "typical_products": "motorcycles and three-wheelers",
+     "islamic_variant": null
+    }
+   ]
+  },
+  {
+   "id": "travel",
+   "institution": "insurer",
+   "name": "Travel",
+   "product_types": [
+    {
+     "id": "single_trip",
+     "typical_products": "single-trip cover",
+     "islamic_variant": "travel takaful"
+    },
+    {
+     "id": "annual_multi_trip",
+     "typical_products": "annual multi-trip cover",
+     "islamic_variant": null
+    },
+    {
+     "id": "migrant_worker",
+     "typical_products": "mandatory or voluntary cover for workers going abroad",
+     "islamic_variant": null
+    },
+    {
+     "id": "pilgrimage",
+     "typical_products": "Hajj and Umrah cover",
+     "islamic_variant": null
+    }
+   ]
+  },
+  {
+   "id": "property",
+   "institution": "insurer",
+   "name": "Property",
+   "product_types": [
+    {
+     "id": "home",
+     "typical_products": "homeowners, household contents, residential fire",
+     "islamic_variant": "property takaful"
+    },
+    {
+     "id": "commercial_property",
+     "typical_products": "fire, business interruption, SME packages",
+     "islamic_variant": "commercial property takaful"
+    },
+    {
+     "id": "engineering",
+     "typical_products": "contractors' all risks, machinery breakdown",
+     "islamic_variant": null
+    }
+   ]
+  },
+  {
+   "id": "marine",
+   "institution": "insurer",
+   "name": "Marine",
+   "product_types": [
+    {
+     "id": "marine_cargo",
+     "typical_products": "single-voyage cargo and open covers",
+     "islamic_variant": "marine cargo takaful"
+    },
+    {
+     "id": "marine_hull",
+     "typical_products": "hull and machinery",
+     "islamic_variant": null
+    }
+   ]
+  },
+  {
+   "id": "liability",
+   "institution": "insurer",
+   "name": "Liability",
+   "product_types": [
+    {
+     "id": "general_liability",
+     "typical_products": "public and products liability",
+     "islamic_variant": "liability takaful"
+    },
+    {
+     "id": "professional_liability",
+     "typical_products": "professional indemnity, D&O, medical malpractice",
+     "islamic_variant": null
+    },
+    {
+     "id": "employers_liability",
+     "typical_products": "employers' liability and workers' compensation",
+     "islamic_variant": null
+    }
+   ]
+  },
+  {
+   "id": "agriculture",
+   "institution": "insurer",
+   "name": "Agriculture",
+   "product_types": [
+    {
+     "id": "crop_indemnity",
+     "typical_products": "multi-peril crop insurance",
+     "islamic_variant": "crop takaful"
+    },
+    {
+     "id": "crop_index",
+     "typical_products": "weather-index and area-yield index (parametric) cover",
+     "islamic_variant": null
+    },
+    {
+     "id": "livestock",
+     "typical_products": "livestock and aquaculture",
+     "islamic_variant": null
+    }
+   ]
+  },
+  {
+   "id": "micro_insurance",
+   "institution": "insurer",
+   "name": "Micro insurance",
+   "product_types": [
+    {
+     "id": "micro_life",
+     "typical_products": "micro life and funeral cover",
+     "islamic_variant": "micro family takaful"
+    },
+    {
+     "id": "micro_health",
+     "typical_products": "hospital cash and micro health",
+     "islamic_variant": null
+    },
+    {
+     "id": "micro_property",
+     "typical_products": "micro property, crop and livestock",
+     "islamic_variant": null
+    },
+    {
+     "id": "mobile_insurance",
+     "typical_products": "cover sold and paid through mobile networks or wallets",
+     "islamic_variant": null
+    }
+   ]
+  },
+  {
+   "id": "insurer_company",
+   "institution": "insurer",
+   "name": "Insurer company level",
+   "product_types": [
+    {
+     "id": "company",
+     "typical_products": "all lines of the insurer together",
+     "islamic_variant": "takaful operator and participants' funds"
+    }
+   ]
+  }
+ ],
+ "dimensions": {
+  "region_l1": {
+   "values": null,
+   "format": "ISO 3166-2 first-level subdivision codes of the profile's country, plus unknown",
+   "description": "First-level region (state, province, emirate, region). Banks: the account's home branch, or the customer's domicile if the profile declares `region_basis: customer_domicile` (required for institutions without branches). Customer-level metrics such as digital_transactions use the customer's region on the same basis. Insurers: the risk location (each insured location, the vehicle's registered addres"
+  },
+  "region_l2": {
+   "values": null,
+   "format": "ISO 3166-2 second-level codes where the standard has them (e.g. LK-11), otherwise institution_defined and mapped at onboarding to the national statistics office's code, plus unknown",
+   "description": "Second-level region (district, county, department, municipality). Every value names its region_l1 parent. Same basis as region_l1."
+  },
+  "corridor": {
+   "values": null,
+   "format": "ISO 3166-1 alpha-2 codes, plus unknown",
+   "description": "The other country in a cross-border flow: the sending country for inward remittances, the receiving country for outward ones, the foreign origin or destination for trade and cargo. Taken from the payment or shipment record, not the customer."
+  },
+  "destination_region": {
+   "values": null,
+   "format": "UN M49 sub-region codes (e.g. 145 Western Asia, 035 South-eastern Asia, 154 Northern Europe), plus unknown",
+   "description": "Where a trip goes (travel insurance). The first destination outside the home country named on the policy."
+  },
+  "currency": {
+   "values": null,
+   "format": "ISO 4217 alphabetic codes, plus unknown",
+   "description": "The original currency of the transaction, account or contract."
+  },
+  "segment": {
+   "values": [
+    "remittance_linked",
+    "pensioner",
+    "student",
+    "salaried",
+    "other_individual",
+    "importer",
+    "exporter",
+    "domestic_business",
+    "government",
+    "non_bank_financial",
+    "unknown"
+   ],
+   "format": null,
+   "description": "One value per customer, the first rule that applies, in this order. Individuals: remittance_linked (≥1 inward personal remittance credited to any of the customer's accounts in the 6 months before the segment date); pensioner (≥1 pension credit in the 3 months before); student (holds a student product at the segment date; a declared occupation alone doesn't count); salaried (a salary credit, by pay"
+  },
+  "age_band": {
+   "values": [
+    "under_18",
+    "18_24",
+    "25_34",
+    "35_49",
+    "50_64",
+    "65_plus",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Age of the individual customer (the primary holder) at the segment date."
+  },
+  "size_band": {
+   "values": [
+    "startup",
+    "micro",
+    "sme",
+    "corporate",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Business size, first rule that applies: startup (incorporated less than 3 years before the segment date), then micro, sme or corporate by the institution's declared size rule (turnover, employees or exposure). Examples of local rules: the EU SME definition (fewer than 250 staff), India's MSME bands, a central bank's SME lending definition."
+  },
+  "sector": {
+   "values": null,
+   "format": "ISIC Rev.4 sections A-U, plus unknown",
+   "description": "The business customer's main economic activity at the segment date."
+  },
+  "sector_l2": {
+   "values": null,
+   "format": "ISIC Rev.4 divisions (2 digits, 01-99); each names its section as parent, plus unknown",
+   "description": "The same activity at division level, so a shock to one industry (garments = 14, tourism accommodation = 55) can be separated from its section."
+  },
+  "employer_sector": {
+   "values": null,
+   "format": "ISIC Rev.4 sections A-U, plus unknown, plus unknown",
+   "description": "ISIC section of the employer that paid the individual's most recent salary credit before the segment date (public administration is section O)."
+  },
+  "merchant_sector": {
+   "values": null,
+   "format": "ISIC Rev.4 sections A-U, plus unknown",
+   "description": "The merchant's activity, for card spend and acquiring."
+  },
+  "channel": {
+   "values": [
+    "branch",
+    "mobile",
+    "internet",
+    "atm",
+    "agent",
+    "contact_centre",
+    "api",
+    "unknown"
+   ],
+   "format": null,
+   "description": "The service channel where the transaction or application was made. `api` covers host-to-host and open-banking access; `agent` covers banking agents and correspondents."
+  },
+  "sales_channel": {
+   "values": [
+    "agency",
+    "broker",
+    "bancassurance",
+    "direct",
+    "digital",
+    "partner",
+    "unknown"
+   ],
+   "format": null,
+   "description": "How an insurance policy (or a bank-distributed policy) was sold. `partner` covers affinity, retail, telecom and employer schemes; `direct` is the insurer's own staff and branches; `digital` its own web and app sales."
+  },
+  "vehicle_type": {
+   "values": [
+    "two_wheeler",
+    "three_wheeler",
+    "car",
+    "light_commercial",
+    "heavy_commercial",
+    "bus",
+    "agricultural",
+    "other",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Class of the financed or insured vehicle."
+  },
+  "new_used": {
+   "values": [
+    "new",
+    "used",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Whether the vehicle was new (first registration) when financed or first insured."
+  },
+  "cover": {
+   "values": [
+    "comprehensive",
+    "third_party_only",
+    "third_party_fire_theft",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Motor cover level."
+  },
+  "claim_type": {
+   "values": [
+    "collision",
+    "third_party",
+    "theft",
+    "natural_peril",
+    "glass_other",
+    "unknown",
+    "inpatient",
+    "outpatient",
+    "day_care",
+    "maternity",
+    "dental_optical",
+    "critical_illness",
+    "accident",
+    "medical",
+    "trip_cancellation",
+    "baggage_delay",
+    "other"
+   ],
+   "format": null,
+   "description": "What the claim is for; the value set depends on the category. A motor flood claim is claim_type=natural_peril with peril=flood."
+  },
+  "peril": {
+   "values": [
+    "flood",
+    "storm",
+    "earthquake",
+    "fire",
+    "drought",
+    "pest_disease",
+    "other",
+    "unknown"
+   ],
+   "format": null,
+   "description": "The cause of loss. `storm` covers wind, cyclone, hurricane and typhoon."
+  },
+  "settlement_mode": {
+   "values": [
+    "cashless",
+    "reimbursement",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Health claims: billed directly by the provider (cashless) or claimed back by the insured."
+  },
+  "plan": {
+   "values": null,
+   "format": "institution_defined, plus unknown",
+   "description": "Health plan or benefit tier."
+  },
+  "traveller_type": {
+   "values": [
+    "leisure",
+    "business",
+    "student",
+    "migrant_worker",
+    "pilgrimage",
+    "other",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Purpose of travel as recorded on the policy."
+  },
+  "tenor_band": {
+   "values": [
+    "lt_3m",
+    "3m_6m",
+    "6m_12m",
+    "1y_3y",
+    "gt_3y",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Contractual tenor at placement or booking."
+  },
+  "rate_type": {
+   "values": [
+    "fixed",
+    "variable",
+    "hybrid",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Whether the interest or profit rate is fixed for the life of the contract, resets with a reference rate, or is fixed for an initial period and then resets."
+  },
+  "lc_type": {
+   "values": [
+    "sight",
+    "usance",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Letter of credit payable at sight or deferred (usance, acceptance, deferred payment)."
+  },
+  "terms": {
+   "values": [
+    "collection",
+    "open_account",
+    "advance",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Import payment terms outside letters of credit: documentary collection (D/P, D/A), open account, or payment in advance."
+  },
+  "withdrawal_reason": {
+   "values": [
+    "hardship",
+    "emigration",
+    "housing",
+    "medical",
+    "education",
+    "other",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Reason recorded for an early retirement-plan withdrawal."
+  },
+  "restructure_reason": {
+   "values": [
+    "income_loss",
+    "business_downturn",
+    "disaster",
+    "other",
+    "not_stated",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Reason recorded on a restructure request."
+  },
+  "asset_class": {
+   "values": [
+    "equity",
+    "fixed_income",
+    "money_market",
+    "mixed",
+    "other",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Main asset class of an investment product or fund."
+  },
+  "outflow_type": {
+   "values": [
+    "at_maturity",
+    "premature",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Term-deposit outflow at maturity, or a premature withdrawal (a broken deposit)."
+  },
+  "action": {
+   "values": [
+    "writeoff",
+    "restructure",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Write-off, or restructure because of financial difficulty."
+  },
+  "instrument": {
+   "values": [
+    "cheque",
+    "direct_debit",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Payment instrument returned unpaid."
+  },
+  "spend_location": {
+   "values": [
+    "domestic",
+    "cross_border",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Card spend at a merchant in the profile's country or abroad (including foreign e-commerce)."
+  },
+  "card_origin": {
+   "values": [
+    "domestic",
+    "foreign",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Acquiring: whether the card was issued in the profile's country or abroad."
+  },
+  "payout_method": {
+   "values": [
+    "account_credit",
+    "cash_pickup",
+    "wallet",
+    "unknown"
+   ],
+   "format": null,
+   "description": "How an inward remittance was paid to the beneficiary."
+  },
+  "source": {
+   "values": [
+    "fc_deposit",
+    "export_proceeds",
+    "inward_remittance",
+    "cash",
+    "other",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Where the foreign currency a customer sells to the institution comes from."
+  },
+  "insurance_line": {
+   "values": [
+    "life",
+    "health",
+    "general",
+    "credit_protection",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Line of an insurance policy distributed by a bank."
+  },
+  "policy_duration_band": {
+   "values": [
+    "year_1",
+    "year_2",
+    "years_3_5",
+    "years_6_plus",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Policy year at the event date, counted from issue."
+  },
+  "cause_group": {
+   "values": [
+    "illness",
+    "infectious_disease",
+    "accident",
+    "other",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Cause of death as notified on the claim."
+  },
+  "collection_method": {
+   "values": [
+    "bank_debit",
+    "card",
+    "payroll",
+    "mobile_wallet",
+    "airtime",
+    "agent_cash",
+    "other",
+    "unknown"
+   ],
+   "format": null,
+   "description": "How a premium instalment is collected."
+  },
+  "trade_direction": {
+   "values": [
+    "import",
+    "export",
+    "domestic",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Direction of an insured shipment relative to the profile's country."
+  },
+  "commodity_group": {
+   "values": null,
+   "format": "Harmonized System sections I-XXI, plus unknown",
+   "description": "Goods shipped, by HS section."
+  },
+  "liability_line": {
+   "values": [
+    "public",
+    "products",
+    "professional",
+    "employers_workers",
+    "directors_officers",
+    "other",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Line of liability cover."
+  },
+  "crop_group": {
+   "values": [
+    "cereals",
+    "vegetables_melons",
+    "fruit_nuts",
+    "oilseeds",
+    "roots_tubers",
+    "beverage_spice",
+    "leguminous",
+    "sugar",
+    "other_crops",
+    "livestock",
+    "aquaculture",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Insured crop or animal group."
+  },
+  "scheme": {
+   "values": [
+    "public_subsidised",
+    "private",
+    "unknown"
+   ],
+   "format": null,
+   "description": "Whether the premium is subsidised under a public scheme."
+  }
+ },
+ "metrics": {
+  "savings": [
+   {
+    "key": "deposit_inflow",
+    "name": "Deposit inflow",
+    "question": "Is money coming into these accounts faster or slower than normal for this time of year?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "product",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "segment",
+     "employer_sector",
+     "age_band",
+     "region_l1",
+     "region_l2",
+     "channel",
+     "currency"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "current_account",
+     "savings_account",
+     "fc_deposit"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "recent_vs_prior",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 30,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "robust_z": 3,
+       "pct_change": 15
+      },
+      "medium": {
+       "robust_z": 3,
+       "pct_change": 15
+      },
+      "large": {
+       "robust_z": 3,
+       "pct_change": 15
+      }
+     }
+    }
+   },
+   {
+    "key": "withdrawals",
+    "name": "Withdrawals",
+    "question": "Are customers taking money out faster than normal?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "product",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "segment",
+     "employer_sector",
+     "age_band",
+     "region_l1",
+     "region_l2",
+     "channel",
+     "currency"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": [
+     "current_account",
+     "savings_account",
+     "fc_deposit"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "recent_vs_prior",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 30,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "robust_z": 3,
+       "pct_change": 15
+      },
+      "medium": {
+       "robust_z": 3,
+       "pct_change": 15
+      },
+      "large": {
+       "robust_z": 3,
+       "pct_change": 15
+      }
+     }
+    }
+   },
+   {
+    "key": "balance",
+    "name": "Deposit balance",
+    "question": "How large is the book, and is a foreign-currency balance draining?",
+    "kind": "stock",
+    "unit": "currency",
+    "currency_rule": "product",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 27,
+    "breakdowns": [
+     "segment",
+     "region_l1",
+     "currency",
+     "tenor_band"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 30,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pct_change": 3
+      },
+      "medium": {
+       "pct_change": 3
+      },
+      "large": {
+       "pct_change": 3
+      }
+     }
+    }
+   },
+   {
+    "key": "inward_remittance_credits",
+    "name": "Inward remittance credits",
+    "question": "Are remittances into these accounts falling, judged in the currency they were sent in?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "original",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 5,
+    "history_months": 39,
+    "breakdowns": [
+     "corridor",
+     "segment",
+     "currency",
+     "region_l1"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "current_account",
+     "savings_account",
+     "fc_deposit"
+    ],
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": "monthly",
+     "stable_age_days": 7,
+     "min_volume": 100,
+     "min_denominator": null,
+     "min_base": 100,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 4
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 4
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 4
+      }
+     }
+    }
+   },
+   {
+    "key": "large_depositor_net_flow",
+    "name": "Large-depositor net flow",
+    "question": "Are the biggest depositors moving money out?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "category",
+    "tier": "recommended",
+    "validation": {
+     "method": "recent_vs_prior",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 30,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": true,
+     "thresholds": {
+      "small": {
+       "robust_z": 3,
+       "pct_of_gross_inflow": 10
+      },
+      "medium": {
+       "robust_z": 3,
+       "pct_of_gross_inflow": 10
+      },
+      "large": {
+       "robust_z": 3,
+       "pct_of_gross_inflow": 10
+      }
+     }
+    }
+   },
+   {
+    "key": "td_placements",
+    "name": "Term-deposit placements",
+    "question": "Are customers placing more or less new money in term deposits (for example before a tax or rate change)?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "product",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "tenor_band",
+     "segment",
+     "region_l1",
+     "currency"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "term_deposit"
+    ],
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": 50,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 10
+      }
+     }
+    }
+   },
+   {
+    "key": "td_non_renewal_outflow",
+    "name": "Term-deposit non-renewal outflow",
+    "question": "Are maturing term deposits leaving instead of being renewed, or being broken early?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "product",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 2,
+    "history_months": 39,
+    "breakdowns": [
+     "tenor_band",
+     "segment",
+     "outflow_type",
+     "currency"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": [
+     "term_deposit"
+    ],
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": 50,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 10
+      }
+     }
+    }
+   },
+   {
+    "key": "new_accounts",
+    "name": "New accounts",
+    "question": "Are customers opening fewer accounts than normal for the season?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 2,
+    "history_months": 39,
+    "breakdowns": [
+     "segment",
+     "channel",
+     "age_band",
+     "region_l1"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 20,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 10
+      }
+     }
+    }
+   },
+   {
+    "key": "customer_closures",
+    "name": "Customer-initiated closures",
+    "question": "Are customers closing accounts faster than normal?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 2,
+    "history_months": 39,
+    "breakdowns": [
+     "segment",
+     "region_l1"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": [
+     "current_account",
+     "savings_account",
+     "fc_deposit"
+    ],
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 1000,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 20
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 20
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 20
+      }
+     }
+    }
+   },
+   {
+    "key": "offered_rate",
+    "name": "Offered rate",
+    "question": "What rate are we offering, so the checks can compare it with rivals' public rates?",
+    "kind": "level",
+    "unit": "percent_pa",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 2,
+    "history_months": 24,
+    "breakdowns": [
+     "tenor_band",
+     "currency"
+    ],
+    "adverse": [],
+    "applies_to": [
+     "savings_account",
+     "term_deposit",
+     "fc_deposit"
+    ],
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "wealth": [
+   {
+    "key": "contributions",
+    "name": "Retirement contributions",
+    "question": "Are members paying in less than normal?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 10,
+    "history_months": 39,
+    "breakdowns": [
+     "employer_sector",
+     "region_l1"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "retirement_plan"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   },
+   {
+    "key": "contribution_rate",
+    "name": "Contribution rate",
+    "question": "Are fewer members contributing?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "none",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 10,
+    "history_months": 39,
+    "breakdowns": [
+     "employer_sector"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "retirement_plan"
+    ],
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "trend",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 200,
+     "min_denominator": 100,
+     "min_base": null,
+     "counts": true,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "forecast_gap_pp": 1.0
+      },
+      "medium": {
+       "forecast_gap_pp": 1.0
+      },
+      "large": {
+       "forecast_gap_pp": 1.0
+      }
+     }
+    }
+   },
+   {
+    "key": "early_withdrawals",
+    "name": "Early withdrawals",
+    "question": "Are members withdrawing savings before retirement, from hardship or emigration?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 10,
+    "history_months": 39,
+    "breakdowns": [
+     "withdrawal_reason"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": [
+     "retirement_plan"
+    ],
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 500,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 10
+      }
+     }
+    }
+   },
+   {
+    "key": "investment_subscriptions",
+    "name": "Investment subscriptions",
+    "question": "Are customers buying fewer investment products?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "product",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 2,
+    "history_months": 39,
+    "breakdowns": [
+     "asset_class",
+     "segment",
+     "channel"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "investment_funds",
+     "structured_products",
+     "securities_sold"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": true,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 10
+      }
+     }
+    }
+   },
+   {
+    "key": "investment_redemptions",
+    "name": "Investment redemptions",
+    "question": "Are customers selling out of investment products early?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "product",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 2,
+    "history_months": 39,
+    "breakdowns": [
+     "asset_class",
+     "segment",
+     "channel"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": [
+     "investment_funds",
+     "structured_products",
+     "securities_sold"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": true,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 10
+      }
+     }
+    }
+   },
+   {
+    "key": "fund_value",
+    "name": "Fund value / customer holdings",
+    "question": "How large is the book?",
+    "kind": "stock",
+    "unit": "currency",
+    "currency_rule": "product",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 24,
+    "breakdowns": [
+     "asset_class"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "fund_return_20d",
+    "name": "20-day fund return",
+    "question": "Has the fund lost value in the last 20 business days to a date?",
+    "kind": "level",
+    "unit": "percent",
+    "currency_rule": "none",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 27,
+    "breakdowns": [
+     "asset_class"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "retirement_plan",
+     "investment_funds"
+    ],
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 1,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 2.0
+      },
+      "medium": {
+       "pp_change": 2.0
+      },
+      "large": {
+       "pp_change": 2.0
+      }
+     }
+    }
+   },
+   {
+    "key": "fund_relative_return_20d",
+    "name": "20-day return vs benchmark",
+    "question": "Is the fund doing worse than its benchmark?",
+    "kind": "level",
+    "unit": "pp",
+    "currency_rule": "none",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 24,
+    "breakdowns": [
+     "asset_class"
+    ],
+    "adverse": [],
+    "applies_to": [
+     "retirement_plan",
+     "investment_funds"
+    ],
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "gold_loan": [
+   {
+    "key": "new_pledges",
+    "name": "New pledges",
+    "question": "Are more households (or fewer) pledging gold for cash?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "rise",
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 30,
+     "min_denominator": null,
+     "min_base": 30,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise",
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   },
+   {
+    "key": "renewals",
+    "name": "Renewals",
+    "question": "How many loans were rolled over at maturity?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 24,
+    "breakdowns": [
+     "region_l1"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "topups",
+    "name": "Top-ups",
+    "question": "How many borrowers drew more on existing pledges?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 24,
+    "breakdowns": [
+     "region_l1"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "redemptions",
+    "name": "Redemptions",
+    "question": "Are fewer borrowers redeeming their gold?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 30,
+     "min_denominator": null,
+     "min_base": 30,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   },
+   {
+    "key": "loans_above_ltv_limit",
+    "name": "Loans above the LTV limit",
+    "question": "How much of the book is now under-collateralised after a gold-price fall?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 27,
+    "breakdowns": [
+     "region_l1"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 2.0
+      },
+      "medium": {
+       "pp_change": 2.0
+      },
+      "large": {
+       "pp_change": 2.0
+      }
+     }
+    }
+   },
+   {
+    "key": "overdue_pawns",
+    "name": "Overdue gold loans",
+    "question": "Are more loans past maturity without being renewed or redeemed?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 2,
+    "history_months": 27,
+    "breakdowns": [
+     "region_l1"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 1.0
+      },
+      "medium": {
+       "pp_change": 1.0
+      },
+      "large": {
+       "pp_change": 1.0
+      }
+     }
+    }
+   },
+   {
+    "key": "auctions",
+    "name": "Auctions",
+    "question": "Are more pledges going to auction?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 2,
+    "history_months": 39,
+    "breakdowns": [
+     "region_l1"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 20
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 20
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 20
+      }
+     }
+    }
+   },
+   {
+    "key": "outstanding",
+    "name": "Outstanding",
+    "question": "How large is the book?",
+    "kind": "stock",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 24,
+    "breakdowns": [
+     "region_l1"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "offered_rate",
+    "name": "Offered rate",
+    "question": "What rate are we offering, so the checks can compare it with rivals' public rates?",
+    "kind": "level",
+    "unit": "percent_pa",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 2,
+    "history_months": 24,
+    "breakdowns": [
+     "tenor_band"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "retail_loan": [
+   {
+    "key": "installment_collection_rate",
+    "name": "Instalment collection rate",
+    "question": "Are borrowers paying this period's instalments on time (the earliest sign of stress)?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 7,
+    "history_months": 27,
+    "breakdowns": [
+     "segment",
+     "employer_sector",
+     "rate_type",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "personal_loan",
+     "housing_loan",
+     "education_loan",
+     "other_secured_consumer"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [
+       {
+        "metric": "moratorium_enrolled",
+        "rise": 2.0,
+        "unit": "pp"
+       },
+       {
+        "metric": "restructure_requests",
+        "rise": 3.0,
+        "unit": "per_1000"
+       }
+      ],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 0.5
+      },
+      "medium": {
+       "pp_change": 0.5
+      },
+      "large": {
+       "pp_change": 0.5
+      }
+     }
+    }
+   },
+   {
+    "key": "roll_rate_to_30",
+    "name": "Roll rate to 30+ dpd",
+    "question": "Is more of the performing book falling 30 days behind each month?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 39,
+    "breakdowns": [
+     "segment",
+     "employer_sector",
+     "rate_type",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "trend",
+     "judge_grain": null,
+     "stable_age_days": 45,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [
+       {
+        "metric": "moratorium_enrolled",
+        "rise": 2.0,
+        "unit": "pp"
+       },
+       {
+        "metric": "restructure_requests",
+        "rise": 3.0,
+        "unit": "per_1000"
+       }
+      ],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "forecast_gap_pp": 0.15
+      },
+      "medium": {
+       "forecast_gap_pp": 0.15
+      },
+      "large": {
+       "forecast_gap_pp": 0.15
+      }
+     }
+    }
+   },
+   {
+    "key": "dpd_30_plus",
+    "name": "30+ days past due",
+    "question": "What share of the book is 30 or more days past due?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 36,
+    "breakdowns": [
+     "segment",
+     "employer_sector",
+     "rate_type",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": 45,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [
+       {
+        "metric": "moratorium_enrolled",
+        "rise": 2.0,
+        "unit": "pp"
+       },
+       {
+        "metric": "restructure_requests",
+        "rise": 3.0,
+        "unit": "per_1000"
+       }
+      ],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "writeoffs_and_restructures",
+    "name": "Write-offs and restructures",
+    "question": "How much was written off or restructured this month (explains dpd moves)?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "action",
+     "region_l1"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "restructure_requests",
+    "name": "Restructure requests",
+    "question": "Are more borrowers asking to reschedule?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 14,
+    "history_months": 39,
+    "breakdowns": [
+     "restructure_reason",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": 10,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 30
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 30
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 30
+      }
+     }
+    }
+   },
+   {
+    "key": "moratorium_enrolled",
+    "name": "Moratorium enrolment",
+    "question": "How much of the book is under a payment moratorium or relief deferral?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 14,
+    "history_months": 24,
+    "breakdowns": [
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "mask",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "applications",
+    "name": "Loan applications",
+    "question": "Is demand for credit rising or falling?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "channel",
+     "employer_sector",
+     "segment"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 8
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 8
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 8
+      }
+     }
+    }
+   },
+   {
+    "key": "approval_rate",
+    "name": "Approval rate",
+    "question": "Is the institution approving a smaller share of applications?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 1,
+    "history_months": 27,
+    "breakdowns": [
+     "channel"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 50,
+     "min_denominator": 50,
+     "min_base": null,
+     "counts": true,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 2.0
+      },
+      "medium": {
+       "pp_change": 2.0
+      },
+      "large": {
+       "pp_change": 2.0
+      }
+     }
+    }
+   },
+   {
+    "key": "prepayments",
+    "name": "Prepayments",
+    "question": "Are borrowers paying off early, perhaps to refinance with a rival?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "rate_type"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 10
+      }
+     }
+    }
+   },
+   {
+    "key": "outstanding",
+    "name": "Outstanding",
+    "question": "How large is the book?",
+    "kind": "stock",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "rate_type",
+     "region_l1"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "facility_utilization",
+    "name": "Credit-line utilisation",
+    "question": "Are households drawing more of their overdrafts and credit lines?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 2,
+    "history_months": 27,
+    "breakdowns": [
+     "segment",
+     "employer_sector",
+     "region_l1"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": [
+     "personal_overdraft"
+    ],
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 0.6
+      },
+      "medium": {
+       "pp_change": 0.6
+      },
+      "large": {
+       "pp_change": 0.6
+      }
+     }
+    }
+   }
+  ],
+  "vehicle_finance": [
+   {
+    "key": "installment_collection_rate",
+    "name": "Instalment collection rate",
+    "question": "Are borrowers paying this period's instalments on time?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 7,
+    "history_months": 27,
+    "breakdowns": [
+     "vehicle_type",
+     "new_used",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [
+       {
+        "metric": "moratorium_enrolled",
+        "rise": 2.0,
+        "unit": "pp"
+       }
+      ],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 0.5
+      },
+      "medium": {
+       "pp_change": 0.5
+      },
+      "large": {
+       "pp_change": 0.5
+      }
+     }
+    }
+   },
+   {
+    "key": "roll_rate_to_30",
+    "name": "Roll rate to 30+ dpd",
+    "question": "Is more of the performing book falling 30 days behind?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 39,
+    "breakdowns": [
+     "vehicle_type"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "trend",
+     "judge_grain": null,
+     "stable_age_days": 45,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [
+       {
+        "metric": "moratorium_enrolled",
+        "rise": 2.0,
+        "unit": "pp"
+       }
+      ],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "forecast_gap_pp": 0.15
+      },
+      "medium": {
+       "forecast_gap_pp": 0.15
+      },
+      "large": {
+       "forecast_gap_pp": 0.15
+      }
+     }
+    }
+   },
+   {
+    "key": "repossessions",
+    "name": "Repossessions",
+    "question": "How many vehicles were repossessed (explains dpd)?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "vehicle_type"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "new_leases",
+    "name": "New vehicle-finance contracts",
+    "question": "Are fewer vehicles being financed?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "vehicle_type",
+     "new_used",
+     "region_l1"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 20,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 8
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 8
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 8
+      }
+     }
+    }
+   },
+   {
+    "key": "moratorium_enrolled",
+    "name": "Moratorium enrolment",
+    "question": "How much of the book is under a moratorium?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 14,
+    "history_months": 24,
+    "breakdowns": [
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "mask",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "outstanding",
+    "name": "Outstanding",
+    "question": "How large is the book?",
+    "kind": "stock",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "vehicle_type"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "cards": [
+   {
+    "key": "card_spend",
+    "name": "Domestic card spend",
+    "question": "Are cardholders spending less at home?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "daily",
+    "day_basis": "calendar",
+    "max_lag_days": 2,
+    "history_months": 39,
+    "breakdowns": [
+     "merchant_sector",
+     "region_l1"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 500,
+     "min_denominator": null,
+     "min_base": 100,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   },
+   {
+    "key": "card_spend_cross_border",
+    "name": "Cross-border card spend",
+    "question": "Are cardholders spending less abroad, judged in the currencies they spend in?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "original",
+    "grain": "daily",
+    "day_basis": "calendar",
+    "max_lag_days": 2,
+    "history_months": 39,
+    "breakdowns": [
+     "merchant_sector",
+     "currency",
+     "corridor"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": 100,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   },
+   {
+    "key": "card_payment_rate",
+    "name": "Card payment rate",
+    "question": "Are cardholders paying less of their statements?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 4,
+    "history_months": 27,
+    "breakdowns": [
+     "segment"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "credit_card",
+     "charge_card"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [
+       {
+        "metric": "moratorium_enrolled",
+        "rise": 2.0,
+        "unit": "pp"
+       }
+      ],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 1.0
+      },
+      "medium": {
+       "pp_change": 1.0
+      },
+      "large": {
+       "pp_change": 1.0
+      }
+     }
+    }
+   },
+   {
+    "key": "revolving_share",
+    "name": "Revolving share",
+    "question": "Are more cardholders carrying balances past the due date?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 10,
+    "history_months": 39,
+    "breakdowns": [
+     "segment"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": [
+     "credit_card"
+    ],
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "trend",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [
+       {
+        "metric": "moratorium_enrolled",
+        "rise": 2.0,
+        "unit": "pp"
+       }
+      ],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "forecast_gap_pp": 0.5
+      },
+      "medium": {
+       "forecast_gap_pp": 0.5
+      },
+      "large": {
+       "forecast_gap_pp": 0.5
+      }
+     }
+    }
+   },
+   {
+    "key": "roll_rate_to_30",
+    "name": "Roll rate to 30+ dpd",
+    "question": "Is more of the performing card book falling 30 days behind?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 39,
+    "breakdowns": [
+     "segment"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": [
+     "credit_card",
+     "charge_card"
+    ],
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "trend",
+     "judge_grain": null,
+     "stable_age_days": 45,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [
+       {
+        "metric": "moratorium_enrolled",
+        "rise": 2.0,
+        "unit": "pp"
+       }
+      ],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "forecast_gap_pp": 0.15
+      },
+      "medium": {
+       "forecast_gap_pp": 0.15
+      },
+      "large": {
+       "forecast_gap_pp": 0.15
+      }
+     }
+    }
+   },
+   {
+    "key": "card_fraud_rate",
+    "name": "Card fraud rate",
+    "question": "Is card fraud rising (a data breach at us, a rival or a merchant)?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 30,
+    "history_months": 27,
+    "breakdowns": [
+     "spend_location"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 90,
+     "min_volume": 500,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 0.02
+      },
+      "medium": {
+       "pp_change": 0.02
+      },
+      "large": {
+       "pp_change": 0.02
+      }
+     }
+    }
+   },
+   {
+    "key": "writeoffs_and_restructures",
+    "name": "Write-offs and restructures",
+    "question": "How much was written off or restructured (explains dpd)?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "action"
+    ],
+    "adverse": [],
+    "applies_to": [
+     "credit_card",
+     "charge_card"
+    ],
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "moratorium_enrolled",
+    "name": "Moratorium enrolment",
+    "question": "How much of the card book is under a payment holiday?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 14,
+    "history_months": 24,
+    "breakdowns": [
+     "region_l1"
+    ],
+    "adverse": [],
+    "applies_to": [
+     "credit_card",
+     "charge_card"
+    ],
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "mask",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "outstanding",
+    "name": "Card receivables",
+    "question": "How large is the book?",
+    "kind": "stock",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 10,
+    "history_months": 24,
+    "breakdowns": [],
+    "adverse": [],
+    "applies_to": [
+     "credit_card",
+     "charge_card"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "business_loan": [
+   {
+    "key": "facility_utilization",
+    "name": "Facility utilisation",
+    "question": "Are businesses drawing more of their working-capital lines (cash-flow strain)?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 1,
+    "history_months": 27,
+    "breakdowns": [
+     "size_band",
+     "sector",
+     "sector_l2",
+     "segment",
+     "region_l1"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": [
+     "working_capital"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 30,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": true,
+     "thresholds": {
+      "small": {
+       "pp_change": 0.6
+      },
+      "medium": {
+       "pp_change": 0.6
+      },
+      "large": {
+       "pp_change": 0.6
+      }
+     }
+    }
+   },
+   {
+    "key": "installment_collection_rate",
+    "name": "Instalment collection rate",
+    "question": "Are businesses paying this period's instalments on time?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 7,
+    "history_months": 27,
+    "breakdowns": [
+     "size_band",
+     "sector",
+     "sector_l2",
+     "segment",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "term_loan",
+     "program_lending"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 30,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [
+       {
+        "metric": "moratorium_enrolled",
+        "rise": 2.0,
+        "unit": "pp"
+       },
+       {
+        "metric": "restructure_requests",
+        "rise": 3.0,
+        "unit": "per_1000"
+       }
+      ],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": true,
+     "thresholds": {
+      "small": {
+       "pp_change": 0.5
+      },
+      "medium": {
+       "pp_change": 0.5
+      },
+      "large": {
+       "pp_change": 0.5
+      }
+     }
+    }
+   },
+   {
+    "key": "roll_rate_to_30",
+    "name": "Roll rate to 30+ dpd",
+    "question": "Is more of the performing business book falling 30 days behind?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 39,
+    "breakdowns": [
+     "size_band",
+     "sector",
+     "sector_l2",
+     "segment"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "trend",
+     "judge_grain": null,
+     "stable_age_days": 45,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [
+       {
+        "metric": "moratorium_enrolled",
+        "rise": 2.0,
+        "unit": "pp"
+       },
+       {
+        "metric": "restructure_requests",
+        "rise": 3.0,
+        "unit": "per_1000"
+       }
+      ],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": true,
+     "thresholds": {
+      "small": {
+       "forecast_gap_pp": 0.15
+      },
+      "medium": {
+       "forecast_gap_pp": 0.15
+      },
+      "large": {
+       "forecast_gap_pp": 0.15
+      }
+     }
+    }
+   },
+   {
+    "key": "dpd_30_plus",
+    "name": "30+ days past due",
+    "question": "What share of the business book is 30+ days past due?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 36,
+    "breakdowns": [
+     "size_band",
+     "sector",
+     "sector_l2",
+     "segment"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": 45,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [
+       {
+        "metric": "moratorium_enrolled",
+        "rise": 2.0,
+        "unit": "pp"
+       },
+       {
+        "metric": "restructure_requests",
+        "rise": 3.0,
+        "unit": "per_1000"
+       }
+      ],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "returned_cheque_rate",
+    "name": "Returned cheque and direct-debit rate",
+    "question": "Are more business payments bouncing for lack of funds?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 2,
+    "history_months": 27,
+    "breakdowns": [
+     "size_band",
+     "sector",
+     "sector_l2",
+     "instrument",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 30,
+     "min_denominator": 50,
+     "min_base": null,
+     "counts": true,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [
+       {
+        "metric": "moratorium_enrolled",
+        "rise": 2.0,
+        "unit": "pp"
+       },
+       {
+        "metric": "restructure_requests",
+        "rise": 3.0,
+        "unit": "per_1000"
+       }
+      ],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 1.5
+      },
+      "medium": {
+       "pp_change": 1.5
+      },
+      "large": {
+       "pp_change": 1.5
+      }
+     }
+    }
+   },
+   {
+    "key": "restructure_requests",
+    "name": "Restructure requests",
+    "question": "Are more businesses asking to reschedule?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 14,
+    "history_months": 39,
+    "breakdowns": [
+     "size_band",
+     "sector",
+     "sector_l2",
+     "restructure_reason",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": 10,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 30
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 30
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 30
+      }
+     }
+    }
+   },
+   {
+    "key": "moratorium_enrolled",
+    "name": "Moratorium enrolment",
+    "question": "How much of the business book is under a moratorium?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 14,
+    "history_months": 24,
+    "breakdowns": [
+     "size_band",
+     "sector",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "mask",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "applications",
+    "name": "Business credit applications",
+    "question": "Is business demand for credit changing?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "size_band",
+     "sector"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 30,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 8
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 8
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 8
+      }
+     }
+    }
+   },
+   {
+    "key": "exposure",
+    "name": "Exposure",
+    "question": "How concentrated is the book in a shocked sector?",
+    "kind": "stock",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "size_band",
+     "sector"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "outstanding",
+    "name": "Outstanding",
+    "question": "How large is the book?",
+    "kind": "stock",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "size_band"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "agri_loan": [
+   {
+    "key": "disbursements",
+    "name": "Agricultural disbursements",
+    "question": "Are farmers borrowing less for the season (prices, a drought, a policy change)?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 2,
+    "history_months": 39,
+    "breakdowns": [
+     "crop_group",
+     "size_band",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 10
+      }
+     }
+    }
+   },
+   {
+    "key": "installment_collection_rate",
+    "name": "Instalment collection rate",
+    "question": "Are farmers repaying what falls due after harvest?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 10,
+    "history_months": 27,
+    "breakdowns": [
+     "crop_group",
+     "size_band",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [
+       {
+        "metric": "moratorium_enrolled",
+        "rise": 2.0,
+        "unit": "pp"
+       },
+       {
+        "metric": "restructure_requests",
+        "rise": 3.0,
+        "unit": "per_1000"
+       }
+      ],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 1.0
+      },
+      "medium": {
+       "pp_change": 1.0
+      },
+      "large": {
+       "pp_change": 1.0
+      }
+     }
+    }
+   },
+   {
+    "key": "roll_rate_to_30",
+    "name": "Roll rate past 30 dpd",
+    "question": "Is more of the performing farm book falling more than 30 days behind?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 39,
+    "breakdowns": [
+     "crop_group",
+     "size_band",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "trend",
+     "judge_grain": null,
+     "stable_age_days": 45,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "credit_quality",
+      "metrics": [
+       {
+        "metric": "moratorium_enrolled",
+        "rise": 2.0,
+        "unit": "pp"
+       },
+       {
+        "metric": "restructure_requests",
+        "rise": 3.0,
+        "unit": "per_1000"
+       }
+      ],
+      "else_break_kind": "relief",
+      "relief_kind": "credit_moratorium"
+     },
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "forecast_gap_pp": 0.15
+      },
+      "medium": {
+       "forecast_gap_pp": 0.15
+      },
+      "large": {
+       "forecast_gap_pp": 0.15
+      }
+     }
+    }
+   },
+   {
+    "key": "restructure_requests",
+    "name": "Restructure requests",
+    "question": "Are more farmers asking to reschedule after a bad season?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 14,
+    "history_months": 39,
+    "breakdowns": [
+     "restructure_reason",
+     "crop_group",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": 10,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 30
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 30
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 30
+      }
+     }
+    }
+   },
+   {
+    "key": "moratorium_enrolled",
+    "name": "Moratorium enrolment",
+    "question": "How much of the farm book is under relief?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 14,
+    "history_months": 24,
+    "breakdowns": [
+     "crop_group",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "mask",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "outstanding",
+    "name": "Outstanding",
+    "question": "How large is the book?",
+    "kind": "stock",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "crop_group",
+     "region_l1"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "trade_finance": [
+   {
+    "key": "lc_openings",
+    "name": "Letters of credit opened",
+    "question": "Are importers opening fewer letters of credit?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "size_band",
+     "sector",
+     "sector_l2",
+     "segment",
+     "lc_type",
+     "currency"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "import_lc"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 10,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": true,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   },
+   {
+    "key": "import_bills",
+    "name": "Import payments outside LCs",
+    "question": "Are importers paying for fewer shipments on collection, open-account or advance terms?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "size_band",
+     "sector",
+     "sector_l2",
+     "segment",
+     "terms",
+     "currency"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "import_collections"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 10,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": true,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 4
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 4
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 4
+      }
+     }
+    }
+   },
+   {
+    "key": "export_receipts",
+    "name": "Export receipts",
+    "question": "Are exporters receiving less (or more) for their shipments, in the currency they invoice in?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "original",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "size_band",
+     "sector",
+     "sector_l2",
+     "currency",
+     "corridor"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "export_finance"
+    ],
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 10,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": true,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   },
+   {
+    "key": "outstanding",
+    "name": "Trade-finance outstanding",
+    "question": "How large is the funded trade book?",
+    "kind": "stock",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "size_band"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "payments": [
+   {
+    "key": "digital_transactions",
+    "name": "Digital and self-service transactions",
+    "question": "Are customers transacting less through digital channels (for example in a disaster area)?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "daily",
+    "day_basis": "calendar",
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "channel",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "category",
+    "tier": "required",
+    "validation": {
+     "method": "recent_vs_prior",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 500,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "robust_z": 3,
+       "pct_change": 10
+      },
+      "medium": {
+       "robust_z": 3,
+       "pct_change": 10
+      },
+      "large": {
+       "robust_z": 3,
+       "pct_change": 10
+      }
+     }
+    }
+   },
+   {
+    "key": "failed_transactions_own",
+    "name": "Own-system failure rate",
+    "question": "Are our own systems failing more transactions (an outage or a trust problem)?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "none",
+    "grain": "daily",
+    "day_basis": "calendar",
+    "max_lag_days": 1,
+    "history_months": 27,
+    "breakdowns": [
+     "channel"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "category",
+    "tier": "required",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 1000,
+     "min_denominator": 1000,
+     "min_base": null,
+     "counts": true,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 1.0
+      },
+      "medium": {
+       "pp_change": 1.0
+      },
+      "large": {
+       "pp_change": 1.0
+      }
+     }
+    }
+   },
+   {
+    "key": "active_digital_users",
+    "name": "Active digital users",
+    "question": "Are fewer customers using our app and internet banking (lost to a rival or after an incident)?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 5,
+    "history_months": 39,
+    "breakdowns": [
+     "channel",
+     "segment",
+     "age_band",
+     "region_l1"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "category",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 1000,
+     "min_denominator": null,
+     "min_base": 100,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 3
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 3
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 3
+      }
+     }
+    }
+   },
+   {
+    "key": "cash_withdrawals",
+    "name": "Cash withdrawals",
+    "question": "Are customers pulling cash (a trust scare, a disaster, a payment outage)?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "daily",
+    "day_basis": "calendar",
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "channel",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "category",
+    "tier": "recommended",
+    "validation": {
+     "method": "recent_vs_prior",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 500,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "robust_z": 3,
+       "pct_change": 10
+      },
+      "medium": {
+       "robust_z": 3,
+       "pct_change": 10
+      },
+      "large": {
+       "robust_z": 3,
+       "pct_change": 10
+      }
+     }
+    }
+   },
+   {
+    "key": "merchant_acquiring_volume",
+    "name": "Merchant acquiring volume",
+    "question": "Are our merchants selling less (local spending, tourism)?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "daily",
+    "day_basis": "calendar",
+    "max_lag_days": 2,
+    "history_months": 39,
+    "breakdowns": [
+     "merchant_sector",
+     "card_origin",
+     "region_l1"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "merchant_acquiring"
+    ],
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": 100,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": true,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   }
+  ],
+  "remittances": [
+   {
+    "key": "inward_remittances",
+    "name": "Inward remittances",
+    "question": "Is our remittance business receiving less from a corridor, in the currency sent?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "original",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 2,
+    "history_months": 39,
+    "breakdowns": [
+     "corridor",
+     "currency",
+     "payout_method",
+     "region_l1"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "inward_remittance"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": "monthly",
+     "stable_age_days": 7,
+     "min_volume": 100,
+     "min_denominator": null,
+     "min_base": 100,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 4
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 4
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 4
+      }
+     }
+    }
+   },
+   {
+    "key": "outward_remittances",
+    "name": "Outward remittances",
+    "question": "Are customers sending less abroad (fees lost) or much more (capital flight)?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "original",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 2,
+    "history_months": 39,
+    "breakdowns": [
+     "corridor",
+     "currency",
+     "channel"
+    ],
+    "adverse": [
+     "fall",
+     "rise"
+    ],
+    "applies_to": [
+     "outward_remittance"
+    ],
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": "weekly",
+     "stable_age_days": 7,
+     "min_volume": 100,
+     "min_denominator": null,
+     "min_base": 100,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall",
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   }
+  ],
+  "fx": [
+   {
+    "key": "customer_fx_purchases",
+    "name": "Customer FX purchases",
+    "question": "Are customers buying more foreign currency (pressure on our FX position) or less (lost business)?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "original",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "currency",
+     "segment",
+     "size_band"
+    ],
+    "adverse": [
+     "rise",
+     "fall"
+    ],
+    "applies_to": [
+     "spot_fx"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise",
+      "fall"
+     ],
+     "concentration_sensitive": true,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   },
+   {
+    "key": "customer_fx_sales",
+    "name": "Customer FX sales",
+    "question": "Are customers converting more foreign currency into the base currency (e.g. under a conversion rule)?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "original",
+    "grain": "daily",
+    "day_basis": "business",
+    "max_lag_days": 1,
+    "history_months": 39,
+    "breakdowns": [
+     "currency",
+     "segment",
+     "source"
+    ],
+    "adverse": [
+     "rise",
+     "fall"
+    ],
+    "applies_to": [
+     "spot_fx"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 7,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise",
+      "fall"
+     ],
+     "concentration_sensitive": true,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   }
+  ],
+  "distribution": [
+   {
+    "key": "bancassurance_new_premium",
+    "name": "Bancassurance new premium",
+    "question": "Are we selling less insurance for our partners (after a partner switch, a rule change or a squeeze on households)?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 7,
+    "history_months": 39,
+    "breakdowns": [
+     "insurance_line",
+     "channel",
+     "region_l1"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 37,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 8
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 8
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 8
+      }
+     }
+    }
+   }
+  ],
+  "life": [
+   {
+    "key": "premium_collection_rate",
+    "name": "Premium collection rate",
+    "question": "Are policyholders paying fewer premiums when due (1-2 months before lapses show)?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 12,
+    "history_months": 27,
+    "breakdowns": [
+     "sales_channel",
+     "collection_method",
+     "region_l1"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "premium_relief",
+      "metrics": [],
+      "else_break_kind": "relief",
+      "relief_kind": "premium_grace_extension"
+     },
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 1.0
+      },
+      "medium": {
+       "pp_change": 1.0
+      },
+      "large": {
+       "pp_change": 1.0
+      }
+     }
+    }
+   },
+   {
+    "key": "new_policies",
+    "name": "New policies",
+    "question": "Are we selling fewer new policies?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 7,
+    "history_months": 39,
+    "breakdowns": [
+     "sales_channel",
+     "age_band",
+     "region_l1"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 37,
+     "min_volume": 20,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   },
+   {
+    "key": "new_premium",
+    "name": "New business premium",
+    "question": "Is the value of new business falling?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 7,
+    "history_months": 39,
+    "breakdowns": [
+     "sales_channel"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 20,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 8
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 8
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 8
+      }
+     }
+    }
+   },
+   {
+    "key": "lapse_rate",
+    "name": "Lapse rate",
+    "question": "Are more policies lapsing for non-payment?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 45,
+    "history_months": 39,
+    "breakdowns": [
+     "policy_duration_band",
+     "sales_channel"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "trend",
+     "judge_grain": null,
+     "stable_age_days": 90,
+     "min_volume": 1000,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "premium_relief",
+      "metrics": [],
+      "else_break_kind": "relief",
+      "relief_kind": "premium_grace_extension"
+     },
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "forecast_gap_pp": 1.0
+      },
+      "medium": {
+       "forecast_gap_pp": 1.0
+      },
+      "large": {
+       "forecast_gap_pp": 1.0
+      }
+     }
+    }
+   },
+   {
+    "key": "surrenders",
+    "name": "Surrenders",
+    "question": "Are policyholders cashing in savings policies (rates up elsewhere, or need for cash)?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 7,
+    "history_months": 39,
+    "breakdowns": [
+     "sales_channel"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": [
+     "savings_life",
+     "unit_linked",
+     "annuity"
+    ],
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 1000,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 15
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 15
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 15
+      }
+     }
+    }
+   },
+   {
+    "key": "death_claims",
+    "name": "Death claims",
+    "question": "Are more death claims coming in (an epidemic, a disaster)?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 60,
+    "history_months": 39,
+    "breakdowns": [
+     "cause_group",
+     "age_band",
+     "region_l1"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 90,
+     "min_volume": 5000,
+     "min_denominator": null,
+     "min_base": 10,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 25
+      }
+     }
+    }
+   },
+   {
+    "key": "new_money_yield_vs_guarantee",
+    "name": "New-money yield vs guarantee",
+    "question": "Is the yield on new investments falling below what in-force policies guarantee?",
+    "kind": "level",
+    "unit": "pp",
+    "currency_rule": "none",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [],
+    "adverse": [],
+    "applies_to": [
+     "savings_life",
+     "annuity"
+    ],
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "gwp",
+    "name": "Gross written premium",
+    "question": "How large is the book?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "sales_channel"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "health": [
+   {
+    "key": "claims_per_1000",
+    "name": "Claims per 1,000 insured",
+    "question": "Are more claims coming in (an epidemic, a flood)?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 14,
+    "history_months": 39,
+    "breakdowns": [
+     "claim_type",
+     "settlement_mode",
+     "plan",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 90,
+     "min_volume": 1000,
+     "min_denominator": null,
+     "min_base": 10,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 25
+      }
+     }
+    }
+   },
+   {
+    "key": "procedure_cost_index",
+    "name": "Procedure cost index",
+    "question": "Is the cost of common treatments and drugs rising?",
+    "kind": "level",
+    "unit": "index",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 27,
+    "breakdowns": [
+     "claim_type"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 20,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pct_change": 3
+      },
+      "medium": {
+       "pct_change": 3
+      },
+      "large": {
+       "pct_change": 3
+      }
+     }
+    }
+   },
+   {
+    "key": "median_claim_cost",
+    "name": "Median claim cost",
+    "question": "What does a typical claim cost now (context)?",
+    "kind": "level",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 30,
+    "history_months": 24,
+    "breakdowns": [
+     "claim_type",
+     "plan"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "renewal_rate",
+    "name": "Renewal rate",
+    "question": "Are fewer policyholders renewing?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 37,
+    "history_months": 27,
+    "breakdowns": [
+     "plan",
+     "sales_channel"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 2.0
+      },
+      "medium": {
+       "pp_change": 2.0
+      },
+      "large": {
+       "pp_change": 2.0
+      }
+     }
+    }
+   },
+   {
+    "key": "new_policies",
+    "name": "New policies",
+    "question": "Are we selling fewer new policies?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 7,
+    "history_months": 39,
+    "breakdowns": [
+     "plan",
+     "sales_channel",
+     "region_l1"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 37,
+     "min_volume": 20,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   },
+   {
+    "key": "gwp",
+    "name": "Gross written premium",
+    "question": "How large is the book?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "plan"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "motor": [
+   {
+    "key": "claims_per_1000",
+    "name": "Claims per 1,000 vehicles",
+    "question": "Are more motor claims coming in (a flood, more traffic)?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 14,
+    "history_months": 39,
+    "breakdowns": [
+     "claim_type",
+     "peril",
+     "vehicle_type",
+     "cover",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 90,
+     "min_volume": 1000,
+     "min_denominator": null,
+     "min_base": 10,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 25
+      }
+     }
+    }
+   },
+   {
+    "key": "parts_cost_index",
+    "name": "Parts cost index",
+    "question": "Are imported parts getting dearer?",
+    "kind": "level",
+    "unit": "index",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 27,
+    "breakdowns": [
+     "vehicle_type"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 20,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pct_change": 3
+      },
+      "medium": {
+       "pct_change": 3
+      },
+      "large": {
+       "pct_change": 3
+      }
+     }
+    }
+   },
+   {
+    "key": "median_claim_cost",
+    "name": "Median claim cost",
+    "question": "What does a typical own-damage claim cost now (context)?",
+    "kind": "level",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 30,
+    "history_months": 24,
+    "breakdowns": [
+     "vehicle_type"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "new_policies",
+    "name": "New policies",
+    "question": "Are we insuring fewer new vehicles (import rules, prices)?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 7,
+    "history_months": 39,
+    "breakdowns": [
+     "vehicle_type",
+     "cover",
+     "new_used",
+     "sales_channel"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 20,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   },
+   {
+    "key": "renewal_rate",
+    "name": "Renewal rate",
+    "question": "Are fewer vehicle owners renewing with us?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 37,
+    "history_months": 27,
+    "breakdowns": [
+     "vehicle_type",
+     "cover"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 2.0
+      },
+      "medium": {
+       "pp_change": 2.0
+      },
+      "large": {
+       "pp_change": 2.0
+      }
+     }
+    }
+   },
+   {
+    "key": "gwp",
+    "name": "Gross written premium",
+    "question": "How large is the book?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "cover"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "travel": [
+   {
+    "key": "new_policies",
+    "name": "New policies",
+    "question": "Are fewer people buying travel cover (a weaker currency, trouble at a destination)?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 2,
+    "history_months": 39,
+    "breakdowns": [
+     "traveller_type",
+     "destination_region",
+     "sales_channel"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 20,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   },
+   {
+    "key": "claims_per_1000",
+    "name": "Claims per 1,000 trips",
+    "question": "Are more travellers claiming after trouble abroad?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 45,
+    "history_months": 39,
+    "breakdowns": [
+     "destination_region",
+     "claim_type"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 90,
+     "min_volume": 1000,
+     "min_denominator": null,
+     "min_base": 10,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 25
+      }
+     }
+    }
+   },
+   {
+    "key": "median_claim_cost",
+    "name": "Median claim cost (original currency)",
+    "question": "What does a typical claim abroad cost, in the currency it is paid in (context)?",
+    "kind": "level",
+    "unit": "currency",
+    "currency_rule": "original",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 45,
+    "history_months": 24,
+    "breakdowns": [
+     "claim_type",
+     "currency"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "gwp",
+    "name": "Gross written premium",
+    "question": "How large is the book?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "traveller_type"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "property": [
+   {
+    "key": "claims_per_1000",
+    "name": "Claims per 1,000 insured locations",
+    "question": "Did a disaster drive up claims where we insure?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 14,
+    "history_months": 39,
+    "breakdowns": [
+     "peril",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 90,
+     "min_volume": 1000,
+     "min_denominator": null,
+     "min_base": 10,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 25
+      }
+     }
+    }
+   },
+   {
+    "key": "median_claim_cost",
+    "name": "Median claim cost",
+    "question": "What does a typical claim cost (context for rebuild costs)?",
+    "kind": "level",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 30,
+    "history_months": 24,
+    "breakdowns": [
+     "peril"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "sum_insured",
+    "name": "Sum insured",
+    "question": "How much do we insure in the affected area?",
+    "kind": "stock",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "new_policies",
+    "name": "New policies",
+    "question": "Are we writing fewer new property policies?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 7,
+    "history_months": 39,
+    "breakdowns": [
+     "sales_channel",
+     "region_l1"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "optional",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 14,
+     "min_volume": 20,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   },
+   {
+    "key": "gwp",
+    "name": "Gross written premium",
+    "question": "How large is the book?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "region_l1"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "marine": [
+   {
+    "key": "insured_shipments",
+    "name": "Insured shipments",
+    "question": "Are our cargo clients shipping less (tariffs, a weaker currency, a port closure)?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 30,
+    "history_months": 39,
+    "breakdowns": [
+     "trade_direction",
+     "commodity_group",
+     "corridor"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": [
+     "marine_cargo"
+    ],
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 60,
+     "min_volume": 20,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": true,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 8
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 8
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 8
+      }
+     }
+    }
+   },
+   {
+    "key": "gwp",
+    "name": "Gross written premium",
+    "question": "How large is the book?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "liability": [
+   {
+    "key": "new_policies",
+    "name": "New policies",
+    "question": "Are businesses buying less liability cover?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 39,
+    "breakdowns": [
+     "liability_line",
+     "sector",
+     "sales_channel"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 20,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 10
+      }
+     }
+    }
+   },
+   {
+    "key": "renewal_rate",
+    "name": "Renewal rate",
+    "question": "Are fewer clients renewing?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "none",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 45,
+    "history_months": 27,
+    "breakdowns": [
+     "liability_line",
+     "sector"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 100,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 2.0
+      },
+      "medium": {
+       "pp_change": 2.0
+      },
+      "large": {
+       "pp_change": 2.0
+      }
+     }
+    }
+   },
+   {
+    "key": "gwp",
+    "name": "Gross written premium",
+    "question": "How large is the book?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "liability_line"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "agriculture": [
+   {
+    "key": "new_policies",
+    "name": "New policies (enrolments)",
+    "question": "Are fewer farmers insuring this season?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 39,
+    "breakdowns": [
+     "crop_group",
+     "scheme",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 50,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 10
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 10
+      }
+     }
+    }
+   },
+   {
+    "key": "sum_insured",
+    "name": "Sum insured",
+    "question": "How much crop and livestock value do we cover where a disaster hit?",
+    "kind": "stock",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "crop_group",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "claims_per_1000",
+    "name": "Claims per 1,000 policies",
+    "question": "Did drought, flood or pests trigger more claims or index payouts?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 30,
+    "history_months": 39,
+    "breakdowns": [
+     "peril",
+     "crop_group",
+     "region_l1",
+     "region_l2"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 90,
+     "min_volume": 1000,
+     "min_denominator": null,
+     "min_base": 10,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 25
+      }
+     }
+    }
+   },
+   {
+    "key": "gwp",
+    "name": "Gross written premium",
+    "question": "How large is the book?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [
+     "scheme"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "micro_insurance": [
+   {
+    "key": "new_policies",
+    "name": "New policies",
+    "question": "Are fewer low-income households taking cover?",
+    "kind": "count",
+    "unit": "count",
+    "currency_rule": "none",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 7,
+    "history_months": 39,
+    "breakdowns": [
+     "sales_channel",
+     "region_l1"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 37,
+     "min_volume": 20,
+     "min_denominator": null,
+     "min_base": 20,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 5
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 5
+      }
+     }
+    }
+   },
+   {
+    "key": "premium_collection_rate",
+    "name": "Premium collection rate",
+    "question": "Are households missing small premium payments (an early stress signal)?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "weekly",
+    "day_basis": null,
+    "max_lag_days": 12,
+    "history_months": 27,
+    "breakdowns": [
+     "collection_method",
+     "region_l1"
+    ],
+    "adverse": [
+     "fall"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "level_change",
+     "judge_grain": null,
+     "stable_age_days": 30,
+     "min_volume": 200,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "premium_relief",
+      "metrics": [],
+      "else_break_kind": "relief",
+      "relief_kind": "premium_grace_extension"
+     },
+     "adverse_allowed": [
+      "fall"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "pp_change": 1.0
+      },
+      "medium": {
+       "pp_change": 1.0
+      },
+      "large": {
+       "pp_change": 1.0
+      }
+     }
+    }
+   },
+   {
+    "key": "lapse_rate",
+    "name": "Lapse rate",
+    "question": "Are more micro policies lapsing?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 45,
+    "history_months": 39,
+    "breakdowns": [
+     "collection_method"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "trend",
+     "judge_grain": null,
+     "stable_age_days": 90,
+     "min_volume": 1000,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": true,
+     "masked_by": {
+      "family": "premium_relief",
+      "metrics": [],
+      "else_break_kind": "relief",
+      "relief_kind": "premium_grace_extension"
+     },
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "forecast_gap_pp": 1.0
+      },
+      "medium": {
+       "forecast_gap_pp": 1.0
+      },
+      "large": {
+       "forecast_gap_pp": 1.0
+      }
+     }
+    }
+   },
+   {
+    "key": "claims_per_1000",
+    "name": "Claims per 1,000 insured",
+    "question": "Are more claims coming in (an epidemic, a disaster)?",
+    "kind": "rate",
+    "unit": "per_1000",
+    "currency_rule": "none",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 30,
+    "history_months": 39,
+    "breakdowns": [
+     "region_l1"
+    ],
+    "adverse": [
+     "rise"
+    ],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "recommended",
+    "validation": {
+     "method": "seasonal_ratio",
+     "judge_grain": null,
+     "stable_age_days": 90,
+     "min_volume": 1000,
+     "min_denominator": null,
+     "min_base": 10,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [
+      "rise"
+     ],
+     "concentration_sensitive": false,
+     "thresholds": {
+      "small": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "medium": {
+       "percentile": 5,
+       "pct_change": 25
+      },
+      "large": {
+       "percentile": 5,
+       "pct_change": 25
+      }
+     }
+    }
+   },
+   {
+    "key": "gwp",
+    "name": "Gross written premium",
+    "question": "How large is the book?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "base",
+    "grain": "monthly",
+    "day_basis": null,
+    "max_lag_days": 15,
+    "history_months": 24,
+    "breakdowns": [],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "product",
+    "tier": "required",
+    "validation": {
+     "method": "book_size",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ],
+  "insurer_company": [
+   {
+    "key": "solvency_ratio",
+    "name": "Solvency ratio (published)",
+    "question": "Where does published capital stand (context for investment shocks)?",
+    "kind": "ratio",
+    "unit": "percent",
+    "currency_rule": "base",
+    "grain": "quarterly",
+    "day_basis": null,
+    "max_lag_days": 45,
+    "history_months": 24,
+    "breakdowns": [],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "category",
+    "tier": "optional",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   },
+   {
+    "key": "reinsurance_cost",
+    "name": "Reinsurance cost",
+    "question": "How much do we pay for reinsurance, in the currencies it is priced in?",
+    "kind": "flow",
+    "unit": "currency",
+    "currency_rule": "original",
+    "grain": "quarterly",
+    "day_basis": null,
+    "max_lag_days": 45,
+    "history_months": 24,
+    "breakdowns": [
+     "currency"
+    ],
+    "adverse": [],
+    "applies_to": "all",
+    "scope": "category",
+    "tier": "optional",
+    "validation": {
+     "method": "context",
+     "judge_grain": null,
+     "stable_age_days": null,
+     "min_volume": null,
+     "min_denominator": null,
+     "min_base": null,
+     "counts": false,
+     "mask_family": false,
+     "masked_by": null,
+     "adverse_allowed": [],
+     "concentration_sensitive": false,
+     "thresholds": null
+    }
+   }
+  ]
+ },
+ "themes": {
+  "fx": "exchange-rate moves of the base currency",
+  "rates": "policy, market or administered interest/profit-rate changes ",
+  "prices": "consumer, fuel, food, energy or utility price changes ",
+  "commodities": "commodity prices that act on a product directly: gold, crops, oil as cargo",
+  "remittance": "changes in cross-border personal remittances ",
+  "regulation": "taxes, central-bank or supervisor directions, relief schemes, import controls, tariffs ",
+  "competitor": "a rival's pricing, new product, failure or partner switch",
+  "macro": "growth, employment, recession or recovery news ",
+  "sector": "a shock or boost to one economic sector ",
+  "disaster": "natural or man-made disasters and epidemics, at home or abroad ",
+  "trust": "news that could shake confidence in this institution, a rival or the system ",
+  "markets": "equity and bond market moves "
+ }
+}

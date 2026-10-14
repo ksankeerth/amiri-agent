@@ -1,0 +1,753 @@
+{
+ "_about": "Rule table: which regulators apply, by country and institution type, plus sanctions regimes by clearing currency and global standards. Written for the prototype from public sources; must be reviewed by a compliance owner before production (reviewed: false).",
+ "reviewed": false,
+ "version": "2026-10-13",
+ "countries": {
+  "LK": [
+   {
+    "name": "Central Bank of Sri Lanka",
+    "short": "CBSL",
+    "area": "banking",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Banking supervision",
+     "Monetary policy and rates",
+     "Foreign-exchange rules"
+    ]
+   },
+   {
+    "name": "Insurance Regulatory Commission of Sri Lanka",
+    "short": "IRCSL",
+    "area": "insurance",
+    "for": [
+     "insurer"
+    ],
+    "controls": [
+     "Insurance supervision",
+     "Solvency rules"
+    ]
+   },
+   {
+    "name": "Financial Intelligence Unit, Sri Lanka",
+    "short": "FIU",
+    "area": "aml",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Anti-money-laundering reporting"
+    ]
+   },
+   {
+    "name": "Securities and Exchange Commission of Sri Lanka",
+    "short": "SEC",
+    "area": "securities",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Listed-company and capital-market rules"
+    ]
+   },
+   {
+    "name": "Data Protection Authority of Sri Lanka",
+    "short": "DPA",
+    "area": "data_protection",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Personal data protection"
+    ]
+   }
+  ],
+  "IN": [
+   {
+    "name": "Reserve Bank of India",
+    "short": "RBI",
+    "area": "banking",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Bank licensing and supervision",
+     "Foreign bank branches",
+     "Priority-sector lending",
+     "NRI deposit rules"
+    ]
+   },
+   {
+    "name": "Insurance Regulatory and Development Authority of India",
+    "short": "IRDAI",
+    "area": "insurance",
+    "for": [
+     "insurer"
+    ],
+    "controls": [
+     "Insurance licensing and supervision"
+    ]
+   },
+   {
+    "name": "Financial Intelligence Unit - India",
+    "short": "FIU-IND",
+    "area": "aml",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Anti-money-laundering reporting"
+    ]
+   },
+   {
+    "name": "Securities and Exchange Board of India",
+    "short": "SEBI",
+    "area": "securities",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Capital-market rules"
+    ]
+   }
+  ],
+  "BD": [
+   {
+    "name": "Bangladesh Bank",
+    "short": "BB",
+    "area": "banking",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Banking supervision",
+     "Monetary policy",
+     "Foreign-exchange rules"
+    ]
+   },
+   {
+    "name": "Insurance Development and Regulatory Authority",
+    "short": "IDRA",
+    "area": "insurance",
+    "for": [
+     "insurer"
+    ],
+    "controls": [
+     "Insurance supervision"
+    ]
+   },
+   {
+    "name": "Bangladesh Financial Intelligence Unit",
+    "short": "BFIU",
+    "area": "aml",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Anti-money-laundering reporting"
+    ]
+   }
+  ],
+  "PK": [
+   {
+    "name": "State Bank of Pakistan",
+    "short": "SBP",
+    "area": "banking",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Banking supervision",
+     "Monetary policy",
+     "Foreign-exchange rules"
+    ]
+   },
+   {
+    "name": "Securities and Exchange Commission of Pakistan",
+    "short": "SECP",
+    "area": "insurance",
+    "for": [
+     "insurer"
+    ],
+    "controls": [
+     "Insurance supervision",
+     "Capital-market rules"
+    ]
+   },
+   {
+    "name": "Financial Monitoring Unit",
+    "short": "FMU",
+    "area": "aml",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Anti-money-laundering reporting"
+    ]
+   }
+  ],
+  "NP": [
+   {
+    "name": "Nepal Rastra Bank",
+    "short": "NRB",
+    "area": "banking",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Banking supervision",
+     "Monetary policy",
+     "Foreign-exchange rules"
+    ]
+   },
+   {
+    "name": "Nepal Insurance Authority",
+    "short": "NIA",
+    "area": "insurance",
+    "for": [
+     "insurer"
+    ],
+    "controls": [
+     "Insurance supervision"
+    ]
+   }
+  ],
+  "SG": [
+   {
+    "name": "Monetary Authority of Singapore",
+    "short": "MAS",
+    "area": "banking",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Banking and insurance supervision",
+     "Monetary policy"
+    ]
+   },
+   {
+    "name": "Suspicious Transaction Reporting Office",
+    "short": "STRO",
+    "area": "aml",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Anti-money-laundering reporting"
+    ]
+   },
+   {
+    "name": "Personal Data Protection Commission",
+    "short": "PDPC",
+    "area": "data_protection",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Personal data protection"
+    ]
+   }
+  ],
+  "MY": [
+   {
+    "name": "Bank Negara Malaysia",
+    "short": "BNM",
+    "area": "banking",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Banking, insurance and takaful supervision",
+     "Monetary policy"
+    ]
+   },
+   {
+    "name": "Securities Commission Malaysia",
+    "short": "SC",
+    "area": "securities",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Capital-market rules"
+    ]
+   },
+   {
+    "name": "Financial Intelligence and Enforcement Department, Bank Negara Malaysia",
+    "short": "FIED",
+    "area": "aml",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Anti-money-laundering reporting"
+    ]
+   },
+   {
+    "name": "Personal Data Protection Department",
+    "short": "JPDP",
+    "area": "data_protection",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Personal data protection"
+    ]
+   }
+  ],
+  "AE": [
+   {
+    "name": "Central Bank of the UAE",
+    "short": "CBUAE",
+    "area": "banking",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Banking and insurance supervision",
+     "Monetary policy"
+    ]
+   },
+   {
+    "name": "Securities and Commodities Authority",
+    "short": "SCA",
+    "area": "securities",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Capital-market rules"
+    ]
+   },
+   {
+    "name": "UAE Financial Intelligence Unit",
+    "short": "UAE FIU",
+    "area": "aml",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Anti-money-laundering reporting"
+    ]
+   }
+  ],
+  "SA": [
+   {
+    "name": "Saudi Central Bank",
+    "short": "SAMA",
+    "area": "banking",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Banking supervision",
+     "Monetary policy"
+    ]
+   },
+   {
+    "name": "Insurance Authority",
+    "short": "IA",
+    "area": "insurance",
+    "for": [
+     "insurer"
+    ],
+    "controls": [
+     "Insurance supervision"
+    ]
+   },
+   {
+    "name": "Capital Market Authority",
+    "short": "CMA",
+    "area": "securities",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Capital-market rules"
+    ]
+   }
+  ],
+  "GB": [
+   {
+    "name": "Prudential Regulation Authority",
+    "short": "PRA",
+    "area": "banking",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Prudential supervision of banks and insurers"
+    ]
+   },
+   {
+    "name": "Financial Conduct Authority",
+    "short": "FCA",
+    "area": "conduct",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Conduct and consumer protection"
+    ]
+   }
+  ],
+  "PH": [
+   {
+    "name": "Bangko Sentral ng Pilipinas",
+    "short": "BSP",
+    "area": "banking",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Banking supervision",
+     "Monetary policy and rates",
+     "Foreign-exchange rules"
+    ]
+   },
+   {
+    "name": "Insurance Commission",
+    "short": "IC",
+    "area": "insurance",
+    "for": [
+     "insurer"
+    ],
+    "controls": [
+     "Insurance supervision",
+     "Solvency and pricing rules"
+    ]
+   },
+   {
+    "name": "Anti-Money Laundering Council",
+    "short": "AMLC",
+    "area": "aml",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Anti-money-laundering reporting",
+     "Asset freezes"
+    ]
+   },
+   {
+    "name": "Philippine Deposit Insurance Corporation",
+    "short": "PDIC",
+    "area": "banking",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Deposit insurance",
+     "Bank resolution"
+    ]
+   },
+   {
+    "name": "Securities and Exchange Commission (Philippines)",
+    "short": "SEC",
+    "area": "securities",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Capital-market rules"
+    ]
+   },
+   {
+    "name": "National Privacy Commission",
+    "short": "NPC",
+    "area": "data_protection",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Personal data protection"
+    ]
+   }
+  ],
+  "ID": [
+   {
+    "name": "Otoritas Jasa Keuangan",
+    "short": "OJK",
+    "area": "banking",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Banking, insurance and capital-market supervision"
+    ]
+   },
+   {
+    "name": "Bank Indonesia",
+    "short": "BI",
+    "area": "banking",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Monetary policy and rates",
+     "Payment systems",
+     "Foreign-exchange rules"
+    ]
+   },
+   {
+    "name": "Indonesian Financial Transaction Reports and Analysis Centre",
+    "short": "PPATK",
+    "area": "aml",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Anti-money-laundering reporting"
+    ]
+   },
+   {
+    "name": "Lembaga Penjamin Simpanan",
+    "short": "LPS",
+    "area": "banking",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Deposit insurance",
+     "Bank resolution"
+    ]
+   }
+  ],
+  "TH": [
+   {
+    "name": "Bank of Thailand",
+    "short": "BOT",
+    "area": "banking",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Banking supervision",
+     "Monetary policy and rates",
+     "Foreign-exchange rules"
+    ]
+   },
+   {
+    "name": "Office of Insurance Commission",
+    "short": "OIC",
+    "area": "insurance",
+    "for": [
+     "insurer"
+    ],
+    "controls": [
+     "Insurance supervision",
+     "Solvency rules"
+    ]
+   },
+   {
+    "name": "Anti-Money Laundering Office",
+    "short": "AMLO",
+    "area": "aml",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Anti-money-laundering reporting"
+    ]
+   },
+   {
+    "name": "Securities and Exchange Commission (Thailand)",
+    "short": "SEC",
+    "area": "securities",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Capital-market rules"
+    ]
+   },
+   {
+    "name": "Personal Data Protection Committee",
+    "short": "PDPC",
+    "area": "data_protection",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Personal data protection"
+    ]
+   }
+  ],
+  "VN": [
+   {
+    "name": "State Bank of Vietnam",
+    "short": "SBV",
+    "area": "banking",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Banking supervision",
+     "Monetary policy and rates",
+     "Foreign-exchange rules"
+    ]
+   },
+   {
+    "name": "Ministry of Finance (insurance supervision)",
+    "short": "MOF",
+    "area": "insurance",
+    "for": [
+     "insurer"
+    ],
+    "controls": [
+     "Insurance supervision"
+    ]
+   },
+   {
+    "name": "Anti-Money Laundering Department, State Bank of Vietnam",
+    "short": "SBV-AML",
+    "area": "aml",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Anti-money-laundering reporting"
+    ]
+   },
+   {
+    "name": "State Securities Commission of Vietnam",
+    "short": "SSC",
+    "area": "securities",
+    "for": [
+     "bank",
+     "insurer"
+    ],
+    "controls": [
+     "Capital-market rules"
+    ]
+   }
+  ]
+ },
+ "sanctions": {
+  "USD": [
+   {
+    "name": "US Treasury sanctions (OFAC)",
+    "short": "OFAC",
+    "controls": [
+     "Sanctions screening on USD payments"
+    ]
+   }
+  ],
+  "EUR": [
+   {
+    "name": "EU sanctions",
+    "short": "EU",
+    "controls": [
+     "Sanctions screening on EUR payments"
+    ]
+   }
+  ],
+  "GBP": [
+   {
+    "name": "UK financial sanctions (OFSI)",
+    "short": "OFSI",
+    "controls": [
+     "Sanctions screening on GBP payments"
+    ]
+   }
+  ]
+ },
+ "always": [
+  {
+   "name": "UN Security Council sanctions",
+   "short": "UN",
+   "area": "sanctions",
+   "relation": "standard",
+   "for": [
+    "bank",
+    "insurer"
+   ],
+   "controls": [
+    "Sanctions lists every member state applies"
+   ]
+  },
+  {
+   "name": "Financial Action Task Force",
+   "short": "FATF",
+   "area": "aml",
+   "relation": "standard",
+   "for": [
+    "bank",
+    "insurer"
+   ],
+   "controls": [
+    "AML standards",
+    "Lists of high-risk jurisdictions"
+   ]
+  },
+  {
+   "name": "Basel Committee standards",
+   "short": "Basel",
+   "area": "standards",
+   "relation": "standard",
+   "for": [
+    "bank"
+   ],
+   "controls": [
+    "Capital and liquidity standards"
+   ]
+  },
+  {
+   "name": "International Association of Insurance Supervisors",
+   "short": "IAIS",
+   "area": "standards",
+   "relation": "standard",
+   "for": [
+    "insurer"
+   ],
+   "controls": [
+    "Insurance core principles",
+    "Capital standards"
+   ]
+  },
+  {
+   "name": "Islamic Financial Services Board",
+   "short": "IFSB",
+   "area": "standards",
+   "relation": "standard",
+   "for": [
+    "bank",
+    "insurer"
+   ],
+   "islamic_only": true,
+   "controls": [
+    "Prudential standards for Islamic finance and takaful"
+   ]
+  }
+ ]
+}

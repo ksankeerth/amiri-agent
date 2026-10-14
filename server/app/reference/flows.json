@@ -1,0 +1,483 @@
+{
+ "_about": "Money and goods flows by country pair, offered in setup with their source and year. SAMPLE FIGURES for the prototype: each row is marked sample: true and must be replaced from the named dataset (World Bank/KNOMAD bilateral remittances, UN Comtrade, central-bank tables) before production.",
+ "unit": "USD per year",
+ "rows": [
+  {
+   "kind": "remittances_in",
+   "to": "LK",
+   "from": "SA",
+   "amount": 1200000000,
+   "year": 2024,
+   "dataset": "Central Bank of Sri Lanka, workers' remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "LK",
+   "from": "AE",
+   "amount": 1000000000,
+   "year": 2024,
+   "dataset": "Central Bank of Sri Lanka, workers' remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "LK",
+   "from": "QA",
+   "amount": 700000000,
+   "year": 2024,
+   "dataset": "Central Bank of Sri Lanka, workers' remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "LK",
+   "from": "KW",
+   "amount": 800000000,
+   "year": 2024,
+   "dataset": "Central Bank of Sri Lanka, workers' remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "LK",
+   "from": "IT",
+   "amount": 400000000,
+   "year": 2024,
+   "dataset": "Central Bank of Sri Lanka, workers' remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "IN-KL",
+   "from": "AE",
+   "amount": 4500000000,
+   "year": 2023,
+   "dataset": "World Bank / KNOMAD bilateral remittance matrix",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "IN-KL",
+   "from": "SA",
+   "amount": 3000000000,
+   "year": 2023,
+   "dataset": "World Bank / KNOMAD bilateral remittance matrix",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "IN-TN",
+   "from": "QA",
+   "amount": 2000000000,
+   "year": 2023,
+   "dataset": "World Bank / KNOMAD bilateral remittance matrix",
+   "sample": true
+  },
+  {
+   "kind": "tourism",
+   "to": "LK",
+   "from": "IN",
+   "amount": 600000000,
+   "year": 2024,
+   "dataset": "SLTDA annual statistical report",
+   "sample": true
+  },
+  {
+   "kind": "tourism",
+   "to": "LK",
+   "from": "GB",
+   "amount": 300000000,
+   "year": 2024,
+   "dataset": "SLTDA annual statistical report",
+   "sample": true
+  },
+  {
+   "kind": "tourism",
+   "to": "LK",
+   "from": "RU",
+   "amount": 400000000,
+   "year": 2024,
+   "dataset": "SLTDA annual statistical report",
+   "sample": true
+  },
+  {
+   "kind": "services",
+   "to": "IN-KA",
+   "from": "US",
+   "amount": 9000000000,
+   "year": 2024,
+   "dataset": "RBI survey of IT services exports",
+   "sample": true
+  },
+  {
+   "kind": "exports",
+   "to": "US",
+   "from": "LK",
+   "amount": 1900000000,
+   "year": 2024,
+   "goods": "Garments",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "exports",
+   "to": "GB",
+   "from": "LK",
+   "amount": 700000000,
+   "year": 2024,
+   "goods": "Garments",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "exports",
+   "to": "IQ",
+   "from": "LK",
+   "amount": 200000000,
+   "year": 2024,
+   "goods": "Tea",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "exports",
+   "to": "RU",
+   "from": "LK",
+   "amount": 150000000,
+   "year": 2024,
+   "goods": "Tea",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "exports",
+   "to": "US",
+   "from": "IN-TN",
+   "amount": 3000000000,
+   "year": 2024,
+   "goods": "Knitwear",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "imports",
+   "to": "LK",
+   "from": "SG",
+   "amount": 1500000000,
+   "year": 2024,
+   "goods": "Refined fuel",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "imports",
+   "to": "LK",
+   "from": "AE",
+   "amount": 1000000000,
+   "year": 2024,
+   "goods": "Crude oil",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "imports",
+   "to": "LK",
+   "from": "IN",
+   "amount": 4000000000,
+   "year": 2024,
+   "goods": "Goods",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "imports",
+   "to": "LK",
+   "from": "CN",
+   "amount": 3500000000,
+   "year": 2024,
+   "goods": "Goods",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "PH",
+   "from": "US",
+   "amount": 14000000000,
+   "year": 2024,
+   "dataset": "Bangko Sentral ng Pilipinas, cash remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "PH",
+   "from": "SG",
+   "amount": 2400000000,
+   "year": 2024,
+   "dataset": "Bangko Sentral ng Pilipinas, cash remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "PH",
+   "from": "SA",
+   "amount": 2100000000,
+   "year": 2024,
+   "dataset": "Bangko Sentral ng Pilipinas, cash remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "PH",
+   "from": "JP",
+   "amount": 1700000000,
+   "year": 2024,
+   "dataset": "Bangko Sentral ng Pilipinas, cash remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "PH",
+   "from": "AE",
+   "amount": 1400000000,
+   "year": 2024,
+   "dataset": "Bangko Sentral ng Pilipinas, cash remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "ID",
+   "from": "MY",
+   "amount": 3000000000,
+   "year": 2024,
+   "dataset": "Bank Indonesia, workers' remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "ID",
+   "from": "SA",
+   "amount": 2500000000,
+   "year": 2024,
+   "dataset": "Bank Indonesia, workers' remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "ID",
+   "from": "HK",
+   "amount": 2000000000,
+   "year": 2024,
+   "dataset": "Bank Indonesia, workers' remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "ID",
+   "from": "TW",
+   "amount": 1800000000,
+   "year": 2024,
+   "dataset": "Bank Indonesia, workers' remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "VN",
+   "from": "US",
+   "amount": 6000000000,
+   "year": 2024,
+   "dataset": "World Bank / KNOMAD bilateral remittance matrix",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "VN",
+   "from": "JP",
+   "amount": 2500000000,
+   "year": 2024,
+   "dataset": "World Bank / KNOMAD bilateral remittance matrix",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "VN",
+   "from": "KR",
+   "amount": 1500000000,
+   "year": 2024,
+   "dataset": "World Bank / KNOMAD bilateral remittance matrix",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "VN",
+   "from": "TW",
+   "amount": 1000000000,
+   "year": 2024,
+   "dataset": "World Bank / KNOMAD bilateral remittance matrix",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "TH",
+   "from": "US",
+   "amount": 1800000000,
+   "year": 2024,
+   "dataset": "World Bank / KNOMAD bilateral remittance matrix",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "TH",
+   "from": "JP",
+   "amount": 1000000000,
+   "year": 2024,
+   "dataset": "World Bank / KNOMAD bilateral remittance matrix",
+   "sample": true
+  },
+  {
+   "kind": "remittances_in",
+   "to": "TH",
+   "from": "KR",
+   "amount": 600000000,
+   "year": 2024,
+   "dataset": "World Bank / KNOMAD bilateral remittance matrix",
+   "sample": true
+  },
+  {
+   "kind": "remittances_out",
+   "to": "ID",
+   "from": "MY",
+   "amount": 3000000000,
+   "year": 2024,
+   "dataset": "Bank Negara Malaysia, outward remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_out",
+   "to": "BD",
+   "from": "MY",
+   "amount": 1400000000,
+   "year": 2024,
+   "dataset": "Bank Negara Malaysia, outward remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "remittances_out",
+   "to": "NP",
+   "from": "MY",
+   "amount": 700000000,
+   "year": 2024,
+   "dataset": "Bank Negara Malaysia, outward remittances by country",
+   "sample": true
+  },
+  {
+   "kind": "exports",
+   "to": "US",
+   "from": "PH",
+   "amount": 6000000000,
+   "year": 2024,
+   "goods": "Electronics",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "exports",
+   "to": "US",
+   "from": "VN",
+   "amount": 60000000000,
+   "year": 2024,
+   "goods": "Electronics",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "exports",
+   "to": "US",
+   "from": "VN",
+   "amount": 15000000000,
+   "year": 2024,
+   "goods": "Garments and footwear",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "exports",
+   "to": "US",
+   "from": "TH",
+   "amount": 20000000000,
+   "year": 2024,
+   "goods": "Electronics",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "exports",
+   "to": "CN",
+   "from": "ID",
+   "amount": 20000000000,
+   "year": 2024,
+   "goods": "Coal",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "exports",
+   "to": "IN",
+   "from": "ID",
+   "amount": 4000000000,
+   "year": 2024,
+   "goods": "Palm oil",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "exports",
+   "to": "IN",
+   "from": "MY",
+   "amount": 3000000000,
+   "year": 2024,
+   "goods": "Palm oil",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "imports",
+   "to": "PH",
+   "from": "SG",
+   "amount": 3000000000,
+   "year": 2024,
+   "goods": "Refined fuel",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "imports",
+   "to": "VN",
+   "from": "CN",
+   "amount": 40000000000,
+   "year": 2024,
+   "goods": "Electronic components",
+   "dataset": "UN Comtrade, trade by partner",
+   "sample": true
+  },
+  {
+   "kind": "tourism",
+   "to": "TH",
+   "from": "CN",
+   "amount": 5000000000,
+   "year": 2024,
+   "dataset": "Tourism Authority of Thailand, visitor spending by country",
+   "sample": true
+  },
+  {
+   "kind": "tourism",
+   "to": "TH",
+   "from": "MY",
+   "amount": 3000000000,
+   "year": 2024,
+   "dataset": "Tourism Authority of Thailand, visitor spending by country",
+   "sample": true
+  }
+ ]
+}

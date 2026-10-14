@@ -1,0 +1,559 @@
+{
+ "_about": "Demo institution (sample data). uv run amiri seed-institution",
+ "institution": {
+  "institution_id": "serendib-bank",
+  "name": "Serendib Commercial Bank",
+  "institution_type": "bank",
+  "subtype": "commercial",
+  "home_country": "LK",
+  "base_currency": "LKR",
+  "time_zone": "Asia/Colombo",
+  "clearing_currencies": [
+   "USD",
+   "EUR"
+  ],
+  "governance_body": "Board Risk Committee",
+  "size_band": "mid",
+  "summary": "Mid-size commercial bank: retail deposits, SME and corporate lending, trade finance, pawning and cards; branches in Sri Lanka and in Tamil Nadu, Kerala and Karnataka."
+ },
+ "sections": {
+  "footprint": [
+   {
+    "code": "LK",
+    "role": "home",
+    "scope": "all"
+   },
+   {
+    "code": "IN-TN",
+    "role": "branches"
+   },
+   {
+    "code": "IN-KL",
+    "role": "branches"
+   },
+   {
+    "code": "IN-KA",
+    "role": "branches"
+   }
+  ],
+  "watch-places": [
+   {
+    "name": "Saudi Arabia",
+    "code": "SA",
+    "kind": "country",
+    "reason": "Remittances from migrant workers"
+   },
+   {
+    "name": "United Arab Emirates",
+    "code": "AE",
+    "kind": "country",
+    "reason": "Remittances; fuel imports"
+   },
+   {
+    "name": "Qatar",
+    "code": "QA",
+    "kind": "country",
+    "reason": "Remittances"
+   },
+   {
+    "name": "Kuwait",
+    "code": "KW",
+    "kind": "country",
+    "reason": "Remittances"
+   },
+   {
+    "id": "hormuz",
+    "name": "Strait of Hormuz",
+    "code": "chk:hormuz",
+    "kind": "chokepoint",
+    "reason": "Fuel imports"
+   },
+   {
+    "id": "bab-el-mandeb",
+    "name": "Bab-el-Mandeb",
+    "code": "chk:bab-el-mandeb",
+    "kind": "chokepoint",
+    "reason": "Exports to Europe and the US"
+   }
+  ],
+  "segments": [
+   {
+    "id": "migrant-families",
+    "label": "Migrant-worker families",
+    "kind": "individual",
+    "note": "Households with a member working abroad, mostly in the Gulf.",
+    "places": [
+     "city:jaffna",
+     "LK-61",
+     "IN-KL"
+    ],
+    "income_sources": [
+     "remittances"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "segment",
+      "value": "remittance_linked"
+     }
+    ],
+    "template_id": "bank-migrant-worker-families"
+   },
+   {
+    "id": "exporters-smes",
+    "label": "Exporters, importers and SMEs",
+    "kind": "business",
+    "note": "Garment, food and trading firms; many import on LCs.",
+    "places": [
+     "LK-11",
+     "LK-12",
+     "IN-TN"
+    ],
+    "income_sources": [
+     "business_income"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "size_band",
+      "value": "sme"
+     }
+    ],
+    "template_id": "bank-small-and-medium-businesses"
+   },
+   {
+    "id": "farmers",
+    "label": "Farmers and estate workers",
+    "kind": "individual",
+    "note": "Tea estates, paddy and vegetables.",
+    "places": [
+     "LK-21",
+     "LK-71",
+     "LK-81"
+    ],
+    "income_sources": [
+     "farm_income"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "sector",
+      "value": "A"
+     }
+    ],
+    "template_id": "bank-farmers"
+   },
+   {
+    "id": "salaried",
+    "label": "Salaried (IT, services, government)",
+    "kind": "individual",
+    "note": "Employees of IT and service firms and the state.",
+    "places": [
+     "LK-11",
+     "IN-TN",
+     "IN-KA"
+    ],
+    "income_sources": [
+     "salary"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "segment",
+      "value": "salaried"
+     }
+    ],
+    "template_id": "bank-salaried-employees"
+   }
+  ],
+  "products": [
+   {
+    "id": "migrant-savings",
+    "name": "Migrant Family Savings",
+    "category": "savings",
+    "product_type": "savings_account",
+    "segments": [
+     "migrant-families"
+    ],
+    "owner": "Retail banking",
+    "currencies": [
+     "LKR"
+    ],
+    "book_size": {
+     "amount": 64000000000,
+     "currency": "LKR"
+    }
+   },
+   {
+    "id": "fc-savings",
+    "name": "FC Savings (NRFC/PFCA)",
+    "category": "savings",
+    "product_type": "fc_deposit",
+    "segments": [
+     "migrant-families"
+    ],
+    "owner": "Treasury",
+    "currencies": [
+     "USD",
+     "EUR"
+    ],
+    "book_size": {
+     "amount": 38000000000,
+     "currency": "LKR"
+    }
+   },
+   {
+    "id": "term-deposits",
+    "name": "Term Deposits",
+    "category": "savings",
+    "product_type": "term_deposit",
+    "segments": [
+     "salaried",
+     "migrant-families"
+    ],
+    "owner": "Treasury",
+    "book_size": {
+     "amount": 310000000000,
+     "currency": "LKR"
+    }
+   },
+   {
+    "id": "pawning",
+    "name": "Pawning",
+    "category": "gold_loan",
+    "product_type": "gold_loan",
+    "segments": [
+     "farmers",
+     "migrant-families"
+    ],
+    "owner": "Pawning",
+    "book_size": {
+     "amount": 58000000000,
+     "currency": "LKR"
+    }
+   },
+   {
+    "id": "personal-loans",
+    "name": "Personal Loans",
+    "category": "retail_loan",
+    "product_type": "personal_loan",
+    "segments": [
+     "salaried"
+    ],
+    "owner": "Retail credit",
+    "book_size": {
+     "amount": 120000000000,
+     "currency": "LKR"
+    }
+   },
+   {
+    "id": "vehicle-leasing",
+    "name": "Vehicle Leasing",
+    "category": "vehicle_finance",
+    "product_type": "vehicle_lease",
+    "segments": [
+     "salaried",
+     "exporters-smes"
+    ],
+    "owner": "Retail credit"
+   },
+   {
+    "id": "credit-cards",
+    "name": "Credit Cards",
+    "category": "cards",
+    "product_type": "credit_card",
+    "segments": [
+     "salaried"
+    ],
+    "owner": "Cards"
+   },
+   {
+    "id": "sme-loans",
+    "name": "SME Loans",
+    "category": "business_loan",
+    "product_type": "working_capital",
+    "segments": [
+     "exporters-smes"
+    ],
+    "owner": "Business credit"
+   },
+   {
+    "id": "trade-finance",
+    "name": "Trade Finance",
+    "category": "trade_finance",
+    "product_type": "import_lc",
+    "segments": [
+     "exporters-smes"
+    ],
+    "owner": "Business credit"
+   },
+   {
+    "id": "inward-remittances",
+    "name": "Inward Remittances",
+    "category": "remittances",
+    "product_type": "inward_remittance",
+    "segments": [
+     "migrant-families"
+    ],
+    "owner": "Retail banking"
+   }
+  ],
+  "flows": [
+   {
+    "kind": "remittances_in",
+    "local": "LK",
+    "counterpart": "SA",
+    "value": {
+     "amount": 1200000000,
+     "currency": "USD",
+     "year": 2024
+    },
+    "source": {
+     "kind": "dataset",
+     "dataset": "Central Bank of Sri Lanka, workers' remittances by country",
+     "dataset_year": 2024,
+     "sample": true
+    },
+    "segments": [
+     "migrant-families"
+    ],
+    "id": "remit-sa",
+    "figure_id": "remittances-in-lk-sa-2024"
+   },
+   {
+    "kind": "remittances_in",
+    "local": "LK",
+    "counterpart": "AE",
+    "value": {
+     "amount": 1000000000,
+     "currency": "USD",
+     "year": 2024
+    },
+    "source": {
+     "kind": "dataset",
+     "dataset": "Central Bank of Sri Lanka, workers' remittances by country",
+     "dataset_year": 2024,
+     "sample": true
+    },
+    "segments": [
+     "migrant-families"
+    ],
+    "id": "remit-ae",
+    "figure_id": "remittances-in-lk-ae-2024"
+   },
+   {
+    "kind": "remittances_in",
+    "local": "IN-KL",
+    "counterpart": "AE",
+    "value": {
+     "amount": 4500000000,
+     "currency": "USD",
+     "year": 2023
+    },
+    "source": {
+     "kind": "dataset",
+     "dataset": "World Bank / KNOMAD bilateral remittance matrix",
+     "dataset_year": 2023,
+     "sample": true
+    },
+    "segments": [
+     "migrant-families"
+    ],
+    "id": "remit-kl-ae",
+    "figure_id": "remittances-in-in-kl-ae-2023"
+   },
+   {
+    "kind": "exports",
+    "local": "LK",
+    "counterpart": "US",
+    "goods": "Garments",
+    "value": {
+     "amount": 1900000000,
+     "currency": "USD",
+     "year": 2024
+    },
+    "source": {
+     "kind": "dataset",
+     "dataset": "UN Comtrade, trade by partner",
+     "dataset_year": 2024,
+     "sample": true
+    },
+    "segments": [
+     "exporters-smes"
+    ],
+    "id": "garments-us",
+    "figure_id": "exports-lk-us-garments-2024",
+    "route_id": "colombo-suez-europe"
+   },
+   {
+    "kind": "imports",
+    "local": "LK",
+    "counterpart": "AE",
+    "goods": "Crude oil",
+    "value": {
+     "amount": 1000000000,
+     "currency": "USD",
+     "year": 2024
+    },
+    "source": {
+     "kind": "dataset",
+     "dataset": "UN Comtrade, trade by partner",
+     "dataset_year": 2024,
+     "sample": true
+    },
+    "id": "crude-ae",
+    "figure_id": "imports-lk-ae-crude-oil-2024",
+    "route_id": "colombo-hormuz-gulf"
+   }
+  ],
+  "regulators": [
+   {
+    "regulator_id": "lk-cbsl",
+    "relation": "home"
+   },
+   {
+    "regulator_id": "lk-fiu",
+    "relation": "home"
+   },
+   {
+    "regulator_id": "in-rbi",
+    "relation": "host"
+   },
+   {
+    "regulator_id": "sanctions-ofac",
+    "relation": "reach"
+   },
+   {
+    "regulator_id": "global-basel",
+    "relation": "standard"
+   },
+   {
+    "regulator_id": "global-fatf",
+    "relation": "standard"
+   }
+  ],
+  "rivals": [
+   {
+    "name": "Kandy Merchant Bank",
+    "type": "bank",
+    "places": [
+     "LK"
+    ],
+    "categories": [
+     "savings",
+     "business_loan",
+     "cards"
+    ],
+    "overlap": "high"
+   },
+   {
+    "name": "Coastal Remit",
+    "type": "wallet",
+    "places": [
+     "AE",
+     "SA",
+     "LK",
+     "IN-KL"
+    ],
+    "categories": [
+     "remittances"
+    ],
+    "overlap": "high",
+    "aliases": [
+     "CoastalRemit"
+    ]
+   },
+   {
+    "name": "Malabar Cooperative Bank",
+    "type": "cooperative",
+    "places": [
+     "IN-KL"
+    ],
+    "categories": [
+     "savings",
+     "gold_loan"
+    ],
+    "overlap": "medium"
+   },
+   {
+    "name": "Coromandel Finance",
+    "type": "finance_company",
+    "places": [
+     "IN-TN"
+    ],
+    "categories": [
+     "business_loan",
+     "vehicle_finance"
+    ],
+    "overlap": "medium"
+   }
+  ],
+  "counterparties": [
+   {
+    "name": "Correspondent bank (USD clearing)",
+    "kind": "correspondent_bank",
+    "places": [
+     "US"
+    ],
+    "importance": "critical"
+   }
+  ],
+  "risk-exposures": [
+   {
+    "id": "gulf",
+    "hazard_id": "gulf-security",
+    "title": "Gulf tension meets remittances",
+    "source": "finder",
+    "touches": {
+     "segments": [
+      "migrant-families"
+     ],
+     "products": [
+      "migrant-savings",
+      "inward-remittances"
+     ],
+     "flows": [
+      "remit-sa",
+      "remit-ae",
+      "remit-kl-ae"
+     ]
+    }
+   },
+   {
+    "id": "sw-monsoon",
+    "hazard_id": "lk-sw-monsoon-floods",
+    "title": "Monsoon floods meet Colombo customers",
+    "source": "finder",
+    "touches": {
+     "segments": [
+      "exporters-smes",
+      "salaried"
+     ],
+     "products": [
+      "sme-loans",
+      "personal-loans"
+     ]
+    }
+   },
+   {
+    "id": "red-sea",
+    "hazard_id": "red-sea-attacks",
+    "title": "Red Sea attacks meet exporters",
+    "source": "finder",
+    "touches": {
+     "segments": [
+      "exporters-smes"
+     ],
+     "products": [
+      "trade-finance"
+     ],
+     "flows": [
+      "garments-us"
+     ],
+     "routes": [
+      "colombo-suez-europe"
+     ],
+     "watch_places": [
+      "bab-el-mandeb"
+     ]
+    }
+   }
+  ]
+ }
+}

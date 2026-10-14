@@ -1,0 +1,684 @@
+openapi: 3.1.0
+info:
+  title: Amiri Agent setup agent contract
+  version: '1.0'
+  description: "The contract between amiri-server and the setup agent (amiri-setup-agent),\
+    \ version 1.0.\n\nThe agent is a service with four endpoints; whatever it uses\
+    \ inside (Google ADK, a\nrouter and track agents) stays on its side:\n\n    GET\
+    \  /health                           liveness: {\"status\": \"ok\"}\n    GET \
+    \ /health/details                   optional, as every Amiri Agent service\n \
+    \   POST /sessions                         AgentSessionIn  -> 201 AgentSessionOut\n\
+    \    POST /sessions/{agent_session_id}/turns  TurnIn -> 200 text/event-stream\
+    \ of Event\n\nEvery request carries `X-Amiri-Contract: 1.0`; the agent answers\
+    \ with the same header.\nEvents are server-sent events: `event: <type>` and `data:\
+    \ <json of the event>`. The\nstream ends when the agent closes it (an `event:\
+    \ done` line is allowed and ignored).\nErrors before the stream starts: RFC 9457\
+    \ problem JSON (404 unknown session, 422 bad\nrequest). The agent's tools are\
+    \ the server's own API,\ncalled with X-Amiri-On-Behalf-Of: <user_id> and X-Amiri-Source:\
+    \ assistant.\n\nThese models are the single source: the server's connector validates\
+    \ every event\nagainst them, the fake agent implements them, and `uv run amiri\
+    \ agent-contract` writes\ncontracts/setup-agent-openapi.yaml from them."
+paths:
+  /health:
+    get:
+      summary: Health
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      parameters:
+      - name: X-Amiri-Contract
+        in: header
+        required: true
+        schema:
+          type: string
+          const: '1.0'
+  /health/details:
+    get:
+      summary: Health Details
+      operationId: health_details_health_details_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+      parameters:
+      - name: X-Amiri-Contract
+        in: header
+        required: true
+        schema:
+          type: string
+          const: '1.0'
+  /sessions:
+    post:
+      summary: Create Session
+      operationId: create_session_sessions_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentSessionIn'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSessionOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      parameters:
+      - name: X-Amiri-Contract
+        in: header
+        required: true
+        schema:
+          type: string
+          const: '1.0'
+  /sessions/{agent_session_id}/turns:
+    post:
+      summary: 'One turn: the agent''s reply as server-sent events'
+      operationId: turn_sessions__agent_session_id__turns_post
+      parameters:
+      - name: agent_session_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Agent Session Id
+      - name: X-Amiri-Contract
+        in: header
+        required: true
+        schema:
+          type: string
+          const: '1.0'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TurnIn'
+      responses:
+        '200':
+          description: 'text/event-stream; each event is `event: <type>` + `data:
+            <Event without type>`.'
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    AgentSessionIn:
+      properties:
+        session_id:
+          type: string
+          title: Session Id
+          description: 'The server''s session id (for propose: session_id).'
+        thread_id:
+          type: string
+          title: Thread Id
+          description: 'The chat thread (for propose: thread_id; get_chat_history).'
+        user_id:
+          type: string
+          title: User Id
+          description: The person; send it as X-Amiri-On-Behalf-Of on tool calls.
+        institution_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Institution Id
+        server_url:
+          type: string
+          title: Server Url
+          description: Base URL of amiri-server for the tools (…/api/v1/…).
+        context:
+          $ref: '#/components/schemas/ContextPack'
+      additionalProperties: false
+      type: object
+      required:
+      - session_id
+      - thread_id
+      - user_id
+      - institution_id
+      - server_url
+      - context
+      title: AgentSessionIn
+    AgentSessionOut:
+      properties:
+        agent_session_id:
+          type: string
+          title: Agent Session Id
+      additionalProperties: false
+      type: object
+      required:
+      - agent_session_id
+      title: AgentSessionOut
+    Answer:
+      properties:
+        question_id:
+          type: string
+          title: Question Id
+        options:
+          items:
+            type: string
+          type: array
+          minItems: 1
+          title: Options
+      additionalProperties: false
+      type: object
+      required:
+      - question_id
+      - options
+      title: Answer
+    ContextPack:
+      properties:
+        thread_id:
+          type: string
+          title: Thread Id
+        institution:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Institution
+          description: GET /institutions/{id}/context; null before the institution
+            exists.
+        readiness:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Readiness
+          description: '{ready, open: [checks not ok], warnings}'
+        filled_by:
+          anyOf:
+          - additionalProperties:
+              type: integer
+            type: object
+          - type: 'null'
+          title: Filled By
+          description: 'Items created per source: form, assistant, setup, import.'
+        profile_version:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Profile Version
+        changes_since_last_session:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Changes Since Last Session
+        tracks:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Tracks
+          description: 'Per track: status, summary, notes.'
+        track_definitions:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Track Definitions
+          description: GET /assistant/tracks.
+        current_track:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Current Track
+        thread_summary:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Thread Summary
+        recent_messages:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Recent Messages
+        pending_proposals:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Pending Proposals
+      additionalProperties: true
+      type: object
+      required:
+      - thread_id
+      - institution
+      - readiness
+      - filled_by
+      - profile_version
+      - changes_since_last_session
+      - tracks
+      - track_definitions
+      - current_track
+      - thread_summary
+      - recent_messages
+      - pending_proposals
+      title: ContextPack
+      description: What the agent starts a session with. Open to additions.
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    TurnIn:
+      properties:
+        turn_id:
+          type: string
+          title: Turn Id
+        session_id:
+          type: string
+          title: Session Id
+        thread_id:
+          type: string
+          title: Thread Id
+        institution_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Institution Id
+          description: Set once the institution exists (it may appear between turns).
+        user_id:
+          type: string
+          title: User Id
+        text:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Text
+          description: A typed message (English).
+        answer:
+          anyOf:
+          - $ref: '#/components/schemas/Answer'
+          - type: 'null'
+          description: Or the answer to a question the agent asked.
+        requested_track:
+          anyOf:
+          - type: string
+            enum:
+            - institution
+            - footprint_flows
+            - customers_products
+            - rules
+            - rivals_partners
+            - risks
+            - monitors
+            - verification
+            - history
+            - agent_view
+            - question
+            - offtopic
+          - type: 'null'
+          title: Requested Track
+          description: 'The user picked this track: route there without a model call.'
+        current_track:
+          anyOf:
+          - type: string
+            enum:
+            - institution
+            - footprint_flows
+            - customers_products
+            - rules
+            - rivals_partners
+            - risks
+            - monitors
+            - verification
+            - history
+            - agent_view
+            - question
+            - offtopic
+          - type: 'null'
+          title: Current Track
+        profile_version:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Profile Version
+        profile_changes:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Profile Changes
+          description: Form changes since the agent last looked.
+        track_notes:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Track Notes
+          description: Notes kept for the current track.
+      additionalProperties: false
+      type: object
+      required:
+      - turn_id
+      - session_id
+      - thread_id
+      - institution_id
+      - user_id
+      - current_track
+      - profile_version
+      title: TurnIn
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+    ErrorEv:
+      additionalProperties: false
+      properties:
+        type:
+          const: error
+          default: error
+          title: Type
+          type: string
+        code:
+          title: Code
+          type: string
+        message:
+          title: Message
+          type: string
+      required:
+      - code
+      - message
+      title: ErrorEv
+      type: object
+    MessageEv:
+      additionalProperties: false
+      properties:
+        type:
+          const: message
+          default: message
+          title: Type
+          type: string
+        text:
+          maxLength: 8000
+          minLength: 1
+          title: Text
+          type: string
+        cites:
+          description: Where the reply's numbers come from.
+          items:
+            additionalProperties: true
+            type: object
+          title: Cites
+          type: array
+      required:
+      - text
+      title: MessageEv
+      type: object
+    Note:
+      additionalProperties: false
+      properties:
+        track:
+          enum:
+          - institution
+          - footprint_flows
+          - customers_products
+          - rules
+          - rivals_partners
+          - risks
+          - monitors
+          - verification
+          - history
+          - agent_view
+          - question
+          - offtopic
+          title: Track
+          type: string
+        text:
+          maxLength: 500
+          minLength: 1
+          title: Text
+          type: string
+      required:
+      - track
+      - text
+      title: Note
+      type: object
+    ProposalEv:
+      additionalProperties: false
+      properties:
+        type:
+          const: proposal
+          default: proposal
+          title: Type
+          type: string
+        proposal_id:
+          description: From the agent's POST /api/v1/proposals call in this turn.
+          title: Proposal Id
+          type: string
+      required:
+      - proposal_id
+      title: ProposalEv
+      type: object
+    QuestionEv:
+      additionalProperties: false
+      properties:
+        type:
+          const: question
+          default: question
+          title: Type
+          type: string
+        question_id:
+          description: Unique within the thread.
+          maxLength: 80
+          minLength: 1
+          title: Question Id
+          type: string
+        text:
+          maxLength: 2000
+          minLength: 1
+          title: Text
+          type: string
+        options:
+          items:
+            type: string
+          maxItems: 8
+          minItems: 1
+          title: Options
+          type: array
+        multi:
+          default: false
+          title: Multi
+          type: boolean
+      required:
+      - question_id
+      - text
+      - options
+      title: QuestionEv
+      type: object
+    TextDeltaEv:
+      additionalProperties: false
+      properties:
+        type:
+          const: text_delta
+          default: text_delta
+          title: Type
+          type: string
+        text:
+          title: Text
+          type: string
+      required:
+      - text
+      title: TextDeltaEv
+      type: object
+    TrackConcludedEv:
+      additionalProperties: false
+      properties:
+        type:
+          const: track_concluded
+          default: track_concluded
+          title: Type
+          type: string
+        track:
+          enum:
+          - institution
+          - footprint_flows
+          - customers_products
+          - rules
+          - rivals_partners
+          - risks
+          - monitors
+          - verification
+          - history
+          - agent_view
+          - question
+          - offtopic
+          title: Track
+          type: string
+        summary:
+          maxLength: 400
+          minLength: 1
+          title: Summary
+          type: string
+      required:
+      - track
+      - summary
+      title: TrackConcludedEv
+      type: object
+    TrackEv:
+      additionalProperties: false
+      properties:
+        type:
+          const: track
+          default: track
+          title: Type
+          type: string
+        track:
+          enum:
+          - institution
+          - footprint_flows
+          - customers_products
+          - rules
+          - rivals_partners
+          - risks
+          - monitors
+          - verification
+          - history
+          - agent_view
+          - question
+          - offtopic
+          title: Track
+          type: string
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          default: null
+          title: Reason
+      required:
+      - track
+      title: TrackEv
+      type: object
+    TrackNotesEv:
+      additionalProperties: false
+      properties:
+        type:
+          const: track_notes
+          default: track_notes
+          title: Type
+          type: string
+        notes:
+          items:
+            $ref: '#/components/schemas/Note'
+          minItems: 1
+          title: Notes
+          type: array
+      required:
+      - notes
+      title: TrackNotesEv
+      type: object
+    UsageEv:
+      additionalProperties: false
+      properties:
+        type:
+          const: usage
+          default: usage
+          title: Type
+          type: string
+        model_calls:
+          default: 0
+          minimum: 0
+          title: Model Calls
+          type: integer
+        input_tokens:
+          default: 0
+          minimum: 0
+          title: Input Tokens
+          type: integer
+        output_tokens:
+          default: 0
+          minimum: 0
+          title: Output Tokens
+          type: integer
+      title: UsageEv
+      type: object
+    Event:
+      discriminator:
+        mapping:
+          error: '#/components/schemas/ErrorEv'
+          message: '#/components/schemas/MessageEv'
+          proposal: '#/components/schemas/ProposalEv'
+          question: '#/components/schemas/QuestionEv'
+          text_delta: '#/components/schemas/TextDeltaEv'
+          track: '#/components/schemas/TrackEv'
+          track_concluded: '#/components/schemas/TrackConcludedEv'
+          track_notes: '#/components/schemas/TrackNotesEv'
+          usage: '#/components/schemas/UsageEv'
+        propertyName: type
+      oneOf:
+      - $ref: '#/components/schemas/MessageEv'
+      - $ref: '#/components/schemas/TextDeltaEv'
+      - $ref: '#/components/schemas/QuestionEv'
+      - $ref: '#/components/schemas/TrackEv'
+      - $ref: '#/components/schemas/TrackNotesEv'
+      - $ref: '#/components/schemas/TrackConcludedEv'
+      - $ref: '#/components/schemas/ProposalEv'
+      - $ref: '#/components/schemas/UsageEv'
+      - $ref: '#/components/schemas/ErrorEv'

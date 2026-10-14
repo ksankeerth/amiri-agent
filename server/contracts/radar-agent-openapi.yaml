@@ -1,0 +1,684 @@
+openapi: 3.1.0
+info:
+  title: Amiri Agent Radar agent contract
+  description: "The contract between amiri-server and the Radar agent (agents/radar-agent),\
+    \ version 2.0.\n\nThe single source: the server validates every answer against\
+    \ these models, the fake agent\n(app/radar/fake_agent.py) implements them, and\
+    \ `uv run amiri radar-contract` writes\ncontracts/radar-agent-openapi.yaml for\
+    \ whoever builds the agent.\n\n    POST /radar-runs            RadarRunRequest\
+    \ -> 202 RadarRunStatus (the same run_id and body: 200, the run)\n    GET  /radar-runs/{run_id}\
+    \   -> RadarRunStatus (result when completed or stopped_early)\n    GET  /health\
+    \                {\"status\": \"ok\"}\n\nA run reads GDELT in BigQuery for the\
+    \ window (code builds a few queries from the institution's\ncontext, each capped\
+    \ by limits.max_bytes_per_query, at most limits.max_queries), groups articles\n\
+    into stories, scores each in code (footprint match x corroboration x freshness\
+    \ x relevance\nweight), and decides which to send for investigation (`send`, with\
+    \ `why`). With `provided_news`\n(a simulation) it reads only those headlines:\
+    \ no BigQuery, no web search."
+  version: '2.0'
+paths:
+  /radar-runs:
+    post:
+      summary: Start a run
+      operationId: start_radar_runs_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RadarRunRequest'
+        required: true
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RadarRunStatus'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /radar-runs/{run_id}:
+    get:
+      summary: A run's status; its result when finished
+      operationId: get_radar_runs__run_id__get
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Run Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RadarRunStatus'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /health:
+    get:
+      summary: Liveness
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+components:
+  schemas:
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    Headline:
+      properties:
+        title:
+          type: string
+          title: Title
+        url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Url
+        outlet:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Outlet
+        published_at:
+          type: string
+          format: date-time
+          title: Published At
+      additionalProperties: false
+      type: object
+      required:
+      - title
+      - published_at
+      title: Headline
+    Institution:
+      properties:
+        name:
+          type: string
+          title: Name
+        institution_type:
+          type: string
+          enum:
+          - bank
+          - insurer
+          title: Institution Type
+        country:
+          type: string
+          pattern: ^[A-Z]{2}$
+          title: Country
+        country_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Country Name
+        currency:
+          type: string
+          pattern: ^[A-Z]{3}$
+          title: Currency
+        time_zone:
+          type: string
+          title: Time Zone
+          default: UTC
+        summary:
+          type: string
+          title: Summary
+          default: ''
+        segments:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Segments
+        products:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Products
+        flows:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Flows
+        corridors:
+          items:
+            type: string
+          type: array
+          title: Corridors
+        rivals:
+          items:
+            $ref: '#/components/schemas/Named'
+          type: array
+          title: Rivals
+        regulators:
+          items:
+            $ref: '#/components/schemas/Named'
+          type: array
+          title: Regulators
+        counterparties:
+          items:
+            $ref: '#/components/schemas/Named'
+          type: array
+          title: Counterparties
+        risks:
+          items:
+            $ref: '#/components/schemas/Named'
+          type: array
+          title: Risks
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - institution_type
+      - country
+      - currency
+      title: Institution
+      description: The institution, profile-shaped (the monitor agent gets the same).
+    Limits:
+      properties:
+        max_stories:
+          type: integer
+          maximum: 30.0
+          minimum: 1.0
+          title: Max Stories
+          default: 10
+        max_model_calls:
+          type: integer
+          maximum: 200.0
+          minimum: 1.0
+          title: Max Model Calls
+          default: 40
+        timeout_seconds:
+          type: integer
+          maximum: 900.0
+          minimum: 30.0
+          title: Timeout Seconds
+          default: 300
+        max_queries:
+          type: integer
+          maximum: 10.0
+          minimum: 1.0
+          title: Max Queries
+          description: BigQuery queries per run, at most.
+          default: 3
+        max_bytes_per_query:
+          type: integer
+          minimum: 10000000.0
+          title: Max Bytes Per Query
+          description: BigQuery maximum_bytes_billed for each query.
+          default: 2000000000
+      additionalProperties: false
+      type: object
+      title: Limits
+    Named:
+      properties:
+        id:
+          type: string
+          title: Id
+        name:
+          type: string
+          title: Name
+        aliases:
+          items:
+            type: string
+          type: array
+          title: Aliases
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - name
+      title: Named
+    ProvidedNews:
+      properties:
+        id:
+          type: string
+          pattern: ^[A-Za-z0-9_.:-]{1,64}$
+          title: Id
+        title:
+          type: string
+          title: Title
+        published_at:
+          type: string
+          format: date-time
+          title: Published At
+        outlet:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Outlet
+        url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Url
+        body:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Body
+        places:
+          items:
+            type: string
+            pattern: ^([A-Z]{2}(-[A-Z0-9]{1,3})?|[a-z]+:[a-z0-9_-]+)$
+          type: array
+          title: Places
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - title
+      - published_at
+      title: ProvidedNews
+    Query:
+      properties:
+        name:
+          type: string
+          title: Name
+        purpose:
+          type: string
+          title: Purpose
+          default: ''
+        bytes_processed:
+          type: integer
+          minimum: 0.0
+          title: Bytes Processed
+        rows:
+          type: integer
+          minimum: 0.0
+          title: Rows
+        cached:
+          type: boolean
+          title: Cached
+          default: false
+      additionalProperties: false
+      type: object
+      required:
+      - name
+      - bytes_processed
+      - rows
+      title: Query
+    RadarRunRequest:
+      properties:
+        run_id:
+          type: string
+          maxLength: 64
+          minLength: 1
+          title: Run Id
+        institution:
+          $ref: '#/components/schemas/Institution'
+        scope:
+          $ref: '#/components/schemas/Scope'
+        window:
+          $ref: '#/components/schemas/Window'
+        seen:
+          items:
+            type: string
+            maxLength: 80
+            minLength: 4
+            pattern: ^[A-Za-z0-9_.:-]+$
+          type: array
+          title: Seen
+          description: Stories already reported (for development_of).
+        provided_news:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/ProvidedNews'
+            type: array
+          - type: 'null'
+          title: Provided News
+          description: 'A simulation: read these only.'
+        limits:
+          $ref: '#/components/schemas/Limits'
+      additionalProperties: false
+      type: object
+      required:
+      - run_id
+      - institution
+      - scope
+      - window
+      title: RadarRunRequest
+    RadarRunResult:
+      properties:
+        stories:
+          items:
+            $ref: '#/components/schemas/Story'
+          type: array
+          title: Stories
+        queries:
+          items:
+            $ref: '#/components/schemas/Query'
+          type: array
+          title: Queries
+        bytes_processed:
+          type: integer
+          minimum: 0.0
+          title: Bytes Processed
+          description: The run's BigQuery total; the server's daily cap adds these
+            up.
+          default: 0
+        considered:
+          type: integer
+          minimum: 0.0
+          title: Considered
+          description: Articles read.
+        shortlisted:
+          type: integer
+          minimum: 0.0
+          title: Shortlisted
+          description: Stories scored before the cut to max_stories.
+        stop_reason:
+          type: string
+          enum:
+          - finished
+          - call_limit
+          - timeout
+          title: Stop Reason
+        usage:
+          $ref: '#/components/schemas/Usage'
+      additionalProperties: false
+      type: object
+      required:
+      - stories
+      - considered
+      - shortlisted
+      - stop_reason
+      - usage
+      title: RadarRunResult
+    RadarRunStatus:
+      properties:
+        run_id:
+          type: string
+          title: Run Id
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - completed
+          - stopped_early
+          - failed
+          title: Status
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        started_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Started At
+        finished_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Finished At
+        result:
+          anyOf:
+          - $ref: '#/components/schemas/RadarRunResult'
+          - type: 'null'
+        error:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error
+      additionalProperties: false
+      type: object
+      required:
+      - run_id
+      - status
+      - created_at
+      title: RadarRunStatus
+    Scope:
+      properties:
+        places:
+          items:
+            type: string
+            pattern: ^([A-Z]{2}(-[A-Z0-9]{1,3})?|[a-z]+:[a-z0-9_-]+)$
+          type: array
+          minItems: 1
+          title: Places
+        places_why:
+          additionalProperties:
+            items:
+              type: string
+            type: array
+          type: object
+          title: Places Why
+          description: Why each place is in the scope.
+        themes:
+          items:
+            type: string
+          type: array
+          title: Themes
+          description: Theme ids (GET /api/v1/reference/themes).
+        actors:
+          items:
+            type: string
+          type: array
+          title: Actors
+          description: Regulators, rivals, counterparties by name.
+      additionalProperties: false
+      type: object
+      required:
+      - places
+      title: Scope
+      description: What Radar watches, computed by code from the profile (the institution
+        context's radar_scope).
+    Story:
+      properties:
+        fingerprint:
+          type: string
+          maxLength: 80
+          minLength: 4
+          pattern: ^[A-Za-z0-9_.:-]+$
+          title: Fingerprint
+          description: Stable for the same story across runs.
+        title:
+          type: string
+          maxLength: 300
+          minLength: 1
+          title: Title
+          description: One line, English.
+        summary:
+          type: string
+          maxLength: 1200
+          minLength: 1
+          title: Summary
+          description: From the headlines only.
+        places:
+          items:
+            type: string
+            pattern: ^([A-Z]{2}(-[A-Z0-9]{1,3})?|[a-z]+:[a-z0-9_-]+)$
+          type: array
+          title: Places
+          description: From the scope's places (or their parents).
+        themes:
+          items:
+            $ref: '#/components/schemas/Theme'
+          type: array
+          title: Themes
+          description: Only when the agent is sure.
+        relevance:
+          type: string
+          enum:
+          - high
+          - medium
+          - low
+          title: Relevance
+        score:
+          type: integer
+          maximum: 100.0
+          minimum: 0.0
+          title: Score
+          description: 'Code: footprint match x corroboration x freshness x relevance
+            weight.'
+        publishers:
+          type: integer
+          minimum: 1.0
+          title: Publishers
+          description: Distinct outlets.
+        headlines:
+          items:
+            $ref: '#/components/schemas/Headline'
+          type: array
+          minItems: 1
+          title: Headlines
+          description: The evidence.
+        development_of:
+          anyOf:
+          - type: string
+            maxLength: 80
+            minLength: 4
+            pattern: ^[A-Za-z0-9_.:-]+$
+          - type: 'null'
+          title: Development Of
+          description: Continues a story in the request's `seen`.
+        send:
+          type: boolean
+          title: Send
+          description: 'Investigate it: the agent''s call, from the institution''s
+            context.'
+        why:
+          type: string
+          maxLength: 300
+          minLength: 1
+          title: Why
+          description: 'One line: why it matters (or not) to this institution.'
+        key_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Key Date
+      additionalProperties: false
+      type: object
+      required:
+      - fingerprint
+      - title
+      - summary
+      - relevance
+      - score
+      - publishers
+      - headlines
+      - send
+      - why
+      title: Story
+    Theme:
+      properties:
+        theme:
+          type: string
+          title: Theme
+        direction:
+          type: string
+          title: Direction
+        item:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Item
+        currency:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Currency
+      additionalProperties: false
+      type: object
+      required:
+      - theme
+      - direction
+      title: Theme
+    Usage:
+      properties:
+        model:
+          type: string
+          title: Model
+        model_calls:
+          type: integer
+          minimum: 0.0
+          title: Model Calls
+        input_tokens:
+          type: integer
+          minimum: 0.0
+          title: Input Tokens
+          default: 0
+        output_tokens:
+          type: integer
+          minimum: 0.0
+          title: Output Tokens
+          default: 0
+        duration_ms:
+          type: integer
+          minimum: 0.0
+          title: Duration Ms
+      additionalProperties: false
+      type: object
+      required:
+      - model
+      - model_calls
+      - duration_ms
+      title: Usage
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+    Window:
+      properties:
+        since:
+          type: string
+          format: date-time
+          title: Since
+        until:
+          type: string
+          format: date-time
+          title: Until
+      additionalProperties: false
+      type: object
+      required:
+      - since
+      - until
+      title: Window

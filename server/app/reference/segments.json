@@ -1,0 +1,27 @@
+{
+  "_about": "Customer-group templates offered in setup, per institution type, each mapped to Metrics Spec dimension values so checks can be scoped to it.",
+  "bank": [
+    {"label": "Migrant-worker families", "kind": "individual", "income_sources": ["remittances"], "spec_mapping": [{"dimension": "segment", "value": "remittance_linked"}], "note": "Households with a member working abroad; income arrives as remittances."},
+    {"label": "Salaried employees", "kind": "individual", "income_sources": ["salary"], "spec_mapping": [{"dimension": "segment", "value": "salaried"}], "note": "Customers whose salary is credited to the bank."},
+    {"label": "Pensioners", "kind": "individual", "income_sources": ["pension"], "spec_mapping": [{"dimension": "segment", "value": "pensioner"}], "note": "Customers receiving a pension."},
+    {"label": "Students", "kind": "individual", "income_sources": ["other"], "spec_mapping": [{"dimension": "segment", "value": "student"}], "note": ""},
+    {"label": "Exporters", "kind": "business", "income_sources": ["business_income"], "spec_mapping": [{"dimension": "segment", "value": "exporter"}], "note": "Businesses earning from exports."},
+    {"label": "Importers", "kind": "business", "income_sources": ["business_income"], "spec_mapping": [{"dimension": "segment", "value": "importer"}], "note": "Businesses buying from abroad, often on LCs."},
+    {"label": "Small and medium businesses", "kind": "business", "income_sources": ["business_income"], "spec_mapping": [{"dimension": "size_band", "value": "sme"}], "note": ""},
+    {"label": "Micro businesses", "kind": "business", "income_sources": ["business_income"], "spec_mapping": [{"dimension": "size_band", "value": "micro"}], "note": ""},
+    {"label": "Farmers", "kind": "individual", "income_sources": ["farm_income"], "spec_mapping": [{"dimension": "sector", "value": "A"}], "note": "Crop, livestock and estate income (ISIC section A)."},
+    {"label": "Corporates", "kind": "business", "income_sources": ["business_income"], "spec_mapping": [{"dimension": "size_band", "value": "corporate"}], "note": ""},
+    {"label": "Government and public bodies", "kind": "public_sector", "income_sources": ["government_transfers"], "spec_mapping": [{"dimension": "segment", "value": "government"}], "note": ""}
+  ],
+  "insurer": [
+    {"label": "Individual policyholders", "kind": "individual", "income_sources": ["salary"], "spec_mapping": [{"dimension": "segment", "value": "other_individual"}], "note": ""},
+    {"label": "Migrant-worker families", "kind": "individual", "income_sources": ["remittances"], "spec_mapping": [{"dimension": "segment", "value": "remittance_linked"}], "note": "Premiums often paid from remittances."},
+    {"label": "Employees on group schemes", "kind": "individual", "income_sources": ["salary"], "spec_mapping": [{"dimension": "segment", "value": "salaried"}], "note": "Group life and health through employers."},
+    {"label": "Vehicle owners", "kind": "individual", "income_sources": ["salary", "business_income"], "spec_mapping": [], "note": "Motor policyholders."},
+    {"label": "Farmers", "kind": "individual", "income_sources": ["farm_income"], "spec_mapping": [{"dimension": "sector", "value": "A"}], "note": "Crop, livestock and index insurance."},
+    {"label": "Travellers", "kind": "individual", "income_sources": ["other"], "spec_mapping": [], "note": "Travel, pilgrimage and migrant-worker travel cover."},
+    {"label": "Small and medium businesses", "kind": "business", "income_sources": ["business_income"], "spec_mapping": [{"dimension": "size_band", "value": "sme"}], "note": "Property, liability and marine cover."},
+    {"label": "Corporates", "kind": "business", "income_sources": ["business_income"], "spec_mapping": [{"dimension": "size_band", "value": "corporate"}], "note": ""},
+    {"label": "Government schemes", "kind": "public_sector", "income_sources": ["government_transfers"], "spec_mapping": [{"dimension": "segment", "value": "government"}], "note": "Publicly subsidised health or crop schemes."}
+  ]
+}

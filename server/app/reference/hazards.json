@@ -1,0 +1,658 @@
+{
+ "_about": "Hazard library for the risk finder: known, recurring hazards with where (places) and when (months; empty: any time). Centre and radius only draw the zone on the map; the finder matches on places. Hand-curated for the prototype (JAPAC, the Gulf, the Red Sea route); to be replaced by maintained sources.",
+ "version": "2026-10-12",
+ "hazards": [
+  {
+   "hazard_id": "lk-sw-monsoon-floods",
+   "kind": "climate",
+   "name": "Southwest monsoon floods (Sri Lanka)",
+   "months": [
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "places": [
+    "LK-1",
+    "LK-9",
+    "LK-3"
+   ],
+   "centre": [
+    6.85,
+    80.15
+   ],
+   "radius_km": 60,
+   "note": "Floods and landslides in the Western, Sabaragamuwa and Southern provinces."
+  },
+  {
+   "hazard_id": "lk-ne-monsoon-floods",
+   "kind": "climate",
+   "name": "Northeast monsoon floods (Sri Lanka)",
+   "months": [
+    10,
+    11,
+    12,
+    1
+   ],
+   "places": [
+    "LK-4",
+    "LK-5"
+   ],
+   "centre": [
+    8.4,
+    81.2
+   ],
+   "radius_km": 90,
+   "note": "Floods in the Northern and Eastern provinces; cyclones in some years."
+  },
+  {
+   "hazard_id": "lk-dry-zone-drought",
+   "kind": "climate",
+   "name": "Dry-zone drought (Sri Lanka)",
+   "months": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "places": [
+    "LK-7",
+    "LK-6",
+    "LK-8"
+   ],
+   "centre": [
+    8.2,
+    80.6
+   ],
+   "radius_km": 70,
+   "note": "Failed rains hit paddy farmers and water supply."
+  },
+  {
+   "hazard_id": "in-kl-monsoon-floods",
+   "kind": "climate",
+   "name": "Kerala monsoon floods",
+   "months": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "places": [
+    "IN-KL"
+   ],
+   "centre": [
+    9.9,
+    76.55
+   ],
+   "radius_km": 80,
+   "note": "Floods and landslides across central and northern Kerala."
+  },
+  {
+   "hazard_id": "in-tn-ne-monsoon-cyclones",
+   "kind": "climate",
+   "name": "Northeast monsoon cyclones (Tamil Nadu and Andhra coast)",
+   "months": [
+    10,
+    11,
+    12
+   ],
+   "places": [
+    "IN-TN",
+    "IN-AP"
+   ],
+   "centre": [
+    12.2,
+    80.7
+   ],
+   "radius_km": 160,
+   "note": "Cyclones and floods on the Coromandel coast, including Chennai."
+  },
+  {
+   "hazard_id": "in-mh-monsoon-floods",
+   "kind": "climate",
+   "name": "Mumbai monsoon floods",
+   "months": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "places": [
+    "IN-MH"
+   ],
+   "centre": [
+    19.08,
+    72.88
+   ],
+   "radius_km": 60,
+   "note": "Urban flooding that halts work and transport."
+  },
+  {
+   "hazard_id": "in-north-heatwave",
+   "kind": "climate",
+   "name": "North India heatwave",
+   "months": [
+    4,
+    5,
+    6
+   ],
+   "places": [
+    "IN-DL",
+    "IN-PB",
+    "IN-GJ"
+   ],
+   "centre": [
+    27.0,
+    76.0
+   ],
+   "radius_km": 500,
+   "note": "Extreme heat: farm output, power demand, outdoor work."
+  },
+  {
+   "hazard_id": "bd-bay-cyclones",
+   "kind": "climate",
+   "name": "Bay of Bengal cyclones (Bangladesh, Odisha, West Bengal)",
+   "months": [
+    4,
+    5,
+    10,
+    11
+   ],
+   "places": [
+    "BD",
+    "IN-OD",
+    "IN-WB"
+   ],
+   "centre": [
+    21.5,
+    89.0
+   ],
+   "radius_km": 300,
+   "note": "Cyclones and storm surge."
+  },
+  {
+   "hazard_id": "pk-monsoon-floods",
+   "kind": "climate",
+   "name": "Pakistan monsoon floods",
+   "months": [
+    7,
+    8,
+    9
+   ],
+   "places": [
+    "PK-SD",
+    "PK-PB"
+   ],
+   "centre": [
+    27.5,
+    69.5
+   ],
+   "radius_km": 400,
+   "note": "Riverine floods across Sindh and Punjab."
+  },
+  {
+   "hazard_id": "np-monsoon-landslides",
+   "kind": "climate",
+   "name": "Nepal monsoon floods and landslides",
+   "months": [
+    6,
+    7,
+    8,
+    9
+   ],
+   "places": [
+    "NP"
+   ],
+   "centre": [
+    28.2,
+    84.1
+   ],
+   "radius_km": 250,
+   "note": "Landslides that cut roads and remittance-dependent towns."
+  },
+  {
+   "hazard_id": "ph-typhoons",
+   "kind": "climate",
+   "name": "Philippine typhoon season",
+   "months": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "places": [
+    "PH"
+   ],
+   "centre": [
+    14.0,
+    122.0
+   ],
+   "radius_km": 500,
+   "note": "Typhoons and floods."
+  },
+  {
+   "hazard_id": "vn-typhoons-floods",
+   "kind": "climate",
+   "name": "Central Vietnam typhoons and floods",
+   "months": [
+    9,
+    10,
+    11
+   ],
+   "places": [
+    "VN"
+   ],
+   "centre": [
+    16.0,
+    108.0
+   ],
+   "radius_km": 300,
+   "note": ""
+  },
+  {
+   "hazard_id": "th-floods",
+   "kind": "climate",
+   "name": "Thailand monsoon floods",
+   "months": [
+    8,
+    9,
+    10,
+    11
+   ],
+   "places": [
+    "TH"
+   ],
+   "centre": [
+    15.0,
+    100.5
+   ],
+   "radius_km": 300,
+   "note": "Floods in the central plains, including industrial estates."
+  },
+  {
+   "hazard_id": "my-east-coast-floods",
+   "kind": "climate",
+   "name": "Malaysia east-coast monsoon floods",
+   "months": [
+    11,
+    12,
+    1
+   ],
+   "places": [
+    "MY-03",
+    "MY-11",
+    "MY-06"
+   ],
+   "centre": [
+    4.8,
+    102.6
+   ],
+   "radius_km": 200,
+   "note": ""
+  },
+  {
+   "hazard_id": "jp-earthquake-typhoon",
+   "kind": "climate",
+   "name": "Japan earthquakes and typhoons",
+   "months": [],
+   "places": [
+    "JP"
+   ],
+   "centre": [
+    36.2,
+    138.25
+   ],
+   "radius_km": 600,
+   "note": "Earthquakes any time; typhoons August to October."
+  },
+  {
+   "hazard_id": "id-earthquake-volcano",
+   "kind": "climate",
+   "name": "Indonesia earthquakes and eruptions",
+   "months": [],
+   "places": [
+    "ID"
+   ],
+   "centre": [
+    -2.5,
+    118.0
+   ],
+   "radius_km": 1500,
+   "note": ""
+  },
+  {
+   "hazard_id": "gulf-security",
+   "kind": "conflict",
+   "name": "Gulf security tension",
+   "months": [],
+   "places": [
+    "SA",
+    "AE",
+    "QA",
+    "KW",
+    "BH",
+    "OM",
+    "IR",
+    "sea:persian-gulf",
+    "chk:hormuz"
+   ],
+   "centre": [
+    26.2,
+    51.5
+   ],
+   "radius_km": 600,
+   "note": "Military tension and attacks on shipping in and around the Gulf; affects migrant jobs, remittances and oil."
+  },
+  {
+   "hazard_id": "hormuz-disruption",
+   "kind": "conflict",
+   "name": "Strait of Hormuz disruption",
+   "months": [],
+   "places": [
+    "chk:hormuz"
+   ],
+   "centre": [
+    26.57,
+    56.25
+   ],
+   "radius_km": 150,
+   "note": "A closure or attacks raise oil prices and the import bill."
+  },
+  {
+   "hazard_id": "red-sea-attacks",
+   "kind": "conflict",
+   "name": "Red Sea shipping attacks",
+   "months": [],
+   "places": [
+    "YE",
+    "sea:red-sea",
+    "chk:bab-el-mandeb",
+    "chk:suez"
+   ],
+   "centre": [
+    15.5,
+    41.3
+   ],
+   "radius_km": 500,
+   "note": "Attacks near Bab-el-Mandeb push ships around Africa: longer voyages, higher freight."
+  },
+  {
+   "hazard_id": "myanmar-conflict",
+   "kind": "conflict",
+   "name": "Myanmar civil conflict",
+   "months": [],
+   "places": [
+    "MM"
+   ],
+   "centre": [
+    21.9,
+    95.9
+   ],
+   "radius_km": 500,
+   "note": ""
+  },
+  {
+   "hazard_id": "taiwan-strait-tension",
+   "kind": "conflict",
+   "name": "Taiwan Strait tension",
+   "months": [],
+   "places": [
+    "TW",
+    "chk:taiwan-strait"
+   ],
+   "centre": [
+    24.0,
+    120.0
+   ],
+   "radius_km": 300,
+   "note": "Shipping and electronics supply chains."
+  },
+  {
+   "hazard_id": "south-china-sea-disputes",
+   "kind": "conflict",
+   "name": "South China Sea disputes",
+   "months": [],
+   "places": [
+    "sea:south-china-sea"
+   ],
+   "centre": [
+    12.0,
+    114.0
+   ],
+   "radius_km": 700,
+   "note": ""
+  },
+  {
+   "hazard_id": "india-pakistan-tension",
+   "kind": "conflict",
+   "name": "India–Pakistan border tension",
+   "months": [],
+   "places": [
+    "PK",
+    "IN-PB"
+   ],
+   "centre": [
+    32.0,
+    74.5
+   ],
+   "radius_km": 400,
+   "note": ""
+  },
+  {
+   "hazard_id": "russia-sanctions",
+   "kind": "economic",
+   "name": "Sanctions on payments to Russia",
+   "months": [],
+   "places": [
+    "RU"
+   ],
+   "centre": [
+    55.5,
+    40.0
+   ],
+   "radius_km": 1200,
+   "note": "Bank restrictions make it hard for buyers to pay for imports (tea, garments)."
+  },
+  {
+   "hazard_id": "iran-sanctions",
+   "kind": "economic",
+   "name": "Sanctions on Iran",
+   "months": [],
+   "places": [
+    "IR"
+   ],
+   "centre": [
+    32.43,
+    53.69
+   ],
+   "radius_km": 700,
+   "note": "Payments for exports to Iran can be blocked."
+  },
+  {
+   "hazard_id": "us-tech-slowdown",
+   "kind": "economic",
+   "name": "US tech hiring slowdown",
+   "months": [],
+   "places": [
+    "US"
+   ],
+   "centre": [
+    39.5,
+    -78.0
+   ],
+   "radius_km": 1000,
+   "note": "US clients cutting technology outsourcing budgets hits IT-services income in India."
+  },
+  {
+   "hazard_id": "china-property-slowdown",
+   "kind": "economic",
+   "name": "China property and demand slowdown",
+   "months": [],
+   "places": [
+    "CN"
+   ],
+   "centre": [
+    35.86,
+    104.2
+   ],
+   "radius_km": 1500,
+   "note": "Weaker demand for imports from South and Southeast Asia."
+  },
+  {
+   "hazard_id": "south-asia-dengue",
+   "kind": "health",
+   "name": "Dengue season (South Asia)",
+   "months": [
+    6,
+    7,
+    10,
+    11,
+    12,
+    1
+   ],
+   "places": [
+    "LK",
+    "BD",
+    "IN-KL",
+    "IN-TN"
+   ],
+   "centre": [
+    9.0,
+    80.0
+   ],
+   "radius_km": 600,
+   "note": "Hospital claims and lost work days."
+  },
+  {
+   "hazard_id": "ph-metro-manila-floods",
+   "kind": "climate",
+   "name": "Monsoon and typhoon floods (Metro Manila)",
+   "months": [
+    7,
+    8,
+    9,
+    10
+   ],
+   "places": [
+    "PH-00",
+    "PH-40"
+   ],
+   "centre": [
+    14.6,
+    121.0
+   ],
+   "radius_km": 40,
+   "note": "Habagat rains and typhoons flood Metro Manila and Calabarzon; work and transport stop."
+  },
+  {
+   "hazard_id": "id-jakarta-floods",
+   "kind": "climate",
+   "name": "Rainy-season floods (Jakarta)",
+   "months": [
+    12,
+    1,
+    2
+   ],
+   "places": [
+    "ID-JK"
+   ],
+   "centre": [
+    -6.2,
+    106.85
+   ],
+   "radius_km": 30,
+   "note": "Floods from the wet monsoon; land subsidence makes them worse."
+  },
+  {
+   "hazard_id": "id-haze",
+   "kind": "climate",
+   "name": "Forest-fire haze (Sumatra and Kalimantan)",
+   "months": [
+    8,
+    9,
+    10
+   ],
+   "places": [
+    "ID-RI",
+    "ID-JA",
+    "ID-SS",
+    "ID-KB",
+    "ID-KT",
+    "ID-KS",
+    "SG",
+    "MY"
+   ],
+   "centre": [
+    0.5,
+    104.0
+   ],
+   "radius_km": 600,
+   "note": "Peatland fires in the dry season; haze closes schools and airports across the region."
+  },
+  {
+   "hazard_id": "th-central-floods",
+   "kind": "climate",
+   "name": "Chao Phraya floods (central Thailand)",
+   "months": [
+    9,
+    10,
+    11
+   ],
+   "places": [
+    "TH-10",
+    "TH-12",
+    "TH-14"
+   ],
+   "centre": [
+    14.0,
+    100.5
+   ],
+   "radius_km": 80,
+   "note": "River floods in Bangkok's north; the 2011 floods shut industrial estates."
+  },
+  {
+   "hazard_id": "vn-north-typhoons",
+   "kind": "climate",
+   "name": "Typhoons and floods (northern Vietnam)",
+   "months": [
+    7,
+    8,
+    9
+   ],
+   "places": [
+    "VN-HN",
+    "VN-HP"
+   ],
+   "centre": [
+    21.0,
+    106.0
+   ],
+   "radius_km": 120,
+   "note": "Typhoons from the Gulf of Tonkin; Yagi (2024) hit Hai Phong and Hanoi."
+  },
+  {
+   "hazard_id": "vn-mekong-drought",
+   "kind": "climate",
+   "name": "Drought and saltwater intrusion (Mekong Delta)",
+   "months": [
+    2,
+    3,
+    4
+   ],
+   "places": [
+    "VN-CT",
+    "VN-44",
+    "VN-49"
+   ],
+   "centre": [
+    10.0,
+    105.8
+   ],
+   "radius_km": 120,
+   "note": "Low river flows let seawater into the delta; rice and fruit farmers lose crops."
+  }
+ ]
+}

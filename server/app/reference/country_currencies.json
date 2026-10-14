@@ -1,0 +1,12 @@
+{
+  "_about": "Each country's currency (ISO 3166-1 -> ISO 4217), for JAPAC and the countries its flows reach. Used to tell which book a currency move belongs to.",
+  "currencies": {
+    "AF": "AFN", "AU": "AUD", "BD": "BDT", "BN": "BND", "BT": "BTN", "CN": "CNY", "FJ": "FJD", "HK": "HKD",
+    "ID": "IDR", "IN": "INR", "JP": "JPY", "KH": "KHR", "KR": "KRW", "LA": "LAK", "LK": "LKR", "MM": "MMK",
+    "MN": "MNT", "MO": "MOP", "MV": "MVR", "MY": "MYR", "NP": "NPR", "NZ": "NZD", "PG": "PGK", "PH": "PHP",
+    "PK": "PKR", "SG": "SGD", "TH": "THB", "TL": "USD", "TW": "TWD", "VN": "VND",
+    "AE": "AED", "BH": "BHD", "KW": "KWD", "OM": "OMR", "QA": "QAR", "SA": "SAR", "JO": "JOD", "IL": "ILS",
+    "GB": "GBP", "US": "USD", "CA": "CAD", "CH": "CHF", "IT": "EUR", "DE": "EUR", "FR": "EUR", "NL": "EUR",
+    "ES": "EUR", "IE": "EUR", "RU": "RUB", "TR": "TRY", "ZA": "ZAR", "KE": "KES", "NG": "NGN", "EG": "EGP"
+  }
+}

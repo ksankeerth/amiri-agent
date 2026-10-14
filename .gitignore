@@ -1,0 +1,47 @@
+# secrets: every .env stays local; the .env.example files are committed
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+
+# web
+node_modules/
+dist/
+
+# local databases and run stores (rebuilt by the scripts in each README)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+.adk/
+
+# agents-cli / deploy outputs
+deployment_metadata.json
+deployment_metadata.json.lock
+
+# GCP keys, should one ever land here
+*-key.json
+service-account*.json
+credentials*.json
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# not published yet: other services and the team's working documents
+/agents/
+/design/
+/ui/
+/mcpservers/
+/HANDOVER-*.md
