@@ -39,9 +39,12 @@ Thumbs.db
 .idea/
 .vscode/
 
-# not published yet: other services and the team's working documents
-/agents/
+# not published yet: the team's working documents
 /design/
 /ui/
 /mcpservers/
 /HANDOVER-*.md
+
+# agents: run logs and local run stores are rebuilt by their scripts
+/agents/*/data/
+/agents/*/tests/**/.results/

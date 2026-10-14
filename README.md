@@ -41,12 +41,16 @@ and a model never produces a number a person reads.
 |---|---|
 | [`server/`](server) | The API, the work tick and the code components (Python, FastAPI, Postgres 16 with pgvector) |
 | [`web/`](web) | The web app (React, TypeScript, Vite); the server serves its build |
+| [`agents/investigation-agent/`](agents/investigation-agent) | Traces findings to the products an institution runs (Google ADK, Gemini) |
+| [`agents/event-monitor-agent/`](agents/event-monitor-agent) | Checks the news for one monitor and reports findings with their sources |
+| [`agents/setup-agent/`](agents/setup-agent) | The setup chat: turns a person's words into profile proposals they confirm |
 | [`server/contracts/`](server/contracts) | OpenAPI contracts of the setup, Radar and investigation agents |
 | `compose.yaml`, `infra/local/` | Local Postgres, and an optional ticker that stands in for Cloud Scheduler |
 
-The agent services are developed separately and connect over those contracts. The server runs without
-them and says on each page what isn't connected; `uv run amiri fake-agent` and `uv run amiri radar-fake`
-start stand-ins for the setup agent and Radar.
+Each agent is its own small service with its own README and tests, and talks to the server only over
+the contracts. The Radar agent (news from GDELT) is developed separately and not in this repository yet.
+The server runs without any of them and says on each page what isn't connected; `uv run amiri fake-agent`
+and `uv run amiri radar-fake` start stand-ins for the setup agent and Radar.
 
 ## Run it locally
 
