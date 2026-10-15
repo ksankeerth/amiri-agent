@@ -1,0 +1,11 @@
+{
+  "_about": "Where the prototype is tested: an institution's home country and base currency must be in the region (SUPPORTED_REGION). Counterparts abroad (flows, places to watch, rivals, regulators) can be anywhere.",
+  "regions": {
+    "japac": {
+      "label": "Japan and Asia-Pacific (JAPAC)",
+      "countries": ["AU", "BD", "BN", "BT", "CN", "FJ", "FM", "HK", "ID", "IN", "JP", "KH", "KI", "KR", "LA", "LK", "MH", "MM",
+                    "MN", "MO", "MV", "MY", "NP", "NR", "NZ", "PG", "PH", "PK", "PW", "SB", "SG", "TH", "TL", "TO", "TV", "TW", "VN",
+                    "VU", "WS"]
+    }
+  }
+}

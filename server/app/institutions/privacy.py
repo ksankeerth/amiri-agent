@@ -18,6 +18,8 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("a national ID number", re.compile(r"\b\d{9}[VvXx]\b")),
     ("an account, card, ID or phone number", re.compile(r"(?<![\w,.])\+?\d(?:[\s-]?\d){7,}(?![\w,.])")),
 ]
+# A date or a time (2026-06-30, 2026-06-30T10:00:00+05:30) is never personal data, though its digits look like a number.
+DATE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ][\d:.]+(?:Z|[+-]\d{2}:?\d{2})?)?")
 
 
 def find(data: Any, path: str = "") -> list[tuple[str, str]]:
@@ -31,8 +33,9 @@ def find(data: Any, path: str = "") -> list[tuple[str, str]]:
         for i, v in enumerate(data):
             out += find(v, f"{path}.{i}" if path else str(i))
     elif isinstance(data, str):
+        text = DATE.sub(" ", data)  # dates anywhere in the text are dates, not numbers
         for what, rx in PATTERNS:
-            if rx.search(data):
+            if rx.search(text):
                 out.append((path, what))
                 break
     return out

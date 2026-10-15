@@ -548,3 +548,17 @@ async def test_japac_institutions_get_their_own_suggestions(client):
                               "base_currency": "IDR", "time_zone": "Asia/Jakarta"}))["institution_id"]
     regs = {x["item"]["short"] for x in (await client.get(f"{B}/{idn}/suggestions/regulators")).json()["items"]}
     assert {"OJK", "PPATK", "IAIS"} <= regs and "BI" not in regs and "LPS" not in regs and "Basel" not in regs
+
+
+async def test_the_prototype_covers_japac_for_the_home_country_and_currency(client, env):
+    env.setenv("SUPPORTED_REGION", "japac")
+    r = await client.post("/api/v1/institutions", json={**BANK, "home_country": "GB", "base_currency": "GBP",
+                                                        "time_zone": "Europe/London"})
+    assert r.status_code == 422 and {e["field"] for e in r.json()["errors"] if e["code"] == "outside_region"} == \
+        {"home_country", "base_currency"}
+    homes = (await client.get("/api/v1/reference/countries", params={"scope": "home"})).json()
+    assert homes["region"]["id"] == "japac" and "LK" in {c["code"] for c in homes["items"]}
+    assert "GB" not in {c["code"] for c in homes["items"]}
+    everywhere = (await client.get("/api/v1/reference/countries")).json()  # counterparts can be anywhere
+    assert "GB" in {c["code"] for c in everywhere["items"]} and everywhere["region"] is None
+    assert (await client.post("/api/v1/institutions", json=BANK)).status_code == 201  # Sri Lanka is in

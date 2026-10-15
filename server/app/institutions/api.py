@@ -5,6 +5,7 @@ Who made a change: X-Amiri-Actor (an email; IAP later) and X-Amiri-Source
 (form | assistant | setup | import | system), recorded in the history.
 """
 
+import json
 from datetime import datetime
 from typing import Annotated, Any, Literal
 
@@ -393,13 +394,16 @@ for _section, _model in SECTIONS.items():
 # ---------------------------------------------------------------- reference data
 
 
-@ref_router.get("/countries", summary="ISO 3166-1 countries")
-async def countries(q: str | None = None):
+@ref_router.get("/countries", summary="ISO 3166-1 countries (scope=home: those a home country may be, SUPPORTED_REGION)")
+async def countries(q: str | None = None, scope: Literal["all", "home"] = "all"):
     items = reference.countries()
+    region = reference.region() if scope == "home" else None
+    if region:
+        items = [c for c in items if c["code"] in region["countries"]]
     if q:
         k = q.casefold()
         items = [c for c in items if k in c["name"].casefold() or k == c["code"].casefold()]
-    return {"items": items}
+    return {"items": items, "region": {"id": region["id"], "label": region["label"]} if region else None}
 
 
 @ref_router.get("/countries/{code}/regions", summary="ISO 3166-2 regions of a country (provinces, states, districts)")
@@ -434,13 +438,31 @@ async def hazards():
     return {"items": reference.hazards()}
 
 
-@ref_router.get("/currencies", summary="ISO 4217 currencies")
-async def currencies():
-    return {"items": reference.currencies()}
+@ref_router.get("/demo-profile", summary="The demo bank's whole profile (sample data), in the import format")
+async def demo_profile():
+    from fastapi.responses import JSONResponse
+
+    from app import settings as _settings
+
+    doc = json.loads((_settings.PROJECT / "app" / "seeds" / "serendib_bank.json").read_text())
+    return JSONResponse(doc, headers={"Content-Disposition": 'attachment; filename="amiri-demo-profile.json"'})
+
+
+@ref_router.get("/currencies", summary="ISO 4217 currencies (scope=home: those a base currency may be, SUPPORTED_REGION)")
+async def currencies(scope: Literal["all", "home"] = "all"):
+    items = reference.currencies()
+    region = reference.region() if scope == "home" else None
+    if region:
+        items = [c for c in items if c["code"] in region["currencies"]]
+    return {"items": items, "region": {"id": region["id"], "label": region["label"]} if region else None}
 
 
 @router.get("/installation", summary="The institution this installation serves (INSTITUTION_ID), for the web app's frame")
 async def installation(request: Request):
+    return {**await _installation(request), "prototype_reset": bool(settings.flag("PROTOTYPE_RESET"))}
+
+
+async def _installation(request: Request) -> dict:
     iid = settings.raw("INSTITUTION_ID")
     try:
         i = await svc(request).get(iid)

@@ -67,6 +67,21 @@ def item_view(section: str, item_id: str, it: Item) -> dict:
             "updated_at": it.updated_at, "updated_by": it.updated_by}
 
 
+
+def region_errors(fields: dict) -> list[dict]:
+    """The prototype is tested in one region (SUPPORTED_REGION): the home country and base currency must be in it."""
+    r = reference.region()
+    if not r:
+        return []
+    out = []
+    if fields.get("home_country") and fields["home_country"] not in r["countries"]:
+        out.append({"section": "institution", "field": "home_country", "code": "outside_region",
+                    "message": f"the prototype covers {r['label']} only: choose a home country there"})
+    if fields.get("base_currency") and fields["base_currency"] not in r["currencies"]:
+        out.append({"section": "institution", "field": "base_currency", "code": "outside_region",
+                    "message": f"the prototype covers {r['label']} only: choose a currency of a country there"})
+    return out
+
 class Institutions:
     def __init__(self, pool: AsyncConnectionPool, clock: Clock):
         self.pool, self.clock = pool, clock
@@ -117,7 +132,7 @@ class Institutions:
         if fields.get("subtype") and fields["subtype"] not in SUBTYPES[fields["institution_type"]]:
             raise _err([{"section": "institution", "field": "subtype", "code": "invalid",
                          "message": f"a {fields['institution_type']} is one of {', '.join(SUBTYPES[fields['institution_type']])}"}])
-        pd = privacy.errors(fields, "institution")
+        pd = privacy.errors(fields, "institution") + region_errors(fields)
         if pd:
             raise _err(pd)
         defaults = {"islamic": False, "clearing_currencies": [], "fiscal_year_start_month": 1}
@@ -317,7 +332,8 @@ class Institutions:
             if not any(reference.country_of(fp[k].data["code"]) == new["home_country"] for k in homes):
                 raise _err([{"section": "institution", "field": "home_country", "code": "home_footprint_first",
                              "message": f"add {new['home_country']} to the footprint with role home (and change the old home's role) in the same batch, before this change"}])
-        pd = privacy.errors({k: new.get(k) for k in patch.model_fields_set}, "institution")
+        pd = privacy.errors({k: new.get(k) for k in patch.model_fields_set}, "institution") + \
+            region_errors({k: new.get(k) for k in patch.model_fields_set})
         if pd:
             raise _err(pd)
         state.inst["fields"] = new

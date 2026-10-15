@@ -61,6 +61,19 @@ def country_currency(country: str) -> str | None:
     return _file("country_currencies.json")["currencies"].get(country)
 
 
+def region() -> dict | None:
+    """The region the prototype supports (SUPPORTED_REGION; empty: everywhere): {id, label, countries, currencies}."""
+    from app import settings
+
+    rid = settings.raw("SUPPORTED_REGION").strip().lower()
+    r = _file("regions.json")["regions"].get(rid) if rid else None
+    if not r:
+        return None
+    table = _file("country_currencies.json")["currencies"]
+    return {"id": rid, "label": r["label"], "countries": r["countries"],
+            "currencies": sorted({table[c] for c in r["countries"] if c in table})}
+
+
 def countries_using(currency: str) -> list[str]:
     """The countries in the table whose currency it is."""
     return sorted(c for c, cur in _file("country_currencies.json")["currencies"].items() if cur == currency)

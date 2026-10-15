@@ -216,6 +216,8 @@ SETTINGS: dict[str, Setting] = {
         Setting("MONITOR_MIN_FREQUENCY_MINUTES", "60", "The most often a monitor may be checked: 15, 60, 360 or 1440."),
         Setting("PROTOTYPE_RESET", "true", "Allow the prototype reset (wipes the institution and all Amiri Agent made for it; "
                 "keeps market prices and reference data). Switch off for a real deployment."),
+        Setting("SUPPORTED_REGION", "japac", "The region the prototype is tested for: an institution's home country and "
+                "base currency must be in it (app/reference/regions.json). Empty: anywhere."),
         Setting("SINGLE_INSTITUTION", "true", "One institution per platform (a deployment serves one bank or insurer); "
                 "a second can't be created until the prototype is reset."),
         Setting("MONITOR_RETRY_MINUTES", "60", "After a check fails, try again this many minutes later (not the whole frequency): a "
