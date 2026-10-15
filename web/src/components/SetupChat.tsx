@@ -106,11 +106,48 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
     const t = setInterval(() => { load().catch(() => {}); }, 2000);
     return () => clearInterval(t);
   }, [writing, busy, load]);
+  // The setup agent is its own service: Cloud Run stops it after about 15 idle minutes, and starting it again takes
+  // a while. Checking it wakes it, so: on opening, every few seconds while it starts, every few minutes while someone
+  // is using the page, and at once when they come back to it. The server says how often (0 for an in-process agent).
+  const checkStatus = useCallback(() => chat.status().then(setStatus).catch(() => {}), []);
+  const lastUse = useRef(Date.now());
   useEffect(() => {
-    chat.status().then(setStatus).catch(() => {});
+    checkStatus();
     chat.tracks().then(setDefs).catch(() => {});
     load().catch(() => {});
-  }, [load]);
+  }, [load, checkStatus]);
+  useEffect(() => {
+    if (!status?.starting) return;
+    const until = Date.now() + 120_000;
+    const t = setInterval(() => { if (Date.now() < until) checkStatus(); }, 2500);
+    return () => clearInterval(t);
+  }, [status?.starting, checkStatus]);
+  const warmEvery = (status?.keep_warm_seconds ?? 0) * 1000, warmFor = (status?.keep_warm_idle_minutes ?? 0) * 60_000;
+  useEffect(() => {
+    if (!warmEvery) return;
+    const used = () => {
+      const away = Date.now() - lastUse.current;
+      lastUse.current = Date.now();
+      if (away > 60_000) checkStatus();  // back after a while: wake it now, before they type
+    };
+    const back = () => { if (document.visibilityState === "visible") used(); };
+    window.addEventListener("pointerdown", used); window.addEventListener("keydown", used); window.addEventListener("focus", used);
+    document.addEventListener("visibilitychange", back);
+    const t = setInterval(() => { if (Date.now() - lastUse.current < warmFor) checkStatus(); }, warmEvery);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener("pointerdown", used); window.removeEventListener("keydown", used); window.removeEventListener("focus", used);
+      document.removeEventListener("visibilitychange", back);
+    };
+  }, [warmEvery, warmFor, checkStatus]);
+  // a reply that takes a while to begin: the agent may be starting
+  const [heard, setHeard] = useState(false);
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!busy || heard) { setSlow(false); return; }
+    const t = setTimeout(() => setSlow(true), 5000);
+    return () => clearTimeout(t);
+  }, [busy, heard]);
   useEffect(() => { log.current?.scrollTo({ top: log.current.scrollHeight }); }, [messages.length, live]);
   // "via assistant" on an item: show its proposal here
   useEffect(() => {
@@ -132,7 +169,7 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
 
   const send = async (body: { text?: string; answer?: { question_id: string; options: string[] } }) => {
     if (busy) return;
-    setBusy(true);
+    setBusy(true); setHeard(false);
     const track = picked;
     try {
       let sid = sessionId;
@@ -142,6 +179,7 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
       setMessages(m => [...m, mine]);
       let text = "";
       const onEvent = ({ event, data }: { event: string; data: Record<string, any> }) => {
+        if (event !== "start") setHeard(true);
         if (event === "text_delta") { text += data.text; setLive(text); return; }
         if (event === "start" || event === "done") return;
         if (event === "track") {
@@ -166,7 +204,7 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
       if (e instanceof ApiError && e.code === "turn_in_progress") { setWriting(true); setMessages(m => m.filter(x => x.message_id >= 0)); }
       toast(e instanceof ApiError ? e.full : String(e));
     }
-    finally { setBusy(false); setLive(null); load().catch(() => {}); }
+    finally { setBusy(false); setLive(null); load().catch(() => {}); checkStatus(); }
   };
 
   const pick = (t: TrackState) => {
@@ -202,8 +240,10 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
               title={`${t.label}: ${t.status.replace("_", " ")}${t.summary ? ` · ${t.summary}` : ""}${t.read_only ? " · read only" : ""}${t.notes.length ? ` · noted: ${t.notes.map(n => n.text).join("; ")}` : ""}`} onClick={() => pick(t)}>
               <span className={`statusdot ${DOT[t.status]}`} />{t.label}{t.notes.length > 0 && t.status === "not_started" ? " ●" : ""}</button>))}
         </div>
-        {status && !status.connected && <div className="note small" style={{ background: "var(--medium-soft)", color: "var(--medium-ink)" }}>
-          <b>Not connected yet.</b> {status.message} <span className="mono">({status.backend})</span></div>}
+        {status && !status.connected && (status.starting
+          ? <div className="note small" role="status"><b>Starting the setup assistant…</b> This can take up to a minute. You can type now: your message waits for it.</div>
+          : <div className="note small" style={{ background: "var(--medium-soft)", color: "var(--medium-ink)" }}>
+            <b>Not connected yet.</b> {status.message} <span className="mono">({status.backend})</span></div>)}
         {status?.connected && status.backend === "stub" && <div className="note small">Stub agent: canned replies and keyword routing, for building the UI.</div>}
       </div>
       <div ref={log} role="log" aria-label="Conversation with the setup agent" tabIndex={0} style={{ flex: 1, overflow: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>
@@ -212,7 +252,7 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
           : "I can set up your institution with you: what kind it is, where you operate, your customers and products, flows, rules, rivals and risks. Tell me in plain words; nothing is saved until you apply it. The forms work too."}</div>}
         {rows}
         {live && <div className="msg ai">{live}<span className="muted">▍</span></div>}
-        {busy && !live && <div className="msg sys">…</div>}
+        {busy && !live && <div className="msg sys" role="status">{slow ? "Waiting for the assistant… If it was asleep, the first reply can take up to a minute." : "…"}</div>}
         {writing && !busy && <div className="msg sys">A reply is still being written… it will appear here.</div>}
       </div>
       <div style={{ borderTop: "1px solid var(--hairline)", padding: 12, display: "flex", gap: 8, alignItems: "center" }}>

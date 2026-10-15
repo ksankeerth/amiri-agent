@@ -62,7 +62,8 @@ async def test_contract_openapi():
 async def test_server_through_the_http_connector(client, app):
     _, transport = fake()
     app.state.assistant.agent = HttpAgent(transport=transport)
-    assert (await client.get("/api/v1/assistant/status")).json() == {"backend": "http", "connected": True, "message": None}
+    assert (await client.get("/api/v1/assistant/status")).json() == {
+        "backend": "http", "connected": True, "starting": False, "message": None, "keep_warm_seconds": 240, "keep_warm_idle_minutes": 30}
     s = await session(client)
     assert s["agent_connected"] is True
     ev = await say(client, s["session_id"], "We're a commercial bank in Sri Lanka.")
@@ -90,17 +91,82 @@ async def test_server_through_the_http_connector(client, app):
     ev = await say(client, s2["session_id"], "hmm")
     assert next(d for e, d in ev if e == "error")["code"] == "agent_contract_violation"
 
-    # the agent restarted and lost the session: the next message starts a new one
+    # the agent restarted (Cloud Run stopped it while the person was away) and lost the session: the message is
+    # answered anyway, in a new agent session, and the chat's session carries on
+    before = (await client.get(f"/api/v1/assistant/sessions/{s2['session_id']}/context")).json()
     async with httpx.AsyncClient(transport=transport, base_url="http://agent") as c:
         await c.delete("/_script")
     ev = await say(client, s2["session_id"], "still there?")
-    assert next(d for e, d in ev if e == "error")["code"] == "agent_session_lost"
-    r = await client.post("/api/v1/assistant/run_sse", json={"session_id": s2["session_id"], "text": "hi"}, headers=ME)
-    assert r.status_code == 409 and r.json()["code"] == "session_ended"
-    s3 = await session(client, iid)
-    assert s3["session_id"] != s2["session_id"]
-    ev = await say(client, s3["session_id"], "hello again")
+    kinds = [e for e, _ in ev]
+    assert "error" not in kinds and "message" in kinds, ev
+    ev = await say(client, s2["session_id"], "and again")
     assert "message" in [e for e, _ in ev]
+    after = (await client.get(f"/api/v1/assistant/sessions/{s2['session_id']}/context")).json()
+    texts = [m["content"].get("text") for m in after["recent_messages"]]
+    # the new agent session got the conversation so far, without the message it was then sent (not twice)
+    assert "hmm" in texts and "still there?" not in texts and after["recent_messages"] != before["recent_messages"]
+
+
+async def test_restart_while_the_person_was_away(client, app):
+    """Cold start and lost session together: the turn waits for the agent, then is answered in a new session."""
+    _, transport = fake()
+    app.state.assistant.agent = HttpAgent(transport=transport)
+    s = await session(client)
+    async with httpx.AsyncClient(transport=transport, base_url="http://agent") as c:
+        await c.post("/_cold", json={"seconds": 0.3})
+    ev = await say(client, s["session_id"], "We're a commercial bank in Sri Lanka.")
+    assert "error" not in [e for e, _ in ev] and "message" in [e for e, _ in ev]
+    th = (await client.get("/api/v1/assistant/thread", headers=ME)).json()
+    assert th["active_session_id"] == s["session_id"]
+    assert sum(1 for m in th["messages"] if m["role"] == "user" and m["kind"] == "text") == 1  # sent once, stored once
+
+
+async def test_lost_session_that_cannot_be_recovered(client, app):
+    """The agent keeps refusing the session: the turn ends with agent_session_lost, and the next message starts afresh."""
+    _, inner = fake()
+
+    async def turns_404(request: httpx.Request):
+        if request.url.path.endswith("/turns"):
+            return httpx.Response(404, json={"status": 404, "code": "not_found", "detail": "No session."})
+        return await inner.handle_async_request(request)
+    app.state.assistant.agent = HttpAgent(transport=httpx.MockTransport(turns_404))
+    s = await session(client)
+    ev = await say(client, s["session_id"], "hello?")
+    assert next(d for e, d in ev if e == "error")["code"] == "agent_session_lost"
+    r = await client.post("/api/v1/assistant/run_sse", json={"session_id": s["session_id"], "text": "hi"}, headers=ME)
+    assert r.status_code == 409 and r.json()["code"] == "session_ended"
+
+
+async def test_agent_down_at_start_then_back(client, app):
+    """The agent was down when the session started; once it is back, the next message starts its session."""
+    _, inner = fake()
+    up = {"ok": False}
+
+    async def maybe(request: httpx.Request):
+        if not up["ok"]:
+            raise httpx.ConnectError("refused")
+        return await inner.handle_async_request(request)
+    app.state.assistant.agent = HttpAgent(transport=httpx.MockTransport(maybe))
+    s = await session(client)
+    assert s["agent_connected"] is False
+    up["ok"] = True
+    ev = await say(client, s["session_id"], "We're a commercial bank in Sri Lanka.")
+    assert "error" not in [e for e, _ in ev] and "message" in [e for e, _ in ev]
+
+
+async def test_status_while_the_agent_is_starting(client, app):
+    def slow(request):
+        raise httpx.ReadTimeout("no answer yet")
+    app.state.assistant.agent = HttpAgent(transport=httpx.MockTransport(slow))
+    st = (await client.get("/api/v1/assistant/status")).json()
+    assert st["connected"] is False and st["starting"] is True and "starting" in st["message"]
+    assert st["keep_warm_seconds"] == 240 and st["keep_warm_idle_minutes"] == 30
+
+    def unavailable(request):
+        return httpx.Response(503, text="Service Unavailable")
+    app.state.assistant.agent = HttpAgent(transport=httpx.MockTransport(unavailable))
+    st = (await client.get("/api/v1/assistant/status")).json()
+    assert st["connected"] is False and st["starting"] is True
 
 
 async def test_agent_down(client, app):
@@ -108,7 +174,7 @@ async def test_agent_down(client, app):
         raise httpx.ConnectError("refused")
     app.state.assistant.agent = HttpAgent(transport=httpx.MockTransport(refuse))
     st = (await client.get("/api/v1/assistant/status")).json()
-    assert st["connected"] is False and st["backend"] == "http"
+    assert st["connected"] is False and st["backend"] == "http" and st["starting"] is False
     s = await session(client)
     assert s["agent_connected"] is False
     ev = await say(client, s["session_id"], "hello?")

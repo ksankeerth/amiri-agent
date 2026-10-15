@@ -23,7 +23,7 @@ from pydantic import ValidationError
 
 from app import reference, settings
 from app.assistant import monitor_ops, numbers
-from app.assistant.agent import Assistant, TurnInput
+from app.assistant.agent import Assistant, AssistantEvent, TurnInput
 from app.assistant.tracks import RULES_INSTITUTION_FIELDS, TRACKS
 from app.assistant.tracks import view as tracks_view
 from app.clock import Clock
@@ -59,8 +59,13 @@ class AssistantService:
 
     async def status(self) -> dict:
         ok = await self.agent.health() if hasattr(self.agent, "health") else self.agent.connected()
-        return {"backend": self.agent.name, "connected": ok, "message": None if ok else
-                "The setup agent isn't connected yet. Messages are saved; the forms do everything."}
+        starting = not ok and bool(getattr(self.agent, "starting", False))
+        message = None if ok else ("The setup assistant is starting; this can take up to a minute." if starting else
+                                   "The setup agent isn't connected yet. Messages are saved; the forms do everything.")
+        warm = self.agent.name == "http"  # only a separate service can be stopped by Cloud Run
+        return {"backend": self.agent.name, "connected": ok, "starting": starting, "message": message,
+                "keep_warm_seconds": settings.integer("ASSISTANT_KEEP_WARM_SECONDS") if warm else 0,
+                "keep_warm_idle_minutes": settings.integer("ASSISTANT_KEEP_WARM_IDLE_MINUTES") if warm else 0}
 
     @staticmethod
     def tracks() -> list[dict]:
@@ -379,6 +384,42 @@ class AssistantService:
         allowed |= {float(i) for i in range(0, 32)}  # counts, days, months
         return allowed
 
+    async def _agent_events(self, turn: TurnInput) -> AsyncIterator[AssistantEvent]:
+        """The agent's events for one turn. When the agent no longer knows the session (it restarted: Cloud Run
+        stopped it while idle, or a deploy), a new agent session is started from a fresh context pack and the
+        message is sent once more. The agent never saw the turn the first time, so nothing runs twice. A session
+        the agent couldn't start earlier (it was down) is started now."""
+        if turn.agent_session is None:
+            await self._renew_agent_session(turn)
+        first = True
+        async for ev in self.agent.run(turn):
+            if first and ev.type == "error" and ev.data.get("code") == "agent_session_lost" \
+                    and await self._renew_agent_session(turn):
+                async for again in self.agent.run(turn):
+                    yield again
+                return
+            first = False
+            yield ev
+
+    async def _renew_agent_session(self, turn: TurnInput) -> bool:
+        async with self.pool.connection() as conn:
+            cur = await conn.execute("SELECT * FROM assistant.threads WHERE thread_id = %s", (turn.thread_id,))
+            t = await cur.fetchone()
+        pack = await self.context_pack(t)
+        recent = pack["recent_messages"]
+        if recent and recent[-1]["role"] == "user":  # the message being answered goes with the turn, not twice
+            pack["recent_messages"] = recent[:-1]
+        old, new = turn.agent_session, await self.agent.start_session(turn.session_id, turn.thread_id, turn.user_id, pack)
+        if not new:
+            return False
+        async with self.pool.connection() as conn:
+            await conn.execute("UPDATE assistant.sessions SET agent_session = %s, context = %s WHERE session_id = %s",
+                               (new, Jsonb(json.loads(json.dumps(pack, default=str))), turn.session_id))
+        log.info("setup chat turn %s: %s; started agent session %s", turn.turn_id,
+                 f"the agent had lost session {old} (it restarted)" if old else "the agent was down when the session started", new)
+        turn.agent_session = new
+        return True
+
     async def _drive(self, turn: TurnInput, q: asyncio.Queue) -> None:
         put = q.put_nowait
         put(sse("start", {"session_id": turn.session_id, "thread_id": turn.thread_id, "backend": self.agent.name,
@@ -393,7 +434,7 @@ class AssistantService:
                 put(sse("message", {"text": ENGLISH_ONLY, "canned": "english_only", "message_id": mid, "track": track}))
                 return
             allowed = await self._allowed_numbers(turn)
-            agen = self.agent.run(turn).__aiter__()
+            agen = self._agent_events(turn).__aiter__()
             deadline = asyncio.get_running_loop().time() + self._turn_timeout().total_seconds()
             while True:
                 left = deadline - asyncio.get_running_loop().time()

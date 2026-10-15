@@ -37,7 +37,10 @@ def me(actor: str | None) -> str:
 class Status(BaseModel):
     backend: str
     connected: bool
+    starting: bool = False                 # Cloud Run is starting the agent; check again shortly
     message: str | None
+    keep_warm_seconds: int = 0             # while the chat is open, check this often (0: don't)
+    keep_warm_idle_minutes: int = 0        # and stop after this long without anyone using the page
 
 
 class TrackDef(BaseModel):

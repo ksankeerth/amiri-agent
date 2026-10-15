@@ -192,16 +192,23 @@ class HttpAgent:
         self.client = httpx.AsyncClient(base_url=self.url, transport=transport,
                                         timeout=httpx.Timeout(connect=5.0, read=t, write=10.0, pool=5.0))
         self._ok: bool | None = None
+        self.starting = False  # the last health check timed out: Cloud Run is starting the agent from zero
 
     def connected(self) -> bool:
         return bool(self._ok)
 
     async def health(self) -> bool:
+        """A quick check. Cloud Run holds a request to a stopped agent while it starts one, so no answer within
+        ASSISTANT_HEALTH_TIMEOUT_SECONDS means starting (the request has already woken it), not down."""
+        t = settings.number("ASSISTANT_HEALTH_TIMEOUT_SECONDS")
         try:
-            r = await self.client.get("/health", headers=await self._headers())
+            r = await self.client.get("/health", headers=await self._headers(), timeout=httpx.Timeout(t, connect=t))
             self._ok = r.status_code == 200 and r.json().get("status") == "ok"
+            self.starting = not self._ok and r.status_code in (429, 502, 503, 504)
+        except httpx.TimeoutException:
+            self._ok, self.starting = False, True
         except (httpx.HTTPError, ValueError):
-            self._ok = False
+            self._ok, self.starting = False, False
         return self._ok
 
     async def _headers(self) -> dict[str, str]:

@@ -5,11 +5,14 @@
 By default it answers like the in-process stub (keyword routing, canned replies, a
 question). For tests and demos it can play exact events: POST /_script with
 {"events": [{"type": "message", "text": "…"}, …]} queues them for the next turn
-(one list per turn, in order). It is also the reference the conformance check
-(`uv run amiri agent-check`) is tested against.
+(one list per turn, in order). POST /_cold with {"seconds": n} acts out a restart from zero on
+Cloud Run: the sessions are gone and every call waits until n seconds have passed. It is also the
+reference the conformance check (`uv run amiri agent-check`) is tested against.
 """
 
+import asyncio
 import json
+import time
 import uuid
 from collections import deque
 
@@ -26,12 +29,18 @@ def create_fake_agent() -> FastAPI:
     sessions: dict[str, contract.AgentSessionIn] = {}
     scripts: deque[list[dict]] = deque()
     stub = StubAssistant()
+    cold = {"until": 0.0}
+
+    async def starting() -> None:  # a restart in progress: calls wait for it
+        if (left := cold["until"] - time.monotonic()) > 0:
+            await asyncio.sleep(left)
 
     def hdr(r: Response) -> None:
         r.headers[contract.HEADER] = contract.CONTRACT_VERSION
 
     @app.get("/health")
     async def health(response: Response):
+        await starting()
         hdr(response)
         return {"status": "ok"}
 
@@ -43,6 +52,7 @@ def create_fake_agent() -> FastAPI:
 
     @app.post("/sessions", status_code=201, response_model=contract.AgentSessionOut)
     async def create_session(body: contract.AgentSessionIn, response: Response):
+        await starting()
         hdr(response)
         sid = "agent-" + uuid.uuid4().hex[:10]
         sessions[sid] = body
@@ -50,6 +60,7 @@ def create_fake_agent() -> FastAPI:
 
     @app.post("/sessions/{agent_session_id}/turns")
     async def turn(agent_session_id: str, body: contract.TurnIn):
+        await starting()
         if agent_session_id not in sessions:
             return JSONResponse({"type": "about:blank", "title": "Not found", "status": 404, "code": "not_found",
                                  "detail": f"No session {agent_session_id}."}, status_code=404,
@@ -74,6 +85,12 @@ def create_fake_agent() -> FastAPI:
     @app.post("/_script", include_in_schema=False, status_code=204)
     async def script(events: list[dict] = Body(..., embed=True)):
         scripts.append(events)
+        return Response(status_code=204)
+
+    @app.post("/_cold", include_in_schema=False, status_code=204)
+    async def restart(seconds: float = Body(..., embed=True)):
+        sessions.clear()
+        cold["until"] = time.monotonic() + seconds
         return Response(status_code=204)
 
     @app.delete("/_script", include_in_schema=False, status_code=204)

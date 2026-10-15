@@ -1,7 +1,12 @@
 // The setup agent's chat and proposals.
 import { api, ApiError, ME, type Problem } from "./client";
 
-export interface AssistantStatus { backend: string; connected: boolean; message: string | null }
+export interface AssistantStatus {
+  backend: string; connected: boolean; message: string | null;
+  starting?: boolean;               // Cloud Run is starting the agent: check again shortly
+  keep_warm_seconds?: number;       // while the chat is open, check this often (0: don't)
+  keep_warm_idle_minutes?: number;  // and stop after this long without anyone using the page
+}
 export interface TrackDef { track: string; label: string; tab: string | null; setup_step: string | null; writes: string[]; read_only: boolean; shown: boolean; order: number | null }
 export interface TrackState extends TrackDef { status: "not_started" | "in_progress" | "concluded"; summary: string | null; notes: { text: string; at: string }[]; updated_at: string | null }
 export interface ChatMessage {

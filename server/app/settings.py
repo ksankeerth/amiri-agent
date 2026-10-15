@@ -146,6 +146,12 @@ SETTINGS: dict[str, Setting] = {
             "The server's URL as the agent reaches it, for its tools (sent to the agent with each session).",
         ),
         Setting("ASSISTANT_TIMEOUT_SECONDS", "120", "Longest one assistant turn may take."),
+        Setting("ASSISTANT_HEALTH_TIMEOUT_SECONDS", "3", "How long the status check waits for the setup agent. No answer "
+                "in time means it is starting (Cloud Run starting it from zero): the chat says so and checks again."),
+        Setting("ASSISTANT_KEEP_WARM_SECONDS", "240", "While the chat is open, the page checks the agent this often so "
+                "Cloud Run keeps it running (it stops an idle agent after about 15 minutes); 0: off."),
+        Setting("ASSISTANT_KEEP_WARM_IDLE_MINUTES", "30", "The page stops keeping the agent warm after this long without "
+                "anyone using it, so an open but forgotten tab lets the agent scale to zero."),
         Setting(
             "ASSISTANT_SESSION_IDLE_MINUTES",
             "30",
