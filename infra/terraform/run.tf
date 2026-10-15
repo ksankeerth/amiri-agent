@@ -8,14 +8,23 @@ locals {
     monitor       = { cpu_idle = false, env = {} }
     setup         = { cpu_idle = true, env = { SERVER_AUTH = "id_token" } }
   }
-  agent_env = {
+  # logs: one JSON line per entry, linked to its trace; no line per request (Cloud Run's request log has those)
+  log_env = {
+    LOG_FORMAT = "json"
+    LOG_LEVEL  = var.log_level
+  }
+  agent_env = merge(local.log_env, {
     GOOGLE_GENAI_USE_ENTERPRISE = "true"
     GOOGLE_GENAI_USE_VERTEXAI   = "true"
     GOOGLE_CLOUD_PROJECT        = var.project_id
     GOOGLE_CLOUD_LOCATION       = "global"
-  }
+    # traces keep timings, model and tool calls, but never a prompt, an answer or what a person typed
+    ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS               = "false"
+    OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = "false"
+  })
 
-  server_env = merge({
+  server_env = merge(local.log_env, {
+    GOOGLE_CLOUD_PROJECT  = var.project_id # links log lines to their request's trace
     INSTITUTION_ID        = var.institution_id
     SERVER_PUBLIC_URL     = local.server_url
     AUTH_MODE             = var.auth_mode

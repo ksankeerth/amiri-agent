@@ -80,6 +80,16 @@ variable "server_env" {
   default     = {}
 }
 
+variable "log_level" {
+  description = "Lowest level every service logs: INFO (default: one line per tick, run or turn, plus warnings and errors), or WARNING for less, DEBUG while chasing a problem."
+  type        = string
+  default     = "INFO"
+  validation {
+    condition     = contains(["DEBUG", "INFO", "WARNING", "ERROR"], var.log_level)
+    error_message = "log_level is DEBUG, INFO, WARNING or ERROR."
+  }
+}
+
 variable "server_max_instances" {
   description = "Most server instances."
   type        = number
