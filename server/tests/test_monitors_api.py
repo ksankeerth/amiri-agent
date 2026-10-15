@@ -320,3 +320,15 @@ async def test_any_japac_institution_drafts_and_checks_monitors(client, env, mon
     inst = monitor_agent.requests[0]["institution"]
     assert (inst["country"], inst["currency"], inst["country_name"]) == ("PH", "PHP", "Philippines")
     assert inst["flows"] and inst["corridors"]
+
+
+async def test_saving_without_a_change_makes_no_new_version(client, env):
+    await bank(client, env)
+    m = await live(client)
+    mid = m["monitor_id"]
+    r = (await client.patch(f"/api/v1/monitors/{mid}", json={"spec": m["spec"]})).json()
+    assert r["latest_version"] == m["latest_version"] and len(r["versions"]) == len(m["versions"])  # nothing changed
+    changed = (await client.patch(f"/api/v1/monitors/{mid}", json={"spec": spec(**{"public.places": ["SA", "QA"]})})).json()
+    assert changed["latest_version"] == m["latest_version"] + 1  # a real change is the next version
+    again = (await client.patch(f"/api/v1/monitors/{mid}", json={"spec": changed["spec"]})).json()
+    assert again["latest_version"] == changed["latest_version"]

@@ -215,6 +215,8 @@ class Monitors:
             await self._check_exposures(m["institution_id"], spec)
             versions = await self._versions(conn, monitor_id)
             latest = versions[m["latest_version"]]
+            if spec.model_dump(mode="json") == latest["spec"] and not note:  # nothing changed: no new version
+                return await self.get(monitor_id)
             if latest["status"] == "draft":  # edit the draft in place
                 await conn.execute(
                     "UPDATE core.monitor_versions SET spec = %s, note = coalesce(%s, note) WHERE monitor_id = %s AND version = %s",

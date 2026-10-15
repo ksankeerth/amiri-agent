@@ -555,7 +555,8 @@ class MarketSeries:
             cur = await conn.execute("SELECT symbol FROM signals.series WHERE world = 'live'")
             watched = {x["symbol"] for x in await cur.fetchall()}
         return {"query": q, "cached": hit,
-                "items": [{**i, "watched": (i["symbol"] or "").upper() in watched} for i in items]}
+                "items": [{**i, "watched": (i["symbol"] or "").upper() in watched, "on_plan": on_plan(i.get("plan"))}
+                          for i in items]}
 
     # ------------------------------------------------ the tick step
 
@@ -828,7 +829,16 @@ class MarketSeries:
 
 
 GOLD = {"XAU"}
-OIL = {"WTI", "BRENT", "XBR", "XTI", "USOIL", "UKOIL", "BNO", "USO"}  # BNO, USO: oil ETFs
+OIL = {"WTI", "BRENT", "XBR", "XTI", "URALS", "USOIL", "UKOIL", "BNO", "USO"}  # BNO, USO: oil ETFs
+PLANS = ["basic", "grow", "pro", "ultra", "enterprise"]  # Twelve Data's plans, cheapest first
+
+
+def on_plan(plan: str | None) -> bool:
+    """Whether a symbol's plan is within the plan in use (TWELVEDATA_PLAN). Unknown plans are let through."""
+    need, have = (plan or "basic").lower(), settings.raw("TWELVEDATA_PLAN").lower()
+    if need not in PLANS or have not in PLANS:
+        return True
+    return PLANS.index(need) <= PLANS.index(have)
 
 
 MAJORS = ("USD", "EUR", "GBP", "JPY", "CHF")

@@ -143,10 +143,20 @@ function MonitorForm({ m, profile, status, onSaved }: { m: Monitor | null; profi
     spec.about.key_dates = (spec.about.key_dates ?? []).filter(d => d.date || d.label);
     setBusy(true);
     try {
+      const before = m?.latest_version;
       let saved = m ? await monitorsApi.update(m.monitor_id, spec, note || undefined) : await monitorsApi.create(spec, note || undefined);
-      if (submit) saved = await monitorsApi.act(saved.monitor_id, "submit");
+      const unchanged = !!m && saved.latest_version === before && JSON.stringify(saved.spec) === JSON.stringify(m.spec);
+      const waiting = saved.versions[saved.versions.length - 1]?.status === "submitted";
+      if (submit && waiting) {  // already waiting for approval: nothing to submit again
+        toast(unchanged ? `No changes: version ${saved.latest_version} is already waiting for approval` : "Saved");
+      } else if (submit) {
+        saved = await monitorsApi.act(saved.monitor_id, "submit");
+        toast(`Version ${saved.latest_version} submitted: a Risk Manager approves it on the Monitors page`);
+      } else {
+        toast(unchanged ? "No changes to save" : live ? `Saved as version ${saved.latest_version}, a draft; version ${saved.live_version} keeps running` : "Draft saved");
+      }
       setErr({ fields: {}, general: [] }); setNote("");
-      toast(submit ? "Saved and submitted for approval" : live ? `Saved as version ${saved.latest_version}, a draft; version ${saved.live_version} keeps running` : "Draft saved");
+      if (submit) { nav("/monitors"); return; }  // back to the list, where it waits for approval
       if (!m) nav(`/monitors/${saved.monitor_id}`, { replace: true }); else onSaved(saved);
     } catch (e) { setErr(errorsOf(e)); }
     finally { setBusy(false); }
@@ -246,13 +256,15 @@ function Approval({ m, onChange }: { m: Monitor; onChange: () => void }) {
   else if (m.status === "paused") text = "Paused: not checked until resumed.";
   else text = "Drafts don't run on the schedule. Run a test to see what it would find (the findings go to the sandbox), then submit it.";
   const sentBack = latest.status === "draft" && latest.note && latest.submitted_at;
+  // approval only matters while a version waits for it (or before the first one runs); a live monitor shows its status
+  const approving = !!pending || m.status === "draft" || m.status === "submitted";
   return (
-    <div className="card"><div className="hd"><h2>Approval</h2></div><div className="bd col" style={{ gap: 8 }}>
+    <div className="card"><div className="hd"><h2>{approving ? "Approval" : "Status"}</h2></div><div className="bd col" style={{ gap: 8 }}>
       <p className="small" style={{ margin: 0 }}>{text}</p>
       {sentBack && <div className="note"><b>Changes requested:</b> {latest.note}</div>}
       {diff.length > 0 && <div className="note">Changes from version {m.live_version}: {diff.join(", ")}.</div>}
       <MonitorActions m={m} onChange={onChange} />
-      <p className="small muted" style={{ margin: 0 }}>Prototype simplification: the person who submitted a version can also approve it. In production a second Risk Manager approves. Who submitted and who approved each version is recorded.</p>
+      {approving && <p className="small muted" style={{ margin: 0 }}>Prototype simplification: the person who submitted a version can also approve it. In production a second Risk Manager approves. Who submitted and who approved each version is recorded.</p>}
     </div></div>
   );
 }

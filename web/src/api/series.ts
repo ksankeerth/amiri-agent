@@ -51,7 +51,7 @@ export interface Finding {
   evidence: { signals: { start_at: string; end_at: string; ref_level: number; obs_level: number; change_pct: number; z: number; window_days: number; direction?: string; description?: string }[] };
 }
 export interface SimulateResult { fired: boolean; note: string; finding: Finding | null; detection: { max: { days: number; z: number } | null } }
-export interface LookupItem { symbol: string; name: string | null; type: string | null; exchange: string | null; country: string | null; currency: string | null; plan: string | null; watched: boolean }
+export interface LookupItem { symbol: string; name: string | null; type: string | null; exchange: string | null; country: string | null; currency: string | null; plan: string | null; watched: boolean; on_plan: boolean }
 export interface FetchOutcome { status: FetchStatus; trigger: string; bars_received: number; bars_new: number; latest_bar_ts: string | null; finding_id: string | null }
 
 const B = "/api/v1";

@@ -106,6 +106,8 @@ SETTINGS: dict[str, Setting] = {
             secret=True,
         ),
         Setting("TWELVEDATA_BASE_URL", "https://api.twelvedata.com", "Twelve Data API base."),
+        Setting("TWELVEDATA_PLAN", "Basic", "The Twelve Data plan of the key (Basic is the free plan; then Grow, Pro, Ultra, "
+                "Enterprise). Search results above it can't be added."),
         Setting(
             "TWELVEDATA_TIMEOUT_SECONDS",
             "15",

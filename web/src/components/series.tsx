@@ -67,8 +67,12 @@ const FIXED: Preset[] = [
   { id: "index", label: "Stock index", theme: { theme: "markets", direction_up: "equity_up", direction_down: "equity_down" } },
   { id: "", label: "None (no theme on findings)", theme: null },
 ];
+// gold and oil look like currency pairs (XAU/USD, XBR/USD): they only get their own meaning, never an exchange rate
+const COMMODITY: Record<string, string> = { XAU: "gold", WTI: "oil", BRENT: "oil", XBR: "oil", XTI: "oil", URALS: "oil", USOIL: "oil", UKOIL: "oil" };
 export function themePresets(symbol: string): Preset[] {
   const [a, b] = symbol.toUpperCase().split("/");
+  const c = COMMODITY[a ?? ""];
+  if (c) return FIXED.filter(t => t.id === c || t.id === "");
   const fx: Preset[] = /^[A-Z]{3}$/.test(a ?? "") && /^[A-Z]{3}$/.test(b ?? "") ? [
     { id: `fx_${b}`, label: `Exchange rate: up = ${b} weaker`, theme: { theme: "fx", direction_up: "weaker", direction_down: "stronger", currency: b } },
     { id: `fx_${a}`, label: `Exchange rate: up = ${a} stronger`, theme: { theme: "fx", direction_up: "stronger", direction_down: "weaker", currency: a } },
@@ -114,7 +118,8 @@ export function AddSeriesModal({ onClose, onAdded, left }: { onClose: () => void
   };
   const pick = (i: LookupItem) => {
     setSymbol(i.symbol); setName(i.symbol === i.name || !i.name ? i.symbol : `${i.symbol} (${i.name})`.slice(0, 60));
-    setTheme(AUTO);
+    const c = COMMODITY[i.symbol.toUpperCase().split("/")[0]];
+    setTheme(c ?? AUTO);  // gold → Gold price, oil → Oil price; else the server sets it from the symbol
   };
   const add = async () => {
     if (!symbol.trim()) { setErr("Choose a symbol from the search, or type one (e.g. USD/LKR)."); return; }
@@ -145,16 +150,17 @@ export function AddSeriesModal({ onClose, onAdded, left }: { onClose: () => void
       <span className="small muted" style={{ marginTop: -8 }}>Each search uses 1 Twelve Data credit; the same search is free for a day.</span>
       {results && (results.length ? (
         <div className="results">{results.map(i => (
-          <button key={`${i.symbol}-${i.exchange}`} type="button" disabled={i.watched} aria-pressed={symbol === i.symbol} onClick={() => pick(i)}>
+          <button key={`${i.symbol}-${i.exchange}`} type="button" disabled={i.watched || i.on_plan === false} aria-pressed={symbol === i.symbol} onClick={() => pick(i)}
+            title={i.on_plan === false ? `Needs the Twelve Data ${i.plan} plan; this key's plan doesn't include it` : undefined}>
             <b className="mono">{i.symbol}</b><span className="muted small" style={{ flex: 1 }}>{i.name} · {i.type}{i.exchange ? ` · ${i.exchange}` : ""}</span>
-            {i.watched ? <span className="badge b-ok">WATCHED</span> : i.plan && i.plan !== "Basic" ? <span className="badge b-warn" title="May need a paid Twelve Data plan">{i.plan.toUpperCase()} PLAN</span> : null}
+            {i.watched ? <span className="badge b-ok">WATCHED</span> : i.on_plan === false ? <span className="badge b-warn">NEEDS {i.plan?.toUpperCase()} PLAN</span> : null}
           </button>))}</div>
       ) : <div className="note">Nothing found for “{q}”.</div>)}
       <div className="grid2">
         <label className="field"><span>Symbol</span><input className="input mono" value={symbol} onChange={e => setSymbol(e.target.value)} placeholder="USD/LKR" /></label>
         <label className="field"><span>Name shown</span><input className="input" value={name} maxLength={60} onChange={e => setName(e.target.value)} placeholder="defaults to the symbol" /></label>
         <label className="field"><span>What a move means</span><select className="input" value={theme} onChange={e => setTheme(e.target.value)}>
-          <option value={AUTO}>Set from the symbol (FX: the currency that moved; gold, oil, stock indices)</option>
+          {!COMMODITY[symbol.trim().toUpperCase().split("/")[0]] && <option value={AUTO}>Set from the symbol (FX: the currency that moved; gold, oil, stock indices)</option>}
           {themePresets(symbol.trim()).map(t => <option key={t.id} value={t.id}>{t.label}</option>)}</select>
           <span className="hint">The investigation reads findings by theme, so it needs no model for them.</span></label>
         <label className="field"><span>Places (ISO codes)</span><input className="input" value={places} onChange={e => setPlaces(e.target.value)} placeholder="LK, AE" />
