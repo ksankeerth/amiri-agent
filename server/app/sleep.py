@@ -23,7 +23,7 @@ from app import db, settings
 from app.problems import Problem, problem_response
 from app.reference import load as refload
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("amiri.sleep")
 
 # what needs the database; the rest works without it: liveness (/health), sign-in, robots, the API docs, the web app
 NEEDS_DB = ("/api/", "/internal/", "/health/")
@@ -34,6 +34,7 @@ class State:
     def __init__(self) -> None:
         self.awake = False
         self.last_probe = 0.0
+        self.warned = False  # said once that the database is unreachable; the probes after it stay quiet
         self.lock = asyncio.Lock()
 
 
@@ -66,7 +67,9 @@ async def wake(app: FastAPI, url: str, force: bool = False) -> bool:
                     await db.migrate(c)
                     await refload.load(c)
         except Exception as e:  # stopped, starting, or unreachable: stay asleep
-            logger.warning("database not reachable (%s: %s); the server is asleep", type(e).__name__, str(e)[:200])
+            (logger.debug if st.warned else logger.warning)(
+                "database not reachable (%s: %s); the server is asleep", type(e).__name__, str(e)[:200])
+            st.warned = True
             return False
         st.awake = True
         logger.info("database reachable: the server is awake")

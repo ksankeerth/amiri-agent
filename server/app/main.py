@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app import auth, db, health, overview, prototype, settings, sleep, tick
+from app import auth, db, health, logs, overview, prototype, settings, sleep, tick
 from app.alerts import api as alerts_api
 from app.alerts.service import Alerts
 from app.assistant import api as assistant_api
@@ -47,6 +47,7 @@ web app, not here (prototype).
 def create_app(*, database_url: str | None = None, provider: TwelveDataClient | None = None,
                clock: Clock | None = None, assistant=None, investigation: InvestigationClient | None = None,
                monitor: MonitorClient | None = None, radar: RadarClient | None = None) -> FastAPI:
+    logs.setup()
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         # The database may be stopped (to save costs): the server starts anyway and wakes when it answers (app/sleep.py).
@@ -91,6 +92,7 @@ def create_app(*, database_url: str | None = None, provider: TwelveDataClient | 
                            allow_headers=["*"], expose_headers=["ETag", "Location", "Retry-After"])
     app.add_middleware(sleep.Asleep)  # inside the gate: signed-out callers get 401 first
     app.add_middleware(auth.Gate)
+    app.add_middleware(logs.TraceContext)  # outermost: every log line a request causes knows its trace
     app.include_router(auth.robots)
     app.include_router(auth.router)
     app.include_router(health.router)

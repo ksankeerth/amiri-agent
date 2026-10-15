@@ -11,6 +11,7 @@ agent held back. A sent story that continues an earlier one (`development_of`) w
 in an open event joins that event as a development (linked by radar).
 """
 
+import logging
 import uuid
 from datetime import datetime, timedelta
 
@@ -29,6 +30,7 @@ from app.radar.contract import RadarRunResult
 
 FINISHED = ("completed", "stopped_early")
 MAX_REPOSTS = 3
+log = logging.getLogger("amiri.radar")
 WORLD = "live"
 
 
@@ -224,6 +226,7 @@ class Radar:
         return True
 
     async def _failed(self, run_id: str, error: str, step: dict) -> None:
+        log.warning("radar run %s failed: %s", run_id, error[:500])
         async with self.pool.connection() as conn:
             await conn.execute(
                 """UPDATE signals.radar_runs SET status = 'failed', error = %s, finished_at = %s, next_poll_at = NULL

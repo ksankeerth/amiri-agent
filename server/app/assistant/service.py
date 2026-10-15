@@ -11,6 +11,7 @@ normal batch (source "assistant", linked to the proposal) and concludes the trac
 
 import asyncio
 import json
+import logging
 import uuid
 from collections.abc import AsyncIterator
 from datetime import datetime, timedelta
@@ -30,6 +31,8 @@ from app.institutions.schemas import InstitutionCreate, Operation
 from app.institutions.service import Institutions
 from app.monitors.service import Monitors
 from app.problems import Problem
+
+log = logging.getLogger("amiri.assistant")
 
 RECENT_MESSAGES = 20
 ENGLISH_ONLY = "Sorry, I can only help in English for now. The forms work in any case."
@@ -403,9 +406,13 @@ class AssistantService:
                            "message": "The setup agent took too long and was stopped; nothing was changed. Try again, or use the forms."}
                     async with self.pool.connection() as conn:
                         err["message_id"] = await self._store(conn, turn.thread_id, turn.session_id, track, "assistant", "error", err)
+                    log.warning("setup chat turn %s: the agent took too long", turn.turn_id)
                     put(sse("error", {**err, "track": track}))
                     break
                 data = dict(ev.data)
+                if ev.type == "error":
+                    log.warning("setup chat turn %s ended with %s: %s", turn.turn_id, data.get("code"),
+                                str(data.get("message"))[:300])
                 if ev.type == "error" and data.get("code") == "agent_session_lost":
                     async with self.pool.connection() as conn:  # the next message starts a new session
                         await conn.execute("UPDATE assistant.sessions SET ended_at = %s WHERE session_id = %s",
@@ -454,6 +461,7 @@ class AssistantService:
                                                                kind, data)
                 put(sse(ev.type, {**data, "track": data.get("track", track)}))
         except Exception as e:  # the connector should report its own errors; this is the backstop
+            log.exception("setup chat turn %s failed", turn.turn_id)
             err = {"code": "assistant_failed", "message": f"{type(e).__name__}: {e}"}
             async with self.pool.connection() as conn:
                 await self._store(conn, turn.thread_id, turn.session_id, track, "assistant", "error", err)

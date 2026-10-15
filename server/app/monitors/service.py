@@ -11,6 +11,7 @@ check reads news published since the last completed check. Its findings become t
 Finding and go to the investigation like any other.
 """
 
+import logging
 import re
 import uuid
 from datetime import datetime, timedelta
@@ -26,6 +27,8 @@ from app.monitors import request as build
 from app.monitors import templates
 from app.monitors.schemas import MonitorSpec
 from app.problems import Problem
+
+log = logging.getLogger("amiri.monitors")
 
 FINISHED = ("completed", "stopped_early")
 MAX_REPOSTS = 3
@@ -454,6 +457,7 @@ class Monitors:
         return True
 
     async def _failed(self, run_id: str, error: str, step: dict) -> None:
+        log.warning("monitor check %s failed: %s", run_id, error[:500])
         now = self.clock.now()
         async with self.pool.connection() as conn:
             cur = await conn.execute(

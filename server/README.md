@@ -66,6 +66,14 @@ refused (`BLOCK_AI_CRAWLERS`). Each sign-in attempt that passes the access code 
 month are free for an organisation); `LOGIN_CHECKS_PER_DAY` caps them, and setting `LOGIN_ACCESS_CODE` keeps bots from
 spending any.
 
+## Logs
+
+`app/logs.py`. Locally plain lines; on Cloud Run (`LOG_FORMAT=json`) one JSON line per entry, with its severity,
+tracebacks in one entry and a link to the request's trace. INFO is one line per tick and per sign-in; WARNING is
+anything that failed (an agent run, a tick step, a series' fetches, sign-in setup); ERROR is an unexpected
+exception. Nothing per request, and never a prompt, a person's words or an IP address. `infra/README.md` §5 has
+the filters to find a problem.
+
 ## When the database is stopped
 
 In Google Cloud the database can be stopped to save money (`infra/scripts/awake.sh off`). The server starts

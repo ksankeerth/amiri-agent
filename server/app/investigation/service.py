@@ -18,6 +18,7 @@ virtual clock, which also sends `as_of`, names its runs predictably and collects
 running run (its clock doesn't move while it waits).
 """
 
+import logging
 import uuid
 from collections.abc import Callable
 from datetime import datetime, timedelta
@@ -34,6 +35,8 @@ from app.investigation.client import AgentError, InvestigationClient
 from app.investigation.tone import tone
 from app.problems import Problem
 from app.text import plural
+
+log = logging.getLogger("amiri.investigation")
 
 MAX_FINDINGS = 20
 MAX_REPOSTS = 3
@@ -408,6 +411,7 @@ class Investigations:
                 await conn.execute("UPDATE signals.findings SET status = 'new', run_id = NULL WHERE finding_id = %s", (f,))
 
     async def _failed(self, run_id: str, error: str, step: dict, *, retry: bool) -> None:
+        log.warning("investigation %s failed%s: %s", run_id, " (will retry)" if retry else "", error[:500])
         now = self.clock.now()
         async with self.pool.connection() as conn, conn.transaction():
             cur = await conn.execute(

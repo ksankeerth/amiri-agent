@@ -11,6 +11,7 @@ the call under an advisory lock, so concurrent requests can't overspend the
 per-minute or per-day budget.
 """
 
+import logging
 import math
 import re
 import uuid
@@ -27,6 +28,8 @@ from app.clock import Clock
 from app.problems import Problem
 from app.providers.twelvedata import PROVIDER, ProviderError, TwelveDataClient
 from app.series import detect
+
+log = logging.getLogger("amiri.series")
 
 BUDGET_LOCK = 7_310_002
 SERIES_LIMIT_LOCK = 7_310_003
@@ -691,11 +694,18 @@ class MarketSeries:
 
     async def _set_fetch_result(self, sid: str, now: datetime, status: str, error: dict | None) -> None:
         async with self.pool.connection() as conn:
-            await conn.execute(
-                """UPDATE signals.series SET last_fetch_at = %s, last_fetch_status = %s,
-                     last_fetch_error = %s WHERE series_id = %s""",
-                (now, status, Jsonb(error) if error else None, sid),
+            cur = await conn.execute(
+                """WITH old AS (SELECT last_fetch_status FROM signals.series WHERE series_id = %s)
+                   UPDATE signals.series SET last_fetch_at = %s, last_fetch_status = %s,
+                     last_fetch_error = %s WHERE series_id = %s RETURNING (SELECT last_fetch_status FROM old) AS was""",
+                (sid, now, status, Jsonb(error) if error else None, sid),
             )
+            row = await cur.fetchone()
+        was = row["was"] if row else None
+        if status == "error" and was != "error":  # once when it starts failing, not every hour
+            log.warning("series %s: fetching from Twelve Data fails: %s", sid, str(error)[:300])
+        elif was == "error" and status != "error":
+            log.info("series %s: fetching works again", sid)
 
     @staticmethod
     async def _recent_bars(conn, r: dict) -> list[tuple[datetime, float]]:

@@ -15,6 +15,7 @@ touches `studio`; a step takes the tick's lock, so the two never overlap.
 """
 
 import itertools
+import logging
 import uuid
 from datetime import datetime, timedelta
 
@@ -36,6 +37,8 @@ from app.series import detect
 from app.studio import prices, template
 from app.studio.record import RecordClient, token
 from app.tick import TICK_LOCK
+
+log = logging.getLogger("amiri.studio")
 
 WORLD = "studio"
 ACTIVE = ("running", "waiting")
@@ -381,6 +384,8 @@ class Studio:
         return False
 
     async def _check_done(self, sim: dict, check_id: str, st: dict) -> None:
+        if st.get("status") == "failed":
+            log.warning("studio %s: check %s failed: %s", sim["sim_id"], check_id, str(st.get("error"))[:500])
         now = sim["virtual_now"]
         async with self.pool.connection() as conn, conn.transaction():
             cur = await conn.execute("SELECT * FROM studio.sim_checks WHERE check_id = %s FOR UPDATE", (check_id,))

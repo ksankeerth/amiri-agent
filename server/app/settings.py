@@ -31,6 +31,12 @@ SETTINGS: dict[str, Setting] = {
     for s in [
         # Server
         Setting("SERVER_PORT", "8000", "Port of `uv run amiri serve`."),
+        # Logs (app/logs.py)
+        Setting("LOG_FORMAT", "text", "text (local) or json (Cloud Run: severity, one entry per traceback, linked to the "
+                "request's trace)."),
+        Setting("LOG_LEVEL", "INFO", "Lowest level logged: DEBUG, INFO, WARNING or ERROR."),
+        Setting("GOOGLE_CLOUD_PROJECT", "", "The Google Cloud project; with LOG_FORMAT=json it links each log line to its "
+                "request's trace."),
         # Sign-in
         Setting("AUTH_MODE", "off", "Who may use the server: off (anyone; local runs and tests) or prototype (a "
                 "Google reCAPTCHA check, then a session cookie; the public URL)."),

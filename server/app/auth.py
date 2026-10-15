@@ -13,6 +13,7 @@ import base64
 import hashlib
 import hmac
 import json
+import logging
 import re
 import secrets
 import time
@@ -26,6 +27,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app import settings
 from app.problems import Problem
+
+log = logging.getLogger("amiri.auth")
 
 COOKIE = "amiri_session"
 router = APIRouter(prefix="/api/v1/auth", tags=["sign in"])
@@ -150,7 +153,11 @@ def _check_budget_spent() -> bool:
     if _checks["day"] != today:
         _checks.update(day=today, n=0)
     _checks["n"] += 1
-    return _checks["n"] > settings.integer("LOGIN_CHECKS_PER_DAY")
+    cap = settings.integer("LOGIN_CHECKS_PER_DAY")
+    if _checks["n"] == cap + 1:  # once a day, when it first happens
+        log.warning("sign-in: today's reCAPTCHA checks (%s, LOGIN_CHECKS_PER_DAY) are used up; sign-in is refused until "
+                    "midnight UTC", cap)
+    return _checks["n"] > cap
 
 
 def _rate_limited(ip: str) -> bool:
@@ -196,6 +203,7 @@ async def prototype(request: Request, body: PrototypeIn, response: Response):
         raise Problem(403, "wrong_code", "That access code isn't right.")
     secret = settings.raw("RECAPTCHA_SECRET")
     if not secret:
+        log.error("sign-in: RECAPTCHA_SECRET isn't set, so nobody can sign in")
         raise Problem(503, "misconfigured", "reCAPTCHA isn't set up on this server (RECAPTCHA_SECRET).")
     if _check_budget_spent():
         raise Problem(429, "busy", "Sign-in is busy today; try again tomorrow or ask for access.", retry_after=3600)
@@ -206,13 +214,18 @@ async def prototype(request: Request, body: PrototypeIn, response: Response):
                              data={"secret": secret, "response": body.token, "remoteip": _client_ip(request)})
         v = r.json()
     except (httpx.HTTPError, ValueError) as e:
+        log.warning("sign-in: Google's reCAPTCHA check didn't answer (%s)", type(e).__name__)
         raise Problem(502, "captcha_unreachable", "Google's reCAPTCHA check didn't answer; try again.") from e
     hosts = settings.names("RECAPTCHA_HOSTNAMES")
     # Over its free allowance Google answers success:true with an error code, so any error code is a failure.
     if not v.get("success") or v.get("error-codes") or (hosts and v.get("hostname") not in hosts):
+        # the hostname tells a key without this domain apart from a failed check (no IP: nothing personal in logs)
+        log.info("sign-in refused: reCAPTCHA success=%s errors=%s hostname=%s (allowed: %s)", v.get("success"),
+                 v.get("error-codes", []), v.get("hostname"), ", ".join(hosts) or "any")
         raise Problem(403, "captcha_failed", "The check didn't pass. Tick the box again.",
                       reasons=v.get("error-codes", []))
     token, exp = issue("prototype")
+    log.info("signed in (prototype access)")
     secure = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
     response.set_cookie(COOKIE, token, max_age=exp - int(time.time()), httponly=True, secure=secure, samesite="lax",
                         path="/")
