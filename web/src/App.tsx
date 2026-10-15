@@ -16,7 +16,7 @@ import { SeriesDetail } from "./pages/SeriesDetail";
 import { SeriesList } from "./pages/SeriesList";
 import { OverviewPage } from "./pages/Overview";
 import { RadarPage } from "./pages/radar/Radar";
-import { LoginPage } from "./pages/Login";
+import { LoginPage, PausedPage } from "./pages/Login";
 import { authApi, type AuthConfig } from "./api/auth";
 import { AlertsPage } from "./pages/Alerts";
 import { alertsApi, type AlertSummary } from "./api/alerts";
@@ -114,10 +114,13 @@ export function App() {
       .then(([cfg, me]) => setGate({ cfg, signedIn: me.signed_in }))
       .catch(() => setGate({ cfg: { mode: "off", recaptcha_site_key: null, access_code: false, google: false }, signedIn: true }));
     const out = () => setGate(g => (g ? { ...g, signedIn: false } : g));
+    const asleep = () => setGate(g => (g ? { ...g, cfg: { ...g.cfg, asleep: true } } : g));
     window.addEventListener("amiri:signed-out", out);
-    return () => window.removeEventListener("amiri:signed-out", out);
+    window.addEventListener("amiri:asleep", asleep);
+    return () => { window.removeEventListener("amiri:signed-out", out); window.removeEventListener("amiri:asleep", asleep); };
   }, []);
   if (!gate) return <PageSkeleton />;
+  if (gate.cfg.asleep) return <PausedPage />;
   if (!gate.signedIn) return <LoginPage cfg={gate.cfg} />;
   return <Installed auth={gate.cfg.mode !== "off"} />;
 }

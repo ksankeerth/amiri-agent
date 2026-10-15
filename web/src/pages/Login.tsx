@@ -43,6 +43,54 @@ function Captcha({ siteKey, onToken, resetKey }: { siteKey: string; onToken: (t:
   </>;
 }
 
+// the left panel, shared by the sign-in and the paused page
+function Brand() {
+  return (
+  <header className="login-brand">
+    <div className="login-logo">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#F1F5EC" /><path d="M9.2 25 15 7h2l5.8 18h-3.1L16 13.1 12.3 25z" fill="#0F3D2E" /><rect x="14.2" y="16" width="3.6" height="5.2" fill="#F05A28" /></svg>
+      <b>Amiri Agent</b>
+    </div>
+    <div className="login-pitch">
+      <h1>See what the world means for your balance sheet, before your numbers show it.</h1>
+      <p>Amiri Agent reads the news and the markets for your institution, traces each event to the products it could move, and tells the team that owns them.</p>
+    </div>
+    <ol className="login-flow" aria-label="How it works">
+      {([["radar", "Watch", "news and markets"], ["search", "Find", "what's unusual"], ["events", "Trace", "to your products"], ["alert", "Alert", "the owning team"]] as const).map(([i, t, d], n) => (
+        <li key={t} style={{ animationDelay: `${n * 0.9}s` }}><span className="ico"><Icon name={i} /></span><b>{t}</b><span>{d}</span></li>))}
+    </ol>
+    <span className="login-foot">Prototype · demo data only</span>
+  </header>
+  );
+}
+
+/** The database is stopped to save costs (server: app/sleep.py); sign-in and this page still work. */
+export function PausedPage() {
+  const [busy, setBusy] = useState(false);
+  const [still, setStill] = useState(false);
+  useEffect(() => { document.title = "Paused · Amiri Agent"; }, []);
+  const check = async () => {
+    setBusy(true); setStill(false);
+    try { const c = await authApi.config(); if (!c.asleep) { window.location.reload(); return; } setStill(true); }
+    catch { setStill(true); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="login">
+      <Brand />
+      <main className="login-main" id="main">
+        <div className="login-card">
+          <h2>Amiri Agent is paused</h2>
+          <p className="muted" style={{ margin: "8px 0 18px" }}>To save costs, its database is stopped while nobody is using it. Nothing is lost: everything comes back as it was when it is woken up.</p>
+          <p className="small muted" style={{ marginBottom: 18 }}>Ask the person who runs this prototype to wake it. It takes a few minutes; then check again.</p>
+          {still && <div className="errtext" role="status" style={{ marginBottom: 12 }}>Still paused.</div>}
+          <button className="btn btn--primary btn--lg" type="button" disabled={busy} onClick={check}>{busy ? "Checking…" : "Check again"}</button>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 export function LoginPage({ cfg }: { cfg: AuthConfig }) {
   const [token, setToken] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -62,21 +110,7 @@ export function LoginPage({ cfg }: { cfg: AuthConfig }) {
   useEffect(() => { document.title = "Sign in · Amiri Agent"; }, []);
   return (
     <div className="login">
-      <header className="login-brand">
-        <div className="login-logo">
-          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#F1F5EC" /><path d="M9.2 25 15 7h2l5.8 18h-3.1L16 13.1 12.3 25z" fill="#0F3D2E" /><rect x="14.2" y="16" width="3.6" height="5.2" fill="#F05A28" /></svg>
-          <b>Amiri Agent</b>
-        </div>
-        <div className="login-pitch">
-          <h1>See what the world means for your balance sheet, before your numbers show it.</h1>
-          <p>Amiri Agent reads the news and the markets for your institution, traces each event to the products it could move, and tells the team that owns them.</p>
-        </div>
-        <ol className="login-flow" aria-label="How it works">
-          {([["radar", "Watch", "news and markets"], ["search", "Find", "what's unusual"], ["events", "Trace", "to your products"], ["alert", "Alert", "the owning team"]] as const).map(([i, t, d], n) => (
-            <li key={t} style={{ animationDelay: `${n * 0.9}s` }}><span className="ico"><Icon name={i} /></span><b>{t}</b><span>{d}</span></li>))}
-        </ol>
-        <span className="login-foot">Prototype · demo data only</span>
-      </header>
+      <Brand />
       <main className="login-main" id="main">
         <div className="login-card">
           <h2>Sign in</h2>

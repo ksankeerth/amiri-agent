@@ -1,7 +1,7 @@
 // Sign-in (server: app/auth.py).
 import { api } from "./client";
 
-export interface AuthConfig { mode: "off" | "prototype"; recaptcha_site_key: string | null; access_code: boolean; google: boolean }
+export interface AuthConfig { mode: "off" | "prototype"; recaptcha_site_key: string | null; access_code: boolean; google: boolean; asleep?: boolean }
 export interface Me { mode: string; signed_in: boolean; kind: string | null; expires_at?: number | null }
 
 export const authApi = {
