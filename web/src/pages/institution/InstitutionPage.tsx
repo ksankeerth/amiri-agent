@@ -10,7 +10,7 @@ import { WithChat } from "../../components/SetupChat";
 import { Banner, MenuButton, Modal, PageHead, ResetModal, useToast, PageSkeleton } from "../../components/ui";
 import { dayTime, plural } from "../../format";
 import { PlaceName, useLoad } from "./fields";
-import { InstitutionFields, InstitutionModal, LABELS, splitErrors, type Ctx } from "./forms";
+import { InstitutionFields, InstitutionModal, LABELS, splitErrors, useHiddenErrors, type Ctx } from "./forms";
 import { ProfileMap } from "./ProfileMap";
 import { LinkGrid, SectionList } from "./sections";
 import { DraftFromProfile } from "../monitors/Monitors";
@@ -64,6 +64,7 @@ export function CreateInstitution({ onCreated }: { onCreated: (id: string) => vo
   const [err, setErr] = useState<Record<string, string>>({});
   const [general, setGeneral] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const { box, hidden } = useHiddenErrors(err);
   const create = async () => {
     setBusy(true); setErr({}); setGeneral([]);
     try {
@@ -86,10 +87,11 @@ export function CreateInstitution({ onCreated }: { onCreated: (id: string) => vo
     <div className="card"><div className="bd col" style={{ gap: 14 }}>
       <div><h2>Tell Amiri Agent about your institution</h2>
         <p className="small muted">Everything Amiri Agent watches and checks starts from this profile. Start with the basics; the next steps add where you operate, your customers, products, flows, rules, rivals and risks. Works with forms alone; the setup assistant is optional.</p></div>
-      <InstitutionFields d={d} set={(k, v) => setD(x => ({ ...x, [k]: v }))} err={err} creating />
-      {general.length > 0 && <div className="rawerr">{general.join(" · ")}</div>}
-      <div className="row wrap"><label className="btn"><Icon name="plus" />Import a profile (JSON)
-        <input type="file" accept="application/json" hidden onChange={e => e.target.files?.[0] && importFile(e.target.files[0])} /></label>
+      <div ref={box}><InstitutionFields d={d} set={(k, v) => setD(x => ({ ...x, [k]: v }))} err={err} creating
+        fill={data => { setErr({}); setGeneral([]); setD(x => ({ ...x, ...data })); }} /></div>
+      {general.concat(hidden).length > 0 && <div className="rawerr" role="alert">{general.concat(hidden).join(" · ")}</div>}
+      <div className="row wrap"><label className="btn"><Icon name="plus" />Import a whole profile (creates everything)
+        <input type="file" accept="application/json" className="sr" onChange={e => e.target.files?.[0] && importFile(e.target.files[0])} /></label>
         <a className="small" href="/api/v1/reference/demo-profile" download>Download the demo bank's profile</a>
         <span className="spacer" /><button className="btn btn--primary" type="button" disabled={busy} onClick={create}>Create and continue</button></div>
     </div></div>

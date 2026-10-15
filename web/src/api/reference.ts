@@ -25,6 +25,7 @@ export const ref = {
   // what a home country and base currency may be (the prototype's region, SUPPORTED_REGION on the server)
   homeCountries: () => once("homeCountries", () => api<{ items: { code: string; name: string }[]; region: Region | null }>(`${R}/countries?scope=home`)),
   homeCurrencies: () => once("homeCurrencies", () => api<{ items: { code: string; name: string }[]; region: Region | null }>(`${R}/currencies?scope=home`)),
+  regulator: (id: string) => api<Record<string, any>>(`${R}/regulators/${encodeURIComponent(id)}`),
   routes: () => once("routes", () => api<{ items: Route[] }>(`${R}/routes`).then(r => r.items)),
   hazards: () => once("hazards", () => api<{ items: Hazard[] }>(`${R}/hazards`).then(r => r.items)),
   types: () => once("types", () => api<{ items: { institution_type: string; subtypes: string[] }[] }>(`${R}/institution-types`).then(r => r.items)),

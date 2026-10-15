@@ -302,3 +302,6 @@ a.card:hover, .card.click:hover { box-shadow:0 2px 4px rgba(20,24,31,.05), 0 10p
 
 /* required fields: a star in the label (the forms say what it means) */
 .req { color:var(--critical); font-weight:600; }
+
+/* a file button: its input is visually hidden but focusable; the button shows the focus ring */
+label.btn:has(input[type=file]:focus-visible) { outline:2px solid var(--focus); outline-offset:2px; }

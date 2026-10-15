@@ -73,7 +73,7 @@ function ImportItems({ section, iid, onAdded }: { section: SectionName; iid: str
       const doc = JSON.parse(await f.text());
       const list: Record<string, any>[] = Array.isArray(doc) ? doc : doc.items ?? doc.sections?.[section] ?? [];
       if (!list.length) { setOps([]); setProblems([`No ${LABELS[section].many.toLowerCase()} in this file.`]); return; }
-      const o: Operation[] = list.map(item => ({ op: "create", section, data: item }));
+      const o: Operation[] = list.map(({ id, ...data }) => ({ op: "create", section, ...(id ? { id: String(id) } : {}), data }));
       await inst.batch(iid, o, true);  // checked, nothing written
       setOps(o);
     } catch (e) {
@@ -91,7 +91,7 @@ function ImportItems({ section, iid, onAdded }: { section: SectionName; iid: str
   return (
     <>
       <label className="btn btn--sm" title={`Import ${LABELS[section].many.toLowerCase()} from a JSON file`}><Icon name="plus" />Import
-        <input type="file" accept="application/json" hidden onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) read(f); }} /></label>
+        <input type="file" accept="application/json" className="sr" onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) read(f); }} /></label>
       {ops !== null && <Modal title={`Import ${LABELS[section].many.toLowerCase()}`} onClose={() => setOps(null)} footer={<>
         <button className="btn" type="button" onClick={() => setOps(null)}>Cancel</button>
         <button className="btn btn--primary" type="button" disabled={busy || !ops.length || problems.length > 0} onClick={add}>Import {ops.length || ""}</button></>}>

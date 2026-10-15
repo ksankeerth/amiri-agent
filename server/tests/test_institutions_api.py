@@ -562,3 +562,12 @@ async def test_the_prototype_covers_japac_for_the_home_country_and_currency(clie
     everywhere = (await client.get("/api/v1/reference/countries")).json()  # counterparts can be anywhere
     assert "GB" in {c["code"] for c in everywhere["items"]} and everywhere["region"] is None
     assert (await client.post("/api/v1/institutions", json=BANK)).status_code == 201  # Sri Lanka is in
+
+
+async def test_a_rule_table_entry_by_id(client):
+    r = (await client.get("/api/v1/reference/regulators/lk-cbsl")).json()
+    assert r["name"] == "Central Bank of Sri Lanka" and r["short"] == "CBSL" and r["area"] == "banking"
+    assert r["basis"] == "rule" and r["rule_ref"] == "lk-cbsl" and r["country"] == "LK" and r["controls"]
+    fatf = (await client.get("/api/v1/reference/regulators/global-fatf")).json()
+    assert fatf["relation"] == "standard" and fatf["country"] is None
+    assert (await client.get("/api/v1/reference/regulators/nope")).status_code == 404

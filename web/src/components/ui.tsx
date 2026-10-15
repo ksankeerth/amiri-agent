@@ -125,7 +125,8 @@ export function Modal({ title, onClose, children, footer, wide }: { title: React
   close.current = onClose;
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
-    const first = box.current?.querySelector<HTMLElement>(".mb " + FOCUSABLE.split(", ").join(", .mb ")) ?? box.current;
+    // the first field, not the "fill from a file" control that sits above it
+    const first = [...(box.current?.querySelectorAll<HTMLElement>(".mb " + FOCUSABLE.split(", ").join(", .mb ")) ?? [])].find(x => !x.closest(".fillfile")) ?? box.current;
     first?.focus({ preventScroll: true });
     const k = (e: KeyboardEvent) => {
       if (e.key === "Escape") { close.current(); return; }

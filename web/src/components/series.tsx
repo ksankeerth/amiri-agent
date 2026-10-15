@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ApiError } from "../api/client";
 import { seriesApi, type Detector, type FetchOutcome, type LookupItem, type Series, type SeriesState, type Theme } from "../api/series";
 import { until } from "../format";
+import { FillFromJson } from "./FillFromJson";
+import { seriesOf } from "./fillJson";
 import { Icon } from "./Icon";
 import { Modal, useNow, useToast } from "./ui";
 
@@ -121,6 +123,15 @@ export function AddSeriesModal({ onClose, onAdded, left }: { onClose: () => void
     const c = COMMODITY[i.symbol.toUpperCase().split("/")[0]];
     setTheme(c ?? AUTO);  // gold → Gold price, oil → Oil price; else the server sets it from the symbol
   };
+  // a file's series fills the form (to check and edit, then add); a theme that isn't one of the choices is set from the symbol
+  const fillFrom = (x: Record<string, any>) => {
+    const sym = String(x.symbol ?? "").trim();
+    setSymbol(sym); setName(typeof x.name === "string" ? x.name.slice(0, 60) : "");
+    setPlaces(Array.isArray(x.places) ? x.places.join(", ") : typeof x.places === "string" ? x.places : "");
+    const id = x.theme && typeof x.theme === "object" ? themeId(x.theme as Theme, sym) : "";
+    setTheme(id && id !== "custom" && themePresets(sym).some(t => t.id === id) ? id : COMMODITY[sym.toUpperCase().split("/")[0]] ?? AUTO);
+    setErr(null);
+  };
   const add = async () => {
     if (!symbol.trim()) { setErr("Choose a symbol from the search, or type one (e.g. USD/LKR)."); return; }
     setBusy(true); setErr(null);
@@ -139,6 +150,8 @@ export function AddSeriesModal({ onClose, onAdded, left }: { onClose: () => void
       <button className="btn" type="button" onClick={onClose}>Cancel</button>
       <button className="btn btn--primary" type="button" onClick={add} disabled={busy || left <= 0}>
         {busy ? <><Icon name="refresh" className="spin" />Reading history…</> : "Add and read history"}</button></>}>
+      <FillFromJson what="a series" read={seriesOf} onFill={c => fillFrom(c.data)}
+        example={'{"symbol": "USD/LKR", "name": "…", "places": ["LK"], "theme": {…}}, or a list of them'} />
       <p className="small muted">Amiri Agent reads about 2,000 hours of history from Twelve Data now (1 credit), then pulls new prices every hour. A move far outside normal becomes a finding. No model is involved.</p>
       <div className="row" style={{ alignItems: "flex-end" }}>
         <label className="field" style={{ flex: 1 }}><span>Find a symbol</span>

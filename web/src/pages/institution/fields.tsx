@@ -272,7 +272,7 @@ export function MoneyField({ value, onChange }: { value: { amount: number; curre
       <input className="input" type="number" min={0} step="any" style={{ width: 170 }} value={value ? v.amount : ""} placeholder="amount"
         onChange={e => e.target.value === "" ? onChange(null) : onChange({ ...v, amount: Number(e.target.value) })} />
       <div style={{ width: 150 }}><CurrencySelect value={v.currency || null} onChange={c => onChange(c ? { ...v, currency: c } : null)} /></div>
-      <input className="input" type="date" style={{ width: 160 }} value={v.as_of ?? ""} onChange={e => value && onChange({ ...v, as_of: e.target.value || null })} title="As of" />
+      <input className="input" type="date" style={{ width: 160 }} value={v.as_of ?? ""} onChange={e => value && onChange({ ...v, as_of: e.target.value || null })} title="As of" aria-label="As of" />
     </div>
   );
 }

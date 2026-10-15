@@ -5,6 +5,8 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { inst, type Profile } from "../../api/institutions";
 import { EVERY, monitorsApi, type CheckRow, type ChipType, type Monitor, type MonitorFinding, type MonitorSpec, type MonitorsStatus } from "../../api/monitors";
+import { FillFromJson } from "../../components/FillFromJson";
+import { monitorsOf } from "../../components/fillJson";
 import { Icon } from "../../components/Icon";
 import { Banner, PageHead, useNow, useToast, PageSkeleton } from "../../components/ui";
 import { ago, dayTime, plainError, when } from "../../format";
@@ -137,6 +139,19 @@ function MonitorForm({ m, profile, status, onSaved }: { m: Monitor | null; profi
   const min = status?.min_frequency_minutes ?? 60;
   const E = err.fields;
 
+  // a file's spec fills the whole form (to check and edit, then save); what it leaves out stays blank
+  const fillFrom = (spec: Record<string, any>) => {
+    const b = blank();
+    const x: MonitorSpec = {
+      ...b, ...spec,
+      about: { ...b.about, ...(spec.about ?? {}) },
+      public: { ...b.public, ...(spec.public ?? {}), example_headlines: { ...b.public.example_headlines, ...(spec.public?.example_headlines ?? {}) },
+        sources: { ...b.public.sources, ...(spec.public?.sources ?? {}) } },
+      private: { ...b.private, ...(spec.private ?? {}) },
+    };
+    setS(x); setTell((x.public.tell_me_if ?? []).join("\n")); setIgnore((x.public.ignore ?? []).join("\n"));
+    setSerious((x.private.serious ?? []).join("\n")); setErr({ fields: {}, general: [] });
+  };
   const save = async (submit: boolean) => {
     const spec: MonitorSpec = structuredClone(s);
     spec.public.tell_me_if = lines(tell); spec.public.ignore = lines(ignore); spec.private.serious = lines(serious);
@@ -167,6 +182,8 @@ function MonitorForm({ m, profile, status, onSaved }: { m: Monitor | null; profi
       <div className="bd col" style={{ gap: 14 }}>
         {err.general.length > 0 && <Banner kind="crit" icon="warn">{err.general.join(" ")}</Banner>}
         {Object.keys(E).length > 0 && <Banner kind="crit" icon="warn">Some fields need attention: see below.</Banner>}
+        <FillFromJson what="a monitor" read={monitorsOf} onFill={c => fillFrom(c.data)}
+          example={'a monitor spec as JSON ({"about": {…}, "public": {…}, "private": {…}}), or {"spec": …}'} />
         <Field label="Name" error={E["about.name"]}>
           <input className={`input ${E["about.name"] ? "err" : ""}`} value={s.about.name} placeholder="e.g. Gulf jobs and security" onChange={e => up(x => { x.about.name = e.target.value; })} />
         </Field>

@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "../../api/client";
 import { studioApi, TONE, type Custom, type HeadlineIn, type Mode, type PriceMove, type Scenario, type ScenarioRow, type Simulation, type Template } from "../../api/studio";
+import { FillFromJson } from "../../components/FillFromJson";
+import { scenariosOf } from "../../components/fillJson";
 import { Icon } from "../../components/Icon";
 import { Banner, Empty, Modal, PageHead, PageSkeleton, useToast } from "../../components/ui";
 import { dayTime, plural } from "../../format";
@@ -35,22 +37,38 @@ function NewOwnModal({ onClose }: { onClose: () => void }) {
   const nav = useNavigate();
   const toast = useToast();
   const [title, setTitle] = useState("");
+  const [custom, setCustom] = useState<Custom>({ headlines: [], prices: { direction: "none", size_pct: 0, ramp_days: 5 } });
   const [busy, setBusy] = useState(false);
+  // a file's scenario fills the form: its name, its headlines and its price move (checked by the server when it is created)
+  const fillFrom = (x: Record<string, any>) => {
+    const c = (x.custom && typeof x.custom === "object" ? x.custom : x) as Record<string, any>;
+    const heads: HeadlineIn[] = (Array.isArray(c.headlines) ? c.headlines : []).filter((h: any) => h && typeof h.title === "string")
+      .map((h: any, i: number) => ({ id: typeof h.id === "string" && h.id ? h.id : `h${i + 1}`, title: h.title, day: Number(h.day) || 1, time: typeof h.time === "string" ? h.time : "09:00" }));
+    const p = c.prices && typeof c.prices === "object" ? c.prices : {};
+    setTitle(typeof x.title === "string" ? x.title.slice(0, 120) : title);
+    setCustom({ headlines: heads, prices: { direction: ["weaker", "stronger"].includes(p.direction) ? p.direction : "none",
+      size_pct: Number(p.size_pct) || 0, ramp_days: Number(p.ramp_days) || 5 } });
+  };
   const go = async () => {
     setBusy(true);
     try {
-      const s = await studioApi.create("blank", { title: title.trim(), custom: { headlines: [], prices: { direction: "none", size_pct: 0, ramp_days: 5 } } });
+      const s = await studioApi.create("blank", { title: title.trim(), custom });
       nav(`/studio/${s.scenario_id}?new=1`);
     } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); setBusy(false); }
   };
+  const n = custom.headlines?.length ?? 0, p = custom.prices;
   return (
     <Modal title="Write your own scenario" onClose={onClose} footer={<>
       <button className="btn" type="button" onClick={onClose}>Cancel</button>
       <button className="btn btn--primary" type="button" disabled={busy || !title.trim()} onClick={go}>Create</button></>}>
       <p style={{ margin: 0 }}>Name it, then write the headlines that arrive day by day and, if you like, how the exchange rate moves. Amiri Agent's monitor reads your headlines and the investigation traces them to your products.</p>
+      <FillFromJson what="a scenario" read={scenariosOf} onFill={c => fillFrom(c.data)}
+        example={'{"title": "…", "headlines": [{"title": "…", "day": 1, "time": "09:00"}], "prices": {"direction": "weaker", "size_pct": 5, "ramp_days": 4}}'} />
       <label className="field"><span>Name</span>
         <input className="input" value={title} maxLength={120} placeholder="e.g. Gulf visa freeze" onChange={e => setTitle(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && title.trim()) go(); }} /></label>
+      {(n > 0 || (p && p.direction !== "none")) && <p className="small muted" style={{ margin: 0 }}>
+        {n > 0 ? plural(n, "headline") : "No headlines"}{p && p.direction !== "none" ? `, and the rate moves ${p.size_pct}% ${p.direction} over ${p.ramp_days} days` : ""}: you can change them on the next page.</p>}
     </Modal>
   );
 }

@@ -438,6 +438,16 @@ async def hazards():
     return {"items": reference.hazards()}
 
 
+@ref_router.get("/regulators/{regulator_id}", summary="One entry of the rule table, in the shape of a regulator item")
+async def rule_table_entry(regulator_id: str):
+    r = reference.regulator(regulator_id)
+    if r is None:
+        raise Problem(404, "not_found", f"No regulator {regulator_id} in the rule table.")
+    return {"regulator_id": r["regulator_id"], "name": r["name"], "short": r.get("short"), "country": r.get("country"),
+            "area": r["area"], "basis": "rule", "rule_ref": r["regulator_id"], "controls": r.get("controls", []),
+            "relation": r.get("relation") or ("standard" if r.get("country") is None else "home")}
+
+
 @ref_router.get("/demo-profile", summary="The demo bank's whole profile (sample data), in the import format")
 async def demo_profile():
     from fastapi.responses import JSONResponse
