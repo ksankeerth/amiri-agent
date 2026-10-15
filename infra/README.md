@@ -6,7 +6,7 @@ Terraform shouldn't (secrets, images, the on/off switch).
 
 ```mermaid
 flowchart LR
-    U["Browser<br/>(sign-in: reCAPTCHA)"] --> SRV
+    U["Browser<br/>(no login: a reCAPTCHA box)"] --> SRV
     SCH["Cloud Scheduler<br/>tick every 15 min"] -- "OIDC token" --> SRV
     subgraph RUN["Cloud Run"]
         SRV["amiri-server<br/>web app · API · tick"]
@@ -81,7 +81,7 @@ infra/scripts/deploy.sh          # the services and the tick
 - **Cloud Build** has 2,500 free build-minutes a month.
 - **Artifact Registry** keeps the last three images of each service (the free tier is 0.5 GB; beyond it, cents).
 - **Secret Manager:** the five secrets fit its free tier, because `secrets.sh` destroys replaced versions.
-- **reCAPTCHA:** 10,000 checks a month are free. The access code keeps bots from using them.
+- **reCAPTCHA:** 10,000 checks a month are free; `LOGIN_CHECKS_PER_DAY` (1,000) caps a day, so a flood of bots can't use them all.
 - **The budget alert** emails the billing account's admins at 50%, 90% and 100% of `budget_amount`.
 
 ## 3. Finding a problem
@@ -92,8 +92,8 @@ own request log already has those.
 
 | Level | What is logged |
 |---|---|
-| INFO | one line per tick (what each step did, how long it took); one line per agent run or setup-chat turn (model, counts, time); sign-ins; the database waking |
-| WARNING | an agent run that failed or broke the contract; a tick step that failed (the other steps still run); a series whose Twelve Data fetches start failing (once, not every hour); a model failing over to the next; sign-in refused by reCAPTCHA (with the hostname it saw); the daily reCAPTCHA cap reached; the database unreachable (once) |
+| INFO | one line per tick (what each step did, how long it took); one line per agent run or setup-chat turn (model, counts, time); passed bot checks; the database waking |
+| WARNING | an agent run that failed or broke the contract; a tick step that failed (the other steps still run); a series whose Twelve Data fetches start failing (once, not every hour); a model failing over to the next; a bot check refused by reCAPTCHA (with the hostname it saw); the daily reCAPTCHA cap reached; the database unreachable (once) |
 | ERROR | unexpected exceptions, with the traceback in one entry |
 
 **Never logged:** prompts, model answers, what people type into the chat, IP addresses. Agent traces leave out
@@ -113,7 +113,7 @@ In the console, open **Logs Explorer** with the same filter. Narrow it with thes
 | one service | `resource.labels.service_name="amiri-server"` (or `amiri-investigation`, `amiri-monitor`, `amiri-setup`) |
 | the ticks | `jsonPayload.logger="amiri.tick"` |
 | agent runs, chat turns, model failovers | `jsonPayload.logger=~"^app\.(runs\|engine\|models)"` |
-| sign-in | `jsonPayload.logger="amiri.auth"` |
+| the bot check | `jsonPayload.logger="amiri.auth"` |
 | a run or turn by id | `jsonPayload.message:"inv-20261014…"` |
 | the tick's own calls (Scheduler) | `resource.type="cloud_scheduler_job"` instead of Cloud Run |
 
@@ -136,7 +136,7 @@ a day, so the free allowance covers it many times over. The **Logs Storage** pag
 | `deploy.sh`: "No image_tag yet" | Run `build.sh` first |
 | A service won't start: "secret … has no versions" | Run `secrets.sh` (every secret needs a value before the services) |
 | The app says "paused" | The database is stopped: `awake.sh on`, wait a few minutes, then "Check again" |
-| Sign-in: "the check failed" | The reCAPTCHA key doesn't list the hostname you opened: use the `server_url` output |
+| The bot check: "the check failed" | The reCAPTCHA key doesn't list the hostname you opened: use the `server_url` output |
 | Setting `allUsers` fails | An organisation policy forbids public services (domain-restricted sharing). Use a project outside that organisation |
 | `build.sh`: permission denied on the build account | Your account needs to act as `amiri-build` (Owner has it) |
 | A script against the API (as the ops account): 401 | The token's audience must be exactly the `server_url` output, with `--include-email` |
@@ -158,5 +158,4 @@ The state bucket (`<project>-amiri-tfstate`) stays; delete it by hand if you wan
 - **Radar:** once its agent exists, add an `amiri-radar` service like the others, with `roles/bigquery.jobUser`
   on its account and the server allowed to call it. Then set `radar_url`. Keep `radar_daily_bytes_cap`
   within BigQuery's free terabyte a month.
-- **Google sign-in** in place of the reCAPTCHA prototype sign-in.
 - **A custom domain**, then a reCAPTCHA key for it.

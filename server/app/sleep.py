@@ -2,7 +2,7 @@
 
 In Google Cloud the database can be stopped to save money when nobody is testing
 (infra/terraform, `awake = false`). The server then starts anyway: the web app and
-sign-in work, and every API call answers 503 `asleep` with Retry-After, so the web app
+the bot check work, and every API call answers 503 `asleep` with Retry-After, so the web app
 shows a "paused" page instead of errors.
 
 While asleep, a request at most every DB_WAKE_PROBE_SECONDS tries the database (a single
@@ -25,9 +25,9 @@ from app.reference import load as refload
 
 logger = logging.getLogger("amiri.sleep")
 
-# what needs the database; the rest works without it: liveness (/health), sign-in, robots, the API docs, the web app
+# what needs the database; the rest works without it: liveness (/health), the bot check, robots, the API docs, the web app
 NEEDS_DB = ("/api/", "/internal/", "/health/")
-OPEN = ("/api/v1/auth/",)  # sign-in (its config says whether the server is asleep)
+OPEN = ("/api/v1/auth/",)  # the bot check (its config says whether the server is asleep)
 
 
 class State:

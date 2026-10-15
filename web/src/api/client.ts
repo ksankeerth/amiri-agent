@@ -51,7 +51,7 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
   if (!r.ok) {
     const p: Problem = data && data.code ? data : { status: r.status, code: "http_" + r.status, detail: text || r.statusText };
     if (p.retry_after_seconds === undefined && r.headers.get("Retry-After")) p.retry_after_seconds = Number(r.headers.get("Retry-After"));
-    // the session ran out (or was never there): back to the sign-in page, once
+    // the passed check ran out (or was never there): back to the bot check, once
     if (r.status === 401 && p.code === "signed_out" && !path.startsWith("/api/v1/auth/")) window.dispatchEvent(new Event("amiri:signed-out"));
     // the database is stopped to save costs (server: app/sleep.py): the app shows its paused page
     if (r.status === 503 && p.code === "asleep") window.dispatchEvent(new Event("amiri:asleep"));

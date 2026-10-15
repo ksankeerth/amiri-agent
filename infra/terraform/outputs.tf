@@ -1,5 +1,5 @@
 output "server_url" {
-  description = "Open this: the web app (use this URL, not another one Cloud Run lists: sign-in checks the hostname)."
+  description = "Open this: the web app (use this URL, not another one Cloud Run lists: the bot check checks the hostname)."
   value       = local.server_url
 }
 

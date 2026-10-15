@@ -79,9 +79,8 @@ locals {
   # name -> who reads it. Values: infra/scripts/secrets.sh (never in Terraform or its state).
   secrets = {
     DATABASE_URL       = "the server's connection string (the script makes the database user)"
-    SESSION_SECRET     = "signs the sign-in cookie (the script generates it)"
+    SESSION_SECRET     = "signs the cookie a passed bot check sets (the script generates it)"
     RECAPTCHA_SECRET   = "the reCAPTCHA key's secret key"
-    LOGIN_ACCESS_CODE  = "the access code reviewers type at sign-in"
     TWELVEDATA_API_KEY = "Twelve Data, for the market series"
   }
 }

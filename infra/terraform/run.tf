@@ -167,7 +167,7 @@ resource "google_cloud_run_v2_service" "server" {
   depends_on = [google_secret_manager_secret_iam_member.server_reads, google_project_iam_member.grants]
 }
 
-# the web app is public; sign-in (AUTH_MODE=prototype) guards everything behind it
+# the web app is public; the bot check (AUTH_MODE=prototype: a reCAPTCHA box, no login) guards everything behind it
 resource "google_cloud_run_v2_service_iam_member" "public" {
   name     = google_cloud_run_v2_service.server.name
   location = google_cloud_run_v2_service.server.location

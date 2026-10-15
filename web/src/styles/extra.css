@@ -269,7 +269,7 @@ a.card:hover, .card.click:hover { box-shadow:0 2px 4px rgba(20,24,31,.05), 0 10p
 .pagehead .pageactions { flex:0 0 auto; flex-wrap:nowrap; }
 @media (max-width: 860px) { .pagehead .pageactions { flex-wrap:wrap; } }
 
-/* Sign in */
+/* The bot check (no login) and the paused page */
 .login { min-height:100%; display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); background:var(--paper); }
 .login-brand { position:relative; overflow:hidden; color:#EAF3EE; padding:44px 56px; display:flex; flex-direction:column; gap:36px;
   background:radial-gradient(90% 70% at 85% 10%, rgba(30,157,99,.45), transparent 60%), radial-gradient(70% 60% at 0% 100%, rgba(240,90,40,.18), transparent 60%), linear-gradient(160deg,#0F3D2E,#0A2A20 70%); }

@@ -19,7 +19,7 @@ What it does:
 - **Scenario Studio**: run a what-if (a template or your own headlines and price move) in a sandbox
   world that never touches live data; record a run and replay it without any agent.
 - **Setup agent chat**: one thread per institution, with tracks and proposals the person confirms.
-- **Sign-in** for a public URL, **prototype reset**, and an **Overview** page that gathers it all.
+- **A bot check** for a public URL (no login), **prototype reset**, and an **Overview** page that gathers it all.
 
 The models are only in the agents. This server is code: it chooses nothing a person didn't approve and
 never produces a number a model wrote.
@@ -55,29 +55,28 @@ Tests use the `amiri_test` database and fake agents: `uv run pytest`. `uv run am
 `openapi.yaml`. `uv run python scripts/demo_seed.py --server http://localhost:8000` fills a running
 server with a demo state through its own API.
 
-## Signing in
+## Keeping bots out
 
-`AUTH_MODE=off` (the default) lets everyone in: for local runs. `AUTH_MODE=prototype` is for a public
-URL: a Google reCAPTCHA check, then a signed session cookie. Set `RECAPTCHA_SITE_KEY`,
-`RECAPTCHA_SECRET` and `SESSION_SECRET`; the agents and Cloud Scheduler call with Google ID tokens
-(`INTERNAL_AUTH=id_token`, `INTERNAL_CALLERS`). On a public URL also set `PROTOTYPE_RESET=false`.
-Search engines and AI crawlers are asked to stay away (`robots.txt`, `noindex`) and known ones are
-refused (`BLOCK_AI_CRAWLERS`). Each sign-in attempt that passes the access code costs one reCAPTCHA check (10,000 a
-month are free for an organisation); `LOGIN_CHECKS_PER_DAY` caps them, and setting `LOGIN_ACCESS_CODE` keeps bots from
-spending any.
+The prototype has no login. `AUTH_MODE=off` (the default) lets everyone in: for local runs.
+`AUTH_MODE=prototype` is for a public URL: a visitor ticks Google reCAPTCHA's "I'm not a robot" box, and the
+app opens; a signed cookie keeps them in for `SESSION_HOURS`. Set `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET`
+and `SESSION_SECRET`; the agents and Cloud Scheduler call with Google ID tokens (`INTERNAL_AUTH=id_token`,
+`INTERNAL_CALLERS`). On a public URL also set `PROTOTYPE_RESET=false`. Search engines and AI crawlers are
+asked to stay away (`robots.txt`, `noindex`) and known ones are refused (`BLOCK_AI_CRAWLERS`). Each check costs
+one reCAPTCHA verification (10,000 a month are free for an organisation); `LOGIN_CHECKS_PER_DAY` caps them.
 
 ## Logs
 
 `app/logs.py`. Locally plain lines; on Cloud Run (`LOG_FORMAT=json`) one JSON line per entry, with its severity,
-tracebacks in one entry and a link to the request's trace. INFO is one line per tick and per sign-in; WARNING is
-anything that failed (an agent run, a tick step, a series' fetches, sign-in setup); ERROR is an unexpected
+tracebacks in one entry and a link to the request's trace. INFO is one line per tick and per passed bot check; WARNING is
+anything that failed (an agent run, a tick step, a series' fetches, the bot check's setup); ERROR is an unexpected
 exception. Nothing per request, and never a prompt, a person's words or an IP address. `infra/README.md` §3 has
 the filters to find a problem.
 
 ## When the database is stopped
 
 In Google Cloud the database can be stopped to save money (`infra/scripts/awake.sh off`). The server starts
-anyway (`app/sleep.py`): sign-in and the web app work, every API call answers 503 `asleep`, and the web app
+anyway (`app/sleep.py`): the bot check and the web app work, every API call answers 503 `asleep`, and the web app
 shows a paused page. While asleep, a request at most every `DB_WAKE_PROBE_SECONDS` tries the database; once it
 answers, the server migrates and wakes without a restart.
 

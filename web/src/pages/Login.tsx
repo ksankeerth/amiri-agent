@@ -1,6 +1,6 @@
-// Sign in: Google sign-in comes later; the prototype asks a person to prove they aren't a bot
-// (Google reCAPTCHA v2 checkbox, checked by the server), then a session cookie.
-import { useEffect, useRef, useState } from "react";
+// No login in the prototype: a visitor ticks Google reCAPTCHA's "I'm not a robot" box (checked by the server),
+// which keeps bots out; the paused page shares the brand panel.
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "../api/client";
 import { authApi, type AuthConfig } from "../api/auth";
 import { Icon } from "../components/Icon";
@@ -43,7 +43,7 @@ function Captcha({ siteKey, onToken, resetKey }: { siteKey: string; onToken: (t:
   </>;
 }
 
-// the left panel, shared by the sign-in and the paused page
+// the left panel, shared by the bot check and the paused page
 function Brand() {
   return (
   <header className="login-brand">
@@ -64,7 +64,7 @@ function Brand() {
   );
 }
 
-/** The database is stopped to save costs (server: app/sleep.py); sign-in and this page still work. */
+/** The database is stopped to save costs (server: app/sleep.py); the bot check and this page still work. */
 export function PausedPage() {
   const [busy, setBusy] = useState(false);
   const [still, setStill] = useState(false);
@@ -91,43 +91,30 @@ export function PausedPage() {
   );
 }
 
-export function LoginPage({ cfg }: { cfg: AuthConfig }) {
-  const [token, setToken] = useState<string | null>(null);
-  const [code, setCode] = useState("");
+/** The prototype has no login: one tick of "I'm not a robot" (checked by the server) and the app opens. */
+export function BotCheckPage({ cfg }: { cfg: AuthConfig }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [resetKey, setResetKey] = useState(0);
-  const ready = !!token && (!cfg.access_code || code.trim().length > 0);
-  const go = async () => {
+  const passed = useCallback(async (token: string | null) => {  // the box was ticked: straight in, no button
     if (!token) return;
     setBusy(true); setErr(null);
-    try { await authApi.prototype(token, code.trim()); window.location.reload(); }
-    catch (e) {
-      setErr(e instanceof ApiError ? e.problem.detail : String(e));
-      setResetKey(k => k + 1); setBusy(false);
-    }
-  };
-  useEffect(() => { document.title = "Sign in · Amiri Agent"; }, []);
+    try { await authApi.prototype(token); window.location.reload(); }
+    catch (e) { setErr(e instanceof ApiError ? e.problem.detail : String(e)); setResetKey(k => k + 1); setBusy(false); }
+  }, []);
+  useEffect(() => { document.title = "Amiri Agent"; }, []);
   return (
     <div className="login">
       <Brand />
       <main className="login-main" id="main">
         <div className="login-card">
-          <h2>Sign in</h2>
-          <p className="muted small" style={{ margin: "4px 0 18px" }}>This is a prototype with a demo bank. No real customer data.</p>
-          <button className="btn login-google" type="button" disabled title="Comes after the prototype">
-            <svg viewBox="0 0 18 18" aria-hidden="true" width="18" height="18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92a8.78 8.78 0 0 0 2.68-6.62z" /><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z" /><path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z" /><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z" /></svg>
-            Continue with Google<span className="badge b-noeffect" style={{ marginLeft: "auto" }}>SOON</span></button>
-          <div className="login-or"><span>or</span></div>
+          <h2>One quick check</h2>
+          <p className="muted small" style={{ margin: "4px 0 18px" }}>A prototype with a demo bank and sample data: there's no login. Tick the box to show you're a person, and Amiri Agent opens.</p>
           <div className="col" style={{ gap: 12 }}>
-            <div><b style={{ color: "var(--ink)" }}>Prototype access</b><div className="small muted">Show you're a person and you're in for {12} hours.</div></div>
-            {cfg.access_code && <label className="field"><span>Access code</span>
-              <input className="input" value={code} autoComplete="off" onChange={e => setCode(e.target.value)} placeholder="The code you were given"
-                onKeyDown={e => { if (e.key === "Enter" && ready) go(); }} /></label>}
-            {cfg.recaptcha_site_key ? <Captcha siteKey={cfg.recaptcha_site_key} onToken={setToken} resetKey={resetKey} />
-              : <div className="errtext">Sign-in isn't set up on this server yet (no reCAPTCHA key).</div>}
+            {cfg.recaptcha_site_key ? <Captcha siteKey={cfg.recaptcha_site_key} onToken={passed} resetKey={resetKey} />
+              : <div className="errtext">The check isn't set up on this server yet (no reCAPTCHA key).</div>}
+            {busy && <div className="small muted" role="status">Opening Amiri Agent…</div>}
             {err && <div className="errtext" role="alert">{err}</div>}
-            <button className="btn btn--primary btn--lg" type="button" disabled={!ready || busy} onClick={go}>{busy ? "Signing in…" : "Enter Amiri Agent"}<Icon name="play" /></button>
           </div>
           <p className="tiny muted" style={{ marginTop: 18 }}>Protected by reCAPTCHA: Google's <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer">Terms</a> apply. Amiri Agent asks search engines and AI crawlers to stay away.</p>
         </div>

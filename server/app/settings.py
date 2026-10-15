@@ -37,9 +37,9 @@ SETTINGS: dict[str, Setting] = {
         Setting("LOG_LEVEL", "INFO", "Lowest level logged: DEBUG, INFO, WARNING or ERROR."),
         Setting("GOOGLE_CLOUD_PROJECT", "", "The Google Cloud project; with LOG_FORMAT=json it links each log line to its "
                 "request's trace."),
-        # Sign-in
-        Setting("AUTH_MODE", "off", "Who may use the server: off (anyone; local runs and tests) or prototype (a "
-                "Google reCAPTCHA check, then a session cookie; the public URL)."),
+        # The bot check (no login: a reCAPTCHA box keeps bots out)
+        Setting("AUTH_MODE", "off", "Keeping bots out: off (no check; local runs and tests) or prototype (no login, just "
+                "a Google reCAPTCHA box to tick, then a cookie; the public URL)."),
         Setting("RECAPTCHA_SITE_KEY", "", "reCAPTCHA v2 checkbox site key (public; shown to the browser). Local test key: "
                 "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI (always passes, shows a test banner)."),
         Setting("RECAPTCHA_SECRET", "", "reCAPTCHA secret key, checked by the server (local test secret: "
@@ -48,13 +48,11 @@ SETTINGS: dict[str, Setting] = {
         Setting("RECAPTCHA_HOSTNAMES", "", "Comma-separated hostnames a token must be issued for (the public URL's host); "
                 "empty: not checked."),
         Setting("SESSION_SECRET", "", "Signs session cookies (32+ random characters). Changing it signs everyone out.", secret=True),
-        Setting("SESSION_HOURS", "12", "How long a sign-in lasts."),
-        Setting("LOGIN_PER_MINUTE", "10", "Sign-in attempts per IP address per minute."),
+        Setting("SESSION_HOURS", "12", "How long a passed check lasts; then the box shows again."),
+        Setting("LOGIN_PER_MINUTE", "10", "Checks per IP address per minute."),
         Setting("LOGIN_CHECKS_PER_DAY", "1000", "reCAPTCHA checks one server instance makes a day at most (the free "
-                "allowance is 10,000 a month for the whole organisation; sign-ins refused by the access code cost none)."),
-        Setting("LOGIN_ACCESS_CODE", "", "Optional: a code people must also enter (e.g. given to reviewers with the URL); "
-                "empty: reCAPTCHA only.", secret=True),
-        Setting("AUTH_LOCAL_AGENTS", "true", "With sign-in on, agents on this machine (loopback, no proxy) skip it: "
+                "allowance is 10,000 a month for the whole organisation)."),
+        Setting("AUTH_LOCAL_AGENTS", "true", "With the bot check on, agents on this machine (loopback, no proxy) skip it: "
                 "local runs only, never true on Cloud Run."),
         Setting("BLOCK_AI_CRAWLERS", "true", "Refuse requests from AI crawlers and simple scripts that name themselves "
                 "(GPTBot, ClaudeBot, PerplexityBot, CCBot, HeadlessChrome, …); robots.txt asks every bot to stay away."),

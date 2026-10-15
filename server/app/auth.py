@@ -1,10 +1,10 @@
-"""Who may use this server. AUTH_MODE=off (local, tests): everyone. AUTH_MODE=prototype (the public URL):
-a person proves they are not a bot with Google reCAPTCHA (v2 checkbox, checked here with the secret key) and gets a
-signed session cookie; Google sign-in comes later.
+"""Keeping bots out. The prototype has no login: AUTH_MODE=prototype (the public URL) asks a visitor to tick Google
+reCAPTCHA's "I'm not a robot" box (v2 checkbox, checked here with the secret key); passing it sets a signed cookie
+for SESSION_HOURS, then the box shows again. AUTH_MODE=off (local, tests): no check at all.
 
-With the gate on, every API, the docs, /health/details and /internal/tick need either the session cookie or an agent's
+With the check on, every API, the docs, /health/details and /internal/tick need either that cookie or an agent's
 Google ID token (a service account in INTERNAL_CALLERS, as /api/v1/internal/* already checks). The web app's own files
-stay public so the login page can load; it holds no data. Always, whatever the mode: robots.txt says no, every response
+stay public so the check page can load; it holds no data. Always, whatever the mode: robots.txt says no, every response
 says noindex, and known AI crawlers are turned away by their user agent.
 """
 
@@ -31,7 +31,7 @@ from app.problems import Problem
 log = logging.getLogger("amiri.auth")
 
 COOKIE = "amiri_session"
-router = APIRouter(prefix="/api/v1/auth", tags=["sign in"])
+router = APIRouter(prefix="/api/v1/auth", tags=["bot check"])
 robots = APIRouter(include_in_schema=False)
 
 # AI crawlers and agents that announce themselves (robots.txt asks them all to stay away; these are refused outright)
@@ -50,7 +50,7 @@ GATED_PREFIX = ("/api/", "/internal/", "/docs", "/redoc", "/openapi.json", "/hea
 def _key() -> bytes:
     k = settings.raw("SESSION_SECRET")
     if len(k) < 32:
-        raise Problem(500, "misconfigured", "SESSION_SECRET must be set (at least 32 characters) when sign-in is on.")
+        raise Problem(500, "misconfigured", "SESSION_SECRET must be set (at least 32 characters) when the bot check is on.")
     return k.encode()
 
 
@@ -124,7 +124,7 @@ class Gate(BaseHTTPMiddleware):
                                      headers={"X-Robots-Tag": "noindex, nofollow, noarchive"})
         gated = gate_on() and path.startswith(GATED_PREFIX) and not path.startswith(PUBLIC_API)
         if gated and not (session(request) or _local_agent(request) or await _agent_token(request)):
-            resp = _problem(401, "signed_out", "Sign in to use Amiri Agent.")
+            resp = _problem(401, "signed_out", "Tick the box to show you're a person, then Amiri Agent opens.")
         else:
             resp = await call_next(request)
         resp.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive, nosnippet"
@@ -139,14 +139,14 @@ async def robots_txt():
     return PlainTextResponse("User-agent: *\nDisallow: /\n")
 
 
-# ---------------------------------------------------------------- sign in
+# ---------------------------------------------------------------- the bot check
 
 _attempts: dict[str, deque] = defaultdict(deque)
 _checks = {"day": "", "n": 0}  # reCAPTCHA checks made today by this instance
 
 
 def _check_budget_spent() -> bool:
-    """Every sign-in attempt that gets past the access code costs one reCAPTCHA check, and the free allowance is
+    """Every check costs one reCAPTCHA verification, and the free allowance is
     10,000 a month for the whole organisation. A cap per day (per instance) keeps a flood of junk tokens from
     using it all and locking everyone out."""
     today = time.strftime("%Y-%m-%d", time.gmtime())
@@ -155,7 +155,7 @@ def _check_budget_spent() -> bool:
     _checks["n"] += 1
     cap = settings.integer("LOGIN_CHECKS_PER_DAY")
     if _checks["n"] == cap + 1:  # once a day, when it first happens
-        log.warning("sign-in: today's reCAPTCHA checks (%s, LOGIN_CHECKS_PER_DAY) are used up; sign-in is refused until "
+        log.warning("bot check: today's reCAPTCHA checks (%s, LOGIN_CHECKS_PER_DAY) are used up; checks are refused until "
                     "midnight UTC", cap)
     return _checks["n"] > cap
 
@@ -171,19 +171,18 @@ def _rate_limited(ip: str) -> bool:
 class PrototypeIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     token: str = Field(min_length=10, max_length=4096, description="The reCAPTCHA response from the page's widget.")
-    code: str | None = Field(None, max_length=200, description="The access code, when LOGIN_ACCESS_CODE is set.")
 
 
-@router.get("/config", summary="How to sign in here, and whether the server is asleep (public)")
+@router.get("/config", summary="Whether a bot check is on (and its site key), and whether the server is asleep (public)")
 async def config(request: Request):
     from app import sleep
 
     awake = await sleep.wake(request.app, request.app.state.database_url)
     return {"mode": settings.raw("AUTH_MODE"), "recaptcha_site_key": settings.raw("RECAPTCHA_SITE_KEY") or None,
-            "access_code": bool(settings.raw("LOGIN_ACCESS_CODE")), "google": False, "asleep": not awake}
+            "asleep": not awake}
 
 
-@router.get("/me", summary="Whether this browser is signed in (public)")
+@router.get("/me", summary="Whether this browser has passed the bot check (public)")
 async def me(request: Request):
     if not gate_on():
         return {"mode": "off", "signed_in": True, "kind": "open"}
@@ -192,21 +191,18 @@ async def me(request: Request):
             "expires_at": s["exp"] if s else None}
 
 
-@router.post("/prototype", summary="Prototype sign-in: the reCAPTCHA check, then a session cookie")
+@router.post("/prototype", summary="The bot check: verify the reCAPTCHA token, then set the cookie")
 async def prototype(request: Request, body: PrototypeIn, response: Response):
     if settings.raw("AUTH_MODE") != "prototype":
-        raise Problem(404, "not_found", "Prototype sign-in isn't on here.")
+        raise Problem(404, "not_found", "The bot check isn't on here.")
     if _rate_limited(_client_ip(request)):
         raise Problem(429, "too_many", "Too many tries; wait a minute.", retry_after=60)
-    code = settings.raw("LOGIN_ACCESS_CODE")
-    if code and not hmac.compare_digest((body.code or "").strip().encode(), code.encode()):
-        raise Problem(403, "wrong_code", "That access code isn't right.")
     secret = settings.raw("RECAPTCHA_SECRET")
     if not secret:
-        log.error("sign-in: RECAPTCHA_SECRET isn't set, so nobody can sign in")
+        log.error("bot check: RECAPTCHA_SECRET isn't set, so nobody can get in")
         raise Problem(503, "misconfigured", "reCAPTCHA isn't set up on this server (RECAPTCHA_SECRET).")
     if _check_budget_spent():
-        raise Problem(429, "busy", "Sign-in is busy today; try again tomorrow or ask for access.", retry_after=3600)
+        raise Problem(429, "busy", "Too many checks today; try again tomorrow.", retry_after=3600)
     transport = getattr(request.app.state, "captcha_transport", None)
     try:
         async with httpx.AsyncClient(timeout=10, transport=transport) as c:
@@ -214,25 +210,25 @@ async def prototype(request: Request, body: PrototypeIn, response: Response):
                              data={"secret": secret, "response": body.token, "remoteip": _client_ip(request)})
         v = r.json()
     except (httpx.HTTPError, ValueError) as e:
-        log.warning("sign-in: Google's reCAPTCHA check didn't answer (%s)", type(e).__name__)
+        log.warning("bot check: Google's reCAPTCHA didn't answer (%s)", type(e).__name__)
         raise Problem(502, "captcha_unreachable", "Google's reCAPTCHA check didn't answer; try again.") from e
     hosts = settings.names("RECAPTCHA_HOSTNAMES")
     # Over its free allowance Google answers success:true with an error code, so any error code is a failure.
     if not v.get("success") or v.get("error-codes") or (hosts and v.get("hostname") not in hosts):
         # the hostname tells a key without this domain apart from a failed check (no IP: nothing personal in logs)
-        log.info("sign-in refused: reCAPTCHA success=%s errors=%s hostname=%s (allowed: %s)", v.get("success"),
+        log.info("bot check refused: reCAPTCHA success=%s errors=%s hostname=%s (allowed: %s)", v.get("success"),
                  v.get("error-codes", []), v.get("hostname"), ", ".join(hosts) or "any")
         raise Problem(403, "captcha_failed", "The check didn't pass. Tick the box again.",
                       reasons=v.get("error-codes", []))
     token, exp = issue("prototype")
-    log.info("signed in (prototype access)")
+    log.info("bot check passed")
     secure = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
     response.set_cookie(COOKIE, token, max_age=exp - int(time.time()), httponly=True, secure=secure, samesite="lax",
                         path="/")
     return {"signed_in": True, "kind": "prototype", "expires_at": exp}
 
 
-@router.post("/logout", summary="Sign out (clears the session cookie)")
+@router.post("/logout", summary="Forget the passed check (clears the cookie)")
 async def logout(response: Response):
     response.delete_cookie(COOKIE, path="/")
     return {"signed_in": False}

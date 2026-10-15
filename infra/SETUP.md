@@ -55,9 +55,6 @@ needs it.
 **Twelve Data** ([twelvedata.com](https://twelvedata.com), free plan): copy the API key. Use one key per
 deployment: the free plan's 800 calls a day are shared by everything that uses the key.
 
-**Access code:** a phrase the people you invite type at sign-in, besides the checkbox. Choose one, or let
-step 7 generate it.
-
 ## 5. Settings
 
 ```bash
@@ -92,15 +89,14 @@ infra/scripts/deploy.sh base     # shows the plan, asks; about 10 minutes (the d
 infra/scripts/secrets.sh
 ```
 
-It asks, without echoing, for the reCAPTCHA **secret** key, the Twelve Data key and the access code (press
-Enter to generate one, then note it down). It generates the rest itself: the database user and its password,
-and the session secret.
+It asks, without echoing, for the reCAPTCHA **secret** key and the Twelve Data key. It generates the rest
+itself: the database user and its password, and the session secret.
 
 **Check them** (nothing secret is printed):
 
 ```bash
 get() { gcloud secrets versions access latest --secret="$1"; }
-for s in DATABASE_URL SESSION_SECRET RECAPTCHA_SECRET LOGIN_ACCESS_CODE TWELVEDATA_API_KEY; do
+for s in DATABASE_URL SESSION_SECRET RECAPTCHA_SECRET TWELVEDATA_API_KEY; do
   v=$(get $s 2>/dev/null); echo "$s: length=${#v} spaces=$(printf '%s' "$v" | grep -c '[[:space:]]')"
 done
 curl -s "https://api.twelvedata.com/api_usage?apikey=$(get TWELVEDATA_API_KEY)" | head -c 120; echo
@@ -139,8 +135,8 @@ curl -s $URL/api/v1/auth/config; echo         # … "asleep": false   (the serve
 echo $URL
 ```
 
-Open that URL in a normal browser window. **Use exactly this URL:** sign-in checks the hostname. Tick the box,
-enter the access code, and you're in.
+Open that URL in a normal browser window. **Use exactly this URL:** the bot check checks the hostname. There's
+no login: tick "I'm not a robot" and Amiri Agent opens.
 
 ## 11. First use
 
@@ -161,5 +157,5 @@ it down), see [README.md](README.md).
 | `deploy.sh`: "No image_tag yet" | `build.sh` first (step 8) |
 | A service fails to start: "secret … has no versions" | `secrets.sh` (step 7), then `deploy.sh` |
 | `"asleep": true` in step 10 | the database isn't up yet (wait a few minutes), or `DATABASE_URL` is wrong: `secrets.sh DATABASE_URL`, then `deploy.sh` |
-| Sign-in: "the check didn't pass" | the reCAPTCHA key's domain isn't exactly the hostname from step 3, or you opened a different URL |
+| The check: "the check didn't pass" | the reCAPTCHA key's domain isn't exactly the hostname from step 3, or you opened a different URL |
 | Setting `allUsers` on the server fails | an organisation policy forbids public services: use a project outside that organisation |

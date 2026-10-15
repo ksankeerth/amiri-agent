@@ -32,10 +32,10 @@ variable "image_tag" {
   default     = ""
 }
 
-# ------------------------------------------------------------------ sign-in and the app
+# ------------------------------------------------------------------ the bot check and the app
 
 variable "auth_mode" {
-  description = "prototype: reCAPTCHA sign-in in front of everything (a public URL). off: anyone gets in."
+  description = "prototype: no login, a reCAPTCHA box to tick in front of everything (a public URL), to keep bots out. off: no check."
   type        = string
   default     = "prototype"
   validation {

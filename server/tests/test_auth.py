@@ -33,7 +33,7 @@ async def test_the_api_needs_a_sign_in_and_the_check_gives_one(client, gated):
     assert (await client.post("/internal/tick")).status_code == 401  # no longer open on a public URL
     assert (await client.get("/health")).status_code == 200  # liveness stays open
     cfg = (await client.get("/api/v1/auth/config")).json()
-    assert cfg == {"mode": "prototype", "recaptcha_site_key": "site-key", "access_code": False, "google": False, "asleep": False}
+    assert cfg == {"mode": "prototype", "recaptcha_site_key": "site-key", "asleep": False}  # no login: just the box
     assert (await client.get("/api/v1/auth/me")).json()["signed_in"] is False
     r = await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token"})
     assert r.status_code == 200 and "amiri_session" in r.cookies
@@ -56,15 +56,14 @@ async def test_a_failed_check_a_forged_cookie_and_too_many_tries(client, gated, 
     assert codes[-1] == 429
 
 
-async def test_the_host_and_the_access_code(client, gated, app, env):
+async def test_the_check_must_come_from_this_site(client, gated, app, env):
     env.setenv("RECAPTCHA_HOSTNAMES", "amiri.app")
     r = await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token"})
     assert r.status_code == 403  # a token issued for another site
     env.setenv("RECAPTCHA_HOSTNAMES", "amiri.example.com")
-    env.setenv("LOGIN_ACCESS_CODE", "reviewers-2026")
-    assert (await client.get("/api/v1/auth/config")).json()["access_code"] is True
-    assert (await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token", "code": "nope"})).json()["code"] == "wrong_code"
-    assert (await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token", "code": "reviewers-2026"})).status_code == 200
+    assert (await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token"})).status_code == 200
+    # no access code, no login: an old client still sending a code is refused as a bad request
+    assert (await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token", "code": "x"})).status_code == 422
 
 
 async def test_crawlers_and_search_engines_are_turned_away(client, env):
@@ -89,8 +88,3 @@ async def test_a_quota_error_is_a_failure_and_the_daily_budget_protects_the_allo
     auth._checks.update(day="", n=0)
     codes = [(await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token"})).status_code for _ in range(4)]
     assert codes == [200, 200, 429, 429]  # the third check never reaches Google
-    env.setenv("LOGIN_CHECKS_PER_DAY", "1000")
-    env.setenv("LOGIN_ACCESS_CODE", "reviewers-2026")
-    auth._checks.update(day="", n=0)
-    assert (await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token", "code": "no"})).status_code == 403
-    assert auth._checks["n"] == 0  # a wrong access code costs no check

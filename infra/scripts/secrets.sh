@@ -6,7 +6,7 @@
 #     infra/scripts/secrets.sh --all            # every secret, again
 #
 # DATABASE_URL: makes (or resets) the database user `amiri` with a new random password.
-# SESSION_SECRET: generated. LOGIN_ACCESS_CODE: yours, or generated (and shown once, to share).
+# SESSION_SECRET: generated.
 # The others are prompted for, without echo. Old versions are destroyed (the free tier has 6 active versions).
 # A running service reads a new value when it next starts: deploy.sh, or wait for it to scale to zero.
 source "$(dirname "$0")/common.sh"
@@ -14,7 +14,7 @@ need gcloud "https://cloud.google.com/sdk/docs/install"
 need openssl "for random values"
 
 PROJECT="$(tfvar project_id)"
-ALL=(DATABASE_URL SESSION_SECRET RECAPTCHA_SECRET LOGIN_ACCESS_CODE TWELVEDATA_API_KEY)
+ALL=(DATABASE_URL SESSION_SECRET RECAPTCHA_SECRET TWELVEDATA_API_KEY)
 
 has_value() { [ -n "$(gcloud secrets versions list "$1" --project "$PROJECT" --filter=state=ENABLED --limit=1 --format='value(name)' 2>/dev/null)" ]; }
 
@@ -50,11 +50,6 @@ set_one() {
       put DATABASE_URL "postgresql://amiri:${pw}@/amiri?host=/cloudsql/${conn}" ;;
     SESSION_SECRET)
       put SESSION_SECRET "$(openssl rand -base64 48 | tr -d '\n')" ;;
-    LOGIN_ACCESS_CODE)
-      local code
-      read -r -s -p "LOGIN_ACCESS_CODE (the code reviewers type; Enter to generate one): " code; echo
-      if [ -z "$code" ]; then code="amiri-$(openssl rand -hex 4)"; echo "  generated: $code   (share it with the people who test)"; fi
-      put LOGIN_ACCESS_CODE "$code" ;;
     RECAPTCHA_SECRET)
       echo "  The reCAPTCHA v2 checkbox key for $(out server_hostname): https://www.google.com/recaptcha/admin"
       ask "RECAPTCHA_SECRET (the key's secret key)" && put RECAPTCHA_SECRET "$REPLY" ;;

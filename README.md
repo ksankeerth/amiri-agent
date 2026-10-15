@@ -78,9 +78,9 @@ API. The server's README has the settings, the tick and the details.
 
 ## Putting it on a public URL
 
-Set `AUTH_MODE=prototype` to put a Google reCAPTCHA check and a session cookie in front of everything,
-and set `PROTOTYPE_RESET=false`. Search engines and AI crawlers are asked to stay away and known ones are
-refused. See [`server/README.md`](server/README.md#signing-in).
+The prototype has no login. Set `AUTH_MODE=prototype` to put a Google reCAPTCHA box ("I'm not a robot") in
+front of everything, which keeps bots out, and set `PROTOTYPE_RESET=false`. Search engines and AI crawlers are
+asked to stay away and known ones are refused. See [`server/README.md`](server/README.md#keeping-bots-out).
 
 **On Google Cloud:** [`infra/README.md`](infra/README.md) deploys it all into your own project with Terraform:
 Cloud Run, Postgres on Cloud SQL, Cloud Scheduler, Secret Manager, and the agents (Google's Agent Development

@@ -6,7 +6,7 @@ groups repeated errors), and links the entry to its request's trace (click a log
 whole request). LOG_FORMAT=text (local) is plain lines.
 
 What is logged, so a problem is easy to find without paying for noise:
-- INFO: one line per tick, sign-ins, the prototype reset, the server waking.
+- INFO: one line per tick, passed bot checks, the prototype reset, the server waking.
 - WARNING: an agent run that failed or broke the contract, a series whose fetches start
   failing, a failing tick step, the daily reCAPTCHA cap reached.
 - ERROR: unexpected exceptions, with the traceback.

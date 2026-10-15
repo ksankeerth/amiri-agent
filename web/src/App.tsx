@@ -16,7 +16,7 @@ import { SeriesDetail } from "./pages/SeriesDetail";
 import { SeriesList } from "./pages/SeriesList";
 import { OverviewPage } from "./pages/Overview";
 import { RadarPage } from "./pages/radar/Radar";
-import { LoginPage, PausedPage } from "./pages/Login";
+import { BotCheckPage, PausedPage } from "./pages/Login";
 import { authApi, type AuthConfig } from "./api/auth";
 import { AlertsPage } from "./pages/Alerts";
 import { alertsApi, type AlertSummary } from "./api/alerts";
@@ -107,12 +107,12 @@ function NotBuilt({ title }: { title: string }) {
 }
 
 export function App() {
-  // first: is this browser allowed in? (AUTH_MODE=off: always)
+  // first: has this browser passed the bot check? (no login; AUTH_MODE=off: no check at all)
   const [gate, setGate] = useState<{ cfg: AuthConfig; signedIn: boolean } | null>(null);
   useEffect(() => {
     Promise.all([authApi.config(), authApi.me()])
       .then(([cfg, me]) => setGate({ cfg, signedIn: me.signed_in }))
-      .catch(() => setGate({ cfg: { mode: "off", recaptcha_site_key: null, access_code: false, google: false }, signedIn: true }));
+      .catch(() => setGate({ cfg: { mode: "off", recaptcha_site_key: null }, signedIn: true }));
     const out = () => setGate(g => (g ? { ...g, signedIn: false } : g));
     const asleep = () => setGate(g => (g ? { ...g, cfg: { ...g.cfg, asleep: true } } : g));
     window.addEventListener("amiri:signed-out", out);
@@ -121,11 +121,11 @@ export function App() {
   }, []);
   if (!gate) return <PageSkeleton />;
   if (gate.cfg.asleep) return <PausedPage />;
-  if (!gate.signedIn) return <LoginPage cfg={gate.cfg} />;
-  return <Installed auth={gate.cfg.mode !== "off"} />;
+  if (!gate.signedIn) return <BotCheckPage cfg={gate.cfg} />;
+  return <Installed />;
 }
 
-function Installed({ auth }: { auth: boolean }) {
+function Installed() {
   const [inst, setInst] = useState<Installation | null>(null);
   useEffect(() => {
     api<Installation>("/api/v1/installation")
@@ -133,10 +133,10 @@ function Installed({ auth }: { auth: boolean }) {
       .catch(() => setInst({ institution_id: "", profile: false, name: null, time_zone: "UTC", notes: ["The Amiri Agent server didn't answer. Is it running?"] }));
   }, []);
   if (!inst) return <PageSkeleton />;
-  return <Frame inst={inst} auth={auth} />;
+  return <Frame inst={inst} />;
 }
 
-function Frame({ inst, auth }: { inst: Installation; auth: boolean }) {
+function Frame({ inst }: { inst: Installation }) {
   const { role, setRole } = useRole();
   const toggleTheme = useTheme();
   const now = useNow(30_000);
@@ -201,8 +201,6 @@ function Frame({ inst, auth }: { inst: Installation; auth: boolean }) {
             <span className="avatar" aria-hidden="true">{ME[0].toUpperCase()}</span>
             <span className="col" style={{ gap: 0, minWidth: 0 }}><b>{ME.split("@")[0][0].toUpperCase() + ME.split("@")[0].slice(1)}</b>
               <span className="small muted">{role === "risk_manager" ? "Risk Manager" : "Platform Admin"}</span></span>
-            {auth && <button className="btn btn--sm btn--ghost" type="button" style={{ marginLeft: "auto" }}
-              onClick={async () => { try { await authApi.logout(); } finally { window.location.assign("/home"); } }}>Sign out</button>}
           </div>
           <div className="side-foot">
             <span className="label">View as</span>

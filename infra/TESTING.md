@@ -36,11 +36,11 @@ agent_url() { gcloud run services describe "amiri-$1" --region "$R" --format='va
   - How: `curl -s -o /dev/null -w '%{http_code}\n' $(agent_url setup)/health`
   - Expect: `403` (no token, no entry). The same for `investigation` and `monitor`.
   - Where to look: if it says 200, an agent is public: check its IAM.
-- [ ] **6. Sign-in works on the real URL**
-  - How: open `$URL` in a normal browser window, tick the box, enter the access code.
-  - Expect: you're in. A wrong code is refused. Sign out, and you're back at sign-in. The log shows
-    `signed in (prototype access)`.
-  - Where to look: `sign-in refused … hostname=…` means the reCAPTCHA key lacks that hostname, or you
+- [ ] **6. The bot check works on the real URL** (no login)
+  - How: open `$URL` in a normal browser window, tick "I'm not a robot".
+  - Expect: the app opens straight away, with no button and no code. The log shows `bot check passed`.
+    In a private window the check shows again.
+  - Where to look: `bot check refused … hostname=…` means the reCAPTCHA key lacks that hostname, or you
     opened a different URL than `server_url`.
 
 ## P1: does each connection work? (the parts that only exist in the cloud)
@@ -141,7 +141,7 @@ agent_url() { gcloud run services describe "amiri-$1" --region "$R" --format='va
 
 - [ ] **25. The demo state** (optional): the demo bank and its monitors, a recorded Studio scenario, and
       alerts, so reviewers see something on day one.
-- [ ] **26. A phone and dark mode:** sign-in, the Overview, the Alerts page.
-- [ ] **27. The access code is shared, and the deployment is awake** for the whole review period.
+- [ ] **26. A phone and dark mode:** the bot check, the Overview, the Alerts page.
+- [ ] **27. The deployment is awake** for the whole review period.
 
 Record what failed, why, and the fix, so the next deployment is quicker.
