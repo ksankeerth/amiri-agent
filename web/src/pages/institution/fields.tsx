@@ -21,7 +21,10 @@ export function useLoad<T>(f: () => Promise<T>, deps: unknown[] = []): T | null 
 const FieldLabel = createContext<string | undefined>(undefined);
 export const useFieldLabel = () => useContext(FieldLabel);
 
-export function Field({ label, hint, error, children, full }: { label: string; hint?: ReactNode; error?: string; children: ReactNode; full?: boolean }) {
+/** A required field's mark: a star to see, "required" to hear. The forms say once that * means required. */
+export const Req = () => <><span className="req" aria-hidden="true"> *</span><span className="sr"> (required)</span></>;
+
+export function Field({ label, hint, error, children, full, req }: { label: string; hint?: ReactNode; error?: string; children: ReactNode; full?: boolean; req?: boolean }) {
   const id = useId();
   const note = error || hint ? `${id}-note` : undefined;
   const single = isValidElement(children) && typeof children.type === "string" && ["input", "select", "textarea"].includes(children.type);
@@ -30,7 +33,7 @@ export function Field({ label, hint, error, children, full }: { label: string; h
     : children;
   return (
     <div className="field" role={single ? undefined : "group"} aria-labelledby={single ? undefined : `${id}-label`} style={full ? { gridColumn: "1 / -1" } : undefined}>
-      {single ? <label htmlFor={id}>{label}</label> : <span id={`${id}-label`}>{label}</span>}
+      {single ? <label htmlFor={id}>{label}{req && <Req />}</label> : <span id={`${id}-label`}>{label}{req && <Req />}</span>}
       <FieldLabel.Provider value={single ? undefined : `${id}-label`}>{body}</FieldLabel.Provider>
       {error ? <span className="errtext" id={note} role="alert">{error}</span> : hint ? <span className="hint" id={note}>{hint}</span> : null}
     </div>
@@ -48,26 +51,32 @@ export function PlaceName({ code, names }: { code: string; names?: Record<string
   return <>{known ?? info?.name ?? code}</>;
 }
 
-export function PlacePicker({ onPick, scope = "any", placeholder = "Search a country, region, city, port or strait…", exclude = [] }: {
+const NONE: string[] = [];
+
+export function PlacePicker({ onPick, scope = "any", placeholder = "Search a country, region, city, port or strait…", exclude = NONE }: {
   onPick: (p: PlaceInfo) => void; scope?: PlaceScope; placeholder?: string; exclude?: string[];
 }) {
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<PlaceInfo[]>([]);
   const [open, setOpen] = useState(false);
   const seq = useRef(0);
+  // by value: a caller's new array on every render must not re-run this (with setHits([]) that looped forever,
+  // and the endless re-rendering starved every navigation on the page)
+  const excluded = exclude.join(",");
   useEffect(() => {
     const term = q.trim();
-    if (term.length < 2) { setHits([]); return; }
+    if (term.length < 2) { setHits(h => (h.length ? [] : h)); return; }
     const n = ++seq.current;
     const t = setTimeout(() => {
       ref.searchPlaces(term, scope === "country" ? "country" : undefined).then(items => {
         if (n !== seq.current) return;
-        setHits(items.filter(p => !exclude.includes(p.code) && (scope !== "iso" || !p.code.includes(":"))));
+        const skip = new Set(excluded.split(","));
+        setHits(items.filter(p => !skip.has(p.code) && (scope !== "iso" || !p.code.includes(":"))));
         setOpen(true);
       }).catch(() => {});
     }, 200);
     return () => clearTimeout(t);
-  }, [q, scope, exclude]);
+  }, [q, scope, excluded]);
   return (
     <div style={{ position: "relative" }}>
       <input className="input" value={q} placeholder={placeholder} onChange={e => setQ(e.target.value)}
@@ -111,27 +120,37 @@ export function PlaceField({ value, onChange, scope = "any", names }: { value: s
   return <PlacePicker scope={scope} onPick={p => onChange(p.code)} placeholder={scope === "country" ? "Search a country…" : undefined} />;
 }
 
-export function CountrySelect({ value, onChange, allowEmpty = false }: { value: string | null; onChange: (v: string | null) => void; allowEmpty?: boolean }) {
+export function CountrySelect({ value, onChange, allowEmpty = false, home = false }: { value: string | null; onChange: (v: string | null) => void; allowEmpty?: boolean; home?: boolean }) {
   const fieldLabel = useFieldLabel();
-  const countries = useLoad(() => ref.countries());
+  const all = useLoad(() => (home ? Promise.resolve(null) : ref.countries()));
+  const homes = useLoad(() => (home ? ref.homeCountries() : Promise.resolve(null)));
+  const countries: { code: string; name: string | null }[] | null = home ? homes?.items ?? null : all;
   return (
-    <select className="input" aria-labelledby={fieldLabel} value={value ?? ""} onChange={e => onChange(e.target.value || null)}>
-      {(allowEmpty || !value) && <option value="">{allowEmpty ? "— none (global) —" : "Choose a country…"}</option>}
-      {(countries ?? (value ? [{ code: value, name: value } as PlaceInfo] : [])).map(c => <option key={c.code} value={c.code}>{c.name} ({c.code})</option>)}
-    </select>
+    <>
+      <select className="input" aria-labelledby={fieldLabel} value={value ?? ""} onChange={e => onChange(e.target.value || null)}>
+        {(allowEmpty || !value) && <option value="">{allowEmpty ? "— none (global) —" : "Choose a country…"}</option>}
+        {(countries ?? (value ? [{ code: value, name: value }] : [])).map(c => <option key={c.code} value={c.code}>{c.name} ({c.code})</option>)}
+      </select>
+      {homes?.region && <span className="hint">The prototype covers {homes.region.label} only.</span>}
+    </>
   );
 }
 
 // ---------------------------------------------------------------- currencies, time zones
 
-export function CurrencySelect({ value, onChange, allowEmpty = false }: { value: string | null; onChange: (v: string | null) => void; allowEmpty?: boolean }) {
+export function CurrencySelect({ value, onChange, allowEmpty = false, home = false }: { value: string | null; onChange: (v: string | null) => void; allowEmpty?: boolean; home?: boolean }) {
   const fieldLabel = useFieldLabel();
-  const cur = useLoad(() => ref.currencies());
+  const all = useLoad(() => (home ? Promise.resolve(null) : ref.currencies()));
+  const homes = useLoad(() => (home ? ref.homeCurrencies() : Promise.resolve(null)));
+  const cur = home ? homes?.items ?? null : all;
   return (
-    <select className="input" aria-labelledby={fieldLabel} value={value ?? ""} onChange={e => onChange(e.target.value || null)}>
-      {(allowEmpty || !value) && <option value="">{allowEmpty ? "—" : "Choose…"}</option>}
-      {(cur ?? (value ? [{ code: value, name: "" }] : [])).map(c => <option key={c.code} value={c.code}>{c.code} · {c.name}</option>)}
-    </select>
+    <>
+      <select className="input" aria-labelledby={fieldLabel} value={value ?? ""} onChange={e => onChange(e.target.value || null)}>
+        {(allowEmpty || !value) && <option value="">{allowEmpty ? "—" : "Choose…"}</option>}
+        {(cur ?? (value ? [{ code: value, name: "" }] : [])).map(c => <option key={c.code} value={c.code}>{c.code} · {c.name}</option>)}
+      </select>
+      {homes?.region && <span className="hint">Currencies of {homes.region.label} only.</span>}
+    </>
   );
 }
 

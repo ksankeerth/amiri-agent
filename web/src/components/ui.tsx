@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Icon } from "./Icon";
 
@@ -118,12 +119,16 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
 export function Modal({ title, onClose, children, footer, wide }: { title: ReactNode; onClose: () => void; children: ReactNode; footer?: ReactNode; wide?: boolean }) {
   const box = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  // forms pass a new onClose on every render: keep the latest in a ref, so the effect below runs once, when the
+  // dialog opens (re-running it on each keystroke moved the focus back to the first field)
+  const close = useRef(onClose);
+  close.current = onClose;
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null;
     const first = box.current?.querySelector<HTMLElement>(".mb " + FOCUSABLE.split(", ").join(", .mb ")) ?? box.current;
     first?.focus({ preventScroll: true });
     const k = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "Escape") { close.current(); return; }
       if (e.key !== "Tab" || !box.current) return;
       const items = [...box.current.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(x => x.offsetParent !== null);
       if (!items.length) return;
@@ -132,9 +137,12 @@ export function Modal({ title, onClose, children, footer, wide }: { title: React
       else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
     };
     window.addEventListener("keydown", k);
-    return () => { window.removeEventListener("keydown", k); opener?.focus?.({ preventScroll: true }); };
-  }, [onClose]);
-  return (
+    document.body.classList.add("modal-open");  // the page behind doesn't scroll
+    return () => { window.removeEventListener("keydown", k); document.body.classList.remove("modal-open"); opener?.focus?.({ preventScroll: true }); };
+  }, []);
+  // into <body>: a page wrapper with a transform or filter would otherwise trap the "fixed" backdrop inside it
+  // (the dialog then sat in the page column, only partly dimmed, sometimes off screen)
+  return createPortal(
     <div className="modalback" onMouseDown={e => e.target === e.currentTarget && onClose()}>
       <div className="modal" ref={box} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} style={wide ? { width: "min(860px,100%)" } : undefined}>
         <div className="mh"><h2 id={titleId}>{title}</h2><span className="spacer" />
@@ -142,7 +150,7 @@ export function Modal({ title, onClose, children, footer, wide }: { title: React
         <div className="mb">{children}</div>
         {footer && <div className="mf">{footer}</div>}
       </div>
-    </div>
+    </div>, document.body
   );
 }
 

@@ -95,7 +95,8 @@ export function DraftFromProfile({ onClose, only }: { onClose: () => void; only?
   const toast = useToast();
   const [items, setItems] = useState<Draftable[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  useEffect(() => { monitorsApi.draftable().then(setItems).catch(e => toast(e instanceof ApiError ? e.full : String(e))); }, [toast]);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
+  useEffect(() => { monitorsApi.draftable().then(setItems).catch(e => { setLoadErr(e instanceof ApiError ? e.full : String(e)); setItems([]); }); }, []);
   const draft = async (d: { section: string; item_id: string }) => {
     setBusy(d.item_id);
     try { const m = await monitorsApi.draft(d.section, d.item_id); onClose(); nav(`/monitors/${m.monitor_id}`); }
@@ -107,7 +108,7 @@ export function DraftFromProfile({ onClose, only }: { onClose: () => void; only?
   return (
     <Modal title="Draft a monitor from the profile" onClose={onClose} wide>
       <p className="small muted">Pick something from your institution profile. Code drafts the name, the sentence, the "tell me if" lines, the chips, the places and the exposure from it; you check and edit them before submitting. Nothing runs until someone approves it.</p>
-      {items === null ? <div className="muted small">Loading…</div> : !groups.length ? <div className="muted small">The profile has no risks, regulators, rivals, flows or counterparties yet.</div> : groups.map(([s, xs]) => (
+      {loadErr ? <div className="errtext">{loadErr}</div> : items === null ? <div className="muted small">Loading…</div> : !groups.length ? <div className="muted small">The profile has no risks, regulators, rivals, flows or counterparties yet.</div> : groups.map(([s, xs]) => (
         <div key={s} className="col" style={{ gap: 6 }}>
           <span className="label">{SECTION_WORDS[s]}</span>
           <div className="row wrap" style={{ gap: 6 }}>{xs.map(i => (

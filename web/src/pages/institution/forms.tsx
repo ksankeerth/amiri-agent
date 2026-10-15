@@ -66,12 +66,12 @@ function ProductCategory({ d, set, err, ctx }: Parameters<Body>[0]) {
   const pt = cat?.product_types.find(t => t.id === d.product_type);
   return (
     <>
-      <Field label="Category (Metrics Spec)" error={err.category}>
+      <Field req label="Category (Metrics Spec)" error={err.category}>
         <select className="input" value={d.category ?? ""} onChange={e => { set("category", e.target.value); set("product_type", ""); }}>
           <option value="">Choose…</option>{cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       </Field>
-      <Field label="Product type" error={err.product_type} hint={pt ? `Typically: ${pt.typical_products}${pt.islamic_variant ? ` · Islamic: ${pt.islamic_variant}` : ""}` : undefined}>
+      <Field req label="Product type" error={err.product_type} hint={pt ? `Typically: ${pt.typical_products}${pt.islamic_variant ? ` · Islamic: ${pt.islamic_variant}` : ""}` : undefined}>
         <select className="input" value={d.product_type ?? ""} onChange={e => set("product_type", e.target.value)} disabled={!cat}>
           <option value="">Choose…</option>{(cat?.product_types ?? []).map(t => <option key={t.id} value={t.id}>{t.id.replace(/_/g, " ")}</option>)}
         </select>
@@ -102,7 +102,7 @@ function RivalCategories({ value, onChange }: { value: string[]; onChange: (v: s
 
 const BODIES: Record<SectionName, Body> = {
   footprint: ({ d, set, err, ctx, editing }) => (<>
-    <Field label="Place (country or region)" error={err.code} full hint={editing ? "To move it, delete this entry and add the new place." : "Countries, states, provinces, districts (ISO 3166)."}>
+    <Field req label="Place (country or region)" error={err.code} full hint={editing ? "To move it, delete this entry and add the new place." : "Countries, states, provinces, districts (ISO 3166)."}>
       {editing ? <span className="chip sel">{names(ctx)[d.code] ?? d.code} <span className="mono">{d.code}</span></span>
         : <PlaceField value={d.code ?? null} onChange={v => set("code", v)} scope="iso" names={names(ctx)} />}
     </Field>
@@ -112,7 +112,7 @@ const BODIES: Record<SectionName, Body> = {
     <Field label="Note" error={err.note} full><textarea className="input" value={d.note ?? ""} onChange={e => set("note", e.target.value || null)} /></Field>
   </>),
   "watch-places": ({ d, set, err, ctx }) => (<>
-    <Field label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} /></Field>
+    <Field req label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} /></Field>
     <Field label="Kind" error={err.kind}><select className="input" value={d.kind} onChange={e => set("kind", e.target.value)}>{opt(["country", "region", "city", "port", "chokepoint", "area"])}</select></Field>
     <Field label="Place" error={err.code} full hint="Pick it to put it on the map (countries, cities, ports, straits).">
       <PlaceField value={d.code ?? null} names={names(ctx)} onChange={v => set("code", v)} />
@@ -120,7 +120,7 @@ const BODIES: Record<SectionName, Body> = {
     <Field label="Why it matters" error={err.reason} full><textarea className="input" value={d.reason ?? ""} onChange={e => set("reason", e.target.value || null)} /></Field>
   </>),
   segments: ({ d, set, err, ctx }) => (<>
-    <Field label="Name of the group" error={err.label} hint="A category, never names of customers."><input className="input" value={d.label ?? ""} onChange={e => set("label", e.target.value)} /></Field>
+    <Field req label="Name of the group" error={err.label} hint="A category, never names of customers."><input className="input" value={d.label ?? ""} onChange={e => set("label", e.target.value)} /></Field>
     <Field label="Kind" error={err.kind}><select className="input" value={d.kind} onChange={e => set("kind", e.target.value)}>{opt(["individual", "business", "public_sector", "financial", "mixed"])}</select></Field>
     <Field label="Where they are concentrated" error={err.places} full><PlacesField value={d.places ?? []} names={names(ctx)} onChange={v => set("places", v)} /></Field>
     <Field label="Main income" error={err.income_sources} full><Toggles options={INCOME} value={d.income_sources ?? []} onChange={v => set("income_sources", v)} /></Field>
@@ -132,7 +132,7 @@ const BODIES: Record<SectionName, Body> = {
   products: (p) => {
     const { d, set, err, ctx } = p;
     return (<>
-      <Field label="Name" error={err.name} full><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} placeholder="e.g. Migrant Family Savings" /></Field>
+      <Field req label="Name" error={err.name} full><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} placeholder="e.g. Migrant Family Savings" /></Field>
       <ProductCategory {...p} />
       <Field label="Who uses it" error={err.segments} full><RefsField items={items(ctx, "segments")} labelKey="label" value={d.segments ?? []} onChange={v => set("segments", v)} empty="Add customer groups first." /></Field>
       <Field label="Owner (business unit)" error={err.owner}><input className="input" value={d.owner ?? ""} onChange={e => set("owner", e.target.value || null)} placeholder="e.g. Retail banking" /></Field>
@@ -153,10 +153,10 @@ const BODIES: Record<SectionName, Body> = {
     </>);
   },
   flows: ({ d, set, err, ctx, editing }) => (<>
-    <Field label="Kind" error={err.kind}><select className="input" value={d.kind} onChange={e => set("kind", e.target.value)}>{opt(Object.keys(FLOW_WORDS), FLOW_WORDS)}</select></Field>
+    <Field req label="Kind" error={err.kind}><select className="input" value={d.kind} onChange={e => set("kind", e.target.value)}>{opt(Object.keys(FLOW_WORDS), FLOW_WORDS)}</select></Field>
     <Field label="Goods (trade only)" error={err.goods}><input className="input" value={d.goods ?? ""} onChange={e => set("goods", e.target.value || null)} placeholder="e.g. Garments" /></Field>
-    <Field label="Your end (in the footprint)" error={err.local}><PlaceField value={d.local ?? null} scope="iso" names={names(ctx)} onChange={v => set("local", v)} /></Field>
-    <Field label="The other end (country)" error={err.counterpart}><CountrySelect value={d.counterpart ?? null} onChange={v => set("counterpart", v)} /></Field>
+    <Field req label="Your end (in the footprint)" error={err.local}><PlaceField value={d.local ?? null} scope="iso" names={names(ctx)} onChange={v => set("local", v)} /></Field>
+    <Field req label="The other end (country)" error={err.counterpart}><CountrySelect value={d.counterpart ?? null} onChange={v => set("counterpart", v)} /></Field>
     <Field label="Figure" error={err.value} full hint={editing?.source?.kind === "dataset" ? `From ${editing.source.dataset} (${editing.source.dataset_year}). Changing it keeps the dataset's figure as the original.` : undefined}>
       <FlowValueField value={d.value ?? null} onChange={v => set("value", v)} /></Field>
     <Field label="Sea route (goods)" error={err.route_id} full><RouteSelect value={d.route_id ?? null} onChange={v => set("route_id", v)} /></Field>
@@ -165,16 +165,16 @@ const BODIES: Record<SectionName, Body> = {
     <Field label="Note" error={err.note} full><textarea className="input" value={d.note ?? ""} onChange={e => set("note", e.target.value || null)} /></Field>
   </>),
   regulators: ({ d, set, err }) => (<>
-    <Field label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} /></Field>
+    <Field req label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} /></Field>
     <Field label="Short name" error={err.short}><input className="input" value={d.short ?? ""} onChange={e => set("short", e.target.value || null)} placeholder="e.g. CBSL" /></Field>
     <Field label="Country" error={err.country}><CountrySelect value={d.country ?? null} allowEmpty onChange={v => set("country", v)} /></Field>
-    <Field label="Area" error={err.area}><select className="input" value={d.area} onChange={e => set("area", e.target.value)}>{opt(AREAS, AREA_WORDS)}</select></Field>
-    <Field label="How it reaches you" error={err.relation} full><select className="input" value={d.relation} onChange={e => set("relation", e.target.value)}>{opt(Object.keys(RELATION_WORDS), RELATION_WORDS)}</select></Field>
+    <Field req label="Area" error={err.area}><select className="input" value={d.area} onChange={e => set("area", e.target.value)}>{opt(AREAS, AREA_WORDS)}</select></Field>
+    <Field req label="How it reaches you" error={err.relation} full><select className="input" value={d.relation} onChange={e => set("relation", e.target.value)}>{opt(Object.keys(RELATION_WORDS), RELATION_WORDS)}</select></Field>
     <Field label="What it controls" error={err.controls} full><ChipsInput value={d.controls ?? []} onChange={v => set("controls", v)} placeholder="e.g. Foreign-exchange rules, then Enter" /></Field>
     <Field label="Note" error={err.note} full><textarea className="input" value={d.note ?? ""} onChange={e => set("note", e.target.value || null)} /></Field>
   </>),
   rivals: ({ d, set, err, ctx }) => (<>
-    <Field label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} /></Field>
+    <Field req label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} /></Field>
     <Field label="Type" error={err.type}><select className="input" value={d.type} onChange={e => set("type", e.target.value)}>{opt(RIVAL_TYPES)}</select></Field>
     <Field label="Where they compete" error={err.places} full><PlacesField value={d.places ?? []} names={names(ctx)} onChange={v => set("places", v)} /></Field>
     <Field label="Product lines where they compete" error={err.categories} full><RivalCategories value={d.categories ?? []} onChange={v => set("categories", v)} /></Field>
@@ -184,16 +184,16 @@ const BODIES: Record<SectionName, Body> = {
     <Field label="Note" error={err.note} full><textarea className="input" value={d.note ?? ""} onChange={e => set("note", e.target.value || null)} /></Field>
   </>),
   counterparties: ({ d, set, err, ctx }) => (<>
-    <Field label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} /></Field>
-    <Field label="Kind" error={err.kind}><select className="input" value={d.kind} onChange={e => set("kind", e.target.value)}>{opt(ctx.type === "insurer" ? ["reinsurer", "distribution_partner", ...CP_KINDS.filter(k => k !== "reinsurer" && k !== "distribution_partner")] : CP_KINDS)}</select></Field>
+    <Field req label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} /></Field>
+    <Field req label="Kind" error={err.kind}><select className="input" value={d.kind} onChange={e => set("kind", e.target.value)}>{opt(ctx.type === "insurer" ? ["reinsurer", "distribution_partner", ...CP_KINDS.filter(k => k !== "reinsurer" && k !== "distribution_partner")] : CP_KINDS)}</select></Field>
     <Field label="Where" error={err.places} full><PlacesField value={d.places ?? []} names={names(ctx)} onChange={v => set("places", v)} /></Field>
     <Field label="Importance" error={err.importance}><select className="input" value={d.importance} onChange={e => set("importance", e.target.value)}>{opt(["critical", "important", "other"])}</select></Field>
     <Field label="Other names" error={err.aliases}><ChipsInput value={d.aliases ?? []} onChange={v => set("aliases", v)} /></Field>
     <Field label="Note" error={err.note} full><textarea className="input" value={d.note ?? ""} onChange={e => set("note", e.target.value || null)} /></Field>
   </>),
   "risk-exposures": ({ d, set, err, ctx }) => (<>
-    <Field label="Title" error={err.title} full><input className="input" value={d.title ?? ""} onChange={e => set("title", e.target.value)} placeholder="e.g. Gulf tension meets remittances" /></Field>
-    <Field label="Kind" error={err.kind}><select className="input" value={d.kind} onChange={e => set("kind", e.target.value)}>{opt(RISK_KINDS)}</select></Field>
+    <Field req label="Title" error={err.title} full><input className="input" value={d.title ?? ""} onChange={e => set("title", e.target.value)} placeholder="e.g. Gulf tension meets remittances" /></Field>
+    <Field req label="Kind" error={err.kind}><select className="input" value={d.kind} onChange={e => set("kind", e.target.value)}>{opt(RISK_KINDS)}</select></Field>
     <Field label="Status" error={err.status}><select className="input" value={d.status} onChange={e => set("status", e.target.value)}><option value="active">active</option><option value="dismissed">dismissed (not relevant)</option></select></Field>
     <Field label="Where" error={err.places} full><PlacesField value={d.places ?? []} names={names(ctx)} onChange={v => set("places", v)} /></Field>
     <Field label="When in the year" error={err.months} full><MonthStrip value={d.months ?? []} onChange={v => set("months", v)} /></Field>
@@ -250,6 +250,7 @@ export function ItemModal({ section, ctx, editing, initial, onClose, onSaved }: 
   };
   return (
     <Modal wide title={`${editing ? "Edit" : "Add a"} ${LABELS[section].one}`} onClose={onClose} footer={<>
+      <span className="small muted" style={{ marginRight: "auto" }}><span className="req">*</span> required; the rest is optional</span>
       <button className="btn" type="button" onClick={onClose}>Cancel</button>
       <button className="btn btn--primary" type="button" onClick={save} disabled={busy}>{editing ? "Save" : "Add"}</button></>}>
       <div className="grid2"><Body d={d} set={set} err={err} ctx={ctx} editing={editing} /></div>
@@ -270,18 +271,18 @@ export function InstitutionFields({ d, set, err, creating }: { d: Draft; set: (k
   const t = (d.institution_type ?? "bank") as InstitutionType;
   return (
     <div className="grid2">
-      <Field label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} placeholder="e.g. Serendib Commercial Bank" /></Field>
+      <Field req label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} placeholder="e.g. Serendib Commercial Bank" /></Field>
       <Field label="Legal name" error={err.legal_name}><input className="input" value={d.legal_name ?? ""} onChange={e => set("legal_name", e.target.value || null)} /></Field>
-      <Field label="Type" error={err.institution_type} hint={!creating ? "Can't change while products of this type exist." : undefined}>
+      <Field req label="Type" error={err.institution_type} hint={!creating ? "Can't change while products of this type exist." : undefined}>
         <div className="seg">{(["bank", "insurer"] as const).map(x => <button key={x} type="button" aria-pressed={t === x} onClick={() => { set("institution_type", x); set("subtype", null); }}>{x === "bank" ? "Bank" : "Insurer"}</button>)}</div>
       </Field>
       <Field label="Kind of bank or insurer" error={err.subtype}>
         <select className="input" value={d.subtype ?? ""} onChange={e => set("subtype", e.target.value || null)}><option value="">—</option>{opt(SUBTYPES[t])}</select>
       </Field>
-      <Field label="Home country" error={err.home_country} hint={!creating ? "To move home, add the new country to the footprint as home first." : undefined}>
-        <CountrySelect value={d.home_country ?? null} onChange={v => set("home_country", v)} /></Field>
-      <Field label="Base currency" error={err.base_currency}><CurrencySelect value={d.base_currency ?? null} onChange={v => set("base_currency", v)} /></Field>
-      <Field label="Time zone" error={err.time_zone}><TimeZoneInput value={d.time_zone ?? ""} onChange={v => set("time_zone", v)} /></Field>
+      <Field req label="Home country" error={err.home_country} hint={!creating ? "To move home, add the new country to the footprint as home first." : undefined}>
+        <CountrySelect home value={d.home_country ?? null} onChange={v => set("home_country", v)} /></Field>
+      <Field req label="Base currency" error={err.base_currency}><CurrencySelect home value={d.base_currency ?? null} onChange={v => set("base_currency", v)} /></Field>
+      <Field req label="Time zone" error={err.time_zone}><TimeZoneInput value={d.time_zone ?? ""} onChange={v => set("time_zone", v)} /></Field>
       <Field label="Islamic" error={err.islamic}><label className="check"><input type="checkbox" checked={!!d.islamic} onChange={e => set("islamic", e.target.checked)} /> Islamic bank or window, or takaful</label></Field>
       <Field label="Currencies you settle in abroad" error={err.clearing_currencies} full hint="Decides which sanctions regimes reach you (USD → OFAC).">
         <CurrenciesField value={d.clearing_currencies ?? []} onChange={v => set("clearing_currencies", v)} /></Field>
@@ -313,6 +314,7 @@ export function InstitutionModal({ profile, onClose, onSaved }: { profile: Profi
   };
   return (
     <Modal wide title="Institution details" onClose={onClose} footer={<>
+      <span className="small muted" style={{ marginRight: "auto" }}><span className="req">*</span> required; the rest is optional</span>
       <button className="btn" type="button" onClick={onClose}>Cancel</button><button className="btn btn--primary" type="button" onClick={save}>Save</button></>}>
       <InstitutionFields d={d} set={(k, v) => setD(x => ({ ...x, [k]: v }))} err={err} creating={false} />
       {general.length > 0 && <div className="rawerr">{general.join(" · ")}</div>}

@@ -299,3 +299,6 @@ a.card:hover, .card.click:hover { box-shadow:0 2px 4px rgba(20,24,31,.05), 0 10p
 @media (max-width: 900px) { .login { grid-template-columns:minmax(0,1fr); } .login-brand { padding:28px 20px; gap:22px; } .login-pitch h1 { font-size:24px; } .login-flow { grid-template-columns:repeat(2,minmax(0,1fr)); } .login-pitch { margin-top:0; } }
 @media (prefers-reduced-motion: reduce) { .login-flow li { animation:none; } }
 @media (max-width: 900px) { .login-brand { gap:14px; padding:22px 20px 26px; } .login-flow, .login-foot, .login-pitch p { display:none; } .login-pitch h1 { font-size:21px; } .login-main { padding:20px 16px 32px; align-items:flex-start; } }
+
+/* required fields: a star in the label (the forms say what it means) */
+.req { color:var(--critical); font-weight:600; }

@@ -60,6 +60,49 @@ function describe(section: SectionName, it: Item, ctx: Ctx): { title: ReactNode;
 }
 
 /** Every section's list, with Add / Edit / Delete. */
+/** Items for a section from a JSON file: a list of items, {items: [...]}, or a whole profile ({sections: {...}}).
+ * Checked by the server first (a dry run), shown, and added only when confirmed, all or nothing. */
+function ImportItems({ section, iid, onAdded }: { section: SectionName; iid: string; onAdded: () => void }) {
+  const toast = useToast();
+  const [ops, setOps] = useState<Operation[] | null>(null);
+  const [problems, setProblems] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const read = async (f: File) => {
+    setProblems([]);
+    try {
+      const doc = JSON.parse(await f.text());
+      const list: Record<string, any>[] = Array.isArray(doc) ? doc : doc.items ?? doc.sections?.[section] ?? [];
+      if (!list.length) { setOps([]); setProblems([`No ${LABELS[section].many.toLowerCase()} in this file.`]); return; }
+      const o: Operation[] = list.map(item => ({ op: "create", section, data: item }));
+      await inst.batch(iid, o, true);  // checked, nothing written
+      setOps(o);
+    } catch (e) {
+      setOps([]);
+      setProblems(e instanceof ApiError ? Object.values(splitErrors(e).fields).concat(splitErrors(e).general) : [`Not a JSON file: ${String(e)}`]);
+    }
+  };
+  const add = async () => {
+    if (!ops?.length) return;
+    setBusy(true);
+    try { const r = await inst.batch(iid, ops); toast(`Imported ${r.results.length}.`); setOps(null); onAdded(); }
+    catch (e) { setProblems(e instanceof ApiError ? [e.full] : [String(e)]); }
+    finally { setBusy(false); }
+  };
+  return (
+    <>
+      <label className="btn btn--sm" title={`Import ${LABELS[section].many.toLowerCase()} from a JSON file`}><Icon name="plus" />Import
+        <input type="file" accept="application/json" hidden onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) read(f); }} /></label>
+      {ops !== null && <Modal title={`Import ${LABELS[section].many.toLowerCase()}`} onClose={() => setOps(null)} footer={<>
+        <button className="btn" type="button" onClick={() => setOps(null)}>Cancel</button>
+        <button className="btn btn--primary" type="button" disabled={busy || !ops.length || problems.length > 0} onClick={add}>Import {ops.length || ""}</button></>}>
+        {problems.length ? <div className="rawerr">{problems.join(" · ")}</div>
+          : <p className="small" style={{ margin: 0 }}>{plural(ops.length, LABELS[section].one)} checked and ready to add, all together.</p>}
+        <p className="small muted" style={{ margin: 0 }}>The file is a list of items, <span className="mono">{"{\"items\": [...]}"}</span>, or a whole profile (its {LABELS[section].many.toLowerCase()} are used).</p>
+      </Modal>}
+    </>
+  );
+}
+
 export function SectionList({ section, ctx, reload, suggest, extra, compact, itemAction }: {
   section: SectionName; ctx: Ctx; reload: () => void; suggest?: boolean; extra?: ReactNode; compact?: boolean;
   itemAction?: (it: Item) => ReactNode;
@@ -87,6 +130,7 @@ export function SectionList({ section, ctx, reload, suggest, extra, compact, ite
         <span className="spacer" />
         {extra}
         {suggest && !archived && <button className="btn btn--sm" type="button" onClick={() => setSuggesting(true)}><Icon name="search" />Suggestions</button>}
+        {!archived && <ImportItems section={section} iid={iid} onAdded={reload} />}
         {!archived && <button className="btn btn--sm btn--primary" type="button" onClick={() => setEditing("new")}><Icon name="plus" />Add</button>}
       </div>
       {!items.length ? <div className="bd small muted">None yet.{suggest ? " Use Suggestions to start from the usual ones, or Add your own." : ""}</div> : (

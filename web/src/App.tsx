@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { Icon } from "./components/Icon";
 import { Empty, PageHead, PageSkeleton, useNow, useRole, type Role } from "./components/ui";
@@ -45,6 +45,27 @@ const NAV: Record<Role, [string, string, string][]> = {
 export interface Installation {
   institution_id: string; profile: boolean; name: string | null; short_name?: string | null; home_country?: string;
   country_name?: string | null; base_currency?: string; time_zone: string; notes: string[];
+  prototype_reset?: boolean;  // the server allows the prototype reset (PROTOTYPE_RESET)
+}
+
+// what this installation serves; reloaded when an institution is created (event "amiri:installation")
+export const InstallationCtx = createContext<Installation | null>(null);
+export const useInstallation = () => useContext(InstallationCtx);
+
+/** Pages that need the institution say so before it exists, with the way to set it up (not a spinner or an error). */
+function NeedsInstitution({ title, what, children }: { title: string; what: string; children: ReactNode }) {
+  const inst = useInstallation();
+  if (!inst || inst.profile) return <>{children}</>;
+  return (
+    <div className="page">
+      <PageHead title={title} />
+      <div className="card"><Empty icon="bank" title="Set up your institution first"
+        actions={<Link className="btn btn--primary" to="/institution/setup">Set up the institution</Link>}>
+        {what} come from your institution's profile: who you are, where you operate, your customers, products and
+        risks. Set it up first; it takes a few minutes with the forms or the setup chat.
+      </Empty></div>
+    </div>
+  );
 }
 
 const BUILT = new Set(["/home", "/events", "/radar", "/monitors", "/series", "/studio", "/alerts", "/institution"]);
@@ -128,12 +149,15 @@ export function App() {
 function Installed() {
   const [inst, setInst] = useState<Installation | null>(null);
   useEffect(() => {
-    api<Installation>("/api/v1/installation")
+    const load = () => api<Installation>("/api/v1/installation")
       .then(i => { setZone(i.time_zone); setInst(i); })
-      .catch(() => setInst({ institution_id: "", profile: false, name: null, time_zone: "UTC", notes: ["The Amiri Agent server didn't answer. Is it running?"] }));
+      .catch(() => setInst(x => x ?? { institution_id: "", profile: false, name: null, time_zone: "UTC", notes: ["The Amiri Agent server didn't answer. Try again in a moment."] }));
+    load();
+    window.addEventListener("amiri:installation", load);  // an institution was created (forms or chat)
+    return () => window.removeEventListener("amiri:installation", load);
   }, []);
   if (!inst) return <PageSkeleton />;
-  return <Frame inst={inst} />;
+  return <InstallationCtx.Provider value={inst}><Frame inst={inst} /></InstallationCtx.Provider>;
 }
 
 function Frame({ inst }: { inst: Installation }) {
@@ -216,15 +240,15 @@ function Frame({ inst }: { inst: Installation }) {
           <Routes>
             <Route path="/" element={<Navigate to="/home" replace />} />
             <Route path="/home" element={<OverviewPage />} />
-            <Route path="/radar" element={<RadarPage />} />
-            <Route path="/alerts" element={<AlertsPage />} />
-            <Route path="/events" element={<EventsPage />} />
-            <Route path="/events/:id" element={<EventDetailPage />} />
-            <Route path="/monitors" element={<MonitorsPage />} />
-            <Route path="/monitors/:id" element={<MonitorPage />} />
-            <Route path="/studio" element={<StudioPage />} />
-            <Route path="/studio/run/:id" element={<StudioRunPage />} />
-            <Route path="/studio/:id" element={<ScenarioPage />} />
+            <Route path="/radar" element={<NeedsInstitution title="Radar" what="What Radar watches"><RadarPage /></NeedsInstitution>} />
+            <Route path="/alerts" element={<NeedsInstitution title="Alerts" what="Alerts"><AlertsPage /></NeedsInstitution>} />
+            <Route path="/events" element={<NeedsInstitution title="Events" what="Events"><EventsPage /></NeedsInstitution>} />
+            <Route path="/events/:id" element={<NeedsInstitution title="Events" what="Events"><EventDetailPage /></NeedsInstitution>} />
+            <Route path="/monitors" element={<NeedsInstitution title="Monitors" what="Monitors"><MonitorsPage /></NeedsInstitution>} />
+            <Route path="/monitors/:id" element={<NeedsInstitution title="Monitors" what="Monitors"><MonitorPage /></NeedsInstitution>} />
+            <Route path="/studio" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><StudioPage /></NeedsInstitution>} />
+            <Route path="/studio/run/:id" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><StudioRunPage /></NeedsInstitution>} />
+            <Route path="/studio/:id" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><ScenarioPage /></NeedsInstitution>} />
             <Route path="/series" element={<SeriesList />} />
             <Route path="/series/:id" element={<SeriesDetail />} />
             <Route path="/institution" element={<InstitutionPage />} />

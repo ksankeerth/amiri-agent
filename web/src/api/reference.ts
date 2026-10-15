@@ -14,12 +14,17 @@ function once<T>(key: string, f: () => Promise<T>): Promise<T> {
 }
 const R = "/api/v1/reference";
 
+export interface Region { id: string; label: string }
+
 export const ref = {
   taxonomy: () => once("tax", () => api<{ items: Category[] }>(`${R}/product-taxonomy`).then(r => r.items)),
   dimensions: () => once("dims", () => api<{ items: Dimension[] }>(`${R}/segment-dimensions`).then(r => r.items)),
   currencies: () => once("cur", () => api<{ items: { code: string; name: string }[] }>(`${R}/currencies`).then(r => r.items)),
   timeZones: () => once("tz", () => api<{ items: string[] }>(`${R}/time-zones`).then(r => r.items)),
   countries: () => once("countries", () => api<{ items: PlaceInfo[] }>(`${R}/places?kind=country&limit=400`).then(r => r.items)),
+  // what a home country and base currency may be (the prototype's region, SUPPORTED_REGION on the server)
+  homeCountries: () => once("homeCountries", () => api<{ items: { code: string; name: string }[]; region: Region | null }>(`${R}/countries?scope=home`)),
+  homeCurrencies: () => once("homeCurrencies", () => api<{ items: { code: string; name: string }[]; region: Region | null }>(`${R}/currencies?scope=home`)),
   routes: () => once("routes", () => api<{ items: Route[] }>(`${R}/routes`).then(r => r.items)),
   hazards: () => once("hazards", () => api<{ items: Hazard[] }>(`${R}/hazards`).then(r => r.items)),
   types: () => once("types", () => api<{ items: { institution_type: string; subtypes: string[] }[] }>(`${R}/institution-types`).then(r => r.items)),

@@ -51,7 +51,7 @@ export function useInstitution() {
   }, [reload]);
   const select = (x: string) => { setId(x); try { localStorage.setItem(KEY, x); } catch { /* */ } };
   const ctx: Ctx = { profile, type: profile?.institution.institution_type ?? "bank" };
-  return { list, id, select, profile, readiness, error, reload: async () => { await reload(); loadList(); }, ctx, reloadList: loadList };
+  return { list, id, select, profile, readiness, error, reload: async () => { await reload(); loadList(); }, ctx, reloadList: () => { loadList(); window.dispatchEvent(new Event("amiri:installation")); } };
 }
 
 export type InstitutionState = ReturnType<typeof useInstitution>;
@@ -88,8 +88,9 @@ export function CreateInstitution({ onCreated }: { onCreated: (id: string) => vo
         <p className="small muted">Everything Amiri Agent watches and checks starts from this profile. Start with the basics; the next steps add where you operate, your customers, products, flows, rules, rivals and risks. Works with forms alone; the setup assistant is optional.</p></div>
       <InstitutionFields d={d} set={(k, v) => setD(x => ({ ...x, [k]: v }))} err={err} creating />
       {general.length > 0 && <div className="rawerr">{general.join(" · ")}</div>}
-      <div className="row"><label className="btn"><Icon name="plus" />Import a profile (JSON)
+      <div className="row wrap"><label className="btn"><Icon name="plus" />Import a profile (JSON)
         <input type="file" accept="application/json" hidden onChange={e => e.target.files?.[0] && importFile(e.target.files[0])} /></label>
+        <a className="small" href="/api/v1/reference/demo-profile" download>Download the demo bank's profile</a>
         <span className="spacer" /><button className="btn btn--primary" type="button" disabled={busy} onClick={create}>Create and continue</button></div>
     </div></div>
   );
@@ -260,7 +261,7 @@ export function InstitutionPage() {
           {!archived && <button className="btn" type="button" onClick={() => setEditing(true)}><Icon name="edit" />Edit details</button>}
           <MenuButton label="More">
               <button className="btn btn--ghost" type="button" onClick={() => download(`${i.institution_id}-profile.json`, { institution: pickCreate(i as any), sections: profile.sections })}>Export the profile (JSON)</button>
-              <button className="btn btn--ghost btn--danger" type="button" onClick={() => setResetting(true)}><Icon name="refresh" />Reset the prototype…</button>
+              {installation?.prototype_reset !== false && <button className="btn btn--ghost btn--danger" type="button" onClick={() => setResetting(true)}><Icon name="refresh" />Reset the prototype…</button>}
           </MenuButton>
           {i.status === "setup" && <button className="btn btn--primary" type="button" disabled={!readiness.ready} title={readiness.ready ? "" : "Required parts are missing"} onClick={() => act("activate")}>Activate</button>}
           {archived && <button className="btn btn--primary" type="button" onClick={() => act("restore")}>Restore</button>}
