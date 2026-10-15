@@ -222,6 +222,7 @@ export function InstitutionPage() {
   const installation = useLoad(() => api<Installation>("/api/v1/installation"));
   const { profile, readiness, ctx, list } = S;
 
+  if (!TABS.some(([k]) => k === tab)) return <Navigate to="/institution" replace />;  // an unknown tab: the overview
   if (S.error && !profile) return <div className="page"><PageHead title="Institution" /><Banner kind="crit" icon="warn">{S.error}</Banner></div>;
   if (list === null) return <PageSkeleton />;
   const follow = (t: { tab: string | null }) => { if (t.tab) nav(`/institution/${t.tab}`); };
@@ -267,7 +268,7 @@ export function InstitutionPage() {
           </MenuButton>
           {i.status === "setup" && <button className="btn btn--primary" type="button" disabled={!readiness.ready} title={readiness.ready ? "" : "Required parts are missing"} onClick={() => act("activate")}>Activate</button>}
           {archived && <button className="btn btn--primary" type="button" onClick={() => act("restore")}>Restore</button>}
-          {i.status === "setup" && <button className="btn btn--danger" type="button" onClick={() => setConfirm("delete")}><Icon name="trash" /></button>}
+          {i.status === "setup" && <button className="btn btn--danger" type="button" aria-label="Delete this institution" title="Delete this institution" onClick={() => setConfirm("delete")}><Icon name="trash" /></button>}
         </>} />
       <div className="banners">
         {archived && <Banner kind="warn" icon="warn">Archived: the agents don't use this profile and it can't be changed. Restore it to edit.</Banner>}

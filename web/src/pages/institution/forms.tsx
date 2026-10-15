@@ -254,6 +254,11 @@ export function ItemModal({ section, ctx, editing, initial, onClose, onSaved }: 
   const fillFrom = async (item: Record<string, any>) => {
     let it = item;
     if (section === "regulators" && it.regulator_id && !it.name) it = { ...(await ref.regulator(it.regulator_id)), ...it };
+    // a risk that only names its hazard is completed from the hazard library (title, kind, months, places)
+    if (section === "risk-exposures" && it.hazard_id && !it.title) {
+      const h = (await ref.hazards()).find(x => x.hazard_id === it.hazard_id);
+      if (h) it = { title: h.name, kind: h.kind, months: h.months, places: h.places, ...it };
+    }
     setErr({}); setGeneral([]);
     setD(draftFrom(DEFAULTS[section](ctx), it, { keepId: !editing, base: editing ? start : undefined }));
   };
