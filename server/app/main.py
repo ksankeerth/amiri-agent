@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app import auth, db, health, overview, prototype, settings, tick
+from app import auth, db, health, overview, prototype, settings, sleep, tick
 from app.alerts import api as alerts_api
 from app.alerts.service import Alerts
 from app.assistant import api as assistant_api
@@ -28,7 +28,6 @@ from app.problems import Problem, on_problem, on_validation
 from app.providers.twelvedata import TwelveDataClient
 from app.radar import api as radar_api
 from app.radar.service import Radar
-from app.reference import load as refload
 from app.series import api as series_api
 from app.series.service import MarketSeries
 from app.studio import api as studio_api
@@ -50,14 +49,12 @@ def create_app(*, database_url: str | None = None, provider: TwelveDataClient | 
                monitor: MonitorClient | None = None, radar: RadarClient | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        pool = db.make_pool(database_url)
-        await pool.open(wait=True)
-        if settings.flag("AUTO_MIGRATE"):
-            async with pool.connection() as conn:
-                await db.migrate(conn)
-                await refload.load(conn)
-        prov = provider or TwelveDataClient()
+        # The database may be stopped (to save costs): the server starts anyway and wakes when it answers (app/sleep.py).
+        app.state.database_url = database_url or settings.raw("DATABASE_URL")
+        pool = db.make_pool(app.state.database_url)
         app.state.pool = pool
+        await sleep.wake(app, app.state.database_url, force=True)
+        prov = provider or TwelveDataClient()
         app.state.series = MarketSeries(pool, prov, clock or Clock())
         app.state.institutions = Institutions(pool, clock or Clock())
         mon_client = monitor or MonitorClient()
@@ -82,7 +79,8 @@ def create_app(*, database_url: str | None = None, provider: TwelveDataClient | 
                 await mon_client.aclose()
             if radar is None:
                 await radar_client.aclose()
-            await pool.close()
+            if sleep.state(app).awake:
+                await pool.close()
 
     app = FastAPI(title="amiri-server", version=health.VERSION, description=DESCRIPTION, lifespan=lifespan)
     app.add_exception_handler(Problem, on_problem)
@@ -91,6 +89,7 @@ def create_app(*, database_url: str | None = None, provider: TwelveDataClient | 
     if origins:
         app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"],
                            allow_headers=["*"], expose_headers=["ETag", "Location", "Retry-After"])
+    app.add_middleware(sleep.Asleep)  # inside the gate: signed-out callers get 401 first
     app.add_middleware(auth.Gate)
     app.include_router(auth.robots)
     app.include_router(auth.router)

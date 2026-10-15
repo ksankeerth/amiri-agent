@@ -66,6 +66,13 @@ refused (`BLOCK_AI_CRAWLERS`). Each sign-in attempt that passes the access code 
 month are free for an organisation); `LOGIN_CHECKS_PER_DAY` caps them, and setting `LOGIN_ACCESS_CODE` keeps bots from
 spending any.
 
+## When the database is stopped
+
+In Google Cloud the database can be stopped to save money (`infra/scripts/awake.sh off`). The server starts
+anyway (`app/sleep.py`): sign-in and the web app work, every API call answers 503 `asleep`, and the web app
+shows a paused page. While asleep, a request at most every `DB_WAKE_PROBE_SECONDS` tries the database; once it
+answers, the server migrates and wakes without a restart.
+
 ## Prototype limits (shown in the UI through `GET /api/v1/series:status`)
 
 | Limit | Default | Setting |

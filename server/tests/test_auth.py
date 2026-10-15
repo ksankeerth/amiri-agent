@@ -33,7 +33,7 @@ async def test_the_api_needs_a_sign_in_and_the_check_gives_one(client, gated):
     assert (await client.post("/internal/tick")).status_code == 401  # no longer open on a public URL
     assert (await client.get("/health")).status_code == 200  # liveness stays open
     cfg = (await client.get("/api/v1/auth/config")).json()
-    assert cfg == {"mode": "prototype", "recaptcha_site_key": "site-key", "access_code": False, "google": False}
+    assert cfg == {"mode": "prototype", "recaptcha_site_key": "site-key", "access_code": False, "google": False, "asleep": False}
     assert (await client.get("/api/v1/auth/me")).json()["signed_in"] is False
     r = await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token"})
     assert r.status_code == 200 and "amiri_session" in r.cookies

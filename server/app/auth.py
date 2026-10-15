@@ -167,10 +167,13 @@ class PrototypeIn(BaseModel):
     code: str | None = Field(None, max_length=200, description="The access code, when LOGIN_ACCESS_CODE is set.")
 
 
-@router.get("/config", summary="How to sign in here (public)")
-async def config():
+@router.get("/config", summary="How to sign in here, and whether the server is asleep (public)")
+async def config(request: Request):
+    from app import sleep
+
+    awake = await sleep.wake(request.app, request.app.state.database_url)
     return {"mode": settings.raw("AUTH_MODE"), "recaptcha_site_key": settings.raw("RECAPTCHA_SITE_KEY") or None,
-            "access_code": bool(settings.raw("LOGIN_ACCESS_CODE")), "google": False}
+            "access_code": bool(settings.raw("LOGIN_ACCESS_CODE")), "google": False, "asleep": not awake}
 
 
 @router.get("/me", summary="Whether this browser is signed in (public)")

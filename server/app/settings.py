@@ -84,6 +84,10 @@ SETTINGS: dict[str, Setting] = {
             secret=True,
         ),
         Setting("DB_POOL_MAX", "10", "Most database connections the server holds."),
+        Setting("DB_CONNECT_TIMEOUT_SECONDS", "5", "Seconds to wait for the database when checking whether it is up."),
+        Setting("DB_WAKE_PROBE_SECONDS", "15",
+                "While the database is stopped (asleep), how often a request may try it again; once it answers the "
+                "server wakes without a restart."),
         Setting(
             "AUTO_MIGRATE",
             "true",
