@@ -266,6 +266,8 @@ async def test_a_development_with_a_new_theme_extends_the_event(client, env, age
     assert r["developments"][0]["event_id"] == event["event_id"]
     req = agent.requests[-1]
     assert req["extend"] == {"event_id": event["event_id"], "themes": [{"theme": "remittance", "direction": "down"}]}
+    grown = (await client.get(f"/api/v1/events/{event['event_id']}")).json()
+    assert {"theme": "remittance", "direction": "down"} in grown["themes"]  # the event now covers the new theme
     await client.post("/internal/tick")
     detail = (await client.get(f"/api/v1/events/{event['event_id']}")).json()
     assert len(detail["hypotheses"]) == 2 and len((await client.get("/api/v1/events")).json()["items"]) == 1

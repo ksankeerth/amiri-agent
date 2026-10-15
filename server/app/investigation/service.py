@@ -18,6 +18,7 @@ virtual clock, which also sends `as_of`, names its runs predictably and collects
 running run (its clock doesn't move while it waits).
 """
 
+import json
 import logging
 import uuid
 from collections.abc import Callable
@@ -37,6 +38,23 @@ from app.problems import Problem
 from app.text import plural
 
 log = logging.getLogger("amiri.investigation")
+
+
+def _lead(theme: dict) -> dict:
+    """What makes two findings the same move: the theme, its direction and its currency or item (no empty keys)."""
+    return {k: v for k, v in theme.items() if k in ("theme", "direction", "currency", "item") and v not in (None, "", "none")}
+
+
+async def _add_themes(conn, event_id: str, themes: list[dict]) -> None:
+    """Themes a development brings that the event doesn't have yet: the event covers them from now on."""
+    cur = await conn.execute("SELECT themes FROM cases.events WHERE event_id = %s", (event_id,))
+    row = await cur.fetchone()
+    if not row:
+        return
+    have = {(t["theme"], t["direction"]) for t in row["themes"]}
+    new = [t for t in themes if (t["theme"], t["direction"]) not in have]
+    if new:
+        await conn.execute("UPDATE cases.events SET themes = themes || %s WHERE event_id = %s", (Jsonb(new), event_id))
 
 MAX_FINDINGS = 20
 MAX_REPOSTS = 3
@@ -157,7 +175,7 @@ class Investigations:
                    ORDER BY created_at FOR UPDATE SKIP LOCKED""",
                 (self.worlds, only, only))
             for f in await cur.fetchall():
-                lead = {k: v for k, v in f["themes"][0].items() if k in ("theme", "direction", "currency", "item")}
+                lead = _lead(f["themes"][0])
                 cur2 = await conn.execute(
                     """SELECT event_id, title, themes FROM cases.events WHERE institution_id = %s AND world = %s
                        AND status = 'open' AND open_until >= %s AND themes @> %s ORDER BY anchor DESC LIMIT 1""",
@@ -180,6 +198,7 @@ class Investigations:
                 have = {(t["theme"], t["direction"]) for t in e["themes"]}
                 new = [t for t in f["themes"][1:] if (t["theme"], t["direction"]) not in have]
                 if new:
+                    await _add_themes(conn, e["event_id"], new)  # the event now covers them (and later findings match)
                     extend.append((e["event_id"], f, new))
         for event_id, f, new in extend:
             if self.client.connected():
@@ -326,7 +345,7 @@ class Investigations:
         """An open event of the same institution and world whose themes hold this lead theme."""
         if not themes:
             return None
-        lead = {k: v for k, v in themes[0].items() if k in ("theme", "direction", "currency", "item")}
+        lead = _lead(themes[0])
         cur = await conn.execute(
             """SELECT event_id, title FROM cases.events WHERE institution_id = %s AND world = %s AND status = 'open'
                AND open_until >= %s AND themes @> %s AND run_id <> %s ORDER BY anchor DESC LIMIT 1""",
@@ -341,7 +360,15 @@ class Investigations:
         # turn out to be the same move as an open event: it joins that event as a development, and the
         # run's duplicate event and its hypotheses are dropped (the open event already has them).
         joined: dict[str, dict] = {}
+        first_of: dict[str, dict] = {}  # one event per lead theme in a run: a second with the same lead joins the first
         for e in ([] if extend else result["events"]):
+            key = json.dumps(_lead(e["themes"][0]), sort_keys=True) if e["themes"] else e["event_id"]
+            if key in first_of:
+                joined[e["event_id"]] = {"event_id": ev[first_of[key]["event_id"]], "title": first_of[key].get("title")}
+                ev[e["event_id"]] = ev[first_of[key]["event_id"]]
+                first_of[key]["finding_ids"] = list(dict.fromkeys(first_of[key]["finding_ids"] + e["finding_ids"]))
+                continue
+            first_of[key] = e
             if (o := await self._open_event_for(conn, run, e["themes"], now)) is not None:
                 joined[e["event_id"]] = o
                 ev[e["event_id"]] = o["event_id"]
@@ -354,6 +381,7 @@ class Investigations:
                         (f, o["event_id"], now, f"classified as the same move as the open event ({what.replace('_', ' ')})"))
                 await conn.execute("UPDATE cases.events SET open_until = %s WHERE event_id = %s",
                                    (now + timedelta(days=settings.integer("EVENT_OPEN_DAYS")), o["event_id"]))
+                await _add_themes(conn, o["event_id"], e["themes"][1:])
         every_event = result["events"]
         result = {**result, "events": [e for e in every_event if e["event_id"] not in joined],
                   "hypotheses": [h for h in result["hypotheses"] if h["event_id"] not in joined],

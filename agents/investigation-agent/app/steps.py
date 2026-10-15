@@ -74,7 +74,9 @@ THEME_GUIDE = """Themes, and the directions each allows:
 - remittance: up | down  (money sent home by migrant workers; job cuts, quotas or visa limits for
   migrant workers abroad mean remittance down)
 - regulation: tax | central_bank_direction | central_bank_relief (moratorium, concessions) |
-  insurance_regulator_rule | import_control_tighter | import_control_looser | tariff
+  insurance_regulator_rule | import_control_tighter | import_control_looser | tariff.
+  A central bank stepping in on its currency (selling dollars, capping the rate) is regulation
+  central_bank_direction first; the currency's move, if stated, comes second.
 - competitor: cheaper | new_product | partner_switch
 - macro: worse | better  (sovereign, IMF, ratings, growth)
 - sector: shock | boost, with the sector named (tourism, apparel, tea, construction...)
