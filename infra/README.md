@@ -27,6 +27,7 @@ flowchart LR
 | Terraform | `infra/terraform/` (`main.tf`: APIs, registry, secrets, database, budget · `iam.tf` · `run.tf`: services, tick) |
 | Images | `server/Dockerfile` (web app + server), each agent's own `Dockerfile`; built by `infra/cloudbuild.yaml` |
 | Scripts | `infra/scripts/`: `bootstrap.sh`, `deploy.sh`, `secrets.sh`, `build.sh`, `awake.sh` |
+| Steps | [`SETUP.md`](SETUP.md): the first deploy, step by step · [`TESTING.md`](TESTING.md): what to test after it |
 
 **Rules the setup keeps:**
 - **No secret values in Terraform, its state or the repository.** Terraform makes empty Secret Manager
@@ -38,82 +39,24 @@ flowchart LR
 
 ---
 
-## 1. What you need
+## 1. First deploy
 
-- A Google Cloud project with **billing linked** (a free trial account is fine).
-- [`gcloud`](https://cloud.google.com/sdk/docs/install) and [Terraform](https://developer.hashicorp.com/terraform/install)
-  1.6 or later. On a Mac: `brew install --cask google-cloud-sdk` and `brew install hashicorp/tap/terraform`.
-- Sign in, once: `gcloud auth login` and `gcloud auth application-default login`.
-- A free [Twelve Data](https://twelvedata.com) API key (market series).
-- Owner (or Editor + Security Admin) on the project. For the budget alert, Billing Account Administrator.
+Follow **[SETUP.md](SETUP.md)**, from an empty Google account to the app running: tools, project, keys,
+settings, secrets, images, deploy, first use. Then check it with **[TESTING.md](TESTING.md)**.
 
-You don't need Docker: Cloud Build makes the images in your project.
-
-## 2. Your settings
+In short:
 
 ```bash
-cd infra/terraform
-cp terraform.tfvars.example terraform.tfvars    # git ignores it
+infra/scripts/bootstrap.sh       # the state bucket, terraform init
+infra/scripts/deploy.sh base     # APIs, accounts, empty secrets, the database
+infra/scripts/secrets.sh         # the secret values (asked in your terminal)
+infra/scripts/build.sh           # the images (Cloud Build)
+infra/scripts/deploy.sh          # the services and the tick
 ```
-
-Fill in `project_id`, `region` (for example `asia-south1`) and `operator_email` (your Google account). For a
-budget alert, also fill in `billing_account_id` (from `gcloud billing accounts list`). Leave
-`recaptcha_site_key` empty for now.
-
-## 3. First time
-
-```bash
-infra/scripts/bootstrap.sh       # the private state bucket, then terraform init
-infra/scripts/deploy.sh base     # APIs, registry, service accounts, empty secrets, the database (about 10 minutes)
-```
-
-### 3.1 The reCAPTCHA key
-
-Your server's address is already known:
-
-```bash
-terraform -chdir=infra/terraform output -raw server_hostname    # amiri-server-<number>.<region>.run.app
-```
-
-At [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin), make a key:
-- **reCAPTCHA v2**, "I'm not a robot" checkbox;
-- domain: that hostname (add `localhost` too if you want to test locally).
-
-Put its **site key** in `terraform.tfvars` (`recaptcha_site_key = "…"`). Keep its **secret key** for the next step.
-
-### 3.2 The secrets
-
-```bash
-infra/scripts/secrets.sh
-```
-
-It asks for the reCAPTCHA secret key and your Twelve Data key, without echoing them. It generates the session
-secret, makes the database user with a random password, and offers to generate the access code people type
-at sign-in. It shows a generated access code once: share it with whoever tests.
-
-### 3.3 Images, then everything
-
-```bash
-infra/scripts/build.sh     # Cloud Build: the four images, tagged with the git commit (about 5–10 minutes)
-infra/scripts/deploy.sh    # the services and the tick; shows the plan, asks, applies
-```
-
-### 3.4 Open it and set up your institution
-
-```bash
-terraform -chdir=infra/terraform output -raw server_url
-```
-
-**Use exactly this URL.** Cloud Run also lists an older-style address, but sign-in checks the hostname and only
-this one is on the reCAPTCHA key. Sign in with the checkbox and the access code. Robots and AI crawlers are
-told to stay away, and known ones are refused.
-
-The install starts empty. Set up your bank or insurer on the Institution page (the setup chat or the forms), add
-the prices and rates to watch on the Market series page, then draft and approve monitors from the profile.
 
 ---
 
-## 4. Day to day
+## 2. Day to day
 
 | Task | Command |
 |---|---|
@@ -124,7 +67,7 @@ the prices and rates to watch on the Market series page, then draft and approve 
 | Change a setting | edit `terraform.tfvars` (`server_env = { … }` for any server setting), then `deploy.sh` |
 | Replace a secret | `infra/scripts/secrets.sh RECAPTCHA_SECRET`, then `deploy.sh` (a running service reads secrets when it starts) |
 | Run the tick now | `gcloud scheduler jobs run amiri-tick --location <region>` |
-| Logs | §5: what went wrong recently, one request, one run |
+| Logs | §3: what went wrong recently, one request, one run |
 | See what Terraform would change | `terraform -chdir=infra/terraform plan` |
 
 **Keep it awake while people are reviewing.** Asleep, the app opens but only shows the paused page. Use
@@ -141,7 +84,7 @@ the prices and rates to watch on the Market series page, then draft and approve 
 - **reCAPTCHA:** 10,000 checks a month are free. The access code keeps bots from using them.
 - **The budget alert** emails the billing account's admins at 50%, 90% and 100% of `budget_amount`.
 
-## 5. Finding a problem
+## 3. Finding a problem
 
 Every service writes **one JSON line per thing worth knowing**. Cloud Logging reads its severity, keeps a
 traceback in one entry, and links the line to its trace. Nothing is logged per normal request: Cloud Run's
@@ -186,7 +129,7 @@ it happened. Turn on its notifications to get an email for a new kind of error.
 **Cost.** Cloud Logging is free up to 50 GiB a month per project. At these levels the services write a few MB
 a day, so the free allowance covers it many times over. The **Logs Storage** page shows the month's volume.
 
-## 6. When something is wrong
+## 4. When something is wrong
 
 | What you see | Why, and what to do |
 |---|---|
@@ -199,7 +142,7 @@ a day, so the free allowance covers it many times over. The **Logs Storage** pag
 | A script against the API (as the ops account): 401 | The token's audience must be exactly the `server_url` output, with `--include-email` |
 | The tick fails with 401 | The scheduler account must be in the server's `INTERNAL_CALLERS` (Terraform sets it). Check that `server_url` matches the service's address |
 
-## 7. Taking it down
+## 5. Taking it down
 
 ```bash
 # 1. allow deleting the database: in terraform.tfvars, protect_database = false
@@ -210,7 +153,7 @@ terraform -chdir=infra/terraform destroy
 
 The state bucket (`<project>-amiri-tfstate`) stays; delete it by hand if you want. Or delete the whole project.
 
-## 8. Later
+## 6. Later
 
 - **Radar:** once its agent exists, add an `amiri-radar` service like the others, with `roles/bigquery.jobUser`
   on its account and the server allowed to call it. Then set `radar_url`. Keep `radar_daily_bytes_cap`
