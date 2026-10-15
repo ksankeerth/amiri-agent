@@ -94,6 +94,13 @@ SETTINGS: dict[str, Setting] = {
             "Comma-separated CORS origins for the API; empty = none.",
         ),
         Setting(
+            "LOG_FORMAT",
+            "text",
+            "text (local) or json (Cloud Run: severity, one entry per traceback, "
+            "linked to the run's trace; app/logs.py).",
+        ),
+        Setting("LOG_LEVEL", "INFO", "Lowest level logged: DEBUG, INFO, WARNING or ERROR."),
+        Setting(
             "OTEL_TO_CLOUD",
             "",
             "true/false: export traces to Cloud Trace (needs Google Cloud credentials). "

@@ -23,13 +23,14 @@ from fastapi import FastAPI
 from google.adk.cli.fast_api import get_fast_api_app
 from google.adk.runners import Runner
 
-from app import settings, turn_api
+from app import logs, settings, turn_api
 from app.app_utils import services
 from app.app_utils.a2a import attach_a2a_routes
 from app.contract import CONTRACT_VERSION, HEADER
 from app.sessions import SessionStore
 
 load_dotenv()
+logs.setup()  # JSON lines on Cloud Run (LOG_FORMAT); app/logs.py
 logger = logging.getLogger(__name__)
 
 if settings.raw("MODEL_MIN_INTERVAL_SECONDS"):

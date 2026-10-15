@@ -209,6 +209,13 @@ class InvestigationService:
                 self.store.fail(req.run_id, error_message(e))
             else:
                 self.store.complete(req.run_id, result)
+                u = result.usage
+                logger.info(
+                    "investigation %s %s in %.1f s: %d events, %d hypotheses, %d model calls, %d tool calls "
+                    "(%s, tracks %s)",
+                    req.run_id, result.stop_reason, u.duration_ms / 1000, len(result.events),
+                    len(result.hypotheses), u.model_calls, u.tool_calls, u.model, result.tracks_version,
+                )
 
     async def drain(self) -> None:
         """Waits for every started run (tests, shutdown)."""

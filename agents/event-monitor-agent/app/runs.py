@@ -225,6 +225,12 @@ class CheckService:
                 self.store.fail(req.run_id, error_message(e))
             else:
                 self.store.complete(req.run_id, result)
+                u = result.usage
+                logger.info(
+                    "check %s (monitor %s v%s) %s in %.1f s: %d findings, %d model calls, %d tool calls (%s)",
+                    req.run_id, req.monitor.monitor_id, req.monitor.version, result.stop_reason,
+                    u.duration_ms / 1000, len(result.findings), u.model_calls, u.tool_calls, u.model,
+                )
 
     async def drain(self) -> None:
         """Waits for every started run (tests, shutdown)."""

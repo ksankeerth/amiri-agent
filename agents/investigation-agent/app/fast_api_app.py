@@ -23,12 +23,13 @@ from fastapi import FastAPI
 from google.adk.cli.fast_api import get_fast_api_app
 from google.adk.runners import Runner
 
-from app import investigation_api, settings
+from app import investigation_api, logs, settings
 from app.app_utils import services
 from app.app_utils.a2a import attach_a2a_routes
 from app.runs import InvestigationService, RunStore
 
 load_dotenv()
+logs.setup()  # JSON lines on Cloud Run (LOG_FORMAT); app/logs.py
 logger = logging.getLogger(__name__)
 allow_origins = settings.names("ALLOW_ORIGINS") or None
 # Cloud Trace export needs Google Cloud credentials: on by default on Cloud Run

@@ -8,6 +8,7 @@ tracks, then the track's own events (message, question, proposal, track_conclude
 
 import asyncio
 import logging
+import time
 from collections.abc import AsyncIterator, Callable
 
 from google.auth.exceptions import DefaultCredentialsError
@@ -62,6 +63,24 @@ def offtopic_reply(track: str | None) -> str:
 
 
 async def run_turn(s: Session, turn: TurnIn) -> AsyncIterator[BaseModel]:
+    """One turn, and one log line when it ends: the track, what it ended with, its model calls (never the text)."""
+    started = time.monotonic()
+    kinds: list[str] = []
+    error = None
+    async for ev in _turn(s, turn):
+        kinds.append(ev.type)  # type: ignore[attr-defined]
+        if isinstance(ev, ErrorEv):
+            error = ev.code
+        elif isinstance(ev, UsageEv):
+            outcome = ("error " + error if error else "proposal" if "proposal" in kinds else
+                       "question" if "question" in kinds else "concluded" if "track_concluded" in kinds else "reply")
+            (logger.warning if error else logger.info)(
+                "turn %s in %s: %s in %.1f s, %d model calls, %d+%d tokens", turn.turn_id, s.current_track or "-",
+                outcome, time.monotonic() - started, ev.model_calls, ev.input_tokens, ev.output_tokens)
+        yield ev
+
+
+async def _turn(s: Session, turn: TurnIn) -> AsyncIterator[BaseModel]:
     usage = Usage()
     yield TextDeltaEv(text="")  # the turn has started (the first event is due within 10 s; deltas aren't stored)
     try:
