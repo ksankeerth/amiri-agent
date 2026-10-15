@@ -1,0 +1,28 @@
+# The four images, built in parallel by Cloud Build (infra/scripts/build.sh submits it from the repository root).
+steps:
+  - id: server
+    name: gcr.io/cloud-builders/docker
+    args: ["build", "-f", "server/Dockerfile", "-t", "${_REGISTRY}/server:${_TAG}", "."]
+    waitFor: ["-"]
+  - id: investigation
+    name: gcr.io/cloud-builders/docker
+    args: ["build", "--build-arg", "AGENT_VERSION=${_TAG}", "-t", "${_REGISTRY}/investigation:${_TAG}", "agents/investigation-agent"]
+    waitFor: ["-"]
+  - id: monitor
+    name: gcr.io/cloud-builders/docker
+    args: ["build", "--build-arg", "AGENT_VERSION=${_TAG}", "-t", "${_REGISTRY}/monitor:${_TAG}", "agents/event-monitor-agent"]
+    waitFor: ["-"]
+  - id: setup
+    name: gcr.io/cloud-builders/docker
+    args: ["build", "--build-arg", "AGENT_VERSION=${_TAG}", "-t", "${_REGISTRY}/setup:${_TAG}", "agents/setup-agent"]
+    waitFor: ["-"]
+
+images:
+  - "${_REGISTRY}/server:${_TAG}"
+  - "${_REGISTRY}/investigation:${_TAG}"
+  - "${_REGISTRY}/monitor:${_TAG}"
+  - "${_REGISTRY}/setup:${_TAG}"
+
+options:
+  logging: CLOUD_LOGGING_ONLY # needed when the build runs as its own service account
+timeout: 1800s

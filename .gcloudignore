@@ -1,0 +1,8 @@
+# What `gcloud builds submit` uploads from the repository root (infra/scripts/build.sh): what git tracks,
+# without the git history and local environments.
+.git
+.gitignore
+.gcloudignore
+**/.venv/
+**/node_modules/
+#!include:.gitignore

@@ -46,6 +46,7 @@ and a model never produces a number a person reads.
 | [`agents/setup-agent/`](agents/setup-agent) | The setup chat: turns a person's words into profile proposals they confirm |
 | [`server/contracts/`](server/contracts) | OpenAPI contracts of the setup, Radar and investigation agents |
 | `compose.yaml`, `infra/local/` | Local Postgres, and an optional ticker that stands in for Cloud Scheduler |
+| [`infra/`](infra) | Google Cloud: Terraform, Cloud Build, and the scripts (secrets, images, the on/off switch) |
 
 Each agent is its own small service with its own README and tests, and talks to the server only over
 the contracts. The Radar agent (news from GDELT) is developed separately and not in this repository yet.
@@ -79,9 +80,11 @@ API. The server's README has the settings, the tick and the details.
 
 Set `AUTH_MODE=prototype` to put a Google reCAPTCHA check and a session cookie in front of everything,
 and set `PROTOTYPE_RESET=false`. Search engines and AI crawlers are asked to stay away and known ones are
-refused. See [`server/README.md`](server/README.md#signing-in). It is designed for Google Cloud: Cloud Run,
-Postgres on Cloud SQL or AlloyDB, Cloud Scheduler, Secret Manager, and agents built with Google's Agent
-Development Kit on Gemini.
+refused. See [`server/README.md`](server/README.md#signing-in).
+
+**On Google Cloud:** [`infra/README.md`](infra/README.md) deploys it all into your own project with Terraform:
+Cloud Run, Postgres on Cloud SQL, Cloud Scheduler, Secret Manager, and the agents (Google's Agent Development
+Kit on Gemini in Vertex AI). One switch stops the database when nobody is using it.
 
 ## License
 

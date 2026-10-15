@@ -1,0 +1,18 @@
+# docker build -f server/Dockerfile . reads only web/ and server/; keep secrets and local state out of the context
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/*.db*
+web/dist
+.git
+design
+ui
+mcpservers
+agents
+infra
+HANDOVER-*.md

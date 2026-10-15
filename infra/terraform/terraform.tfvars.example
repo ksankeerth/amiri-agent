@@ -1,0 +1,20 @@
+# Copy to terraform.tfvars (git ignores it) and fill in. No secrets here: infra/scripts/secrets.sh puts them
+# in Secret Manager.
+
+project_id     = "your-project-id"
+region         = "asia-south1"
+operator_email = "you@gmail.com"
+
+# The reCAPTCHA v2 ("I'm not a robot" checkbox) site key for the server's hostname
+# (`terraform output server_hostname`). Its secret key goes in with infra/scripts/secrets.sh.
+recaptcha_site_key = ""
+
+# A monthly budget alert (optional): your billing account id, from `gcloud billing accounts list`.
+billing_account_id = ""
+budget_amount      = 20
+
+# Optional: the Radar agent once it exists, and extra server settings (server/.env.example).
+# radar_url  = "https://amiri-radar-....run.app"
+# server_env = { SERIES_MAX = "6" }
+
+# `awake` is set by infra/scripts/awake.sh (awake.auto.tfvars); `image_tag` by build.sh (image.auto.tfvars).

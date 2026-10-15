@@ -48,3 +48,12 @@ Thumbs.db
 # agents: run logs and local run stores are rebuilt by their scripts
 /agents/*/data/
 /agents/*/tests/**/.results/
+
+# Terraform: state lives in your project's bucket; per-person settings stay local
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+tfplan
+infra/terraform/backend.hcl
