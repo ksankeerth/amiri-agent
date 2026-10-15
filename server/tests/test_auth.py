@@ -74,3 +74,23 @@ async def test_crawlers_and_search_engines_are_turned_away(client, env):
     for ua in ("Mozilla/5.0 (compatible; GPTBot/1.2; +https://openai.com/gptbot)", "ClaudeBot/1.0", "CCBot/2.0"):
         assert (await client.get("/api/v1/auth/config", headers={"User-Agent": ua})).status_code == 403, ua
     assert (await client.get("/api/v1/auth/config", headers={"User-Agent": "Mozilla/5.0 Safari/605"})).status_code == 200
+
+
+async def test_a_quota_error_is_a_failure_and_the_daily_budget_protects_the_allowance(client, gated, app, env):
+    def quota(request):  # Google over its free allowance: success:true, with an error code
+        return httpx.Response(200, json={"success": True, "hostname": "amiri.example.com", "error-codes": ["quota-exceeded"]})
+    app.state.captcha_transport = httpx.MockTransport(quota)
+    r = await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token"})
+    assert r.status_code == 403 and r.json()["code"] == "captcha_failed"
+    app.state.captcha_transport = captcha()
+    env.setenv("LOGIN_CHECKS_PER_DAY", "2")
+    env.setenv("LOGIN_PER_MINUTE", "50")
+    from app import auth
+    auth._checks.update(day="", n=0)
+    codes = [(await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token"})).status_code for _ in range(4)]
+    assert codes == [200, 200, 429, 429]  # the third check never reaches Google
+    env.setenv("LOGIN_CHECKS_PER_DAY", "1000")
+    env.setenv("LOGIN_ACCESS_CODE", "reviewers-2026")
+    auth._checks.update(day="", n=0)
+    assert (await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token", "code": "no"})).status_code == 403
+    assert auth._checks["n"] == 0  # a wrong access code costs no check

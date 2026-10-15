@@ -62,7 +62,9 @@ URL: a Google reCAPTCHA check, then a signed session cookie. Set `RECAPTCHA_SITE
 `RECAPTCHA_SECRET` and `SESSION_SECRET`; the agents and Cloud Scheduler call with Google ID tokens
 (`INTERNAL_AUTH=id_token`, `INTERNAL_CALLERS`). On a public URL also set `PROTOTYPE_RESET=false`.
 Search engines and AI crawlers are asked to stay away (`robots.txt`, `noindex`) and known ones are
-refused (`BLOCK_AI_CRAWLERS`).
+refused (`BLOCK_AI_CRAWLERS`). Each sign-in attempt that passes the access code costs one reCAPTCHA check (10,000 a
+month are free for an organisation); `LOGIN_CHECKS_PER_DAY` caps them, and setting `LOGIN_ACCESS_CODE` keeps bots from
+spending any.
 
 ## Prototype limits (shown in the UI through `GET /api/v1/series:status`)
 

@@ -44,6 +44,8 @@ SETTINGS: dict[str, Setting] = {
         Setting("SESSION_SECRET", "", "Signs session cookies (32+ random characters). Changing it signs everyone out.", secret=True),
         Setting("SESSION_HOURS", "12", "How long a sign-in lasts."),
         Setting("LOGIN_PER_MINUTE", "10", "Sign-in attempts per IP address per minute."),
+        Setting("LOGIN_CHECKS_PER_DAY", "1000", "reCAPTCHA checks one server instance makes a day at most (the free "
+                "allowance is 10,000 a month for the whole organisation; sign-ins refused by the access code cost none)."),
         Setting("LOGIN_ACCESS_CODE", "", "Optional: a code people must also enter (e.g. given to reviewers with the URL); "
                 "empty: reCAPTCHA only.", secret=True),
         Setting("AUTH_LOCAL_AGENTS", "true", "With sign-in on, agents on this machine (loopback, no proxy) skip it: "

@@ -139,6 +139,18 @@ async def robots_txt():
 # ---------------------------------------------------------------- sign in
 
 _attempts: dict[str, deque] = defaultdict(deque)
+_checks = {"day": "", "n": 0}  # reCAPTCHA checks made today by this instance
+
+
+def _check_budget_spent() -> bool:
+    """Every sign-in attempt that gets past the access code costs one reCAPTCHA check, and the free allowance is
+    10,000 a month for the whole organisation. A cap per day (per instance) keeps a flood of junk tokens from
+    using it all and locking everyone out."""
+    today = time.strftime("%Y-%m-%d", time.gmtime())
+    if _checks["day"] != today:
+        _checks.update(day=today, n=0)
+    _checks["n"] += 1
+    return _checks["n"] > settings.integer("LOGIN_CHECKS_PER_DAY")
 
 
 def _rate_limited(ip: str) -> bool:
@@ -182,6 +194,8 @@ async def prototype(request: Request, body: PrototypeIn, response: Response):
     secret = settings.raw("RECAPTCHA_SECRET")
     if not secret:
         raise Problem(503, "misconfigured", "reCAPTCHA isn't set up on this server (RECAPTCHA_SECRET).")
+    if _check_budget_spent():
+        raise Problem(429, "busy", "Sign-in is busy today; try again tomorrow or ask for access.", retry_after=3600)
     transport = getattr(request.app.state, "captcha_transport", None)
     try:
         async with httpx.AsyncClient(timeout=10, transport=transport) as c:
@@ -191,7 +205,8 @@ async def prototype(request: Request, body: PrototypeIn, response: Response):
     except (httpx.HTTPError, ValueError) as e:
         raise Problem(502, "captcha_unreachable", "Google's reCAPTCHA check didn't answer; try again.") from e
     hosts = settings.names("RECAPTCHA_HOSTNAMES")
-    if not v.get("success") or (hosts and v.get("hostname") not in hosts):
+    # Over its free allowance Google answers success:true with an error code, so any error code is a failure.
+    if not v.get("success") or v.get("error-codes") or (hosts and v.get("hostname") not in hosts):
         raise Problem(403, "captcha_failed", "The check didn't pass. Tick the box again.",
                       reasons=v.get("error-codes", []))
     token, exp = issue("prototype")
