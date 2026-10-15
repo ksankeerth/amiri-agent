@@ -39,11 +39,21 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
     headers.set("content-type", "application/json");
     body = JSON.stringify(init.json);
   }
+  const read = !init.method || init.method === "GET";
   let r: Response;
   try {
     r = await fetch(path, { ...init, headers, body });
+    // a read that met a starting server (Cloud Run brings it up from zero after a quiet spell) is tried once more
+    if (read && [502, 503, 504].includes(r.status) && !(r.headers.get("content-type") ?? "").includes("problem")) r = await fetch(path, { ...init, headers, body });
   } catch (e) {
-    throw new ApiError({ status: 0, code: "network", detail: "The Amiri Agent server didn't answer. Is it running?" });
+    try {
+      if (!read) throw e;  // a write isn't sent twice: it may have arrived
+      r = await fetch(path, { ...init, headers, body });
+    } catch {
+      throw new ApiError({ status: 0, code: "network", detail: read
+        ? "Amiri Agent didn't answer. It may be starting up after a quiet spell: try again in a few seconds."
+        : "Amiri Agent didn't answer, so this may not have been saved. It may be starting up after a quiet spell: check, then try again in a few seconds." });
+    }
   }
   if (r.status === 204) return undefined as T;
   const text = await r.text();

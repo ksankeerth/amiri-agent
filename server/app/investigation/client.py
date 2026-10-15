@@ -11,9 +11,10 @@ from app import settings
 class AgentError(Exception):
     """The agent couldn't be reached or refused the request."""
 
-    def __init__(self, message: str, *, retry: bool = True):
+    def __init__(self, message: str, *, retry: bool = True, cold: bool = False):
         super().__init__(message)
         self.retry = retry  # False: the request itself was refused (4xx); sending it again won't help
+        self.cold = cold  # no answer in time, or not up yet: an agent starting from zero (Cloud Run) looks like this
 
 
 class AgentClient:
@@ -43,13 +44,23 @@ class AgentClient:
         try:
             r = await self.client.request(method, path, headers=await self._headers(), **kw)
         except httpx.HTTPError as e:
-            raise AgentError(f"{type(e).__name__}: {e}") from e
+            cold = isinstance(e, httpx.TimeoutException | httpx.ConnectError | httpx.RemoteProtocolError)
+            raise AgentError(f"{type(e).__name__}: {e}", cold=cold) from e
         if r.status_code in (200, 202):
             return r.json()
-        raise AgentError(f"HTTP {r.status_code}: {r.text[:500]}", retry=r.status_code >= 500 or r.status_code == 404)
+        raise AgentError(f"HTTP {r.status_code}: {r.text[:500]}", retry=r.status_code >= 500 or r.status_code == 404,
+                         cold=r.status_code in (429, 502, 503, 504))
 
     async def start(self, request: dict) -> dict:
-        return await self._call("POST", f"/{self.runs}", json=request)
+        try:
+            return await self._call("POST", f"/{self.runs}", json=request)
+        except AgentError as e:
+            if not e.cold:
+                raise
+            # An agent that Cloud Run is starting from zero can take longer than the timeout to answer its first
+            # call. The same run_id and body returns the same run, so sending it again is safe: once, waiting longer.
+            t = settings.number("AGENT_COLD_START_TIMEOUT_SECONDS")
+            return await self._call("POST", f"/{self.runs}", json=request, timeout=httpx.Timeout(t, connect=10.0))
 
     async def status(self, run_id: str) -> dict:
         return await self._call("GET", f"/{self.runs}/{run_id}")

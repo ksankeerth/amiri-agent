@@ -332,3 +332,21 @@ async def test_a_themeless_finding_classified_as_an_open_story_joins_its_event(c
     assert f["status"] == "linked" and f["outcome"] == {"event_id": events[0]["event_id"], "development": True}
     hyps = await sql("SELECT count(*) AS n FROM cases.hypotheses")
     assert hyps == [{"n": 1}]  # the duplicate's hypotheses were dropped
+
+
+async def test_a_cold_agent_gets_the_run_sent_again():
+    """The first POST times out (the agent is starting); the same run is sent again and accepted."""
+    import httpx
+
+    from app.investigation.client import MonitorClient
+
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        if len(calls) == 1:
+            raise httpx.ReadTimeout("cold start", request=request)
+        return httpx.Response(202, json={"run_id": "r1", "status": "queued"})
+    c = MonitorClient("http://agent", transport=httpx.MockTransport(handler))
+    assert (await c.start({"run_id": "r1"}))["status"] == "queued"
+    assert len(calls) == 2 and calls[0].content == calls[1].content

@@ -90,6 +90,12 @@ variable "log_level" {
   }
 }
 
+variable "server_min_instances" {
+  description = "Server instances kept running. 0 (default): it stops when idle and the first visit after a quiet spell waits for it to start. 1: no wait, at the cost of one always-on instance (roughly USD 10 or more a month); worth it while reviewers use it."
+  type        = number
+  default     = 0
+}
+
 variable "server_max_instances" {
   description = "Most server instances."
   type        = number

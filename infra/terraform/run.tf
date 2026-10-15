@@ -112,7 +112,7 @@ resource "google_cloud_run_v2_service" "server" {
     service_account = google_service_account.sa["server"].email
     timeout         = "600s" # a setup-agent turn takes up to 120 s; the tick waits on the agents' answers
     scaling {
-      min_instance_count = 0
+      min_instance_count = var.server_min_instances
       max_instance_count = var.server_max_instances
     }
     volumes {

@@ -229,6 +229,8 @@ SETTINGS: dict[str, Setting] = {
         Setting("MONITOR_WEB_QUERIES_PER_CHECK", "3", "Web searches one check may run."),
         Setting("MONITOR_RECENT_DAYS", "7", "Pages a monitor reported in this many days are not reported again."),
         # Radar
+        Setting("AGENT_COLD_START_TIMEOUT_SECONDS", "120", "When an agent doesn't answer a new run in time (Cloud Run "
+                "starting it from zero), the run is sent again once, waiting this long."),
         Setting("RADAR_URL", "", "Base URL of the Radar agent (agents/radar-agent); empty: not connected."),
         Setting("RADAR_AUTH", "none", "How the server calls the Radar agent: none (local) or id_token (Cloud Run)."),
         Setting("RADAR_EVERY_MINUTES", "60", "Minutes between scheduled Radar runs (Check now runs one at once)."),
