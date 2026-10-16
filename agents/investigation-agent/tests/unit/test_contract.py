@@ -28,6 +28,8 @@ MODELS: dict[str, type[BaseModel]] = {
     "FootprintCountry": contract.FootprintCountry,
     "PlaceInfo": contract.PlaceInfo,
     "Finding": contract.Finding,
+    "Exposure": contract.Exposure,
+    "ExposureFlow": contract.ExposureFlow,
     "FindingEvidence": contract.FindingEvidence,
     "SignalRecord": contract.SignalRecord,
     "Headline": contract.Headline,

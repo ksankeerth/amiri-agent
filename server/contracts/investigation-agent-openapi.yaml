@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: Investigation Agent - Investigation API
-  version: 0.3.0
+  version: 0.5.0
   description: |
     Turns a batch of findings into hypotheses and validation tasks for one
     institution (a bank or an insurer). amiri-server sends the request: the
@@ -373,15 +373,26 @@ components:
       properties:
         country: {type: string, pattern: '^[A-Z]{2}$'}
         currency: {type: [string, 'null'], pattern: '^[A-Z]{3}$', description: 'Its currency, ISO 4217.'}
+        role:
+          type: [string, 'null']
+          description: branches | subsidiary | agents | digital_only | representative_office. A representative office books nothing, so the country counts as abroad.
+        regions:
+          type: array
+          items: {type: string}
+          description: ISO 3166-2 regions it operates in; empty means the whole country.
 
     PlaceInfo:
       type: object
       additionalProperties: false
-      required: [country]
       properties:
-        country: {type: string, pattern: '^[A-Z]{2}$'}
+        country: {type: [string, 'null'], pattern: '^[A-Z]{2}$', description: Null for a chokepoint or sea.}
         region_l1: {type: [string, 'null'], description: ISO 3166-2 first level.}
         region_l2: {type: [string, 'null']}
+        lane_countries:
+          type: array
+          items: {type: string, pattern: '^[A-Z]{2}$'}
+          description: For a chokepoint, sea or port, the countries at the ends of the sea lanes through it. A lane that reaches home or a trade partner makes the place a trade channel.
+        lanes: {type: array, items: {type: string}, description: Those lanes' names.}
 
     Flow:
       type: object
@@ -429,6 +440,27 @@ components:
           description: The period the finding covers (September remittances). Its start is the anchor if there is no effective_from.
         created_at:
           oneOf: [{$ref: '#/components/schemas/UtcDateTime'}, {type: 'null'}]
+        exposure:
+          oneOf: [{$ref: '#/components/schemas/Exposure'}, {type: 'null'}]
+          description: A monitor finding's exposures, as its owner wrote them (only ids the profile has). When they name products, segments, flows or risks, a finding abroad with no other way home is in scope (channel exposure).
+
+    Exposure:
+      type: object
+      additionalProperties: false
+      properties:
+        products: {type: array, items: {type: string}}
+        segments: {type: array, items: {type: string}}
+        flows: {type: array, items: {$ref: '#/components/schemas/ExposureFlow'}}
+        risks: {type: array, items: {type: string}}
+        notes: {type: array, maxItems: 12, items: {type: string}, description: How it reaches the institution, in the owner's words.}
+
+    ExposureFlow:
+      type: object
+      additionalProperties: false
+      required: [kind, counterpart]
+      properties:
+        kind: {type: string}
+        counterpart: {type: string}
 
     FindingEvidence:
       type: object
@@ -498,7 +530,11 @@ components:
         countries:
           type: array
           items: {type: string, pattern: '^[A-Z]{2}$'}
-          description: Where it is booked; empty means home and every footprint country.
+          description: Where it is booked; empty means home, and a footprint country whose currency is in currencies (every one when currencies is empty).
+        currencies:
+          type: array
+          items: {type: string, pattern: '^[A-Z]{3}$'}
+          description: Currencies it is booked in, ISO 4217.
 
     Extend:
       type: object
@@ -507,6 +543,10 @@ components:
       properties:
         event_id: {$ref: '#/components/schemas/Slug'}
         themes: {type: array, minItems: 1, maxItems: 4, items: {$ref: '#/components/schemas/ThemeTag'}}
+        resize: {type: boolean, default: false, description: 'The same move grew well past the event''s size: hypotheses only for the effects that qualify now and did not at previous_size.'}
+        previous_size:
+          oneOf: [{$ref: '#/components/schemas/Size'}, {type: 'null'}]
+          description: The event's size before the resize (null if it had none).
 
     Limits:
       type: object
@@ -582,7 +622,7 @@ components:
         direction must suit the theme: fx weaker|stronger (with currency); rates, prices,
         commodities, remittance up|down; regulation tax|central_bank_direction|
         central_bank_relief|insurance_regulator_rule|import_control_tighter|
-        import_control_looser|tariff; competitor cheaper|new_product|partner_switch;
+        import_control_looser|tariff|sanctions|travel_tighter|travel_looser; competitor cheaper|new_product|partner_switch;
         macro worse|better; sector shock|boost; disaster domestic|abroad; trust
         own|rival|system; markets equity_down|equity_up|bonds_down|bonds_up.
       properties:
@@ -609,7 +649,7 @@ components:
         finding_id: {$ref: '#/components/schemas/Slug'}
         themes: {type: array, maxItems: 4, items: {$ref: '#/components/schemas/ThemeTag'}}
         country: {type: string, enum: [home, footprint, other, global], description: 'home: the home country; footprint: a country it operates in.'}
-        channel: {type: string, enum: [remittance, sector, none], default: none}
+        channel: {type: string, enum: [remittance, sector, exposure, none], default: none}
 
     Event:
       type: object

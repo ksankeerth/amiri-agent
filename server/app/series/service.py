@@ -274,7 +274,9 @@ class MarketSeries:
             return "moved", f"Flagged {self._at(r['last_finding_at'])}; quiet until {self._at(until)}."
         mx = det.get("max")
         if mx:
-            return "normal", f"Largest move {abs(mx['z']):.1f}x typical ({mx['days']} day); fires at {dcfg['z_threshold']:g}."
+            # rounded down, so a move just under the threshold never reads as the threshold
+            return "normal", (f"Largest move {math.floor(abs(mx['z']) * 10) / 10:.1f}x typical ({mx['days']} day); "
+                              f"fires at {dcfg['z_threshold']:g}.")
         return "normal", "Within normal range."
 
     async def status(self) -> dict:

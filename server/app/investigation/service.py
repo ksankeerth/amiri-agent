@@ -20,6 +20,7 @@ running run (its clock doesn't move while it waits).
 
 import json
 import logging
+import re
 import uuid
 from collections.abc import Callable
 from datetime import datetime, timedelta
@@ -43,6 +44,28 @@ log = logging.getLogger("amiri.investigation")
 def _lead(theme: dict) -> dict:
     """What makes two findings the same move: the theme, its direction and its currency or item (no empty keys)."""
     return {k: v for k, v in theme.items() if k in ("theme", "direction", "currency", "item") and v not in (None, "", "none")}
+
+
+MOVES = ("fx", "commodities", "markets", "prices")  # themes whose size is a market move in percent
+
+
+def _grown(event: dict, f: dict) -> float | None:
+    """The finding's move when it is the same move as the event's, much bigger (EVENT_RESIZE_FACTOR times its
+    size, or the event had none); else None."""
+    moves = [abs(s["change_pct"]) for s in (f.get("evidence") or {}).get("signals") or []
+             if isinstance(s.get("change_pct"), int | float)]
+    if not moves or f["themes"][0].get("theme") not in MOVES:
+        return None
+    size = round(max(moves), 2)
+    had = event.get("size")
+    if had and (had.get("unit") != "pct" or size < settings.number("EVENT_RESIZE_FACTOR") * had["value"]):
+        return None
+    return size
+
+
+def _resized_title(title: str, size: float) -> str:
+    """"The LKR weakened (1.09%)" -> "The LKR weakened (6.45%)"; a title without a size stays."""
+    return re.sub(r"\(\d+(?:\.\d+)?%\)", f"({size:g}%)", title, count=1)
 
 
 async def _add_themes(conn, event_id: str, themes: list[dict]) -> None:
@@ -78,8 +101,29 @@ class Investigations:
     def _run_id(self) -> str:
         return self._run_ids() if self._run_ids else f"inv-{self.clock.now():%Y%m%d%H%M%S}-{uuid.uuid4().hex[:4]}"
 
-    def _request(self, run_id: str, ctx: dict, rows: list[dict], validation: bool) -> dict:
-        req = build.build(run_id, ctx, rows, validation)
+    async def _request(self, conn, run_id: str, ctx: dict, rows: list[dict], validation: bool) -> dict:
+        """The agent's request; product currencies and monitor exposures are read from the profile."""
+        currencies, exposures = {}, {}
+        try:
+            state = await self.institutions.state(ctx["institution_id"])
+        except Problem:
+            state = None
+        if state is not None:
+            currencies = {k: it.data.get("currencies") or [] for k, it in state.section("products").items()}
+            wanted = {(r["source_ref"] or {}).get("monitor_id"): (r["source_ref"] or {}).get("monitor_version")
+                      for r in rows if r["source"] == "monitor"}
+            wanted = {m: v for m, v in wanted.items() if m and v}
+            if wanted:
+                cur = await conn.execute(
+                    "SELECT monitor_id, version, spec FROM core.monitor_versions WHERE monitor_id = ANY(%s)",
+                    (list(wanted),))
+                specs = {(r["monitor_id"], r["version"]): r["spec"] for r in await cur.fetchall()}
+                for r in rows:
+                    ref = r["source_ref"] or {}
+                    spec = specs.get((ref.get("monitor_id"), ref.get("monitor_version")))
+                    if r["source"] == "monitor" and spec and (e := build.exposure(spec, state)):
+                        exposures[r["finding_id"]] = e
+        req = build.build(run_id, ctx, rows, validation, currencies, exposures)
         if self.as_of:
             req["as_of"] = self.clock.now().isoformat()
         return req
@@ -167,7 +211,7 @@ class Investigations:
     async def _attach_developments(self, only: list[str] | None) -> list[dict]:
         """New findings that continue an open event's move join it (no new run)."""
         now = self.clock.now()
-        joined, extend = [], []
+        joined, extend, resize = [], [], []
         async with self.pool.connection() as conn, conn.transaction():
             cur = await conn.execute(
                 """SELECT * FROM signals.findings WHERE status = 'new' AND jsonb_array_length(themes) > 0
@@ -177,7 +221,7 @@ class Investigations:
             for f in await cur.fetchall():
                 lead = _lead(f["themes"][0])
                 cur2 = await conn.execute(
-                    """SELECT event_id, title, themes FROM cases.events WHERE institution_id = %s AND world = %s
+                    """SELECT event_id, title, themes, size FROM cases.events WHERE institution_id = %s AND world = %s
                        AND status = 'open' AND open_until >= %s AND themes @> %s ORDER BY anchor DESC LIMIT 1""",
                     (f["institution_id"], f["world"], now, Jsonb([lead])))
                 e = await cur2.fetchone()
@@ -200,13 +244,22 @@ class Investigations:
                 if new:
                     await _add_themes(conn, e["event_id"], new)  # the event now covers them (and later findings match)
                     extend.append((e["event_id"], f, new))
+                if (grown := _grown(e, f)) is not None:  # the same move, much bigger: re-size the event
+                    await conn.execute("UPDATE cases.events SET size = %s, title = %s WHERE event_id = %s",
+                                       (Jsonb({"unit": "pct", "value": grown}), _resized_title(e["title"], grown),
+                                        e["event_id"]))
+                    resize.append((e["event_id"], f, [lead], e["size"]))
         for event_id, f, new in extend:
             if self.client.connected():
                 await self._start_extend(event_id, f, new)
+        for event_id, f, themes, previous in resize:
+            if self.client.connected():
+                await self._start_extend(event_id, f, themes, {"resize": True, "previous_size": previous})
         return joined
 
-    async def _start_extend(self, event_id: str, row: dict, themes: list[dict]) -> None:
-        """A development with themes the event doesn't have: hypotheses for those only."""
+    async def _start_extend(self, event_id: str, row: dict, themes: list[dict], resize: dict | None = None) -> None:
+        """A development with themes the event doesn't have: hypotheses for those only. With `resize`, the same
+        move grew: hypotheses for the effects that need the bigger move only."""
         try:
             ctx = await self.institutions.context(row["institution_id"])
         except Problem:
@@ -214,8 +267,9 @@ class Investigations:
         now = self.clock.now()
         run_id = self._run_id()
         validation = settings.raw("METRICS_VALIDATION") == "on"
-        req = {**self._request(run_id, ctx, [row], validation), "extend": {"event_id": event_id, "themes": themes}}
         async with self.pool.connection() as conn:
+            req = {**await self._request(conn, run_id, ctx, [row], validation),
+                   "extend": {"event_id": event_id, "themes": themes, **(resize or {})}}
             await conn.execute(
                 """INSERT INTO cases.investigations (run_id, institution_id, world, status, trigger, finding_ids,
                      validation, request, created_at, next_poll_at, extend_event_id)
@@ -265,7 +319,7 @@ class Investigations:
             rows = await cur.fetchall()
             if not rows:
                 return None
-            req = self._request(run_id, ctx, rows, validation)
+            req = await self._request(conn, run_id, ctx, rows, validation)
             attempt = 1 + max((r["outcome"] or {}).get("attempts", 0) for r in rows)
             await conn.execute(
                 """INSERT INTO cases.investigations (run_id, institution_id, world, status, trigger, finding_ids,

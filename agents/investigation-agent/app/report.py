@@ -6,8 +6,10 @@ signal), the mechanisms' effect text, the spec's metric names, and the screening
 validation is off it is the whole output; when it is on, it sums up what the tasks check.
 """
 
+from app.candidates import min_size
 from app.contract import Event, InvestigationRequest, InvestigationResult
 from app.tasks import local_date
+from app.tracks import MECHANISMS
 
 OUT_OF_SCOPE = {
     "not_home_country": "not about where the institution operates",
@@ -34,6 +36,38 @@ def _where(e: Event, req: InvestigationRequest) -> str:
         where = WHERE[e.country]
     places = [p for p in e.places if p not in (req.institution.country, e.country_code)]
     return where + (f"; {', '.join(places)}" if places else "")
+
+
+PORTFOLIO = ("Market and rate moves reach an insurer through its investment portfolio, which isn't one of its"
+             " products here.")
+
+
+def _portfolio(e: Event, inst) -> bool:
+    return inst.institution_type == "insurer" and any(t.theme in ("markets", "rates") for t in e.themes)
+
+
+def _untraced(e: Event, req: InvestigationRequest) -> str:
+    """Why an event reaches no product: its move is below what the effects need, or no track reacts to its
+    themes for these products."""
+    inst = req.institution
+    types = {t for _, t in req.tracked().values()}
+    moved = {(t.theme, t.direction) for t in e.themes}
+    tracked = [m for m in MECHANISMS if m.product_type in types
+               and any((tr.theme, tr.direction) in moved for tr in m.triggers)]  # fmt: skip
+    mins = [min_size(m.min_size[0], m.min_size[1], e.themes[0].theme, e) for m in tracked
+            if m.min_size and e.size and m.min_size[1] == e.size.unit]  # fmt: skip
+    if tracked and mins and len(mins) == len(tracked):
+        unit = "%" if e.size.unit == "pct" else " bp"
+        text = (f"Nothing is traced yet: the move ({e.size.value:g}{unit}) is below the size its effects need "
+                f"(from about {min(mins):.1f}{unit}).")
+    else:
+        themes = ", ".join(
+            dict.fromkeys(f"{t.theme} {t.direction}".replace("_", " ") for t in e.themes if not t.implied)
+        )
+        text = f"Nothing is traced: none of the institution's products has a track for {themes}."
+    if _portfolio(e, inst):
+        text += " " + PORTFOLIO
+    return text
 
 
 def build_report(
@@ -104,11 +138,15 @@ def build_report(
                     if t.scope_note:
                         line += f" {t.scope_note}"
                 lines.append(line)
-        else:
+        elif any(s.event_id == e.event_id for s in r.screening):
             lines += [
                 "",
                 "No product of the institution is exposed through the tracks.",
             ]
+        else:
+            lines += ["", _untraced(e, req)]
+        if hyps and _portfolio(e, inst):
+            lines += ["", PORTFOLIO]
         aside = [
             s for s in r.screening if s.event_id == e.event_id and s.decision != "kept"
         ]

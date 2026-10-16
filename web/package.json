@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
     "preview": "vite preview",
-    "test": "node --test src/components/fillJson.test.ts"
+    "test": "node --test src/components/fillJson.test.ts src/format.test.ts"
   },
   "dependencies": {
     "d3-geo": "^3.1.1",

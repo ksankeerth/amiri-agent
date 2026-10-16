@@ -61,8 +61,9 @@ SETTINGS: dict[str, Setting] = {
         ),
         Setting(
             "REVIEWER_TIMEOUT_SECONDS",
-            "20",
-            "Seconds a reviewer model gets before the next is tried.",
+            "45",
+            "Seconds a reviewer model gets before the next is tried. Long enough for the first (stronger) "
+            "model: a fallback reviewer judges differently, so the same finding could pass one check and not the next.",
         ),
         Setting(
             "SEARCH_TIMEOUT_SECONDS",

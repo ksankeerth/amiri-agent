@@ -58,7 +58,8 @@ export function price(x: number | null | undefined): string {
 }
 export const pct = (x: number | null | undefined, d = 2) =>
   x === null || x === undefined ? "—" : `${x > 0 ? "+" : x < 0 ? "−" : ""}${Math.abs(x).toFixed(d)}%`;
-export const zx = (z: number | null | undefined) => (z === null || z === undefined ? "—" : `${Math.abs(z).toFixed(1)}×`);
+// rounded down, so a move just under the threshold (2.998) never reads as the threshold (3.0×)
+export const zx = (z: number | null | undefined) => (z === null || z === undefined ? "—" : `${(Math.floor(Math.abs(z) * 10) / 10).toFixed(1)}×`);
 
 /** A place code as a person says it: "LK" is Sri Lanka. Codes that aren't countries (IN-TN, sea:red-sea) stay readable. */
 const regionNames = (() => { try { return new Intl.DisplayNames(["en"], { type: "region" }); } catch { return null; } })();

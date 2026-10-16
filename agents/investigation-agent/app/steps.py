@@ -70,16 +70,20 @@ THEME_GUIDE = """Themes, and the directions each allows:
   currency). A pair quoted as USD/{base} going up means {base} is weaker.
 - rates: up | down  (policy rate, T-bill or bond yields, lending or deposit rates)
 - prices: up | down, with item fuel | electricity | food | general
-- commodities: up | down, with item gold | crops | oil
+- commodities: up | down, with item gold | crops | oil  (world prices: news that cuts or threatens
+  supply, such as attacks on oil routes, tankers or refineries, is commodities up, wherever it happens)
 - remittance: up | down  (money sent home by migrant workers; job cuts, quotas or visa limits for
   migrant workers abroad mean remittance down)
 - regulation: tax | central_bank_direction | central_bank_relief (moratorium, concessions) |
-  insurance_regulator_rule | import_control_tighter | import_control_looser | tariff.
+  insurance_regulator_rule | import_control_tighter | import_control_looser | tariff |
+  sanctions (on a country, bank, exchange house or payment channel) |
+  travel_tighter | travel_looser (visas, travel bans, pilgrimage quotas).
   A central bank stepping in on its currency (selling dollars, capping the rate) is regulation
   central_bank_direction first; the currency's move, if stated, comes second.
 - competitor: cheaper | new_product | partner_switch
 - macro: worse | better  (sovereign, IMF, ratings, growth)
-- sector: shock | boost, with the sector named (tourism, apparel, tea, construction...)
+- sector: shock | boost, with the sector named (tourism, apparel, tea, construction...). Attacks on
+  ships, a closed or blockaded strait, or war-risk cover pulled are also sector shock, sector shipping.
 - disaster: domestic | abroad  (domestic: where the institution operates), with item flood | storm
   (typhoon, cyclone) | earthquake | drought | fire | epidemic | haze
 - trust: own | rival | system  (whose fraud, outage, failure or licence loss it is):
@@ -87,6 +91,18 @@ THEME_GUIDE = """Themes, and the directions each allows:
   regulator acting against it ("the central bank cancels the licence of X Finance" is trust rival);
   system = the whole sector or shared infrastructure (a national payment network outage)
 - markets: equity_down | equity_up | bonds_down | bonds_up"""
+
+
+def _monitor_context(f: Finding) -> str:
+    """What the monitor that found it was told to watch for, and how its owner says it reaches us."""
+    lines = [str(x) for x in (f.source_ref.get("line_texts") or [])][:3]
+    notes = f.exposure.notes if f.exposure else []
+    out = ""
+    if lines:
+        out += "\nthe monitor matched: " + "; ".join(lines)
+    if notes:
+        out += "\nhow it reaches the institution (its owner): " + "; ".join(notes[:6])
+    return out
 
 
 def booked_currencies(institution: Institution) -> list[str]:
@@ -107,6 +123,7 @@ def classify_prompt(f: Finding, institution: Institution) -> str:
         f'"{h.title}" ({h.published_at:%Y-%m-%d})' for h in f.evidence.headlines
     ]
     evidence += [w.title or w.url for w in f.evidence.web]
+    context = _monitor_context(f)
     home = institution.country_name or institution.country
     footprint = ", ".join(c.country for c in institution.footprint)
     guide = THEME_GUIDE.format(
@@ -121,7 +138,7 @@ headlines may be in another language.
 title: {f.title}
 explanation: {f.explanation}
 evidence:
-{chr(10).join("- " + e for e in evidence)}
+{chr(10).join("- " + e for e in evidence)}{context}
 </finding>
 
 {guide}
@@ -252,7 +269,9 @@ def describe_event(event: Event, findings: list[Finding]) -> str:
     size = f"; size {event.size.value:g} {event.size.unit}" if event.size else ""
     places = f"; places {', '.join(event.places)}" if event.places else ""
     titles = "; ".join(f'"{f.title}"' for f in findings)
-    return f"{themes}{size}{places}. From: {titles}"
+    notes = list(dict.fromkeys(n for f in findings if f.exposure for n in f.exposure.notes))[:6]
+    reach = f" How it reaches the institution (the monitor's owner): {'; '.join(notes)}." if notes else ""
+    return f"{themes}{size}{places}. From: {titles}.{reach}"
 
 
 def screen_prompt(

@@ -116,7 +116,7 @@ settings at startup. The main ones:
 | `AGENT_MODELS` | `gemini-3.5-flash-lite,gemini-3.1-flash-lite` | the agent's models, tried in order |
 | `REVIEWER_MODELS` | `gemini-3.8-flash,gemini-3.7-flash,gemini-3.5-flash,gemini-3.1-flash-lite` | the reviewer's models, stronger first |
 | `SEARCH_MODELS` | `gemini-3.5-flash-lite,gemini-3.1-flash-lite` | web search (Google Search grounding); needs billing or Vertex AI, since the free tier allows none |
-| `REVIEWER_TIMEOUT_SECONDS` | `20` | a slow reviewer model hands over after this |
+| `REVIEWER_TIMEOUT_SECONDS` | `45` | a slow reviewer model hands over after this (long enough that the first model usually judges) |
 
 A model that is busy (503), out of quota (429), too slow or unknown hands the call
 to the next in its list. A quota error that says when to retry (a daily cap) keeps

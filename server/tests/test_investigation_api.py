@@ -71,7 +71,9 @@ async def test_investigate_now_sends_the_profile_and_stores_the_event(client, en
     inst = req["institution"]
     assert (inst["country"], inst["country_name"], inst["currency"], inst["time_zone"]) == (
         "LK", "Sri Lanka", "LKR", "Asia/Colombo")
-    assert {"country": "IN", "currency": "INR"} in inst["footprint"]
+    # where it books business: role and regions, so a story elsewhere in India isn't the footprint
+    assert {"country": "IN", "currency": "INR", "role": "branches",
+            "regions": ["IN-TN", "IN-KL", "IN-KA"]} in inst["footprint"]
     assert any(fl["kind"] == "remittances_in" for fl in inst["flows"]) and inst["corridors"]
     assert {p["product_id"] for p in req["products"]} >= {"sme-loans", "trade-finance"}
     sent = req["findings"][0]
@@ -273,6 +275,28 @@ async def test_a_development_with_a_new_theme_extends_the_event(client, env, age
     assert len(detail["hypotheses"]) == 2 and len((await client.get("/api/v1/events")).json()["items"]) == 1
     got = (await client.get(f"/api/v1/findings/{out['finding']['finding_id']}")).json()
     assert got["status"] == "linked" and got["outcome"]["development"] is True
+
+
+async def test_a_much_bigger_move_resizes_the_event_and_investigates_what_it_now_reaches(client, env, agent):
+    await bank(client, env)
+    await sandbox_move(client, 4.0)  # the rupee 4% weaker
+    await client.post("/api/v1/investigations", json={})
+    await client.post("/internal/tick")
+    event = (await client.get("/api/v1/events")).json()["items"][0]
+    small = event["size"]["value"]
+    # a little more of the same move: it joins, no run
+    await client.post("/api/v1/series/usd_lkr:simulate", json={"change_pct": 4.5})
+    r = (await client.post("/api/v1/investigations", json={})).json()
+    assert r["developments"] and len(agent.requests) == 1
+    # far more (EVENT_RESIZE_FACTOR 1.5): the event is re-sized and an extend run asks for what the bigger move reaches
+    out = (await client.post("/api/v1/series/usd_lkr:simulate", json={"change_pct": 7.0})).json()
+    await client.post("/api/v1/investigations", json={})
+    req = agent.requests[-1]
+    assert len(agent.requests) == 2 and req["extend"]["event_id"] == event["event_id"]
+    assert req["extend"]["resize"] is True and req["extend"]["previous_size"] == {"unit": "pct", "value": small}
+    grown = (await client.get(f"/api/v1/events/{event['event_id']}")).json()
+    assert grown["size"]["value"] > 1.5 * small and f"({grown['size']['value']:g}%)" in grown["title"]
+    assert out["finding"]["finding_id"] in [d["finding_id"] for d in grown["developments"]]
 
 
 async def test_a_lost_run_is_sent_again(client, env, agent):

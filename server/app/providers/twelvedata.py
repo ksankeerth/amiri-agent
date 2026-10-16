@@ -5,6 +5,7 @@ logs. Every failure becomes a ProviderError with one of a few codes, and keeps
 the provider's own message as raised.
 """
 
+import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
@@ -15,6 +16,11 @@ import httpx
 from app import settings
 
 PROVIDER = "twelvedata"
+logger = logging.getLogger("amiri.twelvedata")
+
+# What one call costs. Twelve Data's `api-credits-used` header is the running total for the
+# current minute (across every client of the key), not this call's cost, so it is only logged.
+CREDITS = {"/time_series": 1, "/symbol_search": 1}
 
 
 @dataclass(frozen=True)
@@ -108,7 +114,8 @@ class TwelveDataClient:
             raise ProviderError("unavailable", f"timeout: {type(e).__name__}", credits=0) from e
         except httpx.HTTPError as e:
             raise ProviderError("unavailable", f"{type(e).__name__}: {e}", credits=0) from e
-        credits = int(r.headers.get("api-credits-used", "1") or 1)
+        credits = CREDITS.get(path, 1)
+        logger.debug("%s %s: credits used this minute %s", path, r.status_code, r.headers.get("api-credits-used", "?"))
         try:
             body = r.json()
         except ValueError:

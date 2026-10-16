@@ -15,11 +15,12 @@ from app import models, settings
 
 Searcher = Callable[[str, str, str], Awaitable[dict]]
 
-_PROMPT = """Search the web for news published between {since} and {until} (UTC) about:
+_PROMPT = """Search the web for news about:
 {query}
 
-List each relevant result with its publication date and a one-sentence summary.
-Only include results published in that period. If there are none, say "No results"."""
+Look for news published between {since} and {until} (UTC). List each relevant result with its
+publication date and a one-sentence summary, including results whose date you are unsure of: the dates
+are checked afterwards. Say "No results" only if you find nothing relevant at all."""
 
 
 class SearchUnavailable(RuntimeError):

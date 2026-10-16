@@ -205,6 +205,12 @@ SETTINGS: dict[str, Setting] = {
             "(the investigation agent's).",
         ),
         Setting(
+            "EVENT_RESIZE_FACTOR",
+            "1.5",
+            "A later market move this many times the open event's size re-sizes it, and the effects that need the "
+            "bigger move are investigated (the ones the event has aren't repeated).",
+        ),
+        Setting(
             "EVENT_OPEN_DAYS",
             "14",
             "An event stays open this many days after its last finding; a new finding about the same move "

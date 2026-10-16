@@ -232,8 +232,11 @@ async def web_search(query: str, tool_context: ToolContext) -> dict:
 
     tool_context.state[STATE_WEB_USED] = used + 1
     window = check["window"]
+    # The search gets the window widened by the grace hours and keeps its dates; code alone decides
+    # what is in the window (in_window), from each page's own date.
+    since = _parse(window["since"]) - timedelta(hours=float(check.get("grace_hours") or 0))
     try:
-        found = await get_searcher()(query, window["since"], window["until"])
+        found = await get_searcher()(query, iso(since), window["until"])
     except Exception as e:
         tool_context.state[STATE_WEB_FAILED] = [*(tool_context.state.get(STATE_WEB_FAILED) or []), str(e)[:300]]
         return _error(f"web search failed: {e}")

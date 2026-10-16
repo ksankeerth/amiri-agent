@@ -441,6 +441,16 @@ async def test_bars_refusals(client):
 # ---------------------------------------------------------------- status, lookup, health
 
 
+async def test_credits_count_each_call_once(client, sql):
+    # the api-credits-used header is the minute's running total (1, 2, 3); each call costs 1
+    for sym in ("USD/LKR", "USD/INR", "XAU/USD"):
+        await add(client, sym)
+    calls = await sql("SELECT credits FROM signals.provider_calls ORDER BY at")
+    assert [c["credits"] for c in calls] == [1, 1, 1]
+    st = (await client.get("/api/v1/series:status")).json()
+    assert st["provider"]["credits"]["used_last_minute"] == 3 and st["provider"]["credits"]["used_today"] == 3
+
+
 async def test_status_and_lookup(client, fake):
     await add(client)
     st = (await client.get("/api/v1/series:status")).json()

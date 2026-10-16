@@ -195,6 +195,29 @@ def test_a_failed_search_among_good_ones_is_counted(request_example, fake_web, m
     assert result.coverage.web_queries == 2 and result.coverage.web_failed == 1
 
 
+def test_the_search_gets_the_window_widened_by_the_grace_hours(request_example, fake_web, monkeypatch):
+    """Search finds news late and judges dates loosely: it gets the window plus PAGE_DATE_GRACE_HOURS, and code
+    alone decides from each page's date what is in the window."""
+    from datetime import datetime, timedelta
+
+    from app import settings, web_search
+
+    seen = []
+
+    async def spy(query, since, until):
+        seen.append((since, until))
+        return await fake_web.search(query, since, until)
+
+    monkeypatch.setattr(web_search, "_searcher", spy)
+    check(request_example, [[("web_search", {"query": "Saudi quota"})],
+                            [("finish", {"summary": "Nothing new.", "findings": []})]])
+    window = request_example["window"]
+    at = lambda s: datetime.fromisoformat(s.replace("Z", "+00:00"))  # noqa: E731
+    since, until = seen[0]
+    assert at(window["since"]) - at(since) == timedelta(hours=settings.number("PAGE_DATE_GRACE_HOURS"))
+    assert at(until) == at(window["until"])
+
+
 def test_a_call_adk_refused_is_an_error_in_the_trace(request_example, fake_web):
     result, _ = check(request_example, [
         [("web_search", {"queries": ["Saudi quota"]})], [("web_search", {"query": "Saudi quota"})],

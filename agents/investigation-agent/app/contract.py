@@ -82,6 +82,10 @@ class Flow(Model):
     counterpart: str  # place code abroad
 
 
+# Footprint roles where the institution books business; a representative office doesn't.
+BOOKING_ROLES = ("branches", "subsidiary", "agents", "digital_only")
+
+
 class FootprintCountry(Model):
     """A country other than home where the institution operates (branches, subsidiaries)."""
 
@@ -89,6 +93,19 @@ class FootprintCountry(Model):
     currency: str | None = Field(
         None, pattern=r"^[A-Z]{3}$", description="Its currency, ISO 4217."
     )
+    role: str | None = Field(
+        None,
+        description="branches | subsidiary | agents | digital_only | representative_office; "
+        "a representative office books nothing, so it counts as abroad.",
+    )
+    regions: list[str] = Field(
+        default_factory=list,
+        description="ISO 3166-2 regions it operates in; empty: the whole country.",
+    )
+
+    @property
+    def books(self) -> bool:
+        return self.role is None or self.role in BOOKING_ROLES
 
 
 class Institution(Model):
@@ -127,13 +144,20 @@ class Institution(Model):
         return zoneinfo.ZoneInfo(self.time_zone)
 
     def footprint_countries(self) -> set[str]:
-        return {f.country for f in self.footprint}
+        """Countries where it books business (a representative office is abroad)."""
+        return {f.country for f in self.footprint if f.books}
+
+    def footprint_of(self, country: str) -> "FootprintCountry | None":
+        return next((f for f in self.footprint if f.country == country and f.books), None)
 
     def currency_country(self, currency: str) -> str | None:
         """home, a footprint country's code, or None for a currency the institution doesn't book in."""
         if currency == self.currency:
             return "home"
-        return next((f.country for f in self.footprint if f.currency == currency), None)
+        return next(
+            (f.country for f in self.footprint if f.currency == currency and f.books),
+            None,
+        )
 
 
 class SignalRecord(Model):
@@ -204,6 +228,7 @@ class Finding(Model):
     effective_from: date | None = None
     period: Period | None = None
     created_at: UtcDatetime | None = None
+    exposure: "Exposure | None" = None
 
     @model_validator(mode="after")
     def _has_evidence(self) -> "Finding":
@@ -217,6 +242,26 @@ class Finding(Model):
         return self
 
 
+class ExposureFlow(Model):
+    kind: str
+    counterpart: str
+
+
+class Exposure(Model):
+    """How the monitor that found it says the news reaches the institution: the profile items its
+    owner named (the server keeps only ids the profile has), and their own words."""
+
+    products: list[str] = Field(default_factory=list)
+    segments: list[str] = Field(default_factory=list)
+    flows: list[ExposureFlow] = Field(default_factory=list)
+    risks: list[str] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list, max_length=12)
+
+    @property
+    def named(self) -> bool:
+        return bool(self.products or self.segments or self.flows or self.risks)
+
+
 class Product(Model):
     """A product from the institution's profile, in Metrics Spec terms."""
 
@@ -226,23 +271,41 @@ class Product(Model):
     product_type: str | None = None
     countries: list[str] = Field(
         default_factory=list,
-        description="Where it is booked (ISO 3166-1); empty: home and every footprint country.",
+        description="Where it is booked (ISO 3166-1); empty: home, and a footprint country "
+        "whose currency is in `currencies` (or every one when currencies are unknown).",
     )
+    currencies: list[str] = Field(
+        default_factory=list, description="Currencies it is booked in, ISO 4217."
+    )
+
+    def booked_in(self, footprint: "FootprintCountry") -> bool:
+        if self.countries:
+            return footprint.country in self.countries
+        return not self.currencies or footprint.currency in self.currencies
 
 
 class PlaceInfo(Model):
     """What the server's gazetteer knows about a place code."""
 
-    country: str = Field(pattern=r"^[A-Z]{2}$")
+    country: str | None = Field(None, pattern=r"^[A-Z]{2}$")
+    lane_countries: list[str] = Field(
+        default_factory=list,
+        description="For a chokepoint, sea or port: the countries at the ends of the sea lanes through it.",
+    )
+    lanes: list[str] = Field(default_factory=list, description="Those lanes' names.")
     region_l1: str | None = None  # ISO 3166-2 first level
     region_l2: str | None = None
 
 
 class Extend(Model):
-    """A development brought new themes to an open event: build hypotheses for these only."""
+    """A development brought new themes to an open event: build hypotheses for these only. Or (resize) the
+    same move grew well past the event's size: build hypotheses only for the effects that qualify at the new
+    size and didn't at `previous_size` (null: the event had no size)."""
 
     event_id: Slug
     themes: list["ThemeTag"] = Field(min_length=1, max_length=4)
+    resize: bool = False
+    previous_size: "Size | None" = None
 
 
 class Limits(Model):

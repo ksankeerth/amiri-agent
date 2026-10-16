@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 
 from app.vocab import ANGLES, THEME_DIRECTIONS
 
-TRACKS_VERSION = "builtin-v2.1"
+TRACKS_VERSION = "builtin-v2.4"
 
 ANY = None  # any price item
 
@@ -19,7 +19,7 @@ ANY = None  # any price item
 class Trigger:
     theme: str
     direction: str
-    items: tuple[str, ...] | None = ANY  # prices and commodities: which items count
+    items: tuple[str, ...] | None = ANY  # prices and commodities: which items count; sector: which sectors
 
 
 @dataclass(frozen=True)
@@ -43,6 +43,9 @@ class Mechanism:
         None  # a fixed segment (e.g. importer), if the catalog has it
     )
     fixed_filter: dict[str, str] = field(default_factory=dict)  # e.g. claim_type=flood
+    # Which side of trade the news must be on: home (our own tariffs and controls), exports (a market
+    # that buys from us) or imports (one that sells to us); None: anywhere.
+    side: str | None = None
     phase: str = "effect"
     only_spec_types: tuple[
         str, ...
@@ -65,6 +68,7 @@ def T(spec: str, items: tuple[str, ...] | None = ANY) -> Trigger:
 
 
 GENERAL = ("general", "food")
+SHIPPING = ("shipping", "maritime", "marine", "freight")  # sector names: matched as words in the sector
 GOLD = ("gold",)
 CROPS = ("crops",)
 EPIDEMIC = ("epidemic", "haze")
@@ -126,6 +130,8 @@ MECHANISMS: list[Mechanism] = [
     # ---------------------------------------------------------- fc_deposit
     M("fc_deposit.fc_flows.remittance", (T("remittance:down"),), "foreign-currency inflows fall",
       ("deposit_inflow",), "fall", "months", min_size=(3, "pct")),
+    M("fc_deposit.fc_flows.currency_weaker", (T("fx:weaker"),), "customers move savings into foreign-currency deposits",
+      ("deposit_inflow",), "rise", "weeks", "secondary", min_size=(1, "pct")),
     M("fc_deposit.fc_flows.conversion_rule", (T("regulation:central_bank_direction"),), "customers convert foreign currency to local currency",
       ("withdrawals",), "rise", "weeks"),
     # ---------------------------------------------------------- retirement
@@ -176,9 +182,9 @@ MECHANISMS: list[Mechanism] = [
     M("leasing.repayment_stress.fuel", (T("prices:up", ("fuel",)),), "three-wheeler and van drivers miss instalments",
       ("installment_collection_rate",), "fall", "weeks", segment_value="three_wheeler"),
     M("leasing.new_business.looser", (T("regulation:import_control_looser"),), "more vehicles are imported and leased",
-      ("new_leases",), "rise", "months"),
+      ("new_leases",), "rise", "months", side="home"),
     M("leasing.new_business.tighter", (T("regulation:import_control_tighter"),), "fewer vehicles are imported and leased",
-      ("new_leases",), "fall", "months"),
+      ("new_leases",), "fall", "months", side="home"),
     # --------------------------------------------------------- credit_card
     M("credit_card.stress.squeeze", (PRICES_UP_GENERAL, T("rates:up")), "cardholders pay off less of their balances",
       ("card_payment_rate",), "fall", "weeks"),
@@ -237,9 +243,9 @@ MECHANISMS: list[Mechanism] = [
     M("motor.claim_frequency.fuel", (T("prices:up", ("fuel",)),), "people drive less, so claims fall", ("claims_per_1000",),
       "fall", "weeks", "secondary", min_size=(10, "pct")),
     M("motor.portfolio.looser", (T("regulation:import_control_looser"),), "more vehicles are imported and insured",
-      ("new_policies",), "rise", "months"),
+      ("new_policies",), "rise", "months", side="home"),
     M("motor.portfolio.tighter", (T("regulation:import_control_tighter"),), "fewer vehicles are imported and insured",
-      ("new_policies",), "fall", "months"),
+      ("new_policies",), "fall", "months", side="home"),
     M("motor.portfolio.rival", (T("competitor:cheaper"),), "customers renew with a cheaper rival", ("renewal_rate",),
       "fall", "months"),
     # -------------------------------------------------------------- travel
@@ -247,6 +253,10 @@ MECHANISMS: list[Mechanism] = [
       ("new_policies",), "fall", "weeks", "secondary", min_size=(3, "pct"), segment_value="leisure"),
     M("travel.demand.abroad", (T("disaster:abroad"),), "travel to the affected destination drops", ("new_policies",),
       "fall", "weeks", segment_dim="destination_region"),
+    M("travel.demand.travel_tighter", (T("regulation:travel_tighter"),),
+      "fewer people can travel, so fewer policies are sold", ("new_policies",), "fall", "weeks"),
+    M("travel.demand.travel_looser", (T("regulation:travel_looser"),),
+      "more people can travel, so more policies are sold", ("new_policies",), "rise", "months", "secondary"),
     M("travel.claim_severity.fx", (T("fx:weaker"),), "claims paid in USD cost more in local currency", ("median_claim_cost",),
       "rise", "weeks", min_size=(5, "pct"), context=True),
     M("travel.claims.abroad", (T("disaster:abroad"),), "more claims from travellers abroad", ("claims_per_1000",),
@@ -260,13 +270,25 @@ MECHANISMS: list[Mechanism] = [
     # ------------------------------------------------- trade_finance (more)
     M("trade_finance.trade_controls.tighter", (T("regulation:import_control_tighter"),),
       "importers open fewer letters of credit under tighter import controls", ("lc_openings", "import_bills"),
-      "fall", "weeks"),
+      "fall", "weeks", side="home"),
     M("trade_finance.trade_controls.looser", (T("regulation:import_control_looser"),),
-      "importers open more letters of credit once controls ease", ("lc_openings", "import_bills"), "rise", "months"),
+      "importers open more letters of credit once controls ease", ("lc_openings", "import_bills"), "rise", "months",
+      side="home"),
     M("trade_finance.trade_controls.tariff", (T("regulation:tariff"),), "dearer imports mean fewer import bills",
-      ("import_bills", "lc_openings"), "fall", "months", "secondary"),
+      ("import_bills", "lc_openings"), "fall", "months", "secondary", side="home"),
     M("trade_finance.exports.buyers", (T("sector:shock"), T("disaster:abroad")),
-      "exporters receive less from the hit market", ("export_receipts",), "fall", "months", segment_dim="corridor"),
+      "exporters receive less from the hit market", ("export_receipts",), "fall", "months", segment_dim="corridor",
+      side="exports"),
+    M("trade_finance.exports.market_access",
+      (T("regulation:tariff"), T("regulation:import_control_tighter")),
+      "exporters sell less to the market that raised its barriers", ("export_receipts",), "fall", "months",
+      segment_dim="corridor", side="exports"),
+    M("trade_finance.trade_controls.sanctions", (T("regulation:sanctions"),),
+      "letters of credit and payments with the sanctioned party stall", ("lc_openings", "import_bills"), "fall",
+      "weeks", "secondary"),
+    M("trade_finance.imports.suppliers", (T("sector:shock"), T("disaster:abroad")),
+      "supplies from the hit market are delayed, so importers open fewer letters of credit",
+      ("lc_openings", "import_bills"), "fall", "weeks", "secondary", segment_value="importer", side="imports"),
     M("trade_finance.exports.fx_stronger", (T("fx:stronger"),), "a stronger currency makes exports dearer abroad",
       ("export_receipts",), "fall", "months", "secondary", min_size=(5, "pct")),
     # ------------------------------------------------------------ agri_loan
@@ -276,8 +298,11 @@ MECHANISMS: list[Mechanism] = [
       ("restructure_requests",), "rise", "weeks", segment_dim="region"),
     M("agri_loan.repayment_stress.crop_prices", (T("commodities:down", CROPS),), "lower crop prices cut farm income",
       ("installment_collection_rate", "roll_rate_to_30"), "fall", "months", min_size=(10, "pct")),
-    M("agri_loan.demand.input_costs", (T("prices:up", ("fuel",)), T("regulation:import_control_tighter")),
+    M("agri_loan.demand.input_costs", (T("prices:up", ("fuel",)),),
       "dearer fuel and inputs push farmers to borrow more", ("disbursements",), "rise", "months", "secondary"),
+    M("agri_loan.demand.input_controls", (T("regulation:import_control_tighter"),),
+      "import controls on fertiliser and inputs push farmers to borrow more", ("disbursements",), "rise", "months",
+      "secondary", side="home"),
     M("agri_loan.demand.rate_cut", (T("rates:down"),), "cheaper credit brings more farm loans", ("disbursements",),
       "rise", "months", "secondary"),
     # ----------------------------------------------------------- remittance
@@ -287,6 +312,9 @@ MECHANISMS: list[Mechanism] = [
       ("inward_remittances",), "rise", "months", "secondary", min_size=(3, "pct")),
     M("remittance.volume.currency_weaker", (T("fx:weaker"),), "migrant workers send more while the currency is weak",
       ("inward_remittances",), "rise", "months", "secondary", min_size=(5, "pct")),
+    M("remittance.corridor.sanctions", (T("regulation:sanctions"),),
+      "remittances through the sanctioned channel stall", ("inward_remittances",), "fall", "weeks",
+      segment_dim="corridor"),
     M("remittance.corridor.abroad", (T("remittance:down"),), "remittances from the affected country fall",
       ("inward_remittances",), "fall", "months", segment_dim="corridor"),
     M("remittance.competition.rival", (T("competitor:cheaper"), T("competitor:new_product")),
@@ -307,6 +335,9 @@ MECHANISMS: list[Mechanism] = [
     # ---------------------------------------------------------- customer_fx
     M("customer_fx.demand.currency_weaker", (T("fx:weaker"),), "customers buy foreign currency to protect savings",
       ("customer_fx_purchases",), "rise", "days", min_size=(1, "pct")),
+    M("customer_fx.demand.oil_bill", (T("commodities:up", ("oil",)),),
+      "importers buy more dollars to pay the dearer fuel bill", ("customer_fx_purchases",), "rise", "days",
+      "secondary", segment_value="importer"),
     M("customer_fx.demand.fx_rule", (T("regulation:central_bank_direction"),), "new rules cut customers' foreign currency purchases",
       ("customer_fx_purchases",), "fall", "weeks"),
     # --------------------------------------------------------------- wealth
@@ -324,6 +355,9 @@ MECHANISMS: list[Mechanism] = [
     # --------------------------------------------------------------- marine
     M("marine.volume.trade", (T("regulation:tariff"), T("regulation:import_control_tighter")), "fewer shipments are insured",
       ("insured_shipments",), "fall", "months"),
+    M("marine.volume.war_risk", (T("sector:shock", SHIPPING),),
+      "war-risk cover is pulled or repriced, so fewer shipments are insured", ("insured_shipments",), "fall",
+      "weeks"),
     M("marine.volume.abroad", (T("disaster:abroad"), T("sector:shock")), "shipments to and from the affected country fall",
       ("insured_shipments",), "fall", "weeks", segment_dim="corridor"),
     # ---------------------------------------------------------- agriculture

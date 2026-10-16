@@ -23,6 +23,7 @@ from datetime import UTC, date, datetime, time, timedelta, tzinfo
 
 from app.contract import (
     Event,
+    Exposure,
     Finding,
     Institution,
     OutOfScope,
@@ -33,7 +34,29 @@ from app.contract import (
 from app.tracks import IMPLIED, ITEM_IMPLIED
 
 SAME_EVENT = timedelta(hours=48)
-CHANNEL_THEMES = {"remittance": {"remittance"}, "sector": {"sector"}}
+# Abroad, what each channel carries home: (theme, direction); None is any direction.
+# World prices (commodities) reach every importer and holder, whatever the channel.
+CHANNEL_THEMES: dict[str, set[tuple[str, str | None]]] = {
+    "remittance": {
+        ("remittance", None),
+        ("commodities", None),
+        ("regulation", "sanctions"),  # a sanctioned exchange house or bank in the corridor
+        ("regulation", "travel_tighter"),  # visas, quotas, pilgrimages: where our people go
+        ("regulation", "travel_looser"),
+    },
+    "sector": {  # trade: what the trade finance, marine and travel tracks react to
+        ("sector", None),
+        ("commodities", None),
+        ("disaster", "abroad"),
+        ("regulation", "tariff"),
+        ("regulation", "import_control_tighter"),
+        ("regulation", "import_control_looser"),
+        ("regulation", "sanctions"),
+        ("regulation", "travel_tighter"),
+        ("regulation", "travel_looser"),
+    },
+    "none": {("commodities", None)},
+}
 # Abroad, in a remittance corridor: what cuts migrant workers' jobs or pay.
 HURTS_MIGRANT_WORK = {
     ("sector", "shock"),
@@ -79,12 +102,20 @@ class Normalized:
 
 ISO_PLACE = re.compile(r"^([A-Z]{2})(?:-([A-Z0-9]{1,3}))?$")
 REMITTANCE_FLOWS = ("remittances_in", "remittances_out")
-TRADE_FLOWS = ("exports", "imports")
+TRADE_FLOWS = ("exports", "imports", "tourism")
+
+
+def carried(channel: str, tag: ThemeTag) -> bool:
+    """Whether a theme of a finding abroad reaches the institution through this channel."""
+    if channel == "exposure":  # the monitor's owner named how it reaches us
+        return True
+    keep = CHANNEL_THEMES.get(channel, set())
+    return (tag.theme, None) in keep or (tag.theme, tag.direction) in keep
 
 
 def country_of(code: str, info: dict[str, PlaceInfo]) -> str | None:
     """The ISO country of a place code: ISO 3166 itself, or the server's gazetteer for other codes."""
-    if code in info:
+    if code in info and info[code].country:
         return info[code].country
     m = ISO_PLACE.match(code)
     return m.group(1) if m else None
@@ -102,27 +133,57 @@ def regions_of(places: list[str], info: dict[str, PlaceInfo]) -> list[str]:
     return sorted(out)
 
 
+def _in_footprint(country: str, places: list[str], inst: Institution, info: dict[str, PlaceInfo]) -> bool:
+    """A place in a country where the institution books business: the country itself, or one of
+    its regions when it operates in only some (India: three states)."""
+    fp = inst.footprint_of(country)
+    if fp is None:
+        return False
+    if not fp.regions:
+        return True
+    for p in places:
+        if country_of(p, info) != country:
+            continue
+        regions = set(regions_of([p], info))
+        if p == country or regions & set(fp.regions):  # country-wide news, or in its regions
+            return True
+    return False
+
+
+def _corridors(inst: Institution, info: dict[str, PlaceInfo]) -> set[str]:
+    """Countries migrant workers send money home from."""
+    ends = {country_of(f.counterpart, info) for f in inst.flows if f.kind in REMITTANCE_FLOWS}
+    return {c for c in ends if c} | set(inst.corridors)
+
+
 def where(
-    places: list[str], inst: Institution, info: dict[str, PlaceInfo]
+    places: list[str],
+    inst: Institution,
+    info: dict[str, PlaceInfo],
+    exposure: Exposure | None = None,
 ) -> tuple[str, str, str, str | None] | None:
     """(country, channel, why, footprint country) from a finding's places, by code; None when
-    no place can be read.
+    no place can be read and the finding names no exposure.
 
-    home: a place in the home country. footprint: in a country where the institution
-    operates. Abroad: remittance when the country is a remittance corridor or the far end
-    of a remittance flow; sector when it is a trade partner; else none.
+    home: a place in the home country. footprint: in a country where the institution books
+    business (a representative office is abroad). Abroad: remittance when the country is a
+    remittance corridor or the far end of a remittance flow; sector when it trades with us
+    (exports, imports, tourism) or a sea lane through the place reaches home or a trade
+    partner; exposure when the monitor that found it names the institution's own products,
+    segments, flows or risks; else none (only world prices then reach us).
     """
     countries = sorted({c for p in places if (c := country_of(p, info))})
-    if not countries:
+    lanes = {p: info[p] for p in places if p in info and info[p].lane_countries}
+    named = exposure is not None and exposure.named
+    if not countries and not lanes and not named:
         return None
     if inst.country in countries:
         return "home", "none", f"place in {inst.country}", None
-    if hit := sorted(set(countries) & inst.footprint_countries()):
+    if hit := [c for c in countries if _in_footprint(c, places, inst, info)]:
         return "footprint", "none", f"{hit[0]}: the institution operates there", hit[0]
     ends = {kind: {country_of(f.counterpart, info) for f in inst.flows if f.kind in kind}
             for kind in (REMITTANCE_FLOWS, TRADE_FLOWS)}  # fmt: skip
-    remit = set(ends[REMITTANCE_FLOWS]) | set(inst.corridors)
-    if hit := sorted(set(countries) & remit):
+    if hit := sorted(set(countries) & _corridors(inst, info)):
         return (
             "other",
             "remittance",
@@ -136,10 +197,19 @@ def where(
             f"{', '.join(hit)}: a trade partner of {inst.country}",
             None,
         )
+    reach = {inst.country} | ends[TRADE_FLOWS] | inst.footprint_countries()
+    for code, p in sorted(lanes.items()):
+        if set(p.lane_countries) & reach:
+            lane = p.lanes[0] if p.lanes else "a sea lane"
+            return "other", "sector", f"{code}: on {lane}, which {inst.country}'s trade uses", None
+    if named:
+        ids = [*exposure.products, *exposure.segments, *exposure.risks,
+               *(f"{f.kind} {f.counterpart}" for f in exposure.flows)][:4]  # fmt: skip
+        return "other", "exposure", f"the monitor names {', '.join(ids)}", None
     return (
         "other",
         "none",
-        f"{', '.join(countries)}: no flow to {inst.country} in the profile",
+        f"{', '.join(countries) or ', '.join(sorted(lanes))}: no flow to {inst.country} in the profile",
         None,
     )
 
@@ -256,19 +326,28 @@ def normalize(
             )
             continue
         themes = r.themes
+        corridor = r.channel == "remittance" or (
+            r.country == "footprint" and r.country_code in _corridors(inst, info)
+        )
+        if (
+            corridor
+            and not any(t.theme == "remittance" for t in themes)
+            and any((t.theme, t.direction) in HURTS_MIGRANT_WORK for t in themes)
+        ):
+            # bad news where the senders work reaches home as fewer remittances
+            themes = [
+                *themes,
+                ThemeTag(theme="remittance", direction="down", implied=True),
+            ]
         if r.country not in IN_SCOPE:
-            keep = CHANNEL_THEMES.get(r.channel, set())
-            if (
-                r.channel == "remittance"
-                and not any(t.theme == "remittance" for t in themes)
-                and any((t.theme, t.direction) in HURTS_MIGRANT_WORK for t in themes)
-            ):
-                # bad news where the senders work reaches home as fewer remittances
-                themes = [
-                    *themes,
-                    ThemeTag(theme="remittance", direction="down", implied=True),
-                ]
-            themes = [t for t in themes if t.theme in keep]
+            # a disaster abroad is "abroad", whatever the reading said
+            themes = [
+                t.model_copy(update={"direction": "abroad"})
+                if (t.theme, t.direction) == ("disaster", "domestic")
+                else t
+                for t in themes
+            ]
+            themes = [t for t in themes if carried(r.channel, t)]
             if not themes:
                 result.out_of_scope.append(
                     OutOfScope(
@@ -312,12 +391,15 @@ def normalize(
         lead = m.themes[0]
         for g in groups:
             first = g[0]
-            same_move = (
-                (first.themes[0].theme, first.themes[0].direction)
-                == (lead.theme, lead.direction)
-                and (first.reading.country, first.reading.country_code)
-                == (m.reading.country, m.reading.country_code)
-                and abs(m.anchor - first.anchor) <= SAME_EVENT
+            shared = _stated(first) & _stated(m)
+            same_place = (first.reading.country, first.reading.country_code) == (
+                m.reading.country,
+                m.reading.country_code,
+            )
+            same_move = abs(m.anchor - first.anchor) <= SAME_EVENT and (
+                ((_move(first.themes[0]) == _move(lead) or shared) and same_place)
+                # a world price is one move wherever it is reported (Hormuz abroad, rationing at home)
+                or any(x[0] == "commodities" for x in shared)
             )
             if same_move:
                 g.append(m)
@@ -329,10 +411,12 @@ def normalize(
     for i, g in enumerate(groups, start=1):
         event_id = f"e-{i}"
         first = g[0]
+        # where the event is: home when any of its findings is (a world price reported abroad and at home)
+        home = next((m for m in g if m.reading.country in IN_SCOPE), first)
         themes: list[ThemeTag] = list(first.themes)
         for m in g[1:]:
             for t in m.themes:
-                if all(t.theme != x.theme for x in themes):
+                if all(_move(t) != _move(x) for x in themes):
                     themes.append(t)
         sizes = [m.size for m in g if m.size]
         size = (
@@ -352,8 +436,8 @@ def normalize(
                 event_id=event_id,
                 finding_ids=[m.finding.finding_id for m in g],
                 themes=themes,
-                country=first.reading.country,
-                country_code=first.reading.country_code,
+                country=home.reading.country,
+                country_code=home.reading.country_code,
                 anchor=first.anchor,
                 anchor_basis=first.basis,
                 size=size,
@@ -372,6 +456,17 @@ def normalize(
                 )
             )
     return result
+
+
+def _stated(m: "_Member") -> set[tuple]:
+    """The moves a finding states (not the ones code implied): two findings stating the same move are one
+    story, whichever they lead with ("Hormuz closed": oil up; "fuel rationing": fuel prices and oil up)."""
+    return {_move(t) for t in m.themes if not t.implied}
+
+
+def _move(t: ThemeTag) -> tuple:
+    """What makes two findings the same move: gold and oil, or tourism and apparel, are not."""
+    return (t.theme, t.direction, t.item, (t.sector or "").lower() or None, t.currency)
 
 
 def _net_opposite_fx(

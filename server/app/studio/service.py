@@ -109,10 +109,21 @@ class Studio:
                 """SELECT sim_id, mode, status, step, steps, created_at, finished_at FROM studio.simulations
                    WHERE scenario_id = %s ORDER BY created_at DESC LIMIT 5""", (scenario_id,))
             sims = await cur.fetchall()
-        ctx = await self.institutions.context(sc["institution_id"])
+        ctx = await self._context(sc["institution_id"])
         built = template.build(sc["template_id"], ctx, sc["intensity"], sc["switched_off"], sc["custom"], sc["title"])
         return {**sc, "built": built, "simulations": sims,
                 "recording": {**rec, "current": rec["scenario_version"] == sc["version"]} if rec else None}
+
+    async def _context(self, institution_id: str) -> dict:
+        """The profile, with the live monitors' specs: a written scenario's headlines are read the way the
+        institution's own monitors would read real news."""
+        ctx = await self.institutions.context(institution_id)
+        async with self.pool.connection() as conn:
+            cur = await conn.execute(
+                """SELECT v.spec FROM core.monitors m JOIN core.monitor_versions v
+                     ON v.monitor_id = m.monitor_id AND v.version = m.live_version
+                   WHERE m.institution_id = %s AND m.status = 'live' ORDER BY m.monitor_id""", (institution_id,))
+            return {**ctx, "live_monitors": [r["spec"] for r in await cur.fetchall()]}
 
     async def scenarios(self, institution_id: str) -> list[dict]:
         async with self.pool.connection() as conn:
@@ -144,7 +155,7 @@ class Studio:
                 if not rec or not rec["complete"]:
                     raise Problem(409, "no_recording", "This version of the scenario has no complete recording: "
                                                        "run it once in record mode (it changed since, or never finished).")
-        ctx = await self.institutions.context(sc["institution_id"])
+        ctx = await self._context(sc["institution_id"])
         built = template.build(sc["template_id"], ctx, sc["intensity"], sc["switched_off"], sc["custom"], sc["title"])
         if mode != "replay" and not (self.inv_client.connected() and self.mon_client.connected()):
             raise Problem(503, "agents_not_connected", "The investigation and monitor agents must be connected "

@@ -11,10 +11,14 @@ scenario (the person writes the headlines and chooses the price move). Either ca
 verified by hand) comes later.
 """
 
+import itertools
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
+from pydantic import ValidationError
+
 from app import reference
+from app.monitors.schemas import MonitorSpec
 from app.problems import Problem
 
 INTENSITY = {"low": 0.5, "medium": 1.0, "high": 1.5}
@@ -89,9 +93,48 @@ def _monitor(ctx: dict, cur_name: str, country: str, bank: str) -> dict:
     }
 
 
+def _take(lists: list[list], cap: int, key=lambda x: x) -> list:
+    """Up to `cap` items from several lists in turn (the first of each, then the second…), without repeats."""
+    out, seen = [], set()
+    for row in itertools.zip_longest(*lists):
+        for x in row:
+            if x is not None and key(x) not in seen and len(out) < cap:
+                seen.add(key(x))
+                out.append(x)
+    return out
+
+
+def _merged_monitor(ctx: dict, specs: list[dict], country: str) -> dict | None:
+    """A blank scenario's monitor from the institution's live monitors: their watch lists, "tell me if" lines,
+    places and exposures in turn, within one monitor's limits. None when it wouldn't be a valid monitor."""
+    pub = [s.get("public") or {} for s in specs]
+    home = f"Something happens in or around {country} that could reach the institution's customers or products"
+    spec = {
+        "about": {"name": "This scenario's news", "owner": "Risk management", "check_frequency": 60, "kind": "events"},
+        "public": {
+            "watch": _take([p.get("watch") or [] for p in pub], 12, key=lambda w: w["name"].lower()),
+            "in_one_sentence": (f"What the institution's {len(specs)} live monitor{'s' if len(specs) != 1 else ''} "
+                                f"watch for, and anything else that could reach {ctx['name']}'s customers."),
+            "tell_me_if": _take([[home], *[p.get("tell_me_if") or [] for p in pub]], 8),
+            "ignore": _take([p.get("ignore") or [] for p in pub], 8),
+            "places": _take([[ctx["country"]], *[p.get("places") or [] for p in pub]], 20),
+            "languages": ["en"],
+        },
+        "private": {"exposure": _take([(s.get("private") or {}).get("exposure") or [] for s in specs], 20,
+                                      key=lambda e: e["id"])},
+        "alert_level": max((s.get("alert_level") or 5) for s in specs),
+    }
+    try:
+        return MonitorSpec.model_validate(spec).model_dump(mode="json")
+    except ValidationError:
+        return None
+
+
 def _blank_monitor(ctx: dict, cur_name: str, country: str, bank: str) -> dict:
-    """A blank scenario's monitor: anything in its headlines that could reach the institution."""
-    products = ctx.get("products") or []
+    """A blank scenario's monitor: what the live monitors watch for, or (without any) anything in its headlines
+    that could reach the institution."""
+    if ctx.get("live_monitors") and (merged := _merged_monitor(ctx, ctx["live_monitors"], country)):
+        return merged
     return {
         "about": {"name": "This scenario's news", "owner": "Risk management", "check_frequency": 60, "kind": "events"},
         "public": {
@@ -106,7 +149,8 @@ def _blank_monitor(ctx: dict, cur_name: str, country: str, bank: str) -> dict:
             "ignore": ["Routine news with no change"],
             "places": [ctx["country"]], "languages": ["en"],
         },
-        "private": {"exposure": [{"id": f"product:{p['id']}", "how_it_reaches_us": ""} for p in products[:4]]},
+        # no exposures: a monitor's exposures are its owner's words (they put news abroad in scope)
+        "private": {"exposure": []},
         "alert_level": 5,
     }
 

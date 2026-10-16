@@ -41,6 +41,9 @@ THEME_DIRECTIONS: dict[str, tuple[str, ...]] = {
         "insurance_regulator_rule",
         "import_control_tighter",
         "import_control_looser",
+        "sanctions",
+        "travel_tighter",
+        "travel_looser",
         "tariff",
     ),
     "competitor": ("cheaper", "new_product", "partner_switch"),
@@ -89,8 +92,9 @@ DISASTER_PERIL = {
 # Where an event is, for this institution: its home country, a country it operates in
 # (branches, subsidiaries), elsewhere, or worldwide.
 Country = Literal["home", "footprint", "other", "global"]
-# How a foreign event reaches the institution, if at all.
-Channel = Literal["remittance", "sector", "none"]
+# How a foreign event reaches the institution, if at all: remittances, trade (exports, imports,
+# tourism, the sea lanes they use), the exposures the monitor's owner named, or only world prices.
+Channel = Literal["remittance", "sector", "exposure", "none"]
 
 # ---------------------------------------------------------------- products
 
@@ -232,7 +236,7 @@ ANGLES: dict[str, tuple[str, ...]] = {
         "repayment_stress",
         "concentration",
     ),
-    "trade_finance": ("fx_mismatch", "trade_controls", "exports"),
+    "trade_finance": ("fx_mismatch", "trade_controls", "exports", "imports"),
     "agri_loan": ("repayment_stress", "restructure", "demand"),
     "remittance": ("volume", "corridor", "competition"),
     "payments": ("channel", "cash", "merchant"),

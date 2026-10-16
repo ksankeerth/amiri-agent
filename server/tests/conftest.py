@@ -41,6 +41,7 @@ class FakeTwelveData:
         self.symbols: dict[str, dict] = {}
         self.fail_next: list[tuple[int, dict]] = []  # (http status, body)
         self.calls: list[httpx.Request] = []
+        self.served = 0  # successful calls so far: the api-credits-used header
 
     def add(self, symbol: str, bars, type_="Physical Currency", plan_restricted=False):
         self.symbols[symbol] = {"bars": list(bars), "type": type_, "restricted": plan_restricted}
@@ -96,7 +97,8 @@ class FakeTwelveData:
             return httpx.Response(400, json={"code": 400, "message": "No data is available on the specified dates. Try setting different start/end dates.", "status": "error"})
         values = [{"datetime": t.strftime("%Y-%m-%d %H:%M:%S"), "open": str(c), "high": str(c), "low": str(c), "close": str(c)}
                   for t, c in visible]
-        return httpx.Response(200, headers={"api-credits-used": "1"}, json={
+        self.served += 1  # like Twelve Data: the header is the running total, not this call's cost
+        return httpx.Response(200, headers={"api-credits-used": str(self.served)}, json={
             "meta": {"symbol": sym, "interval": "1h", "currency_base": sym.split("/")[0],
                      "currency_quote": sym.split("/")[-1], "type": s["type"]},
             "values": values, "status": "ok"})
@@ -188,6 +190,9 @@ class FakeInvestigationAgent:
                  "themes": ext["themes"] if ext else (f[0]["themes"] or self.themes or [{"theme": "macro", "direction": "worse"}]),
                  "country": "home",
                  "anchor": f[0]["created_at"], "anchor_basis": "move_start", "places": f[0]["places"], "regions": []}
+        moves = [abs(s["change_pct"]) for x in f for s in x["evidence"].get("signals") or [] if "change_pct" in s]
+        if moves:  # like the agent: a market move's event is sized from its signals
+            event["size"] = {"unit": "pct", "value": round(max(moves), 2)}
         hyp = {"hypothesis_id": "h-1", "event_id": event["event_id"], "finding_ids": event["finding_ids"], "product_id": p["product_id"],
                "product_type": "savings", "angle": "flows", "mechanism_id": "savings.flows.x", "chain_label": "Savings fall",
                "statement": "The LKR weakened. Expected: savings fall.", "segment": None,

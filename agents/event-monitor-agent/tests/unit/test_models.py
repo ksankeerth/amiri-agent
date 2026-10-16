@@ -236,4 +236,4 @@ def test_reviewer_and_search_get_their_own_time_limits(monkeypatch):
         asyncio.run(reviewer({"monitor": {}, "findings": []}))
     with pytest.raises(RuntimeError):
         asyncio.run(searcher("q", "a", "b"))
-    assert used == [(["r"], 20.0), (["s"], 30.0)]
+    assert used == [(["r"], 45.0), (["s"], 30.0)]

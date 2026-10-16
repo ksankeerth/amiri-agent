@@ -24,11 +24,11 @@ def test_env_example_shows_each_default():
 
 def test_environment_overrides_the_default(monkeypatch):
     monkeypatch.delenv("REVIEWER_TIMEOUT_SECONDS", raising=False)
-    assert settings.number("REVIEWER_TIMEOUT_SECONDS") == 20.0
+    assert settings.number("REVIEWER_TIMEOUT_SECONDS") == 45.0
     monkeypatch.setenv("REVIEWER_TIMEOUT_SECONDS", "12.5")
     assert settings.number("REVIEWER_TIMEOUT_SECONDS") == 12.5
     monkeypatch.setenv("REVIEWER_TIMEOUT_SECONDS", "   ")  # blank = default
-    assert settings.number("REVIEWER_TIMEOUT_SECONDS") == 20.0
+    assert settings.number("REVIEWER_TIMEOUT_SECONDS") == 45.0
 
 
 def test_lists_paths_and_flags(monkeypatch):

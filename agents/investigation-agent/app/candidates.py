@@ -3,7 +3,8 @@
 Code only. A mechanism is listed when one of its triggers matches one of the
 event's themes (theme, direction and, for prices and commodities, the item) and the event's
 size meets its minimum (scaled to the series' typical move for market moves). An unknown
-size doesn't block (the model judges); a size in another unit (bp vs pct) doesn't apply.
+size doesn't block (the model judges), except a secondary fx effect with a minimum: a rate quoted as a
+level ("near 331") isn't a move. A size in another unit (bp vs pct) doesn't apply.
 """
 
 from dataclasses import dataclass, field
@@ -46,13 +47,19 @@ def triggered(m: Mechanism, event: Event) -> bool:
         for tag in event.themes:
             if (tag.theme, tag.direction) != (trigger.theme, trigger.direction):
                 continue
-            if trigger.items is not None:
+            if trigger.items is not None and tag.theme == "sector":
+                words = set((tag.sector or "").lower().replace("-", " ").split())
+                if not words & set(trigger.items):
+                    continue  # a sector-specific effect: tourism isn't shipping
+            elif trigger.items is not None:
                 item = tag.item or ("general" if tag.theme == "prices" else None)
                 # a disaster of unknown kind may be any of them
                 if item not in trigger.items and not (
                     tag.theme == "disaster" and item is None
                 ):
                     continue
+            if m.min_size and event.size is None and m.strength == "secondary" and trigger.theme == "fx":
+                continue  # an exchange rate quoted as a level isn't a move: secondary fx effects need its size
             if m.min_size and event.size and event.size.unit == m.min_size[1]:
                 if event.size.value < min_size(
                     m.min_size[0], m.min_size[1], trigger.theme, event
@@ -71,9 +78,16 @@ def min_size(value: float, unit: str, theme: str, event: Event) -> float:
 
 
 def list_candidates(
-    event: Event, products: dict[str, tuple[str, float, str | None]], limits: Limits
+    event: Event,
+    products: dict[str, tuple[str, float, str | None]],
+    limits: Limits,
+    sides: frozenset[str] = frozenset({"home"}),
+    previous: Event | None = None,
 ) -> Listing:
-    """products: product_id -> (the tracks' product type, book size, Metrics Spec type)."""
+    """products: product_id -> (the tracks' product type, book size, Metrics Spec type).
+    sides: where the event is for trade (home; abroad, a market that buys from us or sells to us);
+    a mechanism tied to one side is listed only for an event on it.
+    previous: the same event at its earlier size (a resize): only what qualifies now and didn't then."""
     by_type: dict[str, list[str]] = {}
     book: dict[str, float] = {}
     spec_type: dict[str, str | None] = {}
@@ -86,6 +100,10 @@ def list_candidates(
     for m in MECHANISMS:
         if m.product_type not in by_type or not triggered(m, event):
             continue
+        if m.side and m.side not in sides:
+            continue
+        if previous is not None and triggered(m, previous):
+            continue  # a resize: it already qualified at the event's earlier size
         pids = [
             p
             for p in by_type[m.product_type]

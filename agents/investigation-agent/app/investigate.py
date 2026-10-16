@@ -37,7 +37,7 @@ from app.contract import (
     ValidationTask,
 )
 from app.data_client import Calendar, Data, DataError
-from app.normalize import Reading, extend_into, normalize, where
+from app.normalize import Reading, country_of, extend_into, normalize, where
 from app.report import build_report
 from app.steps import (
     Llm,
@@ -76,6 +76,9 @@ PHRASES = {
     ("trust", "own"): "We had a trust event",
     ("macro", "worse"): "The economic outlook worsened",
     ("sector", "shock"): "A sector was hit",
+    ("regulation", "sanctions"): "Sanctions were imposed",
+    ("regulation", "travel_tighter"): "Travel rules tightened",
+    ("regulation", "travel_looser"): "Travel rules eased",
 }
 
 
@@ -176,15 +179,14 @@ class Investigation:
         readings: dict[str, Reading] = {}
         inst = self.req.institution
         for f in self.req.findings:
-            placed = where(f.places, inst, self.req.place_info)
+            placed = where(f.places, inst, self.req.place_info, f.exposure)
             if f.themes:  # set by the source (a series, Radar): no model call
                 r = Reading(f.finding_id, list(f.themes))
-            elif placed and placed[:2] == (
-                "other",
-                "none",
-            ):  # abroad, no way home: nothing to classify
+            elif (
+                f.source == "timeseries" and placed and placed[:2] == ("other", "none")
+            ):  # a market abroad with no way home: nothing to classify
                 r = Reading(f.finding_id, [])
-            else:
+            else:  # news abroad too: world prices reach us from anywhere
                 answer = await self._step(
                     "classify",
                     classify_prompt(f, inst),
@@ -265,6 +267,12 @@ class Investigation:
         return [f for f in self.req.findings if f.finding_id in event.finding_ids]
 
     async def _investigate(self, event: Event) -> None:
+        # a footprint event reaches only what is booked there (by country, else by currency)
+        fp = (
+            self.req.institution.footprint_of(event.country_code)
+            if event.country == "footprint" and event.country_code
+            else None
+        )
         products = {
             pid: (
                 ttype,
@@ -272,11 +280,11 @@ class Investigation:
                 p.product_type,
             )
             for pid, (p, ttype) in self.tracked.items()
-            if event.country != "footprint"
-            or not p.countries
-            or event.country_code in p.countries
+            if event.country != "footprint" or fp is None or p.booked_in(fp)
         }
-        listing = list_candidates(event, products, self.limits)
+        ext = self.req.extend
+        previous = event.model_copy(update={"size": ext.previous_size}) if ext and ext.resize else None
+        listing = list_candidates(event, products, self.limits, self._sides(event), previous)
         text = describe_event(event, self._findings(event))
         for c in listing.context:
             self._add_context(event, c)
@@ -293,6 +301,27 @@ class Investigation:
             )
         for c in listing.to_screen:
             await self._screen(event, text, c)
+
+    def _sides(self, event: Event) -> frozenset[str]:
+        """Where the event is for trade: home (or the footprint); abroad, exports when it hits a market
+        that buys from us (goods or tourists), imports when one that sells to us; a sea lane or a
+        monitor's exposures, either."""
+        if event.country in ("home", "footprint"):
+            return frozenset({"home"})
+        info, inst = self.req.place_info, self.req.institution
+        sides = set()
+        for f in inst.flows:
+            if country_of(f.counterpart, info) in event.countries:
+                if f.kind in ("exports", "tourism"):
+                    sides.add("exports")
+                elif f.kind == "imports":
+                    sides.add("imports")
+        if any(info[p].lane_countries for p in event.places if p in info):
+            sides |= {"exports", "imports"}
+        for f in self._findings(event):
+            if f.exposure and f.exposure.named:
+                sides |= {"exports", "imports"}
+        return frozenset(sides)
 
     def _add_context(self, event: Event, c: Candidate) -> None:
         for pid in c.product_ids:
