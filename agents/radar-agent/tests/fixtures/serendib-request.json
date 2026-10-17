@@ -1,0 +1,362 @@
+{
+ "seen": [],
+ "scope": {
+  "actors": [
+   "CBSL",
+   "FIU",
+   "RBI",
+   "OFAC",
+   "Basel",
+   "FATF",
+   "Kandy Merchant Bank",
+   "Coastal Remit",
+   "Malabar Cooperative Bank",
+   "Coromandel Finance",
+   "Correspondent bank (USD clearing)"
+  ],
+  "places": [
+   "LK",
+   "IN-TN",
+   "IN-KL",
+   "IN-KA",
+   "SA",
+   "AE",
+   "QA",
+   "KW",
+   "chk:hormuz",
+   "chk:bab-el-mandeb",
+   "US",
+   "BH",
+   "OM",
+   "IR",
+   "sea:persian-gulf",
+   "LK-1",
+   "LK-9",
+   "LK-3",
+   "YE",
+   "sea:red-sea",
+   "chk:suez"
+  ],
+  "themes": [
+   "rates",
+   "sector",
+   "macro",
+   "fx",
+   "commodities",
+   "remittance",
+   "prices",
+   "regulation",
+   "disaster",
+   "trust",
+   "competitor"
+  ],
+  "places_why": {
+   "AE": [
+    "place to watch: Remittances; fuel imports",
+    "flow: remittances in with IN-KL",
+    "flow: remittances in with LK",
+    "flow: imports (Crude oil) with LK",
+    "risk: Gulf tension meets remittances"
+   ],
+   "BH": [
+    "risk: Gulf tension meets remittances"
+   ],
+   "IR": [
+    "risk: Gulf tension meets remittances"
+   ],
+   "KW": [
+    "place to watch: Remittances",
+    "risk: Gulf tension meets remittances"
+   ],
+   "LK": [
+    "footprint (home)"
+   ],
+   "OM": [
+    "risk: Gulf tension meets remittances"
+   ],
+   "QA": [
+    "place to watch: Remittances",
+    "risk: Gulf tension meets remittances"
+   ],
+   "SA": [
+    "place to watch: Remittances from migrant workers",
+    "flow: remittances in with LK",
+    "risk: Gulf tension meets remittances"
+   ],
+   "US": [
+    "flow: exports (Garments) with LK"
+   ],
+   "YE": [
+    "risk: Red Sea attacks meet exporters"
+   ],
+   "LK-1": [
+    "risk: Monsoon floods meet Colombo customers"
+   ],
+   "LK-3": [
+    "risk: Monsoon floods meet Colombo customers"
+   ],
+   "LK-9": [
+    "risk: Monsoon floods meet Colombo customers"
+   ],
+   "IN-KA": [
+    "footprint (branches)"
+   ],
+   "IN-KL": [
+    "footprint (branches)"
+   ],
+   "IN-TN": [
+    "footprint (branches)"
+   ],
+   "chk:suez": [
+    "risk: Red Sea attacks meet exporters"
+   ],
+   "chk:hormuz": [
+    "place to watch: Fuel imports",
+    "risk: Gulf tension meets remittances"
+   ],
+   "sea:red-sea": [
+    "risk: Red Sea attacks meet exporters"
+   ],
+   "sea:persian-gulf": [
+    "risk: Gulf tension meets remittances"
+   ],
+   "chk:bab-el-mandeb": [
+    "place to watch: Exports to Europe and the US",
+    "risk: Red Sea attacks meet exporters"
+   ]
+  }
+ },
+ "limits": {
+  "max_queries": 1,
+  "max_stories": 10,
+  "max_model_calls": 40,
+  "timeout_seconds": 300,
+  "max_bytes_per_query": 1500000000
+ },
+ "run_id": "rad-fixture-serendib",
+ "window": {
+  "since": "2026-10-17T09:22:33.457446+00:00",
+  "until": "2026-10-17T09:37:33.457446+00:00"
+ },
+ "institution": {
+  "name": "Serendib Commercial Bank",
+  "flows": [
+   {
+    "id": "remit-sa",
+    "kind": "remittances_in",
+    "local": "LK",
+    "counterpart": "SA"
+   },
+   {
+    "id": "remit-ae",
+    "kind": "remittances_in",
+    "local": "LK",
+    "counterpart": "AE"
+   },
+   {
+    "id": "remit-kl-ae",
+    "kind": "remittances_in",
+    "local": "IN-KL",
+    "counterpart": "AE"
+   },
+   {
+    "id": "garments-us",
+    "kind": "exports",
+    "local": "LK",
+    "counterpart": "US"
+   },
+   {
+    "id": "crude-ae",
+    "kind": "imports",
+    "local": "LK",
+    "counterpart": "AE"
+   }
+  ],
+  "risks": [
+   {
+    "id": "gulf",
+    "name": "Gulf tension meets remittances",
+    "aliases": []
+   },
+   {
+    "id": "sw-monsoon",
+    "name": "Monsoon floods meet Colombo customers",
+    "aliases": []
+   },
+   {
+    "id": "red-sea",
+    "name": "Red Sea attacks meet exporters",
+    "aliases": []
+   }
+  ],
+  "rivals": [
+   {
+    "id": "kandy-merchant-bank",
+    "name": "Kandy Merchant Bank",
+    "aliases": []
+   },
+   {
+    "id": "coastal-remit",
+    "name": "Coastal Remit",
+    "aliases": [
+     "CoastalRemit"
+    ]
+   },
+   {
+    "id": "malabar-cooperative-bank",
+    "name": "Malabar Cooperative Bank",
+    "aliases": []
+   },
+   {
+    "id": "coromandel-finance",
+    "name": "Coromandel Finance",
+    "aliases": []
+   }
+  ],
+  "country": "LK",
+  "summary": "Mid-size commercial bank: retail deposits, SME and corporate lending, trade finance, pawning and cards; branches in Sri Lanka and in Tamil Nadu, Kerala and Karnataka.",
+  "currency": "LKR",
+  "products": [
+   {
+    "id": "migrant-savings",
+    "name": "Migrant Family Savings",
+    "category": "savings",
+    "product_type": "savings_account"
+   },
+   {
+    "id": "fc-savings",
+    "name": "FC Savings (NRFC/PFCA)",
+    "category": "savings",
+    "product_type": "fc_deposit"
+   },
+   {
+    "id": "term-deposits",
+    "name": "Term Deposits",
+    "category": "savings",
+    "product_type": "term_deposit"
+   },
+   {
+    "id": "pawning",
+    "name": "Pawning",
+    "category": "gold_loan",
+    "product_type": "gold_loan"
+   },
+   {
+    "id": "personal-loans",
+    "name": "Personal Loans",
+    "category": "retail_loan",
+    "product_type": "personal_loan"
+   },
+   {
+    "id": "vehicle-leasing",
+    "name": "Vehicle Leasing",
+    "category": "vehicle_finance",
+    "product_type": "vehicle_lease"
+   },
+   {
+    "id": "credit-cards",
+    "name": "Credit Cards",
+    "category": "cards",
+    "product_type": "credit_card"
+   },
+   {
+    "id": "sme-loans",
+    "name": "SME Loans",
+    "category": "business_loan",
+    "product_type": "working_capital"
+   },
+   {
+    "id": "trade-finance",
+    "name": "Trade Finance",
+    "category": "trade_finance",
+    "product_type": "import_lc"
+   },
+   {
+    "id": "inward-remittances",
+    "name": "Inward Remittances",
+    "category": "remittances",
+    "product_type": "inward_remittance"
+   }
+  ],
+  "segments": [
+   {
+    "id": "migrant-families",
+    "note": "Households with a member working abroad, mostly in the Gulf.",
+    "label": "Migrant-worker families"
+   },
+   {
+    "id": "exporters-smes",
+    "note": "Garment, food and trading firms; many import on LCs.",
+    "label": "Exporters, importers and SMEs"
+   },
+   {
+    "id": "farmers",
+    "note": "Tea estates, paddy and vegetables.",
+    "label": "Farmers and estate workers"
+   },
+   {
+    "id": "salaried",
+    "note": "Employees of IT and service firms and the state.",
+    "label": "Salaried (IT, services, government)"
+   }
+  ],
+  "corridors": [
+   "SA",
+   "AE"
+  ],
+  "time_zone": "Asia/Colombo",
+  "regulators": [
+   {
+    "id": "central-bank-of-sri-lanka",
+    "name": "Central Bank of Sri Lanka",
+    "aliases": [
+     "CBSL"
+    ]
+   },
+   {
+    "id": "financial-intelligence-unit-sri-lanka",
+    "name": "Financial Intelligence Unit, Sri Lanka",
+    "aliases": [
+     "FIU"
+    ]
+   },
+   {
+    "id": "reserve-bank-of-india",
+    "name": "Reserve Bank of India",
+    "aliases": [
+     "RBI"
+    ]
+   },
+   {
+    "id": "us-treasury-sanctions-ofac",
+    "name": "US Treasury sanctions (OFAC)",
+    "aliases": [
+     "OFAC"
+    ]
+   },
+   {
+    "id": "basel-committee-standards",
+    "name": "Basel Committee standards",
+    "aliases": [
+     "Basel"
+    ]
+   },
+   {
+    "id": "financial-action-task-force",
+    "name": "Financial Action Task Force",
+    "aliases": [
+     "FATF"
+    ]
+   }
+  ],
+  "country_name": "Sri Lanka",
+  "counterparties": [
+   {
+    "id": "correspondent-bank-usd-clearing",
+    "name": "Correspondent bank (USD clearing)",
+    "aliases": []
+   }
+  ],
+  "institution_type": "bank"
+ }
+}
