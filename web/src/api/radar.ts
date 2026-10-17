@@ -20,6 +20,7 @@ export interface RadarRun {
 }
 export interface RadarStatus {
   connected: boolean; agent_url: string | null; every_minutes: number; last_run: RadarRun | null; running: number;
+  run_at: string | null; time_zone: string; run_now: { used: number; limit: number; left: number };  // the schedule and Check now's daily limit
   next_run_at: string; bytes_today: number; bytes_cap: number; budget_spent: boolean;
   limits: { max_stories: number; max_queries: number; max_bytes_per_query: number }; notes: string[];
 }
@@ -41,3 +42,12 @@ export const radarApi = {
 };
 
 export const gb = (b: number | null | undefined) => (b == null ? "—" : b >= 1e9 ? `${(b / 1e9).toFixed(1)} GB` : `${Math.round(b / 1e6)} MB`);
+
+/** How often Radar reads the news, in words: "once a day at 06:00", "every hour", "every 6 hours", "every 45 minutes". */
+export function scheduleText(every: number, runAt: string | null): string {
+  if (runAt) return `once a day at ${runAt}`;
+  if (every === 1440) return "once a day";
+  if (every === 60) return "every hour";
+  if (every % 60 === 0) return `every ${every / 60} hours`;
+  return `every ${every} minutes`;
+}

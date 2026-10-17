@@ -194,7 +194,8 @@ async def build(app, institution_id: str, audience: str = "user") -> dict:
                               "ok": not late}},
         "radar": {"stories": [{k: r[k] for k in ("story_id", "title", "places", "score", "relevance", "publishers", "status",
                                                "last_seen_at", "event_id", "why")} for r in radar_stories],
-                  "last_run_at": (radar["last_run"] or {}).get("finished_at"), "next_run_at": radar["next_run_at"]},
+                  "last_run_at": (radar["last_run"] or {}).get("finished_at"), "next_run_at": radar["next_run_at"],
+                  "every_minutes": radar["every_minutes"], "run_at": radar["run_at"], "run_now_limit": radar["run_now"]["limit"]},
         "studio": {k: studio[k] for k in ("sim_id", "title", "step", "steps", "status")} if studio else None,
         "map": {"places": {c: reference.place_info(c) for c in places if reference.is_place(c)}},
     }

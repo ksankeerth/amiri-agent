@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { inst, type Profile } from "../../api/institutions";
-import { gb, radarApi, type RadarStatus, type RadarStory } from "../../api/radar";
+import { gb, radarApi, scheduleText, type RadarStatus, type RadarStory } from "../../api/radar";
 import { Icon } from "../../components/Icon";
 import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
 import { Banner, Empty, useNow, useRole, useToast, ListSkeleton } from "../../components/ui";
@@ -120,18 +120,25 @@ export function RadarPage() {
   };
   const lr = status?.last_run;
   const admin = role === "platform_admin";
-  const cantRun = !status?.connected ? "Radar isn't connected yet" : status.budget_spent ? "Today's reading budget is spent" : running || status.running ? "A run is in progress" : null;
+  const left = status?.run_now.left ?? 0;
+  const cantRun = !status?.connected ? "Radar isn't connected yet" : status.budget_spent ? "Today's reading budget is spent"
+    : running || status.running ? "A run is in progress" : left === 0 ? "Limit reached; resets at midnight" : null;
+  const sched = status ? scheduleText(status.every_minutes, status.run_at) : "";
+  const nextRun = status ? (new Date(status.next_run_at) <= now ? "due now" : when(status.next_run_at, now)) : "";
   return (
     <div className="page">
       <PageHeader title="Radar"
-        status={!status ? "" : !status.connected ? "Not running yet" : <>Reads world news every {status.every_minutes === 60 ? "hour" : `${status.every_minutes} minutes`}{lr ? `, last ${ago(lr.finished_at ?? lr.created_at, now)}` : ""}</>}
+        status={!status ? "" : !status.connected ? "Not running yet" : <>Reads world news {sched}{lr ? `, last ${ago(lr.finished_at ?? lr.created_at, now)}` : ""}</>}
         help={<HowItWorks><p>Radar reads the world's news for anything that touches {profile?.institution.name ?? "your institution"}, using the places and names in your profile. What matters goes to the investigation like any other finding; the rest is kept here, and you can still send it.</p></HowItWorks>}
         actions={<>
           <Link className="btn" to="/institution/agents">What Radar reads from your profile</Link>
           <button className="btn btn--primary" type="button" disabled={!!cantRun} title={cantRun ?? undefined} onClick={runNow}>
-            <Icon name={running ? "refresh" : "radar"} />{running ? "Checking…" : "Check now"}</button></>} />
+            <Icon name={running ? "refresh" : "radar"} />{running ? "Checking…" : status?.connected ? `Check now · ${left} left today` : "Check now"}</button></>} />
       <div className="banners">
         {err && <Banner kind="crit" icon="warn">{err}</Banner>}
+        {status && <Banner kind="info" icon="info">{left === 0 && status.connected
+          ? <><b>Prototype limits:</b> you've used today's {status.run_now.limit} checks; the next run is {nextRun}.</>
+          : <><b>Prototype limits:</b> Radar reads the news {sched}, and you can Check now {status.run_now.limit} times a day. English news only.</>}</Banner>}
         {admin ? status?.notes.map(n => <Banner key={n} kind="warn" icon="warn">{n}</Banner>)
           : status && !status.connected && <Banner kind="warn" icon="warn"><b>Radar isn't running yet.</b> It reads the news for you once your Platform Admin connects it. Monitors and market series still work.</Banner>}
         {lr?.status === "failed" && <Banner kind="crit" icon="warn"><b>The last run failed</b> {ago(lr.finished_at ?? lr.created_at, now)}.{admin ? ` ${lr.error ?? ""}` : " Radar will try again at the next run."}</Banner>}
@@ -141,8 +148,8 @@ export function RadarPage() {
           <div className="l">Last run</div><div className="v" style={{ fontSize: 20 }}>{lr ? ago(lr.finished_at ?? lr.created_at, now) : "never"}</div>
           <div className="s">{lr ? `${lr.trigger === "now" ? "on request" : "on schedule"}, ${lr.status === "completed" ? "finished" : lr.status.replace("_", " ")}` : "no run yet"}</div></div>
         <div className="card ov-kpi" style={{ ["--kpi" as string]: "var(--info)" }}>
-          <div className="l">Next run</div><div className="v" style={{ fontSize: 20 }}>{status.connected ? when(status.next_run_at, now) : "—"}</div>
-          <div className="s">every {status.every_minutes} minutes{status.running ? " · running now" : ""}</div></div>
+          <div className="l">Next run</div><div className="v" style={{ fontSize: 20 }}>{status.connected ? nextRun : "—"}</div>
+          <div className="s">{sched}{status.running ? " · running now" : ""}</div></div>
         <div className="card ov-kpi"><div className="l">The last run</div><Funnel s={status} /></div>
         <div className="card ov-kpi" style={{ ["--kpi" as string]: status.budget_spent ? "var(--critical)" : "var(--hairline-2)" }}>
           <div className="l">{admin ? "BigQuery today" : "Today's reading budget"}</div><div className="v" style={{ fontSize: 20 }}>{admin ? <>{gb(status.bytes_today)} <span className="small muted">of {gb(status.bytes_cap)}</span></> : <>{Math.round((status.bytes_today / Math.max(1, status.bytes_cap)) * 100)}% <span className="small muted">used</span></>}</div>

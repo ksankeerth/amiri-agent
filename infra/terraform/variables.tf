@@ -75,9 +75,27 @@ variable "radar_url" {
 }
 
 variable "radar_daily_bytes_cap" {
-  description = "BigQuery bytes Radar may scan a day. The free tier is 1 TiB a month (about 34 GB a day)."
+  description = "BigQuery bytes Radar may scan a day (a cost guard). The free tier is 1 TiB a month (about 34 GB a day); Radar uses about 1 to 7 GB."
   type        = number
-  default     = 30000000000
+  default     = 20000000000
+}
+
+variable "radar_every_minutes" {
+  description = "Minutes between scheduled Radar runs. 1440: once a day (at radar_run_at)."
+  type        = number
+  default     = 1440
+}
+
+variable "radar_run_at" {
+  description = "With a daily period: the local time (the institution's time zone, HH:MM) the scheduled Radar run starts. Empty: every radar_every_minutes."
+  type        = string
+  default     = "06:00"
+}
+
+variable "radar_run_now_per_day" {
+  description = "How many times a day people may use Radar's Check now (the prototype's limit, shown on the Radar page)."
+  type        = number
+  default     = 5
 }
 
 variable "server_env" {

@@ -45,6 +45,9 @@ locals {
     RADAR_URL             = var.radar_url
     RADAR_AUTH            = "id_token"
     RADAR_DAILY_BYTES_CAP = tostring(var.radar_daily_bytes_cap)
+    RADAR_EVERY_MINUTES   = tostring(var.radar_every_minutes)
+    RADAR_RUN_AT          = var.radar_run_at
+    RADAR_RUN_NOW_PER_DAY = tostring(var.radar_run_now_per_day)
     DB_POOL_MAX           = "5" # db-f1-micro allows about 25 connections in all
   }, var.server_env)
 

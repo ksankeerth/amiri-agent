@@ -260,17 +260,22 @@ SETTINGS: dict[str, Setting] = {
                 "starting it from zero), the run is sent again once, waiting this long."),
         Setting("RADAR_URL", "", "Base URL of the Radar agent (agents/radar-agent); empty: not connected."),
         Setting("RADAR_AUTH", "none", "How the server calls the Radar agent: none (local) or id_token (Cloud Run)."),
-        Setting("RADAR_EVERY_MINUTES", "60", "Minutes between scheduled Radar runs (Check now runs one at once)."),
+        Setting("RADAR_EVERY_MINUTES", "1440", "Minutes between scheduled Radar runs (1440: once a day). Only scheduled "
+                "runs count; Check now doesn't move the schedule."),
+        Setting("RADAR_RUN_AT", "06:00", "With a daily period (RADAR_EVERY_MINUTES 1440): the local time (the institution's "
+                "time zone, HH:MM) the scheduled run starts. Empty: every RADAR_EVERY_MINUTES from the last scheduled run."),
+        Setting("RADAR_RUN_NOW_PER_DAY", "5", "Check now runs allowed per local day (the prototype's limit; shown on the "
+                "Radar page). Runs refused by a budget don't count."),
         Setting("RADAR_FIRST_LOOKBACK_HOURS", "24", "The first run reads this many hours back."),
         Setting("RADAR_SEEN_DAYS", "14", "Stories reported in this many days are sent as seen (for developments)."),
         Setting("RADAR_MAX_STORIES", "10", "Stories a run may return at most."),
         Setting("RADAR_MAX_MODEL_CALLS", "40", "Model calls a run may make at most."),
         Setting("RADAR_TIMEOUT_SECONDS", "300", "Longest a run may take inside the agent."),
-        Setting("RADAR_MAX_QUERIES", "3", "BigQuery queries a run may make at most."),
-        Setting("RADAR_MAX_BYTES_PER_QUERY", "2000000000",
+        Setting("RADAR_MAX_QUERIES", "1", "BigQuery queries a run may make at most."),
+        Setting("RADAR_MAX_BYTES_PER_QUERY", "1500000000",
                 "BigQuery maximum_bytes_billed for each query (bytes)."),
-        Setting("RADAR_DAILY_BYTES_CAP", "50000000000",
-                "BigQuery bytes Radar may scan per UTC day; scheduled runs are skipped once it is spent (bytes)."),
+        Setting("RADAR_DAILY_BYTES_CAP", "20000000000",
+                "BigQuery bytes Radar may scan per UTC day; scheduled runs and Check now are refused once it is spent (bytes)."),
         # Scenario Studio
         Setting(
             "SIM_INVESTIGATION_WAIT_STEPS",

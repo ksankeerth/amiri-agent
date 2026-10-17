@@ -24,7 +24,7 @@ async def test_a_run_on_the_tick_stores_stories_and_sends_what_the_agent_chose(c
     req = radar_agent.requests[0]
     assert "SA" in req["scope"]["places"] and "Coastal Remit" in req["scope"]["actors"]
     assert req["scope"]["places_why"]["LK"] == ["footprint (home)"] and req["institution"]["country"] == "LK"
-    assert req["limits"]["max_queries"] == 3 and req["limits"]["max_bytes_per_query"] == 2_000_000_000
+    assert req["limits"]["max_queries"] == 1 and req["limits"]["max_bytes_per_query"] == 1_500_000_000  # the cost guards
     assert req["seen"] == []
     await client.post("/internal/tick")  # collected
     items = (await client.get(f"{R}/stories")).json()["items"]
@@ -107,6 +107,7 @@ async def test_the_daily_bigquery_cap(client, env, radar_agent, clock):
     assert st["budget_spent"] is True and st["notes"]
     r = await client.post(f"{R}:run")
     assert r.status_code == 409 and r.json()["code"] == "budget_spent"
+    assert st["run_now"]["used"] == 1  # the refused one doesn't count
     clock.advance(minutes=61)
     ran = (await client.post("/internal/tick")).json()["ran"]
     assert next(s for s in ran if s["step"] == "radar")["skipped"] == ["today's BigQuery budget is spent"]

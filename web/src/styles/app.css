@@ -157,6 +157,7 @@ textarea.input { height:auto; min-height:72px; padding:8px 10px; resize:vertical
 /* ---------- surfaces ---------- */
 .card { background:var(--surface); border:1px solid var(--hairline); border-radius:var(--r-card); box-shadow:var(--e-sm); }
 .card > .hd { display:flex; align-items:center; gap:10px; padding:14px 16px 0; }
+.card > .hd:last-child { padding-bottom:14px; } /* a card that is only its header (collapsed): the button mustn't sit on the edge */
 .card > .bd { padding:14px 16px 16px; }
 .card.flat { box-shadow:none; }
 .card.click { cursor:pointer; transition:border-color var(--d-fast); }
