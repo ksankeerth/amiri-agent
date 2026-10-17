@@ -1,18 +1,19 @@
 // Findings: what the sources found in the last 7 days, and what the investigation made of each (waiting, being
-// investigated, in an event, set aside and why). No live push: the page reloads every 30 s, and Refresh reloads now.
+// investigated, in an event, no impact found and why). No live push: the page reloads every 30 s, and Refresh reloads now.
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ApiError } from "../../api/client";
-import { investigationApi, type FindingRow } from "../../api/investigation";
+import { investigationApi, type EventRow, type FindingRow } from "../../api/investigation";
+import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
 import { Icon } from "../../components/Icon";
-import { Banner, Empty, InlineSkeleton, PageHead, useNow, useToast } from "../../components/ui";
-import { ago, dayTime, plural, until } from "../../format";
+import { Banner, Empty, InlineSkeleton, useNow, useToast } from "../../components/ui";
+import { ago, dayTime, until } from "../../format";
+import { count, FINDING_STATUS, longWhen, sourceInfo } from "../../plain";
 import { InvestigateNowButton, useInvestigationStatus } from "../events/Events";
-import { DAYS, reasonText, STATUS, useRecentFindings } from "./recent";
+import { DAYS, reasonText, useRecentFindings } from "./recent";
 
 type Show = "all" | "new" | "grouped" | "linked" | "set_aside";
-const SHOW: [Show, string][] = [["all", "All"], ["grouped", "Being investigated"], ["linked", "In an event"], ["set_aside", "Set aside"], ["new", "Waiting"]];
-const SOURCE: Record<string, string> = { monitor: "a monitor", timeseries: "a market series", radar: "Radar" };
+const SHOW: [Show, string][] = [["all", "All"], ["grouped", "Being investigated"], ["linked", "In an event"], ["set_aside", "No impact found"], ["new", "Waiting"]];
 
 function sourceLink(f: FindingRow): string | null {
   const r = f.source_ref ?? {};
@@ -30,6 +31,8 @@ export function FindingsPage() {
   const { status, reload } = useInvestigationStatus();
   const [show, setShow] = useState<Show>("all");
   const [checking, setChecking] = useState<string | null>(null);
+  const [events, setEvents] = useState<Record<string, EventRow>>({});
+  useEffect(() => { investigationApi.events().then(xs => setEvents(Object.fromEntries(xs.map(e => [e.event_id, e])))).catch(() => {}); }, [items]);
   const refresh = () => { load(); reload(); };
   const target = decodeURIComponent(hash.slice(1));
   useEffect(() => {  // from the Overview: open on that finding
@@ -37,7 +40,7 @@ export function FindingsPage() {
     document.getElementById(target)?.scrollIntoView({ block: "center" });
   }, [items, target]);
   const rows = useMemo(() => (items ?? []).filter(f => show === "all" || f.status === show), [items, show]);
-  const count = (s: Show) => (items ?? []).filter(f => s === "all" || f.status === s).length;
+  const n = (s: Show) => (items ?? []).filter(f => s === "all" || f.status === s).length;
   const check = async (f: FindingRow) => {
     if (!f.run_id) return;
     setChecking(f.finding_id);
@@ -48,49 +51,57 @@ export function FindingsPage() {
     } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
     finally { setChecking(null); }
   };
+  const nextBatch = status?.next_batch_at && status.connected ? (new Date(status.next_batch_at) <= now ? "very soon" : `in ${until(status.next_batch_at, now)}`) : null;
   return (
     <div className="page">
-      <PageHead title="Findings" sub={`What your monitors, market series and Radar found in the last ${DAYS} days, and what the investigation made of each.`}
+      <PageHeader title="Findings"
+        status={items === null ? "" : <><b className="ink">{count(items.length, "finding")}</b> in the last {DAYS} days{n("grouped") ? `, ${n("grouped")} being investigated` : ""}</>}
         actions={<>
           <span className="small muted">Updated {loadedAt ? ago(loadedAt.toISOString(), now) : ""}</span>
           <button className="btn" type="button" onClick={refresh}><Icon name="refresh" />Refresh</button>
           {status && status.findings_waiting > 0 && status.connected ? <InvestigateNowButton onDone={refresh} small /> : null}
-        </>} />
+        </>}
+        help={<HowItWorks><p>A finding is something a monitor, a market series or Radar noticed. Each one goes to the investigation, which links it to an event or finds no impact on your products. Findings from tests aren't shown.</p></HowItWorks>} />
       {err && <Banner kind="warn" icon="warn">Couldn't refresh: {err}</Banner>}
-      <span className="seg" role="group" aria-label="Which findings">{SHOW.map(([k, label]) => (
-        <button key={k} type="button" aria-pressed={show === k} onClick={() => setShow(k)}>{label} ({count(k)})</button>))}</span>
+      <div className="filters"><span className="seg" role="group" aria-label="Which findings">{SHOW.map(([k, label]) => (
+        <button key={k} type="button" aria-pressed={show === k} onClick={() => setShow(k)}>{label} ({n(k)})</button>))}</span></div>
       <div className="card mt12">
         {items === null ? <InlineSkeleton /> : !rows.length ? (
-          <Empty icon="search" title={show === "all" ? `Nothing found in the last ${DAYS} days` : "None in this group"}>
-            {show === "all" ? "When a monitor, a market series or Radar finds something, it appears here, then goes to the investigation." : "Choose another group above."}</Empty>
+          <Empty icon="search" title={show === "all" ? `Nothing found in the last ${DAYS} days` : "None in this group"}
+            actions={show === "all" ? <Link className="btn" to="/monitors"><Icon name="monitor" />See your monitors</Link> : undefined}>
+            {show === "all" ? "When a monitor, a market series or Radar notices something, it appears here." : "Choose another group above."}</Empty>
         ) : (
-          <div className="list">{rows.map(f => {
-            const [cls, label] = STATUS[f.status];
-            const src = sourceLink(f);
+          <ul className="evlist" aria-label="Findings">{rows.map(f => {
+            const [label, tone] = FINDING_STATUS[f.status];
+            const si = sourceInfo(f.source), src = sourceLink(f);
+            const ev = f.outcome?.event_id ? events[f.outcome.event_id] : undefined;
             return (
-              <div key={f.finding_id} id={`f-${f.finding_id}`} className={`li fd-row ${target === `f-${f.finding_id}` ? "fd-target" : ""}`}>
-                <Icon name={f.source === "monitor" ? "monitor" : f.source === "radar" ? "radar" : "series"} className="ico16" />
-                <div className="col" style={{ gap: 4, minWidth: 0, flex: 1 }}>
-                  <div className="row wrap" style={{ gap: 8 }}><b>{f.title}</b><span className={`badge ${cls}`}>{label}</span></div>
-                  {f.explanation && <div className="small">{f.explanation}</div>}
-                  <div className="small muted">
-                    {dayTime(f.created_at)} · from {src ? <Link to={src}>{SOURCE[f.source] ?? f.source}</Link> : SOURCE[f.source] ?? f.source}
-                    {" · "}
-                    {f.status === "new" && <>waiting for the investigation{status?.next_batch_at && status.connected ? <>: the next batch goes {new Date(status.next_batch_at) <= now ? "on the next refresh" : `in ${until(status.next_batch_at, now)}`}</> : null}</>}
-                    {f.status === "grouped" && <>being investigated{f.run_started_at ? `, started ${ago(f.run_started_at, now)}` : ""}</>}
-                    {f.status === "linked" && f.outcome?.event_id && <>traced to your products: <Link to={`/events/${f.outcome.event_id}`}>open the event</Link></>}
-                    {f.status === "set_aside" && <>investigated, no event: {reasonText(f)}</>}
-                  </div>
-                  {f.status === "grouped" && f.run_status === "running" && f.run_id && <div>
-                    <button className="btn btn--sm" type="button" disabled={checking === f.finding_id} onClick={() => check(f)}>
-                      <Icon name="refresh" className={checking === f.finding_id ? "spin" : undefined} />Check now</button>
-                    <span className="small muted"> The result is otherwise collected on the server's next refresh.</span></div>}
+              <li key={f.finding_id} id={`f-${f.finding_id}`} className={`fd-row ${target === `f-${f.finding_id}` ? "fd-target" : ""}`}>
+                <div className="evrow">
+                  <span className="evrow-ico"><Icon name={si.icon} /></span>
+                  <span className="evrow-main">
+                    <span className="row-top"><b className="row-l">{f.title}</b><StatusPill tone={tone}>{label}</StatusPill></span>
+                    <span className="row-d fd-what">
+                      {f.status === "new" && <>Waiting to be investigated{nextBatch ? `: the next batch goes ${nextBatch}` : ""}</>}
+                      {f.status === "grouped" && <>Being investigated{f.run_started_at ? `, started ${ago(f.run_started_at, now)}` : ""}</>}
+                      {f.status === "linked" && f.outcome?.event_id && <>In the event <Link to={`/events/${f.outcome.event_id}`}>{ev?.title ?? "open the event"}</Link></>}
+                      {f.status === "set_aside" && <>No impact found: {reasonText(f) || "no link to your products"}</>}
+                    </span>
+                    {f.explanation && <span className="row-d muted">{f.explanation}</span>}
+                    {f.status === "grouped" && f.run_status === "running" && f.run_id && <span className="row wrap">
+                      <button className="btn btn--sm" type="button" disabled={checking === f.finding_id} onClick={() => check(f)}>
+                        <Icon name="refresh" className={checking === f.finding_id ? "spin" : undefined} />Check now</button>
+                      <span className="small muted">Otherwise the result comes in on its own within a few minutes.</span></span>}
+                  </span>
+                  <span className="evrow-side">
+                    {src ? <Link className="small" to={src}>{si.label}</Link> : <span className="small">{si.label}</span>}
+                    <span className="evrow-when" title={longWhen(f.created_at)}>{dayTime(f.created_at)}</span>
+                  </span>
                 </div>
-              </div>);
-          })}</div>
+              </li>);
+          })}</ul>
         )}
       </div>
-      {items && items.length > 0 && <p className="small muted mt8">{plural(items.length, "finding")} in the last {DAYS} days. Simulated findings (from tests) aren't shown.</p>}
     </div>
   );
 }

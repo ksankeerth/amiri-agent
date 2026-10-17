@@ -8,7 +8,7 @@ import { ApiError } from "../api/client";
 import { chat, type AssistantStatus, type ChatMessage, type Proposal, type TrackDef, type TrackState } from "../api/assistant";
 import { dayTime, plural } from "../format";
 import { Icon } from "./Icon";
-import { ChatToggleCtx, Modal, useToast } from "./ui";
+import { ChatToggleCtx, Modal, useRole, useToast } from "./ui";
 
 const SECTION_WORDS: Record<string, string> = {
   institution: "Institution", footprint: "Footprint", "watch-places": "Place to watch", segments: "Customer group",
@@ -78,6 +78,7 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
 }) {
   const chatToggle = useContext(ChatToggleCtx);
   const toast = useToast();
+  const { role } = useRole();
   const [status, setStatus] = useState<AssistantStatus | null>(null);
   const [defs, setDefs] = useState<TrackDef[]>([]);
   const [tracks, setTracks] = useState<TrackState[]>([]);
@@ -243,7 +244,7 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
         {status && !status.connected && (status.starting
           ? <div className="note small" role="status"><b>Starting the setup assistant…</b> This can take up to a minute. You can type now: your message waits for it.</div>
           : <div className="note small" style={{ background: "var(--medium-soft)", color: "var(--medium-ink)" }}>
-            <b>Not connected yet.</b> {status.message} <span className="mono">({status.backend})</span></div>)}
+            <b>Not connected yet.</b> {status.message}{role === "platform_admin" && <span className="mono"> ({status.backend})</span>}</div>)}
         {status?.connected && status.backend === "stub" && <div className="note small">Stub agent: canned replies and keyword routing, for building the UI.</div>}
       </div>
       <div ref={log} role="log" aria-label="Conversation with the setup agent" tabIndex={0} style={{ flex: 1, overflow: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>

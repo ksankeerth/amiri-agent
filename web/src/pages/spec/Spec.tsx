@@ -7,7 +7,8 @@ import { ApiError } from "../../api/client";
 import { specApi, type Spec, type SpecCategory, type SpecDimension, type SpecMetric } from "../../api/spec";
 import { Icon } from "../../components/Icon";
 import { Markdown, ScrollTable } from "../../components/markdown";
-import { Banner, PageHead, PageSkeleton } from "../../components/ui";
+import { FactList, PageHeader } from "../../components/blocks";
+import { Banner, PageSkeleton } from "../../components/ui";
 
 const words = (s: string) => s.replace(/_/g, " ");
 const TIER: Record<string, string> = { required: "b-ok", recommended: "b-info", optional: "b-sub" };
@@ -176,8 +177,11 @@ export function SpecPage() {
   const nMetrics = s.categories.reduce((n, c) => n + (c.metrics?.length ?? 0), 0);
   return (
     <div className="page">
-      <PageHead title={<span className="row" style={{ gap: 10 }}>{s.title}<span className="chip">Spec {s.spec_version}</span></span>}
-        sub={<>The numbers an institution exposes, per product category, and how Amiri Agent judges them. Version {s.spec_version} · {s.status} · {s.published} · validation parameters {s.validation_params_version} · {s.categories.length} categories, {nMetrics} metrics.</>} />
+      <PageHeader title={s.title} pills={<span className="chip">Version {s.spec_version}</span>}
+        status={<>The figures an institution shares, per product: {s.categories.length} categories, {nMetrics} metrics</>}
+        help={<div className="col" style={{ gap: 6 }}><p className="ph-about">The numbers an institution exposes, per product category, and how Amiri Agent judges them when it checks a possible impact.</p>
+          <FactList items={[["Version", s.spec_version], ["Status", s.status], ["Published", s.published], ["Validation parameters", s.validation_params_version]]} /></div>}
+        helpLabel="About this spec" />
       <div className="card sp-files">
         <div className="hd"><h2>Downloads</h2><span className="small muted">each named with its version</span></div>
         <div className="bd row wrap" style={{ gap: 8 }}>{s.files.map(f => f.available

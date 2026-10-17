@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError } from "../../api/client";
-import { studioApi, TONE, type Simulation, type TimelineItem } from "../../api/studio";
+import { studioApi, type Simulation, type TimelineItem } from "../../api/studio";
+import { StatusPill, TonePill } from "../../components/blocks";
 import { PriceChart, type Mark } from "../../components/charts";
 import { Icon } from "../../components/Icon";
 import { Banner, CountUp, PageHead, useToast, PageSkeleton } from "../../components/ui";
 import { dayTime, plural } from "../../format";
+import { listText, themeLabel } from "../../plain";
 
 const PLAY_MS = 1200;
 const KIND: Record<string, [string, string]> = {
@@ -129,11 +131,11 @@ export function StudioRunPage() {
     <div className="page">
       <PageHead title={sim.title}
         crumbs={<><Link to="/studio">Scenario Studio</Link> / <Link to={`/studio/${sim.scenario_id}`}>The scenario</Link> / This run</>}
-        sub={<>{sim.institution.name} · {sim.mode === "replay" ? "replaying a recording" : sim.mode === "record" ? "recording" : "live agents"} · <b>{dayTime(sim.virtual_now)}</b> (simulated) · step {sim.step} of {sim.steps}</>}
+        sub={<>Day {sim.step} of {sim.steps} · <b>{dayTime(sim.virtual_now)}</b> (simulated) · {sim.mode === "replay" ? "replaying a recording" : sim.mode === "record" ? "recording" : "live agents"}</>}
         actions={active ? <>
           <button className="btn btn--primary" type="button" onClick={() => setPlaying(p => !p)}><Icon name={playing ? "pause" : "play"} />{playing ? "Pause" : "Play"}</button>
           <button className="btn" type="button" disabled={playing} onClick={step}>Step</button>
-          <button className="btn btn--ghost" type="button" onClick={stop}>Stop</button></> : <span className="badge b-noeffect">{sim.status.toUpperCase()}</span>} />
+          <button className="btn btn--ghost" type="button" onClick={stop}>Stop</button></> : <StatusPill tone={sim.status === "finished" ? "green" : "grey"}>{sim.status === "finished" ? "Finished" : sim.status[0].toUpperCase() + sim.status.slice(1).replace(/_/g, " ")}</StatusPill>} />
       {moment && <AlertMoment a={moment} onDone={() => setMoment(null)} />}
       <Chain timeline={timeline} sim={sim} />
       <div className="progress" role="progressbar" aria-label="How far the simulated days have run" aria-valuemin={0} aria-valuemax={sim.steps} aria-valuenow={sim.step}>
@@ -152,28 +154,30 @@ export function StudioRunPage() {
             {!sim.events.length ? <div className="bd small muted">None yet. The first investigation starts after day 2, so a story's first findings go in together.</div> : (
               <div className="list">{sim.events.map(e => (
                 <div key={e.event_id} className="li"><div className="col" style={{ gap: 3, flex: 1 }}>
-                  <div className="row" style={{ gap: 8 }}><span className={`badge ${TONE[e.tone][0]}`}>{TONE[e.tone][1]}</span>
-                    <Link className="strong" to={`/events/${e.event_id}`}>{e.title}</Link></div>
-                  <span className="small muted">{e.themes.map(t => [t.theme, t.currency ?? t.item, t.direction].filter(Boolean).join(" ").replace(/_/g, " ")).join(" · ")} · {plural(e.effects, "effect")} to watch{e.developments ? ` · ${plural(e.developments, "later finding")} joined` : ""}</span>
+                  <div className="row wrap" style={{ gap: 8 }}><Link className="strong" to={`/events/${e.event_id}`}>{e.title}</Link><TonePill tone={e.tone} /></div>
+                  <span className="row wrap" style={{ gap: 6 }}>{e.themes.map((t, i) => <span key={i} className="chip">{themeLabel(t)}</span>)}
+                    <span className="small muted">{plural(e.effects, "possible impact")}{e.developments ? ` · ${plural(e.developments, "later finding")} joined` : ""}</span></span>
                 </div></div>))}</div>)}
           </div>
           <div className="card"><div className="hd"><h2>Alerts it would raise</h2><span className="spacer" /><span className="small muted">for the team that owns each product</span></div>
             {!sim.alerts.length ? <div className="bd small muted">{active ? "None yet. An alert appears when an event is traced to a product's risk." : "No event in this run puts a product at risk."}</div> : (
               <div className="list">{sim.alerts.map((a, n) => (
                 <div key={n} className="li"><div className="col" style={{ gap: 3, flex: 1 }}>
-                  <div className="row wrap" style={{ gap: 8 }}><span className="badge b-down">EARLY WARNING</span><span className="chip">{a.owner}</span><span className="strong">{a.title}</span></div>
-                  <span className="small muted">From <Link to={`/events/${a.event_id}`}>{a.event_title}</Link>. In the live app this lands on the Alerts page for {a.owner}, who acknowledge it.</span>
+                  <div className="row wrap" style={{ gap: 8 }}><StatusPill tone="amber" icon="alert">Early warning</StatusPill><span className="alc-team"><Icon name="users" />{a.owner}</span></div>
+                  <span className="strong"><Link to={`/events/${a.event_id}`}>{a.event_title}</Link></span>
+                  <span className="small">{listText([...new Set(a.effects.map(x => x.product))])}</span>
+                  <span className="small muted">For real, this lands on the Alerts page for {a.owner} to acknowledge.</span>
                 </div></div>))}</div>)}
           </div>
           <div className="card"><div className="hd"><h2>What was expected, and what Amiri Agent found</h2></div><div className="list">
             {sim.summary.stories.filter(s => s.expected).map(s => (
               <div key={s.key} className="li"><div className="row" style={{ gap: 8, flex: 1 }}>
-                <span className={`badge ${s.found ? "b-ok" : active ? "b-noeffect" : "b-down"}`}>{s.found ? "FOUND" : active ? "NOT YET" : "MISSED"}</span>
-                <span style={{ flex: 1 }}>{s.label} <span className="small muted">(expected {s.tone})</span></span>
+                <StatusPill tone={s.found ? "green" : active ? "grey" : "red"}>{s.found ? "Found" : active ? "Not yet" : "Missed"}</StatusPill>
+                <span style={{ flex: 1 }}>{s.label} <span className="small muted">(expected: {s.tone === "bad" ? "bad for you" : s.tone === "good" ? "good for you" : s.tone})</span></span>
                 {s.found && <Link className="small" to={`/events/${s.event_id}`}>{s.event_title}</Link>}
               </div></div>))}
-            {sim.summary.other_events.map(e => <div key={e.event_id} className="li small">Also found: <Link to={`/events/${e.event_id}`}>{e.title}</Link> ({e.tone})</div>)}
-            <div className="li small muted">Findings: {Object.entries(sim.summary.findings).map(([k, v]) => `${k === "timeseries" ? "market series" : k} ${v.found} (expected ${v.expected}+)`).join(" · ")}</div>
+            {sim.summary.other_events.map(e => <div key={e.event_id} className="li small">Also found: <Link to={`/events/${e.event_id}`}>{e.title}</Link></div>)}
+            <div className="li small muted">Findings: {Object.entries(sim.summary.findings).map(([k, v]) => `${v.found} from ${k === "timeseries" ? "prices" : k === "monitor" ? "news" : k} (expected ${v.expected} or more)`).join(" · ")}</div>
           </div></div>
         </div>
         <div className="card"><div className="hd"><h2>Timeline</h2></div>
@@ -181,7 +185,7 @@ export function StudioRunPage() {
             const [icon, label] = KIND[t.kind] ?? ["info", t.kind];
             return <div key={t.seq} className="li"><div className="row" style={{ gap: 8, alignItems: "flex-start" }}>
               <Icon name={icon} className="ico16" /><div className="col" style={{ gap: 2 }}>
-                <span className="small muted">day {t.step} · {dayTime(t.at)}{label ? ` · ${label}` : ""}</span>
+                <span className="small muted">Day {t.step} · {dayTime(t.at)}{label ? ` · ${label}` : ""}</span>
                 <span className="small">{line(t)}</span></div></div></div>;
           })}</div></div>
       </div>

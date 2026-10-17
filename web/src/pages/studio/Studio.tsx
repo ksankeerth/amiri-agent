@@ -2,12 +2,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "../../api/client";
-import { studioApi, TONE, type Custom, type HeadlineIn, type Mode, type PriceMove, type Scenario, type ScenarioRow, type Simulation, type Template } from "../../api/studio";
+import { studioApi, type Custom, type HeadlineIn, type Mode, type PriceMove, type Scenario, type ScenarioRow, type Simulation, type Template } from "../../api/studio";
 import { FillFromJson } from "../../components/FillFromJson";
 import { scenariosOf } from "../../components/fillJson";
 import { Icon } from "../../components/Icon";
+import { HowItWorks, PageHeader, TonePill } from "../../components/blocks";
 import { Banner, Empty, Modal, PageHead, PageSkeleton, useToast } from "../../components/ui";
 import { dayTime, plural } from "../../format";
+
+const TAG: Record<string, string> = { fx: "currency" };  // a template's tags in words
 
 const MODES: [Mode, string, string][] = [
   ["replay", "Replay (instant, no agents)", "No agent is called: the answers saved from an earlier run come back, so it plays in seconds and the same every time."],
@@ -95,7 +98,8 @@ export function StudioPage() {
   const ready = (items ?? []).find(s => s.recorded);
   return (
     <div className="page">
-      <PageHead title="Scenario Studio" sub="Run a what-if on your institution in a sandbox: headlines arrive, prices move, and Amiri Agent's monitors, market series and investigation respond. Nothing touches live data." />
+      <PageHeader title="Scenario Studio" status="Try a what-if on your institution. Nothing touches your live data."
+        help={<HowItWorks><p>A scenario plays out in a sandbox: headlines arrive and prices move, and Amiri Agent's monitors, market series and investigation respond as they would for real. You see the events it traces and the alerts each team would get.</p></HowItWorks>} />
       <div className="banners">{err && <Banner kind="crit" icon="warn">{err}</Banner>}<CurrentBanner sim={current} /></div>
       {ready && !current && <div className="card st-hero">
         <div className="col" style={{ gap: 4, flex: 1, minWidth: 260 }}>
@@ -111,7 +115,7 @@ export function StudioPage() {
           <span className="st-ico" aria-hidden="true"><Icon name={t.template_id === "blank" ? "edit" : "series"} /></span>
           <h3>{t.title}</h3>
           <p className="small muted" style={{ margin: 0, flex: 1 }}>{t.summary}</p>
-          <div className="row wrap" style={{ gap: 6 }}>{t.tags.map(x => <span key={x} className="chip">{x}</span>)}</div>
+          <div className="row wrap" style={{ gap: 6 }}>{t.tags.map(x => <span key={x} className="chip">{TAG[x] ?? x}</span>)}</div>
           {t.unavailable ? <span className="small muted">Can't run here: {t.unavailable}.</span>
             : <button className={`btn btn--sm ${t.template_id === "blank" ? "" : "btn--primary"}`} type="button" style={{ alignSelf: "flex-start" }} onClick={() => create(t)}>
               <Icon name="plus" />{t.template_id === "blank" ? "Write your own" : "Use this template"}</button>}
@@ -282,7 +286,7 @@ export function ScenarioPage() {
           <Headlines s={s} save={save} startOpen={fresh} />
           {!own && <div className="card"><div className="hd"><h2>What Amiri Agent should find</h2></div><div className="list">{b.stories.map(st => (
             <div key={st.key} className="li"><div className="row" style={{ gap: 8, flex: 1 }}>
-              <span className={`badge ${TONE[st.tone][0]}`}>{TONE[st.tone][1]}</span><span style={{ flex: 1 }}>{st.label}</span>
+              <TonePill tone={st.tone} /><span style={{ flex: 1 }}>{st.label}</span>
               {!st.expected && <span className="small muted">not expected: its headlines are out</span>}</div></div>))}</div></div>}
         </div>
         <div className="col gap16">

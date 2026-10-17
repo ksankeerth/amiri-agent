@@ -1,15 +1,33 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { ApiError } from "../../api/client";
-import { investigationApi, type EventRow, type InvestigationStatus, type Run, type Theme } from "../../api/investigation";
+import { investigationApi, type EventDetail, type EventRow, type InvestigationStatus, type Run, type Theme } from "../../api/investigation";
+import { HowItWorks, PageHeader, Places, StatTiles, TonePill } from "../../components/blocks";
+import { CheckBrief } from "../../components/checks";
 import { Icon } from "../../components/Icon";
-import { TONE } from "../../api/studio";
-import { Banner, Empty, PageHead, useNow, useRole, useToast, InlineSkeleton } from "../../components/ui";
-import { ago, dayTime, until, plural, placeName } from "../../format";
+import { Banner, Empty, useNow, useRole, useToast, InlineSkeleton } from "../../components/ui";
+import { ago, dayTime, until, plural } from "../../format";
+import { count, longWhen, sourceInfo, themeLabel } from "../../plain";
 import { DAYS, useRecentFindings } from "../findings/recent";
 
-export const themeText = (t: Theme) =>
-  `${t.theme}${t.item ? ` (${t.item})` : ""}: ${t.currency ? `${t.currency} ` : ""}${t.direction.replace(/_/g, " ")}`;
+/** A theme tag in words ("Oil prices up"): the Overview and Radar use it too. */
+export const themeText = (t: Theme) => themeLabel(t);
+
+const details = new Map<string, EventDetail>();
+/** Each listed event's detail (its checks), fetched once per page load and kept while the page is open. */
+export function useEventDetails(ids: string[]): Record<string, EventDetail> {
+  const [, bump] = useState(0);
+  const key = ids.join(",");
+  useEffect(() => {
+    const todo = ids.filter(id => !details.has(id)).slice(0, 30);
+    if (!todo.length) return;
+    let live = true;
+    Promise.all(todo.map(id => investigationApi.event(id).then(e => { details.set(id, e); }).catch(() => {})))
+      .then(() => { if (live) bump(n => n + 1); });
+    return () => { live = false; };
+  }, [key]);  // eslint-disable-line react-hooks/exhaustive-deps
+  return Object.fromEntries(ids.filter(id => details.has(id)).map(id => [id, details.get(id)!]));
+}
 
 const RUN_BADGE: Record<Run["status"], [string, string]> = {
   running: ["b-info", "RUNNING"], completed: ["b-ok", "DONE"], stopped_early: ["b-warn", "STOPPED EARLY"], failed: ["b-down", "FAILED"],
@@ -50,7 +68,7 @@ function Runs({ runs, onChange }: { runs: Run[]; onChange: () => void }) {
   };
   return (
     <div className="card mt16">
-      <div className="hd"><h2>Investigation runs</h2><span className="small muted">each run sends a batch of findings to the investigation agent</span></div>
+      <div className="hd"><h2>Investigation runs</h2><span className="small muted">for the Platform Admin: each run sends a batch of findings to the investigation agent</span></div>
       {!runs.length ? <div className="bd small muted">None yet.</div> : (
         <div className="tblwrap"><table className="tbl">
           <thead><tr><th>Started</th><th>Run</th><th>Status</th><th>Findings</th><th>Found</th><th>Error</th><th><span className="sr">Actions</span></th></tr></thead>
@@ -84,11 +102,12 @@ function ClearSandbox({ onDone }: { onDone: () => void }) {
     : <button className="btn" type="button" onClick={() => setAsking(true)}><Icon name="trash" />Clear simulated</button>;
 }
 
+type Sort = "newest" | "impacts";
 export function EventsPage() {
-  const nav = useNavigate();
   const { role } = useRole();
   const admin = role === "platform_admin";
   const [show, setShow] = useState<"open" | "closed" | "all">("open");
+  const [sort, setSort] = useState<Sort>("newest");
   const [sim, setSim] = useState(false);  // simulated events (from a series' "Simulate a move") stay out of the live picture unless asked for
   const now = useNow(30_000);
   const { status, reload: reloadStatus } = useInvestigationStatus();
@@ -108,56 +127,79 @@ export function EventsPage() {
   const noEvent = (recent.items ?? []).filter(f => f.status === "set_aside");
   useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t); }, [load]);
   const nSim = (events ?? []).filter(e => e.world !== "live").length;
-  const rows = (events ?? []).filter(e => (show === "all" || e.status === show) && (sim || e.world === "live"));
+  const rows = useMemo(() => (events ?? []).filter(e => (show === "all" || e.status === show) && (sim || e.world === "live"))
+    .sort((a, b) => sort === "impacts" ? b.hypotheses - a.hypotheses || (a.anchor < b.anchor ? 1 : -1) : (a.anchor < b.anchor ? 1 : -1)), [events, show, sim, sort]);
+  const ev = useEventDetails(rows.map(e => e.event_id));
+  // the headline each event came from: its first finding, when it's among the recent ones
+  const lead = useMemo(() => new Map((recent.items ?? []).filter(f => f.outcome?.event_id).map(f => [f.outcome!.event_id!, f])), [recent.items]);
+  const live = (events ?? []).filter(e => e.world === "live");
+  const open = live.filter(e => e.status === "open");
+  const bad = open.filter(e => e.tone === "bad" || e.tone === "mixed").length;
   return (
     <div className="page">
-      <PageHead title="Events" sub="Each event is something that happened in the world, traced to your products by the investigation agent."
+      <PageHeader title="Events"
+        status={events === null ? "" : open.length ? <><b className="ink">{count(open.length, "open event")}</b>{bad ? `, ${bad} bad for you` : ""}</> : "No open events right now"}
         actions={<>
           <span className="small muted">Updated {loadedAt ? ago(loadedAt.toISOString(), now) : ""}</span>
           <button className="btn" type="button" onClick={refresh}><Icon name="refresh" />Refresh</button>
           {sim && ((events ?? []).some(e => e.world === "sandbox") || runs.some(r => r.world === "sandbox")) ? <ClearSandbox onDone={load} /> : null}
           {status && status.findings_waiting > 0 && status.connected ? <InvestigateNowButton onDone={refresh} /> : null}
-        </>} />
+        </>}
+        help={<HowItWorks><p>An event is something that happened in the world, traced to the products it could hit. It stays open while news about it keeps coming, then closes.</p></HowItWorks>} />
       <div className="banners">
         {err && <Banner kind="crit" icon="warn">{err}</Banner>}
         {admin && status?.notes.map(n => <Banner key={n} kind={status.connected ? "info" : "warn"} icon="info">{n}</Banner>)}
-        {!admin && status && !status.connected && <Banner kind="warn" icon="warn">New findings can't be investigated right now: the investigation service isn't connected. Your Platform Admin has been told.</Banner>}
+        {!admin && status && !status.connected && <Banner kind="warn" icon="warn">New findings can't be investigated right now. Your Platform Admin has been told.</Banner>}
         {status && status.findings_waiting > 0 && (
           <Banner kind="info" icon="info">
-            <b>{status.findings_waiting} finding{status.findings_waiting === 1 ? "" : "s"} waiting</b> for investigation.
-            {status.next_batch_at && status.connected ? <> The next batch goes {new Date(status.next_batch_at) <= now ? "on the next tick" : `in ${until(status.next_batch_at, now)}`} (findings wait {status.wait_minutes} min for related ones); Investigate now skips the wait.</> : null}
+            <b>{plural(status.findings_waiting, "finding")} waiting</b> to be investigated
+            {status.next_batch_at && status.connected ? <>, {new Date(status.next_batch_at) <= now ? "very soon" : `in ${until(status.next_batch_at, now)}`}. Investigate now skips the wait.</> : "."}
           </Banner>
         )}
       </div>
-      {(inProgress.length > 0 || noEvent.length > 0) && <div className="card ev-strip">
-        <Icon name="search" className="ico16" />
-        <span>{inProgress.length > 0 && <><b>Being investigated: {inProgress.length}</b> ({inProgress[0].title}{inProgress.length > 1 ? ` and ${inProgress.length - 1} more` : ""})</>}
-          {inProgress.length > 0 && noEvent.length > 0 && " · "}
-          {noEvent.length > 0 && <>Investigated, no event (last {DAYS} days): {noEvent.length}</>}</span>
-        <span className="spacer" /><Link className="small" to="/findings">See findings →</Link>
-      </div>}
-      <div className="row mb wrap" style={{ gap: 12 }}><span className="seg" role="group" aria-label="Which events">{(["open", "closed", "all"] as const).map(x => (
-        <button key={x} type="button" aria-pressed={show === x} onClick={() => setShow(x)}>{x[0].toUpperCase() + x.slice(1)}</button>))}</span>
-        {nSim > 0 && <label className="check small"><input type="checkbox" checked={sim} onChange={e => setSim(e.target.checked)} /> Also show {plural(nSim, "simulated event")} (from tests; not real)</label>}</div>
+      {events !== null && <StatTiles label="Events in short" items={[
+        { value: open.length, label: "Open events", sub: open.length ? "news still coming in" : "none right now", tone: open.length ? "blue" : "grey", icon: "events" },
+        { value: bad, label: "Bad for you", sub: "open events", tone: bad ? "red" : "grey", icon: "bad" },
+        { value: inProgress.length, label: "Being investigated", sub: inProgress.length ? inProgress[0].title : "nothing right now", tone: inProgress.length ? "blue" : "grey", icon: "search" },
+        { value: noEvent.length, label: "No impact found", sub: `last ${DAYS} days`, tone: "grey", icon: "check" },
+      ]} />}
+      <div className="filters">
+        <span className="seg" role="group" aria-label="Which events">{(["open", "closed", "all"] as const).map(x => (
+          <button key={x} type="button" aria-pressed={show === x} onClick={() => setShow(x)}>{x[0].toUpperCase() + x.slice(1)}</button>))}</span>
+        <label className="sortby small">Sort <select className="input" value={sort} onChange={e => setSort(e.target.value as Sort)}>
+          <option value="newest">Newest first</option><option value="impacts">Most possible impacts</option></select></label>
+        {nSim > 0 && <label className="check small"><input type="checkbox" checked={sim} onChange={e => setSim(e.target.checked)} /> Also show {plural(nSim, "simulated event")} (from tests; not real)</label>}
+        <span className="spacer" />
+        {(inProgress.length > 0 || noEvent.length > 0) && <Link className="small" to="/findings">See all findings</Link>}
+      </div>
       <div className="card mt12">
         {events === null ? <InlineSkeleton /> : !rows.length ? (
-          <Empty icon="events" title={show === "open" ? "No open events" : "No events here"} actions={<Link className="btn" to="/studio"><Icon name="studio" />Try a what-if in the Scenario Studio</Link>}>When a market series, a monitor or Radar finds something, the investigation traces it to your products and the event appears here.</Empty>
+          <Empty icon="events" title={show === "open" ? "No open events" : "No events here"} actions={<Link className="btn" to="/studio"><Icon name="studio" />Try a what-if in the Scenario Studio</Link>}>
+            When Amiri Agent traces news or a price move to your products, the event appears here.</Empty>
         ) : (
-          <div className="tblwrap"><table className="tbl">
-            <thead><tr><th>Event</th><th>When</th><th>Where</th><th>Effects to watch</th><th>Findings</th></tr></thead>
-            <tbody>{rows.map(e => (
-              <tr key={e.event_id} className="click" onClick={() => nav(`/events/${e.event_id}`)}>
-                <td><Link className="strong" to={`/events/${e.event_id}`} onClick={ev => ev.stopPropagation()}>{e.title}</Link>
-                  <span className={`badge ${TONE[e.tone][0]}`} style={{ marginLeft: 8 }}>{TONE[e.tone][1]}</span>
-                  {e.world !== "live" && <span className="badge b-info" style={{ marginLeft: 8 }}>SIMULATED</span>}
-                  {e.status === "closed" && <span className="badge b-noeffect" style={{ marginLeft: 8 }}>CLOSED</span>}
-                  <div className="sub">{e.themes.map(themeText).join(" · ")}</div></td>
-                <td className="num">{dayTime(e.anchor)}</td>
-                <td className="small">{e.places.length ? e.places.map(placeName).join(", ") : e.country === "footprint" ? `${placeName(e.country_code ?? "")} (where you operate)` : e.country === "home" ? "Your home country" : e.country}</td>
-                <td className="num">{e.hypotheses ? e.hypotheses : <span className="muted">none</span>}{e.tasks ? <span className="sub"> · {plural(e.tasks, "task")}</span> : null}</td>
-                <td className="num">{e.finding_ids.length}{e.developments ? <div className="sub">+{e.developments} joined later</div> : null}</td>
-              </tr>))}</tbody>
-          </table></div>
+          <ul className="evlist" aria-label="Events">{rows.map(e => {
+            const f = lead.get(e.event_id), si = f ? sourceInfo(f.source) : null;
+            return (
+              <li key={e.event_id}>
+                <Link className="evrow" to={`/events/${e.event_id}`}>
+                  <span className={`evrow-ico tone-${e.tone}`}><Icon name="events" /></span>
+                  <span className="evrow-main">
+                    <span className="row-top"><b className="row-l">{e.title}</b><TonePill tone={e.tone} />
+                      {e.world !== "live" && <span className="pill t-blue">Simulated</span>}
+                      {e.status === "closed" && <span className="pill t-grey">Closed</span>}</span>
+                    {f && <span className="evrow-src">{si && <Icon name={si.icon} />}<span>{f.title}</span></span>}
+                    <span className="evrow-tags">{e.themes.map((t, i) => <span key={i} className="chip">{themeLabel(t)}</span>)}
+                      {e.places.length > 0 && <span className="evrow-where"><Icon name="pin" /><Places codes={e.places} max={2} /></span>}</span>
+                  </span>
+                  <span className="evrow-side">
+                    <span className="evrow-n"><b>{e.hypotheses}</b> {e.hypotheses === 1 ? "possible impact" : "possible impacts"}</span>
+                    <CheckBrief e={ev[e.event_id]} />
+                    <span className="evrow-when" title={longWhen(e.anchor)}>{dayTime(e.anchor)}</span>
+                  </span>
+                  <Icon name="chevron" className="row-go" />
+                </Link>
+              </li>);
+          })}</ul>
         )}
       </div>
       {admin && <Runs runs={runs} onChange={load} />}

@@ -1,21 +1,32 @@
 import { useState } from "react";
 import { ApiError } from "../api/client";
 import { seriesApi, type Detector, type FetchOutcome, type LookupItem, type Series, type SeriesState, type Theme } from "../api/series";
-import { until } from "../format";
+import { until, when, zx } from "../format";
+import { currencyWord, SERIES_STATE } from "../plain";
+import { StatusPill } from "./blocks";
 import { FillFromJson } from "./FillFromJson";
 import { seriesOf } from "./fillJson";
 import { Icon } from "./Icon";
 import { Modal, useNow, useToast } from "./ui";
 
-const STATE: Record<SeriesState, [string, string]> = {
-  normal: ["NORMAL", "b-ok"], moved: ["MOVED", "b-warn"], stale: ["STALE", "b-warn"],
-  warming_up: ["WARMING UP", "b-info"], pending: ["NO PRICES YET", "b-notyet"], paused: ["PAUSED", "b-paused"],
-};
-export const StateBadge = ({ state }: { state: SeriesState }) => <span className={`badge ${STATE[state][1]}`}>{STATE[state][0]}</span>;
+export const StateBadge = ({ state }: { state: SeriesState }) => { const [t, tone] = SERIES_STATE[state]; return <StatusPill tone={tone}>{t}</StatusPill>; };
+
+/** A series' state in one plain sentence, for its header and its card. */
+export function seriesSentence(s: Series, now = new Date()): string {
+  const l = s.latest;
+  switch (s.state) {
+    case "stale": return `Prices haven't updated since ${l ? when(l.bar_end, now) : "they were added"}; your Platform Admin has been told.`;
+    case "moved": return `An unusual move: ${zx(l?.max_z)} a normal move${l?.max_z_days ? ` over ${l.max_z_days} day${l.max_z_days === 1 ? "" : "s"}` : ""}.`;
+    case "warming_up": return "Still learning what a normal move is; it can flag moves once it has enough history.";
+    case "pending": return "Waiting for its first prices.";
+    case "paused": return "Paused: prices aren't updated until it's resumed.";
+    default: return l?.max_z !== null && l?.max_z !== undefined ? `Normal: the largest recent move is ${zx(l.max_z)} a normal one.` : "Normal.";
+  }
+}
 
 export function FetchBadge({ s }: { s: Series }) {
   if (s.fetch.last_status !== "error") return null;
-  return <span className="badge b-down" title={s.fetch.last_error?.message}>LAST FETCH FAILED</span>;
+  return <StatusPill tone="red" icon="warn" title={s.fetch.last_error?.message}>Last update failed</StatusPill>;
 }
 
 /** What a refresh did, in words. */
@@ -91,9 +102,9 @@ const THEME_WORDS: Record<string, string> = { fx: "Exchange rate", commodities: 
 /** What a move in this series means, in a sentence a banker would say. */
 export const themeMeaning = (t: Theme | null) => {
   if (!t) return "not set";
-  const what = THEME_WORDS[t.theme] ?? t.theme;
-  const of = t.currency ?? t.item;
-  return `${what}${of ? ` (${of})` : ""}: a rise means ${t.direction_up.replace(/_/g, " ")}, a fall means ${t.direction_down.replace(/_/g, " ")}`;
+  const up = t.direction_up.replace(/_/g, " "), down = t.direction_down.replace(/_/g, " ");
+  if (t.currency) { const w = currencyWord(t.currency).toLowerCase(); return `A rise means a ${up} ${w}, a fall a ${down} one`; }
+  return `${THEME_WORDS[t.theme] ?? t.theme}${t.item ? ` (${t.item})` : ""}: a rise means ${up}, a fall means ${down}`;
 };
 export const themeLabel = (t: Theme | null) =>
   !t ? "no theme" : `${t.theme}${t.item ? ` (${t.item})` : ""}${t.currency ? ` ${t.currency}` : ""}: up = ${t.direction_up.replace(/_/g, " ")}, down = ${t.direction_down.replace(/_/g, " ")}`;

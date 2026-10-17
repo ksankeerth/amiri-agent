@@ -61,12 +61,25 @@ export const pct = (x: number | null | undefined, d = 2) =>
 // rounded down, so a move just under the threshold (2.998) never reads as the threshold (3.0×)
 export const zx = (z: number | null | undefined) => (z === null || z === undefined ? "—" : `${(Math.floor(Math.abs(z) * 10) / 10).toFixed(1)}×`);
 
-/** A place code as a person says it: "LK" is Sri Lanka. Codes that aren't countries (IN-TN, sea:red-sea) stay readable. */
+/** A place code as a person says it: "LK" is Sri Lanka, "chk:hormuz" the Strait of Hormuz. A code with no name here
+ *  reads as words ("sea:java-sea" → "Java Sea"); pages that can, ask the reference data for the exact name. */
 const regionNames = (() => { try { return new Intl.DisplayNames(["en"], { type: "region" }); } catch { return null; } })();
+const PLACES: Record<string, string> = {
+  "chk:hormuz": "Strait of Hormuz", "chk:bab-el-mandeb": "Bab-el-Mandeb Strait", "chk:malacca": "Strait of Malacca",
+  "chk:suez": "Suez Canal", "chk:panama": "Panama Canal", "chk:bosporus": "Bosporus", "chk:gibraltar": "Strait of Gibraltar",
+  "chk:taiwan": "Taiwan Strait", "chk:cape-of-good-hope": "Cape of Good Hope",
+  "IN-TN": "Tamil Nadu", "IN-KL": "Kerala", "IN-MH": "Maharashtra", "IN-KA": "Karnataka", "IN-DL": "Delhi",
+};
+const titleWords = (s: string) => s.replace(/[-_]+/g, " ").replace(/\b([a-z])/g, (_, c: string) => c.toUpperCase()).replace(/\b(Of|The|And|El)\b/g, w => w.toLowerCase());
 export function placeName(code: string): string {
+  if (PLACES[code]) return PLACES[code];
   if (/^[A-Z]{2}$/.test(code)) { try { return regionNames?.of(code) ?? code; } catch { return code; } }
-  return code.replace(/^(sea|chk):/, "").replace(/[-_]/g, " ");
+  const sub = code.match(/^([A-Z]{2})-([A-Z0-9]+)$/);  // a state or province: "IN-TN" → "India (TN)" unless named above
+  if (sub) return `${placeName(sub[1])} (${sub[2]})`;
+  return titleWords(code.replace(/^[a-z]+:/, ""));
 }
+/** Seas, straits and regions before countries: they say more about where something happened. */
+export const placeOrder = (codes: string[]) => [...codes].sort((a, b) => Number(/^[A-Z]{2}$/.test(a)) - Number(/^[A-Z]{2}$/.test(b)));
 
 /** What a failed check means for a person, in a sentence (the raw message stays one click away). Mirrors the server's plain_error. */
 export function plainError(error: string | null | undefined): string {
