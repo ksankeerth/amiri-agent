@@ -2,6 +2,7 @@
 (/api/v1/internal). No role checks here: roles are applied in the web app."""
 
 import asyncio
+import logging
 from datetime import date
 from typing import Annotated, Literal
 
@@ -13,6 +14,8 @@ from app.investigation import calendar as cal
 from app.investigation import coverage as cov
 from app.investigation.service import Investigations
 from app.problems import Problem
+
+log = logging.getLogger("amiri.investigation")
 
 
 async def agent_only(authorization: Annotated[str | None, Header()] = None) -> None:
@@ -108,10 +111,30 @@ async def event(request: Request, event_id: str):
 # ---------------------------------------------------------------- for the agents
 
 
-@internal.get("/coverage", summary="What each product can be measured with (assumed from the Metrics Spec)")
+@internal.get("/coverage", summary="What each product can be measured with: the connected catalog with validation on, "
+                                     "otherwise assumed from the Metrics Spec")
 async def coverage(request: Request, institution_id: str):
     state = await request.app.state.institutions.state(institution_id)
-    return cov.coverage(state)
+    assumed = cov.coverage(state)
+    dc = request.app.state.data_connection
+    if not await dc.validation_on():
+        return assumed
+    try:  # what the institution serves, so tasks only ask for that
+        view = await dc.view()
+        data, target, _ = await dc.client()
+        try:
+            ans = await data.catalog()
+        finally:
+            await data.aclose()
+        if ans.status != 200 or not isinstance(ans.body, dict):
+            raise ValueError(f"GET /catalog answered {ans.status or ans.error}")
+        sample = view.get("sample")
+        source_id, name = (f"sample-{sample}", f"The sample {sample}") if view.get("source") == "sample" \
+            else ("institution-api", f"Your institution's API ({target})")
+        return cov.narrowed(assumed, ans.body, source_id, name)
+    except Exception as e:
+        log.warning("coverage: the connected catalog couldn't be read (%s); assumed from the Metrics Spec", e)
+        return assumed
 
 
 @internal.get("/calendar", summary="Business days of the institution's home country")

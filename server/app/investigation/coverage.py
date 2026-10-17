@@ -1,14 +1,16 @@
 """What the investigation agent may measure, per profile product: GET /api/v1/internal/coverage.
 
-No data source is connected yet, so coverage is **assumed from the Metrics Spec**: each
+Without an approved data connection, coverage is **assumed from the Metrics Spec**: each
 product serves its category's metrics that apply to its product type, with the spec's
 breakdowns and validation rules. Whole-category metrics (spec scope: category, such as
 large depositors' net flow, digital transactions, the insurer's solvency) come as groups:
 the categories the institution sells in, plus payments for a bank and the company for an
 insurer. Breakdown values come from the spec (fixed lists), the
 home country's ISO 3166-2 regions, the profile's corridors and currencies, and ISIC
-sections. When a data source is connected (Metrics Spec reference API), its catalog will
-replace the assumption; the shape stays the same.
+sections. With validation on an approved connection (Metrics Spec reference API), `narrowed`
+keeps only what its catalog serves, with the catalog's own breakdowns, grain and lag, so the
+agent never asks for a metric or a breakdown value the institution doesn't serve; the shape
+stays the same.
 """
 
 from functools import cache
@@ -16,6 +18,7 @@ from functools import cache
 import pycountry
 
 from app import spec
+from app.connect.coverage import catalog_version
 from app.institutions.rules import State
 
 ISIC_SECTIONS = list("ABCDEFGHIJKLMNOPQRSTU")
@@ -132,4 +135,55 @@ def coverage(state: State) -> dict:
         "products": products,
         "groups": groups,  # whole-category metrics (Metrics Spec scope: category)
         "unmatched": {"profile": [p["product_id"] for p in products if not p["metrics"]], "source": []},
+    }
+
+
+def _served(m: dict, cm: dict) -> dict:
+    """An assumed metric as the catalog serves it: its breakdowns and values, grain, lag and history."""
+    dims = {d: list(v) for d, v in (cm.get("breakdowns") or {}).items() if isinstance(v, list)}
+    return {**m, "grain": cm.get("grain") or m["grain"], "lag_days": max(int(cm.get("max_lag_days") or 0), m["lag_days"]),
+            "history_from": cm.get("history_from"), "dimensions": dims}
+
+
+def narrowed(assumed: dict, raw: dict, source_id: str, name: str) -> dict:
+    """The assumed coverage, narrowed to the connected catalog: a product keeps the metrics its catalog product
+    serves (by key, or by an alias the catalog declares); a whole-category group keeps what a category-scope
+    catalog entry serves. Products and groups the catalog lacks keep no metrics."""
+    catalog = {p.get("product_id"): p for p in raw.get("products") or [] if isinstance(p, dict)}
+    renamed = {a["old"]["key"]: a["new"]["key"] for a in raw.get("aliases") or []
+               if isinstance(a, dict) and isinstance(a.get("old"), dict) and isinstance(a.get("new"), dict)}
+    used: set[str] = set()
+
+    def keep(metrics: list[dict], cp: dict | None) -> list[dict]:
+        served = {m.get("key"): m for m in (cp or {}).get("metrics") or [] if isinstance(m, dict)}
+        out = []
+        for m in metrics:
+            cm = served.get(m["metric"]) or served.get(renamed.get(m["metric"]))
+            if cm is not None:
+                out.append(_served(m, cm))
+        return out
+
+    products = []
+    for p in assumed["products"]:
+        link = p.get("source_product_id") or p["product_id"]
+        cp = catalog.get(link)
+        if cp is not None:
+            used.add(link)
+        products.append({**p, "source_product_id": cp["product_id"] if cp else p.get("source_product_id"),
+                         "metrics": keep(p["metrics"], cp)})
+    groups = []
+    for g in assumed["groups"]:
+        cp = next((c for pid, c in catalog.items() if c.get("scope") == "category" and c.get("category") == g["category"]),
+                  None)
+        if cp is not None:
+            used.add(cp["product_id"])
+        if metrics := keep(g["metrics"], cp):
+            groups.append({**g, "metrics": metrics})
+    return {
+        "data_source": {"data_source_id": source_id, "name": name, "catalog_version": catalog_version(raw),
+                        "spec_version": raw.get("spec_version"), "assumed": False},
+        "products": products,
+        "groups": groups,
+        "unmatched": {"profile": [p["product_id"] for p in products if not p["metrics"]],
+                      "source": sorted(pid for pid in catalog if pid not in used)},
     }

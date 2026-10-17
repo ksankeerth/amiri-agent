@@ -7,6 +7,11 @@ from app import spec
 GRAIN_ORDER = {"daily": 0, "weekly": 1, "monthly": 2, "quarterly": 3}
 
 
+def catalog_version(raw: dict) -> str:
+    """A catalog's version as verdicts and coverage name it: the spec version and the day it was generated."""
+    return f"{raw.get('spec_version')}/{str(raw.get('generated_at'))[:10]}"
+
+
 def _required(category: str, product_type: str | None) -> list[dict]:
     out = []
     for m in spec.metrics(category):

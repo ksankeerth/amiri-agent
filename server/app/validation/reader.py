@@ -15,6 +15,7 @@ from typing import Any
 
 from app import spec
 from app.connect.client import Answer, InstitutionData
+from app.connect.coverage import catalog_version
 from app.validation.contract import ToolCall
 from app.validation.periods import add_months, next_period, period_start
 
@@ -134,7 +135,7 @@ class RunReader:
         aliases = {a["old"]["key"]: a["new"]["key"] for a in raw.get("aliases") or []
                    if isinstance(a, dict) and isinstance(a.get("old"), dict) and isinstance(a.get("new"), dict)}
         primary = next((c.get("id") for c in prof.get("business_calendars") or [] if c.get("primary")), None)
-        return {"catalog_version": f"{raw.get('spec_version')}/{str(raw.get('generated_at'))[:10]}",
+        return {"catalog_version": catalog_version(raw),
                 "spec_version": raw.get("spec_version"), "vintages_kept": bool(prof.get("vintages_kept", True)),
                 "aliases": aliases, "products": products, "calendar_id": primary,
                 "time_zone": prof.get("time_zone")}
