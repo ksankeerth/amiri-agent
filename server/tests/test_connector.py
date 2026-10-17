@@ -78,6 +78,8 @@ async def test_each_fault_is_caught(client, fault, expect):
     elif where == "formats":
         errs = " ".join(e for f in rep["formats"] for e in f["errors"])
         assert ("published_at" in errs and "is not a 'date'" in errs) or "is not of type" in errs
+        fix = next(st for st in rep["steps"] if st["step"] == "formats" and st["status"] == "fail")["fix"]
+        assert "JSON numbers" in fix and "YYYY-MM-DD" in fix, fix
     else:
         assert check(rep, where)["status"] == "fail", (fault, check(rep, where))
 
@@ -90,6 +92,8 @@ async def test_missing_metric_shows_in_coverage(client):
     gaps = [p for p in rep["coverage"]["products"] if p["missing"]]
     assert len(gaps) == 1 and len(gaps[0]["missing"]) == 1
     assert gaps[0]["missing"][0] in rep["missing_for_profile"][0]
+    step = next(st for st in rep["steps"] if st["step"] == "coverage")
+    assert step["status"] == "warn" and "Serve each missing required metric" in step["fix"]
 
 
 async def test_suppression_off_fails_c09(client):

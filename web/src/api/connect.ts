@@ -28,7 +28,7 @@ export interface CoverageProduct {
 export interface Report {
   check_id: string; run_by: string; target: string; started_at: string; finished_at: string; status: CheckStatus;
   headline: string; spec_version: string; server_version: string | null; accepted: boolean;
-  steps: { step: string; status: StepStatus; title: string; detail: string | null; items: string[] }[];
+  steps: { step: string; status: StepStatus; title: string; detail: string | null; items: string[]; fix?: string | null }[];
   missing_for_profile: string[];
   coverage: { products: CoverageProduct[]; unmapped_catalog_products: { product_id: string; name: string; category: string }[] } | null;
   checks: ConformanceCheck[];

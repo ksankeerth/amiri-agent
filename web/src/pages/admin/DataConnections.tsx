@@ -202,7 +202,8 @@ function ReportCard({ report, history, current, onPick }: { report: Report; hist
           {report.steps.map((s, i) => { const [ico, color] = STEP_ICON[s.status]; return (
             <li key={i} className="row" style={{ alignItems: "flex-start" }}><span style={{ color }} role="img" aria-label={s.status}><Icon name={ico} className="ico16" /></span>
               <div><span>{s.title}</span>{s.detail && <span className="small muted"> · {s.detail}</span>}
-                {s.items.length > 0 && <ul className="small" style={{ margin: "4px 0 0", paddingLeft: 18 }}>{s.items.slice(0, 12).map((x, j) => <li key={j}>{x}</li>)}</ul>}</div></li>); })}
+                {s.items.length > 0 && <ul className="small" style={{ margin: "4px 0 0", paddingLeft: 18 }}>{s.items.slice(0, 12).map((x, j) => <li key={j}>{x}</li>)}</ul>}
+                {s.fix && <div className="small muted"><b>Fix:</b> {s.fix}</div>}</div></li>); })}
         </ol>
         {report.missing_for_profile.length > 0 && <div><h3 className="small" style={{ margin: "0 0 6px" }}>What's missing for your profile</h3>
           <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>{report.missing_for_profile.map((x, i) => <li key={i}>{x}</li>)}</ul></div>}

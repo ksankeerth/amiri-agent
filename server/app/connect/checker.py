@@ -100,8 +100,10 @@ class Report:
             self.checks[cid] = {"id": cid, "level": level, "title": title, "status": "not_run", "findings": [],
                                 "more": 0, "fix": fix, "note": None}
 
-    def step(self, step: str, status: str, title: str, detail: str | None = None, items: list[str] | None = None):
-        self.steps.append({"step": step, "status": status, "title": title, "detail": detail, "items": items or []})
+    def step(self, step: str, status: str, title: str, detail: str | None = None, items: list[str] | None = None,
+             fix: str | None = None):
+        self.steps.append({"step": step, "status": status, "title": title, "detail": detail, "items": items or [],
+                           "fix": fix})
 
     def ok(self, cid: str):
         if self.checks[cid]["status"] == "not_run":
@@ -514,7 +516,8 @@ async def _run(r: Report, data: InstitutionData, profile: dict | None, now: date
         r.step("formats", "warn", f"Read {MAX_SERIES_METRICS} of {len(offered)} metrics", "The rest weren't read in this check.")
     r.step("formats", "pass" if not r.formats else "fail",
            f"Answers checked against the reference schemas: {read} series, the catalog and the calendar",
-           f"{len(r.formats)} answer(s) don't match." if r.formats else None)
+           f"{len(r.formats)} answer(s) don't match." if r.formats else None,
+           fix=format_fix([e for f in r.formats for e in f["errors"]]) if r.formats else None)
 
     br = await data.breaks()
     _version(r, br, "GET /breaks")
@@ -553,7 +556,27 @@ async def _run(r: Report, data: InstitutionData, profile: dict | None, now: date
     gaps = sum(p["status"] != "full" for p in r.coverage["products"])
     r.step("coverage", "pass" if not gaps else "warn",
            f"Coverage for {len(r.coverage['products'])} product(s) in your profile",
-           f"{gaps} not fully covered." if gaps else None)
+           f"{gaps} not fully covered." if gaps else None,
+           fix="Serve each missing required metric as the Metrics Spec defines it (§5), at its grain; or, if the "
+               "product is in your catalog under another id, link it on the Institution page." if gaps else None)
+
+
+# What to change, by the kind of schema error found (jsonschema's messages); the first matching kinds, in this order.
+FORMAT_FIXES = (
+    (re.compile(r"is not of type '(number|integer)'"), "Send amounts, counts and rates as JSON numbers, not strings "
+                                                        "(310998284.65, not \"310998284.65\")."),
+    (re.compile(r"(_at|_as_of|date|from|until)\b[^:]*: .*(is not a 'date'|is not a 'date-time'|not valid under any)"),
+     "Send dates as YYYY-MM-DD and times as ISO 8601 with an offset (2026-10-06, 2026-10-06T09:00:00+05:30)."),
+    (re.compile(r"is a required property"), "Include every field the reference schema marks required."),
+    (re.compile(r"is not one of"), "Use only the values the spec lists for that field."),
+    (re.compile(r"Additional properties are not allowed"), "Leave out fields the reference schema doesn't define."),
+)
+
+
+def format_fix(errors: list[str]) -> str:
+    """The fix for a check's format errors, in words: one sentence per kind of error found."""
+    fixes = [fix for pat, fix in FORMAT_FIXES if any(pat.search(e) for e in errors)]
+    return " ".join(fixes) or "Make each answer match its schema in the reference API (the OpenAPI file on the spec page)."
 
 
 def _isodate(s: Any) -> bool:
