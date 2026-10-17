@@ -25,7 +25,7 @@ export interface Overview {
     tick: { last_at: string | null; minutes_ago: number | null; ok: boolean } };
   radar: { stories: { story_id: string; title: string; places: string[]; score: number; relevance: string; publishers: number;
     status: "sent" | "below" | "dismissed"; last_seen_at: string; event_id: string | null; why: string }[];
-    last_run_at: string | null; next_run_at: string | null };
+    last_run_at: string | null; next_run_at: string | null; every_minutes: number; run_at: string | null; run_now_limit: number };
   studio: { sim_id: string; title: string; step: number; steps: number; status: string } | null;
   map: { places: Record<string, PlaceInfo> };
 }

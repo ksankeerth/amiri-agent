@@ -1,8 +1,11 @@
 """Radar runs, stories and their findings.
 
-The tick's `radar` step collects running runs and starts one when RADAR_EVERY_MINUTES have
-passed since the last, unless today's BigQuery bytes (the agents' own reports, added up per UTC
-day) have reached RADAR_DAILY_BYTES_CAP. "Check now" starts one at once (the cap applies too).
+The tick's `radar` step collects running runs and starts a scheduled one when it's due: once a day
+at RADAR_RUN_AT (the institution's local time) with a daily period, otherwise RADAR_EVERY_MINUTES
+after the last scheduled run. Only scheduled runs count for that, so Check now never moves the
+schedule. "Check now" starts one at once, at most RADAR_RUN_NOW_PER_DAY times per local day. Both
+stop once today's BigQuery bytes (the agent's own reports, added up per UTC day) reach
+RADAR_DAILY_BYTES_CAP. Each run reads the window since the previous run of either kind.
 
 A run's stories are stored by fingerprint: a story seen again is updated (headlines added, the
 latest score and reason kept), not repeated. A story the agent sent becomes a finding (source
@@ -12,8 +15,10 @@ in an open event joins that event as a development (linked by radar).
 """
 
 import logging
+import re
 import uuid
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from psycopg.types.json import Jsonb
 from psycopg_pool import AsyncConnectionPool
@@ -38,12 +43,55 @@ def _day_start(t: datetime) -> datetime:
     return t.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
+def run_at() -> tuple[int, int] | None:
+    """RADAR_RUN_AT as (hour, minute) when it applies: a daily period and a valid HH:MM."""
+    m = re.fullmatch(r"([01]?\d|2[0-3]):([0-5]\d)", settings.raw("RADAR_RUN_AT").strip())
+    return (int(m.group(1)), int(m.group(2))) if m and settings.integer("RADAR_EVERY_MINUTES") == 1440 else None
+
+
+def schedule(now: datetime, tz: ZoneInfo, last_tick: datetime | None) -> tuple[bool, datetime]:
+    """(due now, the next scheduled start) from the last scheduled run. The first one is due at once."""
+    at = run_at()
+    if at:
+        local = now.astimezone(tz)
+        slot = local.replace(hour=at[0], minute=at[1], second=0, microsecond=0)
+        if local < slot:
+            slot -= timedelta(days=1)  # the latest slot that has come
+        if last_tick is None or last_tick < slot:
+            return True, now
+        return False, slot + timedelta(days=1)
+    every = timedelta(minutes=settings.integer("RADAR_EVERY_MINUTES"))
+    if last_tick is None or now - last_tick >= every:
+        return True, now
+    return False, last_tick + every
+
+
 class Radar:
     def __init__(self, pool: AsyncConnectionPool, institutions: Institutions, client: RadarClient, clock: Clock):
         self.pool, self.institutions, self.client, self.clock = pool, institutions, client, clock
 
     def _iid(self) -> str:
         return settings.raw("INSTITUTION_ID")
+
+    async def _tz(self) -> ZoneInfo:
+        """The institution's time zone (for the daily slot and the Check now day); UTC without a profile."""
+        try:
+            name = (await self.institutions.state(self._iid())).inst["fields"].get("time_zone") or "UTC"
+            return ZoneInfo(name)
+        except (Problem, ZoneInfoNotFoundError, KeyError):
+            return ZoneInfo("UTC")
+
+    async def _last_tick(self, conn) -> datetime | None:
+        cur = await conn.execute("SELECT max(created_at) AS t FROM signals.radar_runs WHERE institution_id = %s "
+                                 "AND trigger = 'tick'", (self._iid(),))
+        return (await cur.fetchone())["t"]
+
+    async def _run_now_used(self, conn, tz: ZoneInfo) -> int:
+        """Check now runs today (local day); a run the agent never took doesn't count."""
+        local_midnight = _day_start(self.clock.now().astimezone(tz))
+        cur = await conn.execute("SELECT count(*) AS n FROM signals.radar_runs WHERE institution_id = %s "
+                                 "AND trigger = 'now' AND status <> 'failed' AND created_at >= %s", (self._iid(), local_midnight))
+        return int((await cur.fetchone())["n"])
 
     # ------------------------------------------------------------ status
 
@@ -60,22 +108,26 @@ class Radar:
                           result -> 'considered' AS considered, result -> 'shortlisted' AS shortlisted
                    FROM signals.radar_runs WHERE institution_id = %s ORDER BY created_at DESC LIMIT 1""", (self._iid(),))
             last = await cur.fetchone()
-            cur = await conn.execute("SELECT max(created_at) AS t FROM signals.radar_runs WHERE institution_id = %s",
-                                     (self._iid(),))
-            last_start = (await cur.fetchone())["t"]
+            tz = await self._tz()
+            _, next_at = schedule(now, tz, await self._last_tick(conn))
+            used = await self._run_now_used(conn, tz)
             spent = await self._bytes_today(conn)
             cur = await conn.execute("SELECT count(*) AS n FROM signals.radar_runs WHERE status = 'running'")
             running = (await cur.fetchone())["n"]
         cap = settings.integer("RADAR_DAILY_BYTES_CAP")
         every = settings.integer("RADAR_EVERY_MINUTES")
+        limit = settings.integer("RADAR_RUN_NOW_PER_DAY")
+        at = run_at()
         notes = []
         if not self.client.connected():
             notes.append("The Radar agent isn't connected (RADAR_URL); Radar doesn't run.")
         if spent >= cap:
             notes.append("Today's BigQuery budget is spent: scheduled runs wait until midnight UTC.")
         return {"connected": self.client.connected(), "agent_url": self.client.url or None, "every_minutes": every,
+                "run_at": f"{at[0]:02d}:{at[1]:02d}" if at else None, "time_zone": tz.key,
+                "run_now": {"used": used, "limit": limit, "left": max(0, limit - used)},
                 "last_run": last, "running": running,
-                "next_run_at": (last_start + timedelta(minutes=every)) if last_start else now,
+                "next_run_at": next_at,
                 "bytes_today": spent, "bytes_cap": cap, "budget_spent": spent >= cap,
                 "limits": {"max_stories": settings.integer("RADAR_MAX_STORIES"),
                            "max_queries": settings.integer("RADAR_MAX_QUERIES"),
@@ -99,10 +151,8 @@ class Radar:
             cur = await conn.execute("SELECT 1 FROM signals.radar_runs WHERE status = 'running'")
             if await cur.fetchone():
                 return step
-            cur = await conn.execute("SELECT max(created_at) AS t FROM signals.radar_runs WHERE institution_id = %s",
-                                     (self._iid(),))
-            last = (await cur.fetchone())["t"]
-            if last and self.clock.now() - last < timedelta(minutes=settings.integer("RADAR_EVERY_MINUTES")):
+            due, _ = schedule(self.clock.now(), await self._tz(), await self._last_tick(conn))
+            if not due:
                 return step
             if await self._bytes_today(conn) >= settings.integer("RADAR_DAILY_BYTES_CAP"):
                 step["skipped"].append("today's BigQuery budget is spent")
@@ -121,6 +171,10 @@ class Radar:
             if await self._bytes_today(conn) >= settings.integer("RADAR_DAILY_BYTES_CAP"):
                 raise Problem(409, "budget_spent", "Today's BigQuery budget for Radar is spent (RADAR_DAILY_BYTES_CAP); "
                                                    "it resets at midnight UTC.")
+            limit = settings.integer("RADAR_RUN_NOW_PER_DAY")
+            if await self._run_now_used(conn, await self._tz()) >= limit:
+                raise Problem(429, "run_now_limit", f"You've used today's {limit} checks (the prototype's limit); "
+                              "they reset at midnight, and the scheduled run still comes.", limit=limit)
         step: dict = {"skipped": []}
         run_id = await self._start("now", actor, step)
         if not run_id:

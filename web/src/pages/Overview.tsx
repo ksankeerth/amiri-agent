@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { inst, type Profile } from "../api/institutions";
 import { overviewApi, type Attention, type Overview } from "../api/overview";
+import { scheduleText } from "../api/radar";
 import { HowItWorks, PageHeader, TonePill } from "../components/blocks";
 import type { SeriesState } from "../api/series";
 import { Spark } from "../components/charts";
@@ -179,6 +180,7 @@ export function OverviewPage() {
               </Link>))}</div>}
 
           <div className="card"><div className="hd"><h2>Latest from Radar</h2><span className="spacer" /><Link className="small" to="/radar">Radar</Link></div>
+            {s.radar.connected && <div className="bd small muted" style={{ paddingBottom: 0 }}>Prototype: {scheduleText(o.radar.every_minutes, o.radar.run_at)}, Check now {o.radar.run_now_limit} times a day.</div>}
             {!o.radar.stories.length ? <div className="bd small muted">{s.radar.connected ? "No stories yet." : "Radar isn't connected yet."}</div>
               : <div className="list">{o.radar.stories.map(r => (
                 <Link key={r.story_id} to={r.event_id ? `/events/${r.event_id}` : "/radar"} className="li" style={{ textDecoration: "none", color: "inherit" }}>

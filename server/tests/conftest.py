@@ -133,6 +133,7 @@ def env(monkeypatch):
         "AUTO_MIGRATE": "true", "CORS_ORIGINS": "",
         "SINGLE_INSTITUTION": "false",  # many tests set up more than one; test_one_institution checks the rule
         "INSTITUTION_ID": "bank-a",  # whatever a local .env says (it may point at a demo institution)
+        "RADAR_EVERY_MINUTES": "60", "RADAR_RUN_AT": "",  # hourly in most tests; test_radar_schedule covers the daily slot
         "MOCK_INSTITUTIONS": "true",
     }
     for k, v in values.items():
