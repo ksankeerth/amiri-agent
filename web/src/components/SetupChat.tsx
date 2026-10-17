@@ -8,7 +8,12 @@ import { ApiError } from "../api/client";
 import { chat, type AssistantStatus, type ChatMessage, type Proposal, type TrackDef, type TrackState } from "../api/assistant";
 import { dayTime, plural } from "../format";
 import { Icon } from "./Icon";
+import { continuedTo, continueText, nextOpen, stepFrom } from "./setupFlow";
 import { ChatToggleCtx, Modal, useRole, useToast } from "./ui";
+
+// Applying the new institution remounts the chat (it now belongs to the institution): the move to the next
+// track is handed over through here, and dropped if nobody picks it up soon.
+const NEXT_KEY = "amiri.setupNext";
 
 const SECTION_WORDS: Record<string, string> = {
   institution: "Institution", footprint: "Footprint", "watch-places": "Place to watch", segments: "Customer group",
@@ -168,10 +173,10 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
   const follow = (id: string | null) => { const d = def(id); if (d && d.shown && d.tab !== null) onTrack?.(d); };
   const markTrack = (id: string, status: TrackState["status"]) => setTracks(ts => ts.map(t => (t.track === id ? { ...t, status } : t)));
 
-  const send = async (body: { text?: string; answer?: { question_id: string; options: string[] } }) => {
+  const send = async (body: { text?: string; answer?: { question_id: string; options: string[] } }, to?: string) => {
     if (busy) return;
     setBusy(true); setHeard(false);
-    const track = picked;
+    const track = to ?? picked;
     try {
       let sid = sessionId;
       if (!sid) { const s = await chat.start(institutionId); sid = s.session_id; setSessionId(sid); await load(); }
@@ -211,10 +216,38 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
   const pick = (t: TrackState) => {
     setPicked(t.track); follow(t.track);
   };
+  // Moving on: the next track's tab, and a turn in it, so the agent leads with its first question (using what was
+  // noted for it) instead of waiting for the person to type.
+  const advance = (t: TrackState) => { follow(t.track); send({ text: continueText(t.label) }, t.track); };
+  // The move waits here until the agent's turn is over: a card can be applied while the agent is still writing
+  // the text after it, and a new turn can't start until that one ends.
+  const [nextUp, setNextUp] = useState<string | null>(null);
   const decided = (p: Proposal) => {
     setProposals(ps => ({ ...ps, [p.proposal_id]: p }));
-    if (p.status === "confirmed") { markTrack(p.track, "concluded"); follow(p.track); onApplied?.(p); load().catch(() => {}); }
+    if (p.status !== "confirmed") return;
+    markTrack(p.track, "concluded");
+    // only for the track the chat is in, so applying an older card from the history doesn't move it
+    const next = p.track === (picked ?? current) ? nextOpen(tracks, p.track) : null;
+    if (next && p.kind === "create_institution") {
+      try { sessionStorage.setItem(NEXT_KEY, JSON.stringify({ track: next.track, at: Date.now() })); } catch { /* */ }
+    }
+    follow(next?.track ?? p.track); onApplied?.(p); load().catch(() => {});
+    if (next && p.kind !== "create_institution") setNextUp(next.track);
   };
+  useEffect(() => {  // the handed-over move, once this chat (the new institution's) has loaded
+    if (!institutionId || !tracks.length || !defs.length) return;
+    let next: { track: string; at: number } | null = null;
+    try { next = JSON.parse(sessionStorage.getItem(NEXT_KEY) ?? "null"); sessionStorage.removeItem(NEXT_KEY); } catch { /* */ }
+    if (next && Date.now() - next.at < 60_000) setNextUp(next.track);
+  }, [institutionId, tracks.length, defs.length]);
+  useEffect(() => {  // the queued move, once no turn is running
+    if (!nextUp || busy || writing || !tracks.length) return;
+    const t = tracks.find(x => x.track === nextUp);
+    setNextUp(null);
+    if (t) advance(t);
+  }, [nextUp, busy, writing, tracks.length]);  // eslint-disable-line react-hooks/exhaustive-deps
+  const here = picked ?? current;
+  const back = stepFrom(tracks, here, -1), fwd = stepFrom(tracks, here, 1);
   const answered = new Set(messages.filter(m => m.kind === "answer").map(m => m.content.question_id));
   const lastQuestion = [...messages].reverse().find(m => m.kind === "question");
   const shownTracks = tracks.filter(t => t.shown);
@@ -226,14 +259,20 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
     const tr = m.track && def(m.track)?.shown ? m.track : null;
     if (tr && tr !== prevTrack && m.kind !== "session") rows.push(<div key={`d${m.message_id}`} className="trackdiv"><span>{def(tr)?.label}</span></div>);
     if (tr) prevTrack = tr;
+    const moved = m.role === "user" && m.kind === "text" ? continuedTo(tracks, m.content.text) : null;
+    if (moved) { rows.push(<div key={m.message_id} className="msg sys">→ {moved.label}</div>); continue; }
     rows.push(<MessageRow key={m.message_id} m={m} proposals={proposals} flash={flash} open={m === lastQuestion && !answered.has(m.content.question_id)}
-      busy={busy} onAnswer={(qid, o) => send({ answer: { question_id: qid, options: [o] } })} onDecided={decided} />);
+      busy={busy} onAnswer={(qid, options) => send({ answer: { question_id: qid, options } })} onDecided={decided} />);
   }
 
   return (
     <div className="col" style={{ height: "100%", minHeight: 0 }}>
       <div style={{ padding: "12px 14px 10px", borderBottom: "1px solid var(--hairline)", display: "flex", flexDirection: "column", gap: 8 }}>
         <div className="row"><Icon name="chat" className="ico16" /><b>Setup agent</b><span className="spacer" />
+          <button className="btn btn--sm btn--ghost" type="button" disabled={!back || busy} onClick={() => back && pick(back)}
+            aria-label={back ? `Back to ${back.label}` : "Back"} title={back ? `Back to ${back.label}` : undefined}>←</button>
+          <button className="btn btn--sm btn--ghost" type="button" disabled={!fwd || busy} onClick={() => fwd && pick(fwd)}
+            aria-label={fwd ? `Next: ${fwd.label}` : "Next"} title={fwd ? `Next: ${fwd.label}` : undefined}>→</button>
           {chatToggle && <button className="btn btn--sm btn--ghost" type="button" onClick={chatToggle.toggle} aria-label="Hide the setup agent">Hide<Icon name="x" /></button>}</div>
         <div className="row wrap" style={{ gap: 4 }}>
           {shownTracks.map(t => (
@@ -267,9 +306,34 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
   );
 }
 
+/** The agent's question with its options: one click answers, or, when several may be chosen (multi), the
+ *  clicks pick and Send answers with all of them. */
+function QuestionRow({ m, open, busy, onAnswer }: {
+  m: ChatMessage; open: boolean; busy: boolean; onAnswer: (questionId: string, options: string[]) => void;
+}) {
+  const [chosen, setChosen] = useState<string[]>([]);
+  const multi = m.content.multi === true;
+  const click = (o: string) => {
+    if (!multi) { onAnswer(m.content.question_id, [o]); return; }
+    setChosen(c => (c.includes(o) ? c.filter(x => x !== o) : [...c, o]));
+  };
+  return (
+    <div className="col" style={{ gap: 6 }}>
+      <div className="msg ai">{m.content.text}</div>
+      {open && <div className="row wrap" role={multi ? "group" : undefined} aria-label={multi ? "Pick one or more" : undefined} style={{ gap: 6 }}>
+        {(m.content.options ?? []).map((o: string) => (
+          <button key={o} className={`chip click ${chosen.includes(o) ? "sel" : ""}`} type="button" disabled={busy}
+            aria-pressed={multi ? chosen.includes(o) : undefined} onClick={() => click(o)}>{multi && chosen.includes(o) ? "✓ " : ""}{o}</button>))}
+        {multi && <button className="btn btn--sm btn--primary" type="button" disabled={busy || !chosen.length}
+          onClick={() => onAnswer(m.content.question_id, chosen)}>{chosen.length > 1 ? `Send ${chosen.length}` : "Send"}</button>}
+      </div>}
+      {open && multi && <span className="small muted">Pick one or more, then Send.</span>}
+    </div>);
+}
+
 function MessageRow({ m, proposals, flash, open, busy, onAnswer, onDecided }: {
   m: ChatMessage; proposals: Record<string, Proposal>; flash: string | null; open: boolean; busy: boolean;
-  onAnswer: (questionId: string, option: string) => void; onDecided: (p: Proposal) => void;
+  onAnswer: (questionId: string, options: string[]) => void; onDecided: (p: Proposal) => void;
 }) {
   switch (m.kind) {
     case "session": return <div className="msg sys">New session · {dayTime(m.at)}{m.content.profile_version ? ` · profile v${m.content.profile_version}` : ""}
@@ -283,12 +347,7 @@ function MessageRow({ m, proposals, flash, open, busy, onAnswer, onDecided }: {
       const p = proposals[m.content.proposal_id];
       return p ? <div style={flash === p.proposal_id ? { outline: "2px solid var(--accent)", borderRadius: 12 } : undefined}><ProposalCard p={p} onDecided={onDecided} /></div> : null;
     }
-    case "question": return (
-      <div className="col" style={{ gap: 6 }}>
-        <div className="msg ai">{m.content.text}</div>
-        {open && <div className="row wrap" style={{ gap: 6 }}>{(m.content.options ?? []).map((o: string) => (
-          <button key={o} className="chip click" type="button" disabled={busy} onClick={() => onAnswer(m.content.question_id, o)}>{o}</button>))}</div>}
-      </div>);
+    case "question": return <QuestionRow m={m} open={open} busy={busy} onAnswer={onAnswer} />;
     default:
       if (m.role === "user") return <div className="msg me">{m.kind === "answer" ? (m.content.options ?? []).join(", ") : m.content.text}</div>;
       return <div className="msg ai">{m.content.text}
