@@ -12,12 +12,14 @@ locals {
     ops           = "a person running scripts against the API, by impersonation"
   }
 
+  # the agents' telemetry sends traces, logs and metrics (without metricWriter, a 403 every few seconds)
+  agent_roles = ["roles/aiplatform.user", "roles/cloudtrace.agent", "roles/logging.logWriter", "roles/monitoring.metricWriter"]
   project_roles = {
     server        = ["roles/cloudsql.client"]
-    investigation = ["roles/aiplatform.user", "roles/cloudtrace.agent", "roles/logging.logWriter"]
-    monitor       = ["roles/aiplatform.user", "roles/cloudtrace.agent", "roles/logging.logWriter"]
-    setup         = ["roles/aiplatform.user", "roles/cloudtrace.agent", "roles/logging.logWriter"]
-    radar         = ["roles/aiplatform.user", "roles/cloudtrace.agent", "roles/logging.logWriter"]
+    investigation = local.agent_roles
+    monitor       = local.agent_roles
+    setup         = local.agent_roles
+    radar         = local.agent_roles
     build         = ["roles/artifactregistry.writer", "roles/logging.logWriter", "roles/storage.objectViewer"]
   }
   grants = merge([for sa, roles in local.project_roles : { for r in roles : "${sa} ${r}" => { sa = sa, role = r } }]...)
