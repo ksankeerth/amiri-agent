@@ -18,12 +18,12 @@ agent_url() { gcloud run services describe "amiri-$1" --region "$R" --format='va
     `activation_policy` matches `awake`.
   - Where to look: the plan output from `deploy.sh`. Don't apply a surprise.
 - [ ] **2. The images were built**
-  - How: `build.sh` ends with SUCCESS, and Artifact Registry shows `server`, `investigation`, `monitor` and
-    `setup` with the same tag.
+  - How: `build.sh` ends with SUCCESS, and Artifact Registry shows `server`, `investigation`, `monitor`,
+    `setup` and `radar` with the same tag.
   - Where to look: Cloud Build history and its log.
-- [ ] **3. All four services are ready**
+- [ ] **3. All five services are ready**
   - How: `gcloud run services list --region $R`
-  - Expect: four services, each ✔ with a serving revision.
+  - Expect: five services, each ✔ with a serving revision.
   - Where to look: the service's revision logs. "Secret … has no versions" means run `secrets.sh`. A crash
     at startup shows its traceback in Error Reporting.
 - [ ] **4. The server answers, and has reached its database**
@@ -81,44 +81,51 @@ agent_url() { gcloud run services describe "amiri-$1" --region "$R" --format='va
     appear.
   - Where to look: 401 on its calls back means the investigation account is missing from `INTERNAL_CALLERS`
     (`DATA_AUTH=id_token`).
-- [ ] **13. A Studio scenario runs, records and replays**
+- [ ] **13. Radar reads the news** (radar agent, BigQuery, its custom role)
+  - How: on the Radar page, *Check now* (one of the day's 5), then run a tick a minute later.
+  - Expect: the radar agent logs `bigquery: N rows, 0.9 GB processed` and `radar … finished`; the page shows
+    the run's funnel and its stories, and the sent ones appear on Findings.
+  - Where to look: "BigQuery's job list couldn't be read" means the agent account is missing the
+    `amiriRadarBigQuery` role (`bigquery.jobs.list`); "Access Denied" on the query means `bigquery.jobs.create`.
+    The day's bytes are on the Radar page (*Today's reading budget*).
+- [ ] **14. A Studio scenario runs, records and replays**
   - How: in the Scenario Studio, run a scenario to the end, then Replay it.
   - Expect: alerts appear during the run; the replay plays without the agents.
 
 ## P2: can we operate it? (before anyone else uses it)
 
-- [ ] **14. The switch: asleep and back, nothing lost**
+- [ ] **15. The switch: asleep and back, nothing lost**
   - How: `infra/scripts/awake.sh off`, open `$URL`, then `infra/scripts/awake.sh on`, wait a few minutes, and
     click *Check again*.
   - Expect:
     - off: the paused page shows, and the Scheduler job is paused;
     - on: the app comes back without a redeploy, with the profile, series and alerts as they were.
-- [ ] **15. The logs make a problem easy to find**
+- [ ] **16. The logs make a problem easy to find**
   - How: run the "what went wrong in the last day" filter (README §3) after a normal day.
   - Expect: quiet, or only real problems. Open a line → *Show entries for this trace* shows the whole request.
-- [ ] **16. No prompt text anywhere**
+- [ ] **17. No prompt text anywhere**
   - How:
     - in Trace Explorer, open a setup-agent turn and its `call_llm` span;
     - search the logs for words you typed in the chat.
   - Expect: `gcp.vertex.agent.llm_request` is `{}`, and your words aren't in any log.
-- [ ] **17. Errors are grouped**
+- [ ] **18. Errors are grouped**
   - How: open Error Reporting.
   - Expect: empty, or each problem listed once. Turn on notifications for new errors.
-- [ ] **18. Ship a change**
+- [ ] **19. Ship a change**
   - How: change something small, then `build.sh` and `deploy.sh`.
   - Expect: the plan changes only the images. No downtime on the server. The registry keeps at most three
     images per service.
-- [ ] **19. Replace a secret**
+- [ ] **20. Replace a secret**
   - How: `secrets.sh SESSION_SECRET`, then `deploy.sh`.
   - Expect: everyone is signed out; the secret has one active version.
-- [ ] **20. Cold start is acceptable**
+- [ ] **21. Cold start is acceptable**
   - How: after 20 minutes idle, time the first page load, and the first chat turn.
   - Expect: a few seconds for the server. Note the setup agent's first turn. If it's too slow for reviewers,
     consider `min_instance_count = 1` on the server, which has a cost.
 
 ## P3: safe and affordable for a public URL
 
-- [ ] **21. Locked down for strangers**
+- [ ] **22. Locked down for strangers**
   - How: on `$URL`:
     - `curl -s $URL/api/v1/installation` without a cookie;
     - `curl -s -A GPTBot $URL/`;
@@ -126,22 +133,22 @@ agent_url() { gcloud run services describe "amiri-$1" --region "$R" --format='va
     - `curl -s $URL/docs`.
   - Expect: 401; 403; `Disallow: /`; 401. Prototype reset is refused with `reset_off`
     (`PROTOTYPE_RESET=false`): the button still shows, but nothing is wiped.
-- [ ] **22. The database isn't reachable from the internet**
+- [ ] **23. The database isn't reachable from the internet**
   - How: Cloud SQL → Connections.
   - Expect: no authorised networks; the connection requires SSL or the connector.
-- [ ] **23. The cost is what we expect**
+- [ ] **24. The cost is what we expect**
   - How: after 24 hours, Billing → Reports, filtered to the project.
   - Expect: mostly Cloud SQL; Cloud Run, logging and the registry near zero. The budget exists, with its
     thresholds.
-- [ ] **24. A teammate can do it alone**
+- [ ] **25. A teammate can do it alone**
   - How: one teammate deploys into their own project with only `README.md`.
   - Expect: it works. Fix the guide wherever they had to ask.
 
 ## P4: before handing the URL to reviewers
 
-- [ ] **25. The demo state** (optional): the demo bank and its monitors, a recorded Studio scenario, and
+- [ ] **26. The demo state** (optional): the demo bank and its monitors, a recorded Studio scenario, and
       alerts, so reviewers see something on day one.
-- [ ] **26. A phone and dark mode:** the bot check, the Overview, the Alerts page.
-- [ ] **27. The deployment is awake** for the whole review period.
+- [ ] **27. A phone and dark mode:** the bot check, the Overview, the Alerts page.
+- [ ] **28. The deployment is awake** for the whole review period.
 
 Record what failed, why, and the fix, so the next deployment is quicker.

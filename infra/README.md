@@ -13,11 +13,13 @@ flowchart LR
         INV["amiri-investigation"]
         MON["amiri-monitor"]
         SET["amiri-setup"]
+        RDR["amiri-radar"]
     end
-    SRV -- "ID token" --> INV & MON & SET
+    SRV -- "ID token" --> INV & MON & SET & RDR
     INV & SET -- "ID token" --> SRV
     SRV -- "Cloud SQL connector" --> SQL[("Cloud SQL<br/>Postgres 16")]
-    INV & MON & SET --> VTX["Vertex AI · Gemini"]
+    INV & MON & SET & RDR --> VTX["Vertex AI · Gemini"]
+    RDR -- "capped queries" --> BQ["BigQuery<br/>GDELT (public)"]
     SM["Secret Manager"] -. "values at start" .-> SRV
     AR["Artifact Registry"] -. "images" .-> RUN
 ```
@@ -110,7 +112,7 @@ In the console, open **Logs Explorer** with the same filter. Narrow it with thes
 
 | To see | Add |
 |---|---|
-| one service | `resource.labels.service_name="amiri-server"` (or `amiri-investigation`, `amiri-monitor`, `amiri-setup`) |
+| one service | `resource.labels.service_name="amiri-server"` (or `amiri-investigation`, `amiri-monitor`, `amiri-setup`, `amiri-radar`) |
 | the ticks | `jsonPayload.logger="amiri.tick"` |
 | agent runs, chat turns, model failovers | `jsonPayload.logger=~"^app\.(runs\|engine\|models)"` |
 | the bot check | `jsonPayload.logger="amiri.auth"` |
@@ -155,7 +157,7 @@ The state bucket (`<project>-amiri-tfstate`) stays; delete it by hand if you wan
 
 ## 6. Later
 
-- **Radar:** once its agent exists, add an `amiri-radar` service like the others, with `roles/bigquery.jobUser`
-  on its account and the server allowed to call it. Then set `radar_url`. Keep `radar_daily_bytes_cap`
-  within BigQuery's free terabyte a month.
+- **Radar's project quota** (optional, a backstop behind its other cost guards): in the console, IAM & Admin
+  → Quotas, BigQuery API, "Query usage per day", set a custom limit (for example 0.05 TiB). The agent's own
+  guards already stop at 20 GB a day and 600 GB a month, under BigQuery's free terabyte.
 - **A custom domain**, then a reCAPTCHA key for it.

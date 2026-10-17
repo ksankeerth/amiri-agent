@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds the four images with Cloud Build (in your project; no Docker needed here) and records their tag.
+# Builds the five images with Cloud Build (in your project; no Docker needed here) and records their tag.
 #
 #     infra/scripts/build.sh
 #

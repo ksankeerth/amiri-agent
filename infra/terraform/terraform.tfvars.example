@@ -13,8 +13,7 @@ recaptcha_site_key = ""
 billing_account_id = ""
 budget_amount      = 20
 
-# Optional: the Radar agent once it exists, and extra server settings (server/.env.example).
-# radar_url  = "https://amiri-radar-....run.app"
-# server_env = { SERIES_MAX = "6" }
+# Optional: extra server settings (server/.env.example), for example Radar's daily model calls.
+# server_env = { SERIES_MAX = "6", RADAR_MODEL_CALLS_PER_DAY = "300" }
 
 # `awake` is set by infra/scripts/awake.sh (awake.auto.tfvars); `image_tag` by build.sh (image.auto.tfvars).
