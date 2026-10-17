@@ -45,10 +45,12 @@ export const VERDICT_BADGE: Record<Verdict, string> = {
   masked: "b-masked", not_yet: "b-notyet", error: "b-error",
 };
 export interface EventDetail extends Omit<EventRow, "hypotheses" | "tasks" | "developments"> {
-  findings: FindingRow[]; hypotheses: Hypothesis[]; country_name: string | null; developments: Development[];
+  findings: (FindingRow & { evidence?: { headlines?: { title?: string; url?: string | null; outlet?: string | null; published_at?: string }[] } | null })[];
+  hypotheses: Hypothesis[]; country_name: string | null; developments: Development[];
   set_aside: { product_type: string; angle: string; decision: string; reason: string }[];
   tasks: { task_id: string; hypothesis_id: string; metric: string; watch?: { from: string; until: string }; scope_note?: string | null;
-    status?: "pending" | "done" | "failed"; next_check_after?: string | null; check?: Check | null }[];
+    status?: "pending" | "done" | "failed"; next_check_after?: string | null; check?: Check | null;
+    expected_direction?: string; adverse_direction?: string }[];
   run: { run_id: string; status: string; validation: boolean; report: string | null };
 }
 

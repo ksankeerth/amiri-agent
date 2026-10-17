@@ -4,24 +4,23 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ApiError } from "../../api/client";
 import { EVERY, monitorsApi, type Draftable, type MonitorRow, type MonitorsStatus, type MonitorStatus } from "../../api/monitors";
+import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
 import { Icon } from "../../components/Icon";
-import { Banner, Empty, Limits, Modal, PageHead, useNow, useToast, InlineSkeleton } from "../../components/ui";
+import { Banner, Empty, Modal, useNow, useRole, useToast, InlineSkeleton } from "../../components/ui";
 import { ago, due, when } from "../../format";
+import { count, everyText, MONITOR_CHECK, MONITOR_STATUS } from "../../plain";
 
 export function StatusBadge({ status }: { status: MonitorStatus }) {
-  const [cls, text] = {
-    live: ["b-live", "LIVE"], draft: ["b-draft", "DRAFT"], submitted: ["b-sub", "WAITING FOR APPROVAL"],
-    paused: ["b-paused", "PAUSED"], retired: ["b-noeffect", "RETIRED"],
-  }[status];
-  return <span className={`badge ${cls}`}>{text}</span>;
+  const [text, tone] = MONITOR_STATUS[status];
+  return <StatusPill tone={tone}>{text}</StatusPill>;
 }
 
+/** The last check in words: "Found 1 · 26 min ago", "Nothing new · 2 h ago", "Couldn't check (tries again soon)". */
 export function LastCheck({ m, now }: { m: MonitorRow; now: Date }) {
-  if (!m.last_check) return <span className="muted">—</span>;
+  if (!m.last_check) return <span className="small muted">Not checked yet</span>;
   const c = m.last_check;
-  const badge = c.status === "fired" ? <span className="badge b-ok">FIRED · {c.findings}</span>
-    : c.status === "error" ? <span className="badge b-error">ERROR</span> : <span className="badge b-noeffect">QUIET</span>;
-  return <>{badge}<div className="sub">{ago(c.at, now)}</div></>;
+  const [text, tone] = MONITOR_CHECK[c.status](c.findings);
+  return <span className="lastck"><StatusPill tone={tone}>{text}</StatusPill><span className="small muted">{ago(c.at, now)}</span></span>;
 }
 
 export const ORIGIN: Record<string, string> = { profile: "drafted from the profile", setup: "drafted in setup", radar_story: "from a Radar story", template: "from a template" };
@@ -33,17 +32,21 @@ export function useMonitorsStatus() {
   return { status, reload: load };
 }
 
+/** Notes about the monitor service: the Platform Admin reads the server's own words; a Risk Manager reads what it means. */
 export function MonitorBanners({ status }: { status: MonitorsStatus | null }) {
+  const { role } = useRole();
   if (!status) return null;
+  if (role === "platform_admin") return <>{status.notes.map(n => <Banner key={n} kind="warn" icon="warn">{n}</Banner>)}</>;
+  return !status.connected ? <Banner kind="warn" icon="warn">Monitors can't check the news right now. Your Platform Admin has been told.</Banner> : null;
+}
+
+/** How monitor checks work: behind the page's "How this works" link. */
+export function MonitorHelp({ status }: { status: MonitorsStatus | null }) {
   return (
-    <>
-      {status.notes.map(n => <Banner key={n} kind="warn" icon="warn">{n}</Banner>)}
-      <Limits summary="How checks work"
-        status={status.next_check_at ? <>Next check due <b>{due(status.next_check_at)}</b>{status.running > 0 && <> · Running now: <b>{status.running}</b></>}</> : undefined}>
-        Each check searches the web for news published since the last check (at most {status.web_queries_per_check} searches), and what it finds goes to the investigation like any other finding.
-        In this prototype a monitor is checked at most every {EVERY[status.min_frequency_minutes] ?? `${status.min_frequency_minutes} minutes`}, and up to {status.live_max} monitors can be live. If a check can't read the news it tries again within the hour and loses nothing.
-      </Limits>
-    </>
+    <HowItWorks>
+      <p>A monitor watches the news for something you care about. It runs once a Risk Manager approves it. What it finds goes to the investigation like any other finding.</p>
+      {status && <p>Each check reads news published since the last one (up to {status.web_queries_per_check} searches). In this prototype a monitor is checked at most every {EVERY[status.min_frequency_minutes] ?? `${status.min_frequency_minutes} minutes`}, and up to {status.live_max} can be live. If a check can't read the news, it tries again within the hour and nothing is lost.</p>}
+    </HowItWorks>
   );
 }
 
@@ -57,7 +60,7 @@ export function MonitorActions({ m, onChange, compact }: { m: MonitorRow; onChan
   const act = async (a: "submit" | "approve" | "pause" | "resume" | "retire") => {
     try {
       await monitorsApi.act(m.monitor_id, a);
-      toast({ submit: "Submitted for approval", approve: "Approved: live from the next tick", pause: "Paused", resume: "Resumed: checked on the next tick", retire: "Retired" }[a]);
+      toast({ submit: "Submitted for approval", approve: "Approved: live within a few minutes", pause: "Paused", resume: "Resumed: checked again within a few minutes", retire: "Retired" }[a]);
       onChange();
     } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
   };
@@ -120,7 +123,6 @@ export function DraftFromProfile({ onClose, only }: { onClose: () => void; only?
 }
 
 export function MonitorsPage() {
-  const nav = useNavigate();
   const now = useNow(30_000);
   const { status, reload: reloadStatus } = useMonitorsStatus();
   const [items, setItems] = useState<MonitorRow[] | null>(null);
@@ -134,37 +136,43 @@ export function MonitorsPage() {
   const actions = <>
     <button className="btn" type="button" onClick={() => setDrafting(true)}><Icon name="bank" />Draft from the profile</button>
     <Link className="btn btn--primary" to="/monitors/new"><Icon name="plus" />New monitor</Link></>;
+  const live = (items ?? []).filter(m => m.status === "live").length;
+  const waiting = (items ?? []).filter(m => m.status === "submitted" || m.pending?.status === "submitted").length;
   return (
     <div className="page">
-      <PageHead title="Monitors" sub="Things you've asked Amiri Agent to watch the news for. A monitor runs after a Risk Manager approves it; what it finds goes to the investigation like any other finding."
-        actions={actions} />
+      <PageHeader title="Monitors"
+        status={items === null ? "" : <><b className="ink">{count(live, "live monitor")}</b>
+          {status?.next_check_at ? `, next check ${due(status.next_check_at)}` : ""}{waiting ? ` · ${waiting} waiting for approval` : ""}</>}
+        actions={actions} help={<MonitorHelp status={status} />} />
       <div className="banners">{err && <Banner kind="crit" icon="warn">{err}</Banner>}<MonitorBanners status={status} /></div>
-      <div className="card mt12">
+      <div className="card">
         {items === null ? <InlineSkeleton /> : !items.length ? (
           <Empty icon="monitor" title="No monitors yet" actions={actions}>
-            Monitors watch for specific things you care about: a rival's prices, a regulator's rules, jobs in a remittance corridor. Draft one from your institution profile, or write your own.
+            Monitors watch the news for what you care about: a rival's prices, a regulator's rules, jobs in a remittance corridor.
           </Empty>
         ) : (
-          <div className="tblwrap"><table className="tbl">
-            <thead><tr><th>Monitor</th><th>Status</th><th>Checks</th><th>Last check</th><th>Findings (30 d)</th><th>Owner</th><th><span className="sr">Actions</span></th></tr></thead>
-            <tbody>{items.map(m => (
-              <tr key={m.monitor_id} className="click" onClick={() => nav(`/monitors/${m.monitor_id}`)}>
-                <td style={{ minWidth: 260 }}><Link className="strong" to={`/monitors/${m.monitor_id}`} onClick={e => e.stopPropagation()}>{m.name}</Link><div className="sub clamp2">{m.sentence}</div></td>
-                <td><StatusBadge status={m.status} />
-                  {m.pending && <div className="sub">version {m.pending.version} {m.pending.status === "submitted" ? "waiting for approval" : "being edited"}</div>}
-                  {ORIGIN[m.origin] && <div className="sub">{ORIGIN[m.origin]}</div>}
-                  {m.review_due && <div className="sub" style={{ color: "var(--medium-ink)" }}>review due</div>}</td>
-                <td className="small nowrap">every {EVERY[m.check_frequency] ?? `${m.check_frequency} min`}
-                  {m.next_check_at && <div className="sub">next {when(m.next_check_at, now)}</div>}</td>
-                <td><LastCheck m={m} now={now} /></td>
-                <td className="num">{m.findings_30d}</td>
-                <td className="small nowrap">{m.owner}</td>
-                <td onClick={e => e.stopPropagation()}><MonitorActions m={m} onChange={load} compact /></td>
-              </tr>))}</tbody>
-          </table></div>
+          <ul className="evlist" aria-label="Monitors">{items.map(m => (
+            <li key={m.monitor_id}>
+              <div className="evrow">
+                <span className="evrow-ico"><Icon name="monitor" /></span>
+                <span className="evrow-main">
+                  <span className="row-top"><Link className="row-l" to={`/monitors/${m.monitor_id}`}>{m.name}</Link><StatusBadge status={m.status} />
+                    {m.pending && (m.status === "live" || m.status === "paused") && <StatusPill tone="blue">{m.pending.status === "submitted" ? `Version ${m.pending.version} waiting for approval` : `Version ${m.pending.version} being edited`}</StatusPill>}
+                    {m.review_due && <StatusPill tone="amber">Review due</StatusPill>}</span>
+                  <span className="row-d">{m.sentence}</span>
+                  <span className="mon-facts"><span><Icon name="clock" />{everyText(m.check_frequency)}{m.status === "live" && m.next_check_at ? `, next ${when(m.next_check_at, now)}` : ""}</span>
+                    <span><Icon name="users" />{m.owner}</span>
+                    {m.findings_30d > 0 && <span><Icon name="search" />{count(m.findings_30d, "finding")} in 30 days</span>}</span>
+                </span>
+                <span className="evrow-side">
+                  <LastCheck m={m} now={now} />
+                  <MonitorActions m={m} onChange={load} compact />
+                </span>
+              </div>
+            </li>))}</ul>
         )}
       </div>
-      <div className="card mt16"><div className="bd small muted">Monitors catch news. Price and rate moves are watched by <Link to="/series">market series</Link> without a monitor.</div></div>
+      <p className="small muted mt12">Monitors watch the news. Price and rate moves are watched by <Link to="/series">market series</Link>, without a monitor.</p>
       {drafting && <DraftFromProfile onClose={() => setDrafting(false)} />}
     </div>
   );

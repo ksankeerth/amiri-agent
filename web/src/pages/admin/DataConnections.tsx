@@ -8,6 +8,7 @@ import { connectApi, type CheckState, type CheckStatus, type Condition, type Con
 import { FillFromJson } from "../../components/FillFromJson";
 import type { Candidate } from "../../components/fillJson";
 import { Icon } from "../../components/Icon";
+import { PageHeader } from "../../components/blocks";
 import { Banner, Empty, ListSkeleton, PageHead, useToast } from "../../components/ui";
 import { ago, dayTime, plural } from "../../format";
 
@@ -65,9 +66,9 @@ export function DataConnectionsPage() {
   if (!conn || !samples) return <div className="page"><PageHead title="Data connections" /><div className="card"><ListSkeleton rows={4} /></div></div>;
   return (
     <div className="page">
-      <PageHead title="Data connections"
-        sub={<>Where Amiri Agent reads your institution's own numbers to check what an event does to it. Only the
-          {" "}<b>Metrics Spec reference API</b> is accepted <span className="badge b-info" title="The version this server implements">Spec {SPEC}</span></>} />
+      <PageHeader title="Data connections" pills={<span className="badge b-info" title="The version this server implements">Spec {SPEC}</span>}
+        status={conn.latest_check ? "Where Amiri Agent reads your own figures to check each possible impact" : "No connection checked yet"}
+        help={<p className="ph-about">Amiri Agent checks each possible impact against your institution's own figures, read from a Metrics Spec reference API. Only that API is accepted. Connect it, run the check, then approve it and switch checks on.</p>} />
       <div className="col gap16">
         <ConnectionCard conn={conn} samples={samples} checking={checking} onSaved={c => { setConn(c); setReport(null); load(); }}
           onCheck={run} onApprove={approve} onValidation={validation} />

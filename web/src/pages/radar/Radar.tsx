@@ -6,13 +6,15 @@ import { api, ApiError } from "../../api/client";
 import { inst, type Profile } from "../../api/institutions";
 import { gb, radarApi, type RadarStatus, type RadarStory } from "../../api/radar";
 import { Icon } from "../../components/Icon";
-import { Banner, Empty, PageHead, useNow, useRole, useToast, ListSkeleton } from "../../components/ui";
-import { ago, dayTime, when } from "../../format";
+import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
+import { Banner, Empty, useNow, useRole, useToast, ListSkeleton } from "../../components/ui";
+import { ago, dayTime, placeName, placeOrder, when } from "../../format";
+import type { Tone } from "../../plain";
 import { themeText } from "../events/Events";
 
 type Show = "all" | "sent" | "below" | "dismissed";
 const SHOW: [Show, string][] = [["all", "All"], ["sent", "Sent for investigation"], ["below", "Held back"], ["dismissed", "Dismissed"]];
-const REL: Record<RadarStory["relevance"], string> = { high: "b-down", medium: "b-warn", low: "b-noeffect" };
+const REL: Record<RadarStory["relevance"], [string, Tone]> = { high: ["Highly relevant", "red"], medium: ["Relevant", "amber"], low: ["Slightly relevant", "grey"] };
 
 function Funnel({ s }: { s: RadarStatus }) {
   const r = s.last_run;
@@ -20,12 +22,13 @@ function Funnel({ s }: { s: RadarStatus }) {
   const max = Math.sqrt(Math.max(1, ...vals));  // square root: the later bars stay visible next to "read"
   return <>
     <div className="rd-funnel">{vals.map((v, i) => <div key={i} className={`bar ${i === 3 ? "sent" : ""}`} style={{ height: `${Math.max(12, (Math.sqrt(v) / max) * 100)}%` }} title={String(v)} />)}</div>
-    <div className="rd-funnel-l"><span>{vals[0]} read</span><span>{vals[1]} grouped</span><span>{vals[2]} kept</span><span><b>{vals[3]} new sent</b></span></div>
+    <div className="rd-funnel-l"><span>{vals[0]} read</span><span>{vals[1]} grouped</span><span>{vals[2]} kept</span><span><b>{vals[3]} sent to you</b></span></div>
   </>;
 }
 
 function StoryCard({ s, names, onChange }: { s: RadarStory; names: Record<string, string | null>; onChange: (s: RadarStory) => void }) {
   const toast = useToast();
+  const { role } = useRole();
   const now = useNow(60_000);
   const [open, setOpen] = useState(false);
   const act = async (f: () => Promise<RadarStory>, msg: string) => {
@@ -37,12 +40,12 @@ function StoryCard({ s, names, onChange }: { s: RadarStory; names: Record<string
       <div className="row wrap" style={{ gap: 6 }}>
         <span className="small muted">{ago(s.last_seen_at, now)}{s.runs_seen > 1 ? ` · seen in ${s.runs_seen} runs` : ""}</span>
         <span className="chip">{s.publishers} publisher{s.publishers === 1 ? "" : "s"}</span>
-        {s.places.map(p => <span key={p} className="chip">{names[p] ?? p}</span>)}
+        {placeOrder(s.places).map(p => <span key={p} className="chip">{names[p] ?? placeName(p)}</span>)}
         {s.themes.map((t, i) => <span key={i} className="chip">{themeText(t)}</span>)}
         <span className="spacer" />
-        <span className={`badge ${REL[s.relevance]}`}>{s.relevance.toUpperCase()}</span>
-        <span className="rd-score" title="Radar's score: footprint match × corroboration × freshness × relevance">
-          <span className={`meter ${s.score >= 60 ? "" : "warn"}`}><span style={{ width: `${s.score}%` }} /></span><b>{s.score}</b></span>
+        <StatusPill tone={REL[s.relevance][1]}>{REL[s.relevance][0]}</StatusPill>
+        {role === "platform_admin" && <span className="rd-score" title="Radar's score: footprint match × corroboration × freshness × relevance">
+          <span className={`meter ${s.score >= 60 ? "" : "warn"}`}><span style={{ width: `${s.score}%` }} /></span><b>{s.score}</b></span>}
       </div>
       <h2>{s.title}</h2>
       <p className="sum">{s.summary}</p>
@@ -55,10 +58,10 @@ function StoryCard({ s, names, onChange }: { s: RadarStory; names: Record<string
       </ul>
       <div className="row wrap" style={{ gap: 8 }}>
         {s.status === "sent" ? (s.event_id
-          ? <><span className="badge b-ok">IN AN EVENT</span><Link className="small" to={`/events/${s.event_id}`}>{s.event_title ?? "Open the event"} →</Link></>
-          : <><span className="badge b-info">{s.finding_status === "grouped" ? "BEING INVESTIGATED" : "SENT"}</span><span className="small muted">waiting for the investigation</span></>)
-          : s.status === "dismissed" ? <><span className="badge b-noeffect">DISMISSED</span><span className="small muted">by {s.dismissed_by} {s.dismissed_at ? ago(s.dismissed_at, now) : ""}</span></>
-          : <><span className="badge b-noeffect">HELD BACK</span><span className="small muted">the agent didn't send it</span></>}
+          ? <><StatusPill tone="green">In an event</StatusPill><Link className="small" to={`/events/${s.event_id}`}>{s.event_title ?? "Open the event"}</Link></>
+          : <><StatusPill tone="blue">{s.finding_status === "grouped" ? "Being investigated" : "Sent"}</StatusPill><span className="small muted">waiting to be investigated</span></>)
+          : s.status === "dismissed" ? <><StatusPill tone="grey">Dismissed</StatusPill><span className="small muted">by {s.dismissed_by} {s.dismissed_at ? ago(s.dismissed_at, now) : ""}</span></>
+          : <><StatusPill tone="grey">Not sent</StatusPill><span className="small muted">Radar judged it not important enough for you</span></>}
         {s.status === "sent" && s.sent_by && s.sent_by !== "agent" && <span className="small muted">sent by {s.sent_by}</span>}
         {s.development_of && <span className="small muted">continues an earlier story</span>}
         <span className="spacer" />
@@ -120,7 +123,9 @@ export function RadarPage() {
   const cantRun = !status?.connected ? "Radar isn't connected yet" : status.budget_spent ? "Today's reading budget is spent" : running || status.running ? "A run is in progress" : null;
   return (
     <div className="page">
-      <PageHead title="Radar" sub={`Amiri Agent reads the world's news every ${status?.every_minutes ?? 60} minutes for anything that touches ${profile?.institution.name ?? "your institution"}, and sends what matters for investigation.`}
+      <PageHeader title="Radar"
+        status={!status ? "" : !status.connected ? "Not running yet" : <>Reads world news every {status.every_minutes === 60 ? "hour" : `${status.every_minutes} minutes`}{lr ? `, last ${ago(lr.finished_at ?? lr.created_at, now)}` : ""}</>}
+        help={<HowItWorks><p>Radar reads the world's news for anything that touches {profile?.institution.name ?? "your institution"}, using the places and names in your profile. What matters goes to the investigation like any other finding; the rest is kept here, and you can still send it.</p></HowItWorks>}
         actions={<>
           <Link className="btn" to="/institution/agents">What Radar reads from your profile</Link>
           <button className="btn btn--primary" type="button" disabled={!!cantRun} title={cantRun ?? undefined} onClick={runNow}>
@@ -134,7 +139,7 @@ export function RadarPage() {
       {status && <div className="rd-strip">
         <div className="card ov-kpi" style={{ ["--kpi" as string]: lr?.status === "failed" ? "var(--critical)" : "var(--accent)" }}>
           <div className="l">Last run</div><div className="v" style={{ fontSize: 20 }}>{lr ? ago(lr.finished_at ?? lr.created_at, now) : "never"}</div>
-          <div className="s">{lr ? `${lr.trigger === "now" ? "Check now" : "scheduled"} · ${lr.status.replace("_", " ")}` : "no run yet"}</div></div>
+          <div className="s">{lr ? `${lr.trigger === "now" ? "on request" : "on schedule"}, ${lr.status === "completed" ? "finished" : lr.status.replace("_", " ")}` : "no run yet"}</div></div>
         <div className="card ov-kpi" style={{ ["--kpi" as string]: "var(--info)" }}>
           <div className="l">Next run</div><div className="v" style={{ fontSize: 20 }}>{status.connected ? when(status.next_run_at, now) : "—"}</div>
           <div className="s">every {status.every_minutes} minutes{status.running ? " · running now" : ""}</div></div>
@@ -151,7 +156,8 @@ export function RadarPage() {
         <div className="row wrap" style={{ gap: 6 }}>{scope.places.map(p => (
           <button key={p} type="button" className={`chip click ${why === p ? "sel" : ""}`} aria-expanded={why === p} onClick={() => setWhy(why === p ? null : p)}>{names[p] ?? p}</button>))}</div>
         {why && <div className="note" role="status"><b>{names[why] ?? why}</b>: {(scope.why[why] ?? []).join("; ") || "part of where you operate"}</div>}
-        <span className="small muted">{scope.themes.length} themes · actors: {scope.actors.slice(0, 6).join(", ")}{scope.actors.length > 6 ? ` and ${scope.actors.length - 6} more` : ""} · select a place to see why it's watched</span>
+        {scope.actors.length > 0 && <span className="small">Also looks for: {scope.actors.slice(0, 6).join(", ")}{scope.actors.length > 6 ? ` and ${scope.actors.length - 6} more` : ""}</span>}
+        <span className="small muted">Select a place to see why it's watched.</span>
       </div></div>}
 
       <div className="row wrap mt16" style={{ gap: 10 }}>

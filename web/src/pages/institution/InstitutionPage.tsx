@@ -7,6 +7,7 @@ import { inst, type HistoryRow, type InstitutionSummary, type Item, type Profile
 import type { Installation } from "../../App";
 import { Icon } from "../../components/Icon";
 import { WithChat } from "../../components/SetupChat";
+import { PageHeader, StatusPill } from "../../components/blocks";
 import { Banner, MenuButton, Modal, PageHead, ResetModal, useToast, PageSkeleton } from "../../components/ui";
 import { dayTime, plural } from "../../format";
 import { PlaceName, useLoad } from "./fields";
@@ -119,7 +120,7 @@ export function ReadinessList({ r, onFix }: { r: Readiness; onFix?: (section: st
 }
 
 export function StatusBadge({ status }: { status: string }) {
-  return <span className={`badge ${status === "active" ? "b-ok" : status === "archived" ? "b-paused" : "b-sub"}`}>{status.toUpperCase()}</span>;
+  return <StatusPill tone={status === "active" ? "green" : status === "archived" ? "grey" : "blue"}>{status === "active" ? "Live" : status === "archived" ? "Archived" : "Being set up"}</StatusPill>;
 }
 
 function download(name: string, data: unknown) {
@@ -256,9 +257,12 @@ export function InstitutionPage() {
 
   return (
     <WithChat institutionId={i.institution_id} onTrack={follow} onApplied={applied}><div className="page">
-      <PageHead
-        title={<span className="row" style={{ gap: 10 }}>{i.name} <StatusBadge status={i.status} /></span>}
-        sub={<>{i.institution_type === "bank" ? "Bank" : "Insurer"}{i.subtype ? ` · ${i.subtype.replace(/_/g, " ")}` : ""}{i.islamic ? " · Islamic" : ""} · <PlaceName code={i.home_country} names={profile.place_names} /> · {i.base_currency} · {i.time_zone}{i.summary ? <><br />{i.summary}</> : null}</>}
+      <PageHeader
+        title={i.name} pills={<StatusBadge status={i.status} />}
+        status={<>{i.subtype ? `${i.subtype.replace(/_/g, " ")[0].toUpperCase()}${i.subtype.replace(/_/g, " ").slice(1)} ${i.institution_type === "bank" ? "bank" : "insurer"}` : i.institution_type === "bank" ? "Bank" : "Insurer"}{i.islamic ? " (Islamic)" : ""} in <PlaceName code={i.home_country} names={profile.place_names} /> · {i.base_currency}</>}
+        help={<div className="col" style={{ gap: 8 }}>{i.summary && <p className="ph-about">{i.summary}</p>}
+          <p className="small muted">Time zone: {i.time_zone}. Amiri Agent reads this profile to decide what matters to you: where you operate, your customers and products, your flows, rules, rivals and risks.</p></div>}
+        helpLabel="About this institution"
         actions={<>
           <Link className="btn" to="/institution/setup"><Icon name="check" />Guided setup</Link>
           {!archived && <button className="btn" type="button" onClick={() => setEditing(true)}><Icon name="edit" />Edit details</button>}
@@ -291,7 +295,7 @@ export function InstitutionPage() {
           </div></div></div>
         </div>
         {readiness.warnings.length > 0 && <div className="card"><div className="hd"><h2>Worth a look</h2></div><div className="bd col" style={{ gap: 6 }}>
-          {readiness.warnings.map((w, k) => <div key={k} className="small"><span className="badge b-warn">{(w.section ?? "").toUpperCase()}</span> {w.message} <span className="mono muted">{w.id}</span></div>)}</div></div>}
+          {readiness.warnings.map((w, k) => <div key={k} className="small"><span className="badge b-warn">{(w.section ?? "").replace(/-/g, " ")}</span> {w.message}</div>)}</div></div>}
       </div>}
       {tab === "customers" && <div className="col gap16">
         <SectionList section="segments" ctx={ctx} reload={S.reload} suggest />

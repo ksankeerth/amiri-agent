@@ -2,20 +2,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError } from "../../api/client";
 import { investigationApi, type FindingRow } from "../../api/investigation";
+import { setAsideReason } from "../../plain";
 
 export const DAYS = 7;
-export const STATUS: Record<FindingRow["status"], [string, string]> = {
-  new: ["b-info", "WAITING"], grouped: ["b-info", "BEING INVESTIGATED"], linked: ["b-ok", "IN AN EVENT"], set_aside: ["b-noeffect", "SET ASIDE"],
-};
-// why the investigation set a finding aside, in words
-const REASON: Record<string, string> = {
-  not_home_country: "it isn't about a place where you operate",
-  no_theme: "it carries no economic theme the investigation can trace to products",
-  below_min_size: "the move is too small to matter",
-  after_as_of: "it came after the investigation's cut-off",
-  investigation_failed: "the investigation failed",
-};
-export const reasonText = (f: FindingRow) => f.outcome?.reason ? (REASON[f.outcome.reason] ?? f.outcome.reason.replace(/_/g, " ")) : "";
+// why the investigation set a finding aside, in a few words (plain.ts holds the words)
+export const reasonText = (f: FindingRow) => setAsideReason(f.outcome?.reason);
 
 /** Live findings of the last 7 days, newest first; reloads every 30 s. */
 export function useRecentFindings() {

@@ -1,23 +1,17 @@
 import { createPortal } from "react-dom";
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Icon } from "./Icon";
+import { PageHeader } from "./blocks";
 
 /** Set by a page that has the setup agent beside it: PageHead puts the show/hide button with the page's buttons. */
 export const ChatToggleCtx = createContext<{ open: boolean; toggle: () => void } | null>(null);
 
+/** The older page head, drawn as the new PageHeader (components/blocks.tsx): a short `sub` is the status line; a long one
+ *  is an explanation, so it moves behind the "How this works" link instead of sitting under the title. */
 export function PageHead({ title, sub, actions, crumbs }: { title: ReactNode; sub?: ReactNode; actions?: ReactNode; crumbs?: ReactNode }) {
-  const chat = useContext(ChatToggleCtx);
-  return (
-    <>
-      {crumbs && <nav className="crumbs" aria-label="Breadcrumb">{crumbs}</nav>}
-      <div className="pagehead">
-        <div className="titles"><h1>{title}</h1>{sub && <p>{sub}</p>}</div>
-        <span className="spacer" />
-        <div className="row wrap pageactions">{actions}
-          {chat && !chat.open && <button className="btn" type="button" onClick={chat.toggle}><Icon name="chat" />Setup agent</button>}</div>
-      </div>
-    </>
-  );
+  const long = typeof sub === "string" && sub.length > 90;
+  return <PageHeader title={title} crumbs={crumbs} actions={actions} status={long ? undefined : sub}
+    help={long ? <p className="ph-about">{sub}</p> : undefined} />;
 }
 
 export function Banner({ kind, icon = "info", children, action }: { kind: "info" | "warn" | "crit"; icon?: string; children: ReactNode; action?: ReactNode }) {

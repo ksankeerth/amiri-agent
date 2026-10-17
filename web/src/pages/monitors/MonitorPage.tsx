@@ -3,17 +3,20 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
+import { investigationApi } from "../../api/investigation";
 import { inst, type Profile } from "../../api/institutions";
 import { EVERY, monitorsApi, type CheckRow, type ChipType, type Monitor, type MonitorFinding, type MonitorSpec, type MonitorsStatus } from "../../api/monitors";
 import { FillFromJson } from "../../components/FillFromJson";
 import { monitorsOf } from "../../components/fillJson";
+import { FactList, PageHeader, Places, Row, Section, SourceCard, StatusPill, TechnicalDetails } from "../../components/blocks";
 import { Icon } from "../../components/Icon";
-import { Banner, PageHead, useNow, useToast, PageSkeleton } from "../../components/ui";
+import { Banner, useNow, useToast, PageSkeleton } from "../../components/ui";
 import { ago, dayTime, plainError, when } from "../../format";
+import { everyText, longWhen, MONITOR_CHECK, setAsideReason } from "../../plain";
 import type { Installation } from "../../App";
 import { ChipsInput, Field, PlacesField } from "../institution/fields";
 import { FLOW_WORDS } from "../institution/forms";
-import { DraftFromProfile, MonitorActions, MonitorBanners, ORIGIN, StatusBadge, useMonitorsStatus } from "./Monitors";
+import { DraftFromProfile, LastCheck, MonitorActions, MonitorBanners, MonitorHelp, StatusBadge, useMonitorsStatus } from "./Monitors";
 
 const CHIP_TYPES: ChipType[] = ["organisation", "place", "region", "person", "sector", "regulation", "topic"];
 const OWNERS = ["Risk management", "Treasury", "Retail banking", "Retail credit", "Business credit", "Pawning", "Cards", "Underwriting", "Claims"];
@@ -58,7 +61,7 @@ function changed(a: MonitorSpec, b: MonitorSpec): string[] {
 }
 
 function Drafted({ on }: { on: boolean }) {
-  return on ? <span className="badge b-info" style={{ marginLeft: 6 }} title="Drafted by code from the profile item. Check and edit it.">DRAFTED</span> : null;
+  return on ? <span className="pill t-blue" style={{ marginLeft: 6 }} title="Filled in from your profile. Check and edit it.">Filled in for you</span> : null;
 }
 
 function WatchField({ value, onChange }: { value: MonitorSpec["public"]["watch"]; onChange: (v: MonitorSpec["public"]["watch"]) => void }) {
@@ -121,7 +124,7 @@ function errorsOf(e: unknown): { fields: Record<string, string>; general: string
   return { fields, general };
 }
 
-function MonitorForm({ m, profile, status, onSaved }: { m: Monitor | null; profile: Profile | null; status: MonitorsStatus | null; onSaved: (m: Monitor) => void }) {
+function MonitorForm({ m, profile, status, onSaved, onCancel }: { m: Monitor | null; profile: Profile | null; status: MonitorsStatus | null; onSaved: (m: Monitor) => void; onCancel?: () => void }) {
   const nav = useNavigate();
   const toast = useToast();
   const [s, setS] = useState<MonitorSpec>(() => structuredClone(m?.spec ?? blank()));
@@ -182,8 +185,6 @@ function MonitorForm({ m, profile, status, onSaved }: { m: Monitor | null; profi
       <div className="bd col" style={{ gap: 14 }}>
         {err.general.length > 0 && <Banner kind="crit" icon="warn">{err.general.join(" ")}</Banner>}
         {Object.keys(E).length > 0 && <Banner kind="crit" icon="warn">Some fields need attention: see below.</Banner>}
-        <FillFromJson what="a monitor" read={monitorsOf} onFill={c => fillFrom(c.data)}
-          example={'a monitor spec as JSON ({"about": {…}, "public": {…}, "private": {…}}), or {"spec": …}'} />
         <Field label="Name" error={E["about.name"]}>
           <input className={`input ${E["about.name"] ? "err" : ""}`} value={s.about.name} placeholder="e.g. Gulf jobs and security" onChange={e => up(x => { x.about.name = e.target.value; })} />
         </Field>
@@ -251,7 +252,10 @@ function MonitorForm({ m, profile, status, onSaved }: { m: Monitor | null; profi
         </details>
         {m && <Field label="What changed (optional)"><input className="input" value={note} onChange={e => setNote(e.target.value)} placeholder="Added Qatar" /></Field>}
         {live && <Banner kind="info">Saving makes version {m.latest_version === m.live_version ? m.latest_version + 1 : m.latest_version} a draft; version {m.live_version} keeps running until a Risk Manager approves the new one.</Banner>}
+        <div className="fill-end"><FillFromJson what="a monitor" read={monitorsOf} onFill={c => fillFrom(c.data)}
+          example={'a monitor spec as JSON ({"about": {…}, "public": {…}, "private": {…}}), or {"spec": …}'} /></div>
         <div className="row wrap savebar">
+          {onCancel && <button className="btn btn--ghost" type="button" onClick={onCancel}>Cancel</button>}
           <button className="btn" type="button" disabled={busy} onClick={() => save(false)}>{live ? "Save as the next version" : "Save draft"}</button>
           <button className="btn btn--primary" type="button" disabled={busy} onClick={() => save(true)}>Save and submit for approval</button>
         </div>
@@ -265,24 +269,25 @@ function Approval({ m, onChange }: { m: Monitor; onChange: () => void }) {
   const diff = pending && m.live_spec ? changed(m.live_spec, m.spec) : [];
   const latest = m.versions[m.versions.length - 1];
   let text: ReactNode;
-  if (m.status === "retired") text = "Retired: not checked.";
-  else if (pending?.status === "submitted") text = <>Version {pending.version} was submitted by {latest.submitted_by} {latest.submitted_at ? dayTime(latest.submitted_at) : ""}. Version {m.live_version} keeps running until it is approved.</>;
-  else if (m.status === "submitted") text = <>Submitted by {latest.submitted_by} {latest.submitted_at ? dayTime(latest.submitted_at) : ""}. Any Risk Manager can approve it; it goes live on the next tick.</>;
-  else if (pending) text = <>Version {pending.version} is a draft. Submit it when ready; version {m.live_version} keeps running.</>;
-  else if (m.status === "live") text = <>Version {m.live_version} is live{latest.approved_by ? `, approved by ${latest.approved_by}` : ""}.</>;
-  else if (m.status === "paused") text = "Paused: not checked until resumed.";
-  else text = "Drafts don't run on the schedule. Run a test to see what it would find (the findings go to the sandbox), then submit it.";
+  if (m.status === "retired") text = "Retired: it isn't checked any more.";
+  else if (pending?.status === "submitted") text = <>A new version is waiting for approval (sent by {latest.submitted_by}). The current one keeps running until then.</>;
+  else if (m.status === "submitted") text = <>Waiting for approval (sent by {latest.submitted_by}{latest.submitted_at ? `, ${dayTime(latest.submitted_at)}` : ""}). It goes live within minutes of approval.</>;
+  else if (pending) text = "You have unsaved changes in a new version. Submit them when ready; the current version keeps running.";
+  else if (m.status === "live") text = <>Live{latest.approved_by ? `, approved by ${latest.approved_by}` : ""}.</>;
+  else if (m.status === "paused") text = "Paused: it isn't checked until you resume it.";
+  else text = "A draft doesn't run on its own. Run a test to see what it would find, then submit it for approval.";
   const sentBack = latest.status === "draft" && latest.note && latest.submitted_at;
-  // approval only matters while a version waits for it (or before the first one runs); a live monitor shows its status
   const approving = !!pending || m.status === "draft" || m.status === "submitted";
   return (
-    <div className="card"><div className="hd"><h2>{approving ? "Approval" : "Status"}</h2></div><div className="bd col" style={{ gap: 8 }}>
-      <p className="small" style={{ margin: 0 }}>{text}</p>
-      {sentBack && <div className="note"><b>Changes requested:</b> {latest.note}</div>}
-      {diff.length > 0 && <div className="note">Changes from version {m.live_version}: {diff.join(", ")}.</div>}
-      <MonitorActions m={m} onChange={onChange} />
-      {approving && <p className="small muted" style={{ margin: 0 }}>Prototype simplification: the person who submitted a version can also approve it. In production a second Risk Manager approves. Who submitted and who approved each version is recorded.</p>}
-    </div></div>
+    <Section title={approving ? "Approval" : "Status"}>
+      <div className="col" style={{ gap: 10 }}>
+        <p className="small" style={{ margin: 0 }}>{text}</p>
+        {sentBack && <div className="note"><b>Changes requested:</b> {latest.note}</div>}
+        {diff.length > 0 && <div className="note">What changes: {diff.join(", ")}.</div>}
+        <MonitorActions m={m} onChange={onChange} />
+        {approving && <p className="small muted" style={{ margin: 0 }}>In this prototype the person who sent it can also approve it. Who sent and who approved each version is recorded.</p>}
+      </div>
+    </Section>
   );
 }
 
@@ -290,54 +295,66 @@ function Checks({ m, runs, onRun, running }: { m: Monitor; runs: CheckRow[]; onR
   const now = useNow(30_000);
   const live = m.status === "live";
   return (
-    <div className="card"><div className="hd"><h2>Checks</h2><span className="spacer" />
-      {m.status !== "retired" && <button className="btn btn--sm" type="button" disabled={running} onClick={onRun}
-        title={live ? "Check the live version now" : "Test the latest version now; its findings go to the sandbox"}>
-        <Icon name="play" />{running ? "Checking…" : live ? "Run now" : "Run a test"}</button>}</div>
-      {!runs.length ? <div className="bd small muted">No checks yet.{live && m.next_check_at ? ` The first is due ${when(m.next_check_at, now)}.` : ""}</div> : (
-        <div className="list">{runs.map((r, i) => {
-          const same = r.status === "failed" && i > 0 && runs[i - 1].status === "failed" && runs[i - 1].error === r.error;  // the same problem again
+    <Section title="Recent checks" count={runs.length || undefined} flush
+      action={m.status !== "retired" ? <button className="btn btn--sm" type="button" disabled={running} onClick={onRun}
+        title={live ? "Check the news now" : "Test it now; what it finds is kept apart from your real findings"}>
+        <Icon name="play" />{running ? "Checking…" : live ? "Check now" : "Run a test"}</button> : undefined}>
+      {!runs.length ? <p className="sec-line">No checks yet.{live && m.next_check_at ? ` The first is due ${when(m.next_check_at, now)}.` : ""}</p>
+        : runs.map((r, i) => {
+          const same = r.status === "failed" && i > 0 && runs[i - 1].status === "failed" && runs[i - 1].error === r.error;
+          const [text, tone] = r.status === "running" ? ["Checking…", "blue" as const] : MONITOR_CHECK[r.status === "failed" ? "error" : r.findings ? "fired" : "quiet"](r.findings ?? 0);
           return (
-          <div key={r.run_id} className="li"><div className="col" style={{ gap: 3, minWidth: 0 }}>
-            <span className="small"><b>{dayTime(r.created_at)}</b> · {r.status === "running" ? <span className="badge b-info">RUNNING</span>
-              : r.status === "failed" ? <span className="badge b-error">ERROR</span>
-              : r.findings ? <span className="badge b-ok">FIRED · {r.findings}</span> : <span className="badge b-noeffect">QUIET</span>}
-              {r.world === "sandbox" && <span className="badge b-info" style={{ marginLeft: 6 }}>TEST</span>}
-              <span className="muted"> · v{r.version}{r.trigger === "now" ? " · run now" : ""}</span></span>
-            <span className="small muted">News since {dayTime(r.window_since)}{r.coverage ? ` · ${r.coverage.web_queries} searches, ${r.coverage.pages_seen} pages, ${r.coverage.pages_in_window} in the window${r.coverage.already_reported ? `, ${r.coverage.already_reported} already reported` : ""}` : ""}</span>
-            {r.summary && <span className="small">{r.summary}</span>}
-            {r.error && (same ? <span className="small muted">Same problem as the check above.</span>
-              : <><span className="small">{plainError(r.error)} It tries again within the hour; nothing is lost.</span>
-                <details className="small"><summary>Technical details</summary><div className="rawerr">{r.error}</div></details></>)}
-          </div></div>); })}</div>
-      )}
-    </div>
+            <div key={r.run_id} className="ck-row">
+              <Row marker={<StatusPill tone={tone}>{text}</StatusPill>} label={longWhen(r.created_at)}
+                detail={r.error ? (same ? "Same problem as the check below." : `${plainError(r.error)} It tries again within the hour.`) : r.summary ?? undefined}
+                meta={r.world === "sandbox" ? "Test" : r.trigger === "now" ? "Checked on request" : undefined} />
+              <div className="ck-tech"><TechnicalDetails>
+                <FactList items={[["News since", dayTime(r.window_since)], ["Version", String(r.version)],
+                  ["Searches", r.coverage ? `${r.coverage.web_queries} searches, ${r.coverage.pages_seen} pages, ${r.coverage.pages_in_window} in the window${r.coverage.already_reported ? `, ${r.coverage.already_reported} already reported` : ""}` : null],
+                  ["Error", r.error ? <span className="rawerr">{r.error}</span> : null], ["Check", <span className="mono">{r.run_id}</span>]]} />
+              </TechnicalDetails></div>
+            </div>);
+        })}
+    </Section>
   );
 }
 
-function Findings({ items }: { items: MonitorFinding[] }) {
-  if (!items.length) return null;
+function Findings({ items, events }: { items: MonitorFinding[]; events: Record<string, string> }) {
   return (
-    <div className="card"><div className="hd"><h2>What it found</h2></div>
-      <div className="list">{items.map(f => (
-        <div key={f.finding_id} className="li"><div className="col" style={{ gap: 4, minWidth: 0 }}>
-          <div className="row wrap" style={{ gap: 6 }}>
-            <span className="strong">{f.title}</span>
-            {f.world === "sandbox" && <span className="badge b-info">TEST</span>}
-          </div>
-          <span className="small muted">{dayTime(f.created_at)} · score {f.score}{f.places.length ? ` · ${f.places.join(", ")}` : ""}</span>
-          {f.source_ref.line_texts.length > 0 && <span className="small">Met: {f.source_ref.line_texts.map(t => `“${t}”`).join("; ")}</span>}
-          <span className="small">{f.explanation}</span>
-          <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
-            {f.evidence.headlines.map(h => <li key={h.url ?? h.title}>{h.url ? <a href={h.url} target="_blank" rel="noreferrer">{h.title}</a> : h.title}
-              <span className="muted"> · {h.outlet ?? ""} {dayTime(h.published_at)}</span></li>)}
-            {f.evidence.web.map(w => <li key={w.url}><a href={w.url} target="_blank" rel="noreferrer">{w.title ?? w.url}</a> <span className="muted">(undated)</span></li>)}
-          </ul>
-          <span className="small">{f.outcome?.event_id ? <>→ in the event <Link to={`/events/${f.outcome.event_id}`}>{f.outcome.event_id}</Link></>
-            : f.status === "new" ? <span className="muted">Waiting for the investigation.</span>
-            : f.outcome?.reason ? <span className="muted">Set aside: {f.outcome.note ?? f.outcome.reason}</span> : <span className="muted">{f.status}</span>}</span>
-        </div></div>))}</div>
-    </div>
+    <Section title="What it found" count={items.length} flush>
+      {!items.length ? <p className="sec-line">Nothing yet. What it finds appears here and goes to the investigation.</p>
+        : items.map(f => {
+          const h = f.evidence?.headlines?.[0], lines = f.source_ref?.line_texts ?? [];
+          const ev = f.outcome?.event_id;
+          return <SourceCard key={f.finding_id} icon="news" source={f.world === "sandbox" ? "Test" : h?.outlet ?? "News"} title={h?.title ?? f.title}
+            href={h?.url ?? f.evidence?.web?.[0]?.url} when={longWhen(h?.published_at ?? f.created_at)}
+            detail={lines.length ? `Met: “${lines[0]}”${lines.length > 1 ? ` and ${lines.length - 1} more` : ""}` : f.explanation}
+            to={ev ? `/events/${ev}` : undefined} toLabel={ev ? `In the event: ${events[ev] ?? "open it"}` : undefined}
+            note={!ev ? (f.status === "new" || f.status === "grouped" ? "Being investigated" : f.outcome?.reason ? `No impact found: ${setAsideReason(f.outcome.reason)}` : undefined) : undefined} />;
+        })}
+    </Section>
+  );
+}
+
+/** A monitor as it reads: what it watches, when it tells you, where, how often, who owns it. */
+function MonitorView({ m, profile }: { m: Monitor; profile: Profile | null }) {
+  const sp = m.live_spec ?? m.spec;
+  const p = sp.public;
+  return (
+    <Section title="What it watches">
+      <FactList items={[
+        ["What it watches", p.in_one_sentence],
+        ["Tell me if", p.tell_me_if.length ? <ul className="plainlist">{p.tell_me_if.map(t => <li key={t}>{t}</li>)}</ul> : null],
+        ["Names to look for", p.watch.length ? <span className="cells">{p.watch.map(w => <span key={w.name} className="chip">{w.name}</span>)}</span> : null],
+        ["Where", p.places.length ? <Places codes={p.places} max={20} /> : null],
+        ["Not interested in", p.ignore?.length ? p.ignore.join("; ") : null],
+        ["How often", everyText(sp.about.check_frequency)],
+        ["Owner", sp.about.owner + (sp.about.also_notify?.length ? `, also tells ${sp.about.also_notify.join(", ")}` : "")],
+        ["Sources", p.sources?.mode === "trusted_only" ? `Only ${p.sources.check_first.join(", ")}` : "Any reputable outlet"],
+        ["Key dates", sp.about.key_dates?.length ? sp.about.key_dates.map(d => `${d.label} (${d.date})`).join("; ") : null],
+        ["Could reach", sp.private.exposure.length && profile ? sp.private.exposure.length + " of your customer groups, products or flows" : null],
+      ]} />
+    </Section>
   );
 }
 
@@ -355,6 +372,9 @@ export function MonitorPage() {
   const [checking, setChecking] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
   const [drafting, setDrafting] = useState(false);
+  const [editing, setEditing] = useState<boolean | null>(null);  // null: the default for its state (a fresh draft opens in the form)
+  const [eventTitles, setEventTitles] = useState<Record<string, string>>({});
+  useEffect(() => { if (findings.some(f => f.outcome?.event_id)) investigationApi.events().then(xs => setEventTitles(Object.fromEntries(xs.map(e => [e.event_id, e.title])))).catch(() => {}); }, [findings]);
 
   const owner = m?.institution_id;
   useEffect(() => {  // the exposure chips come from the monitor's own institution (the installation's for a new one)
@@ -392,31 +412,39 @@ export function MonitorPage() {
     try { const r = await monitorsApi.runNow(m.monitor_id); setChecking(r.status === "running" ? r.run_id : null); await load(); }
     catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
   };
-  const saved = (x: Monitor) => { setM(x); setFormKey(k => k + 1); load(); };
+  const saved = (x: Monitor) => { setM(x); setFormKey(k => k + 1); setEditing(false); load(); };
+  const editMode = isNew || editing || (m?.status === "draft" && editing !== false && !m.last_check);
 
   if (!isNew && !m) return <div className="page">{err ? <Banner kind="crit" icon="warn">{err}</Banner> : <PageSkeleton bare />}</div>;
-  const sub = m ? <><StatusBadge status={m.status} /> · version {m.live_version ?? m.latest_version}{m.pending ? ` (version ${m.pending.version} ${m.pending.status === "submitted" ? "waiting for approval" : "being edited"})` : ""} · every {EVERY[m.spec.about.check_frequency]} · owner {m.spec.about.owner}
-    {m.last_check ? ` · last check ${ago(m.last_check.at, now)}` : ""}{ORIGIN[m.origin] ? ` · ${ORIGIN[m.origin]}` : ""}</>
-    : "Describe what to watch for in plain words. It runs after a Risk Manager approves it.";
+  const statusLine = m ? <>{everyText(m.spec.about.check_frequency)} · {m.spec.about.owner}
+    {m.last_check ? <> · last check {ago(m.last_check.at, now)}</> : null}</>
+    : "Say in plain words what to watch for. It runs once a Risk Manager approves it.";
   return (
     <div className="page">
-      <PageHead title={m ? m.spec.about.name || m.monitor_id : "New monitor"} sub={sub}
-        crumbs={<><Link to="/monitors">Monitors</Link> / {m ? m.name : "New monitor"}</>}
-        actions={isNew ? <button className="btn" type="button" onClick={() => setDrafting(true)}><Icon name="bank" />Draft from the profile</button> : undefined} />
+      <PageHeader title={m ? m.spec.about.name || m.name : "New monitor"} status={statusLine}
+        pills={m ? <><StatusBadge status={m.status} />{m.last_check && <LastCheck m={m} now={now} />}</> : undefined}
+        crumbs={<><Link to="/monitors">Monitors</Link><span aria-hidden="true">/</span><span>{m ? m.name : "New monitor"}</span></>}
+        actions={isNew ? <button className="btn" type="button" onClick={() => setDrafting(true)}><Icon name="bank" />Draft from the profile</button>
+          : m && m.status !== "retired" && !editMode ? <button className="btn" type="button" onClick={() => setEditing(true)}><Icon name="edit" />Edit</button> : undefined}
+        help={<MonitorHelp status={status} />} />
       <div className="banners">{err && <Banner kind="crit" icon="warn">{err}</Banner>}<MonitorBanners status={status} /></div>
-      {m && m.drafted_fields.length > 0 && <Banner kind="info">Drafted by code from your profile ({m.origin_ref?.section} · {m.origin_ref?.item_id}). Fields marked DRAFTED are a start: check them before you submit.</Banner>}
+      {editMode && m && m.drafted_fields.length > 0 && <Banner kind="info">Filled in for you from your profile. Check the marked fields before you submit.</Banner>}
       <div className="split mt12">
-        <MonitorForm key={`${m?.monitor_id ?? "new"}-${formKey}`} m={m} profile={profile} status={status} onSaved={saved} />
+        {editMode ? <MonitorForm key={`${m?.monitor_id ?? "new"}-${formKey}`} m={m} profile={profile} status={status} onSaved={saved}
+            onCancel={m ? () => setEditing(false) : undefined} />
+          : m && <div className="col gap16">
+            <MonitorView m={m} profile={profile} />
+            <Findings items={findings} events={eventTitles} />
+            <Checks m={m} runs={runs} onRun={runNow} running={!!checking} />
+          </div>}
         {m && <div className="col gap16">
           <Approval m={m} onChange={load} />
-          <Checks m={m} runs={runs} onRun={runNow} running={!!checking} />
-          <Findings items={findings} />
-          <div className="card"><div className="hd"><h2>Versions</h2></div><div className="list">{[...m.versions].reverse().map(v => (
-            <div key={v.version} className="li"><div className="col" style={{ gap: 2 }}>
-              <span className="small"><b>Version {v.version}</b> · {v.status}{v.version === m.live_version ? " · running" : ""}</span>
-              <span className="small muted">by {v.created_by} {dayTime(v.created_at)}{v.approved_by ? ` · approved by ${v.approved_by}` : ""}</span>
-              {v.note && <span className="small">{v.note}</span>}
-            </div></div>))}</div></div>
+          {editMode && <Checks m={m} runs={runs.slice(0, 3)} onRun={runNow} running={!!checking} />}
+          <TechnicalDetails summary={`Versions (${m.versions.length})`}>
+            <ol className="alc-hist">{[...m.versions].reverse().map(v => (
+              <li key={v.version}><b>Version {v.version}</b><span>{v.status}{v.version === m.live_version ? ", running" : ""} · by {v.created_by} {dayTime(v.created_at)}{v.approved_by ? ` · approved by ${v.approved_by}` : ""}{v.note ? ` · ${v.note}` : ""}</span></li>))}</ol>
+            <span>Monitor <span className="mono">{m.monitor_id}</span></span>
+          </TechnicalDetails>
         </div>}
       </div>
       {drafting && <DraftFromProfile onClose={() => setDrafting(false)} />}
