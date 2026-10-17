@@ -14,6 +14,9 @@ import { ChatToggleCtx, Modal, useRole, useToast } from "./ui";
 // Applying the new institution remounts the chat (it now belongs to the institution): the move to the next
 // track is handed over through here, and dropped if nobody picks it up soon.
 const NEXT_KEY = "amiri.setupNext";
+// One message, one topic: room for a few sentences (the longest real answers are about 250 characters), not a pasted
+// essay covering every section at once. The server's own limit (4,000) stays as the backstop.
+const MAX_CHARS = 600;
 
 const SECTION_WORDS: Record<string, string> = {
   institution: "Institution", footprint: "Footprint", "watch-places": "Place to watch", segments: "Customer group",
@@ -295,8 +298,11 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
         {busy && !live && <div className="msg sys" role="status">{slow ? "Waiting for the assistant… If it was asleep, the first reply can take up to a minute." : "…"}</div>}
         {writing && !busy && <div className="msg sys">A reply is still being written… it will appear here.</div>}
       </div>
+      {draft.length >= MAX_CHARS * 0.8 && <div className="small" role="status" style={{ padding: "6px 12px 0", color: draft.length >= MAX_CHARS ? "var(--medium-ink)" : "var(--ink-3)" }}>
+        {draft.length}/{MAX_CHARS}{draft.length >= MAX_CHARS ? " · That's the limit: keep to one topic, and send the rest after the reply." : ""}</div>}
       <div style={{ borderTop: "1px solid var(--hairline)", padding: 12, display: "flex", gap: 8, alignItems: "center" }}>
         <textarea className="input" rows={2} aria-label="Message to the setup agent" style={{ flex: 1, resize: "none" }} value={draft} disabled={busy}
+          maxLength={MAX_CHARS}
           placeholder={picked ? `About ${def(picked)?.label.toLowerCase()}…` : institutionId ? "Ask, check, or ask for a change…" : "e.g. We're a commercial bank in Sri Lanka with branches in Kerala"}
           onChange={e => setDraft(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (draft.trim()) { send({ text: draft.trim() }); setDraft(""); } } }} />
