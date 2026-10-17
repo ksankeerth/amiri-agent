@@ -1,10 +1,12 @@
 """The Metrics Spec the server works from: product categories and types (bank or
 insurer), dimensions with their values, themes, and each category's metrics with
 their breakdowns and validation rules. A snapshot of the Metrics Spec source
-(metrics-spec-v1.0.yaml), kept here so the image is self-contained;
-`uv run amiri spec-sync` refreshes it when the source file is at hand."""
+(metrics-spec-v1.0.yaml), kept here so the image is self-contained, beside the
+spec itself for its pages and downloads (metrics-spec-<version>.yaml and .md, the
+guide); `uv run amiri spec-sync` refreshes them when the source files are at hand."""
 
 import json
+import shutil
 from functools import cache
 from pathlib import Path
 
@@ -14,9 +16,19 @@ SEGMENT_DIMENSIONS = ("segment", "age_band", "size_band", "sector", "sector_l2",
                       "region_l1", "region_l2", "channel", "sales_channel", "corridor", "currency")
 
 
+REFERENCE_OPENAPI = Path(__file__).parent / "reference-openapi-1.0.0.yaml"  # the spec's reference API, as published
+
+
 @cache
 def spec() -> dict:
     return json.loads(SNAPSHOT.read_text())
+
+
+@cache
+def reference_openapi() -> dict:
+    import yaml
+
+    return yaml.safe_load(REFERENCE_OPENAPI.read_text())
 
 
 def categories(institution_type: str | None = None) -> list[dict]:
@@ -81,5 +93,9 @@ def sync(source: Path = SOURCE) -> dict:
         "themes": d["vocabularies"]["themes"],
     }
     SNAPSHOT.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n")
+    here = Path(__file__).parent
+    shutil.copyfile(source, here / f"metrics-spec-{d['spec_version']}.yaml")
+    if (guide := source.with_suffix(".md")).exists():
+        shutil.copyfile(guide, here / f"metrics-spec-{d['spec_version']}.md")
     spec.cache_clear()
     return out

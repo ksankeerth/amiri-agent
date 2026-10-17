@@ -6,6 +6,7 @@ import { Markdown } from "../../components/markdown";
 import { alertsApi, LEVEL, type AlertItem } from "../../api/alerts";
 import { Banner, Empty, PageHead, PageSkeleton } from "../../components/ui";
 import { dayTime, placeName } from "../../format";
+import { CheckView } from "./CheckView";
 import { themeText } from "./Events";
 
 const TIMING: Record<string, string> = { days: "within days", weeks: "within weeks", months: "within months" };
@@ -22,6 +23,7 @@ export function EventDetailPage() {
       <div className="card"><Empty icon="events" title={`No event “${id}”`} actions={<Link className="btn" to="/events">Events</Link>} /></div></div>);
   if (!e) return <div className="page">{err ? <Banner kind="crit" icon="warn">{err instanceof ApiError ? err.full : err}</Banner> : <PageSkeleton bare />}</div>;
   const tasks = new Map(e.tasks.map(t => [t.hypothesis_id, t]));
+  const nChecked = e.tasks.filter(t => t.check).length;
   return (
     <div className="page">
       <PageHead crumbs={<><Link to="/events">Events</Link><span>/</span><span>{e.title}</span></>}
@@ -34,9 +36,12 @@ export function EventDetailPage() {
         <Banner kind="info" icon="info">{e.status === "open"
           ? <>Open until {dayTime(e.open_until)}: a new finding about the same move joins it as a development.</>
           : <>Closed {e.closed_at ? dayTime(e.closed_at) : ""}: no new finding about the same move for a while.</>}</Banner>
+        {e.run.validation && e.tasks.length > 0 && <Banner kind="info" icon="info">{nChecked
+          ? <>{nChecked} of {e.tasks.length} effects checked against your own data so far. Each is checked again as new periods are published.</>
+          : <>Each effect is checked against your own data once the institution publishes the period it watches.</>}</Banner>}
         {!e.run.validation && <Banner kind="info" icon="info">These are the effects to watch: where the investigation expects your numbers to move. They aren't checked against your own data yet.</Banner>}
       </div>
-      <div className="grid2" style={{ gridTemplateColumns: "3fr 2fr", alignItems: "start" }}>
+      <div className="grid2 ev-grid">
         <div className="col" style={{ gap: 16 }}>
           <div className="card">
             <div className="hd"><h2>What could be affected</h2><span className="small muted">by code from the investigation tracks; the model only chose among them</span></div>
@@ -49,6 +54,8 @@ export function EventDetailPage() {
                     <div>{h.chain_label}.</div>
                     <div className="small muted">Watch <b>{h.expected.metric.replace(/_/g, " ")}</b>{h.segment ? ` (${h.segment.dimension.replace(/_/g, " ")}: ${h.segment.value})` : ""}: expected to {h.expected.direction} {TIMING[h.expected.timing] ?? h.expected.timing}.
                       {t ? <> Task <span className="mono">{t.task_id}</span>{t.watch ? ` checks ${t.watch.from} to ${t.watch.until}` : ""}.{t.scope_note ? ` ${t.scope_note}` : ""}</> : null}</div>
+                    {t?.check ? <CheckView c={t.check} next={t.next_check_after} />
+                      : t && e.run.validation && t.status === "pending" ? <div className="small muted">Not checked yet.</div> : null}
                   </div>);
               })}</div>
             )}

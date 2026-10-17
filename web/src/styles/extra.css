@@ -305,3 +305,54 @@ a.card:hover, .card.click:hover { box-shadow:0 2px 4px rgba(20,24,31,.05), 0 10p
 
 /* a file button: its input is visually hidden but focusable; the button shows the focus ring */
 label.btn:has(input[type=file]:focus-visible) { outline:2px solid var(--focus); outline-offset:2px; }
+
+.gap8 { gap:8px; } .gap12 { gap:12px; }  /* with .gap16 in app.css */
+
+/* a check against the institution's own data (event page, alerts) */
+.ck { display:flex; flex-direction:column; gap:4px; margin-top:4px; padding:8px 10px; border-left:3px solid var(--hairline-2); background:var(--surface-2); border-radius:4px; }
+.ck-list { margin:0; padding-left:18px; }
+.al-ck { display:block; margin-top:2px; }
+.ev-grid { grid-template-columns:minmax(0,3fr) minmax(0,2fr); align-items:start; }
+@media (max-width: 900px) { .ev-grid { grid-template-columns:minmax(0,1fr); } }
+
+/* the Metrics Spec (/spec) and its print layout (/spec/print, the PDF) */
+.md code, .sp-metric code, .sp-body code, .sp-print code { font-family:var(--font-mono); font-size:.88em; background:var(--sunken); padding:1px 4px; border-radius:4px; }
+.md h4.md-h { font-size:14px; margin:14px 0 6px; }
+.md-table { overflow-x:auto; margin:8px 0 12px; }
+.md-table table { width:100%; border-collapse:collapse; font-size:13px; }
+.md-table th { text-align:left; font-weight:600; color:var(--ink-2); border-bottom:1px solid var(--hairline-2); padding:6px 8px; vertical-align:bottom; }
+.md-table td { border-bottom:1px solid var(--hairline); padding:6px 8px; vertical-align:top; color:var(--ink-2); }
+.md-quote { margin:8px 0; padding:4px 12px; border-left:3px solid var(--hairline-2); color:var(--ink-2); }
+.sp-layout { display:grid; grid-template-columns:240px minmax(0,1fr); gap:16px; align-items:start; }
+.sp-toc { position:sticky; top:72px; padding:14px; display:flex; flex-direction:column; gap:6px; max-height:calc(100dvh - 96px); overflow:auto; }
+.sp-toc-list { margin:6px 0 0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:4px; font-size:13px; }
+.sp-sec { scroll-margin-top:72px; }
+.sp-sec + .sp-sec { margin-top:28px; }
+.sp-sec h2 { font-size:19px; margin:0 0 10px; }
+.sp-cat { scroll-margin-top:72px; margin-top:20px; }
+.sp-cat h3 { font-size:16px; margin:0 0 6px; }
+.sp-metric { scroll-margin-top:72px; border:1px solid var(--hairline); border-radius:8px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
+.sp-metric:target { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent); }
+.sp-metric h4 { margin:0; font-size:14px; }
+.sp-q { margin:0; color:var(--ink-2); }
+.sp-facts { display:flex; flex-wrap:wrap; gap:4px 16px; margin:0; font-size:12.5px; }
+.sp-facts div { display:flex; gap:4px; }
+.sp-facts dt { color:var(--ink-3); }
+.sp-facts dd { margin:0; }
+.sp-fold summary { cursor:pointer; font-size:13px; color:var(--ink-2); }
+.sp-fold > .label { margin-top:4px; }
+tr[id^="dim-"], tr[id^="check-"] { scroll-margin-top:72px; }
+@media (max-width: 860px) { .sp-layout { grid-template-columns:minmax(0,1fr); } .sp-toc { position:static; max-height:none; } }
+html:has(.sp-print), body:has(.sp-print) { background:#fff; }
+.sp-print { margin:0; padding:0; background:#fff; color:#111; font-size:11px; }
+.sp-print #intro, .sp-print #s1 { break-before:auto; }
+.sp-print .sp-title { min-height:240mm; display:flex; flex-direction:column; justify-content:center; break-after:page; }
+.sp-print .sp-title h1 { font-size:30px; margin:0 0 8px; }
+.sp-print .sp-sec { break-before:page; }
+.sp-print .sp-metric { break-inside:avoid; border-color:#ccc; }
+.sp-print .md-table { overflow:visible; }
+.sp-print .md-table td, .sp-print .md-table th { border-color:#ccc; color:#111; }
+.sp-print tr { break-inside:avoid; }
+.sp-print a { color:inherit; text-decoration:none; }
+.sp-print .badge { border:1px solid #999; }
+.sp-files .btn { white-space:normal; max-width:100%; height:auto; min-height:32px; flex-wrap:wrap; text-align:left; overflow-wrap:anywhere; }

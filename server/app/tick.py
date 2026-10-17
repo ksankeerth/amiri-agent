@@ -25,10 +25,12 @@ async def run_tick(app) -> dict:
         try:
             at = app.state.series.clock.now()
             ran = []
-            # in this order: news and moves found now join this tick's investigation batch
+            # in this order: news and moves found now join this tick's investigation batch, whose tasks
+            # the validation step then judges
             for name, run_due in (("series", app.state.series.run_due), ("radar", app.state.radar.run_due),
                                   ("monitors", app.state.monitors.run_due),
-                                  ("investigation", app.state.investigations.run_due)):
+                                  ("investigation", app.state.investigations.run_due),
+                                  ("validation", app.state.validation.run_due)):
                 t = time.monotonic()
                 try:
                     step = await run_due()

@@ -230,6 +230,20 @@ SETTINGS: dict[str, Setting] = {
         Setting("MONITOR_MIN_FREQUENCY_MINUTES", "60", "The most often a monitor may be checked: 15, 60, 360 or 1440."),
         Setting("PROTOTYPE_RESET", "true", "Allow the prototype reset (wipes the institution and all Amiri Agent made for it; "
                 "keeps market prices and reference data). Switch off for a real deployment."),
+        Setting("MOCK_INSTITUTIONS", "true", "Allow the sample bank and insurer (the Metrics Spec reference API at "
+                "/mock/bank and /mock/insurer, switched on by the Platform Admin). Switch off for a real deployment."),
+        # The institution's data (the Metrics Spec reference API) and the connector that checks it
+        Setting("DATA_CONNECTION_TIMEOUT_SECONDS", "15", "How long the connector waits for one answer from an "
+                "institution's API (the spec asks for a full history within 30 seconds)."),
+        Setting("DATA_CONNECTION_MAX_CALLS", "200", "Calls one check may make at most (the institution's rate limits)."),
+        Setting("DATA_CONNECTION_MAX_BYTES", "5000000", "The largest answer the connector reads; bigger ones are cut off "
+                "and reported."),
+        Setting("DATA_CONNECTION_ALLOW_LOCAL", "false", "Let the connector call http:// and private or loopback addresses "
+                "(local development only; never on a public deployment)."),
+        Setting("VALIDATION_TASKS_PER_TICK", "20", "Validation tasks judged per tick at most (each reads the "
+                "institution's API several times); the rest wait for the next tick."),
+        Setting("DATA_SECRET_KEY", "", "Encrypts the institution API's key or token in the database (32+ random "
+                "characters). Changing it means entering the key again.", secret=True),
         Setting("SUPPORTED_REGION", "japac", "The region the prototype is tested for: an institution's home country and "
                 "base currency must be in it (app/reference/regions.json). Empty: anywhere."),
         Setting("SINGLE_INSTITUTION", "true", "One institution per platform (a deployment serves one bank or insurer); "

@@ -132,6 +132,8 @@ def env(monkeypatch):
         "SERIES_STALE_AFTER_HOURS_24H": "6", "SERIES_STALE_AFTER_HOURS_SESSION": "30",
         "AUTO_MIGRATE": "true", "CORS_ORIGINS": "",
         "SINGLE_INSTITUTION": "false",  # many tests set up more than one; test_one_institution checks the rule
+        "INSTITUTION_ID": "bank-a",  # whatever a local .env says (it may point at a demo institution)
+        "MOCK_INSTITUTIONS": "true",
     }
     for k, v in values.items():
         monkeypatch.setenv(k, v)
@@ -151,13 +153,13 @@ def reset_database(url: str) -> None:
         pytest.skip(f"test database unreachable ({e}); start it with: docker compose up -d postgres")
     with conn:
         if not _built:
-            for schema in ("studio", "cases", "assistant", "signals", "core", "ref"):
+            for schema in ("studio", "cases", "assistant", "signals", "core", "ref", "ops"):
                 conn.execute(f"DROP SCHEMA IF EXISTS {schema} CASCADE")
             conn.execute("DROP TABLE IF EXISTS public.schema_migrations")
             _built = True
             return
         tables = conn.execute(
-            "SELECT schemaname || '.' || tablename AS t FROM pg_tables WHERE schemaname IN ('signals', 'core', 'assistant', 'cases', 'studio')"
+            "SELECT schemaname || '.' || tablename AS t FROM pg_tables WHERE schemaname IN ('signals', 'core', 'assistant', 'cases', 'studio', 'ops')"
         ).fetchall()
         if tables:
             conn.execute(f"TRUNCATE {', '.join(t[0] for t in tables)} RESTART IDENTITY CASCADE")

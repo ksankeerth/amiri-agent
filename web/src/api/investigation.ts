@@ -29,10 +29,24 @@ export interface Hypothesis {
   chain_label: string; statement: string; segment: { dimension: string; value: string } | null;
   expected: { metric: string; direction: "rise" | "fall"; size: string; timing: string }; task_id: string | null;
 }
+export type Verdict = "confirms" | "contradicts" | "no_effect" | "insufficient_data" | "masked" | "not_yet" | "error";
+// One effect checked against the institution's data, in words (server: app/validation/explain.py).
+export interface Check {
+  verdict: Verdict; verdict_text: string; final: boolean; line: string; what: string; change: string | null; usual: string | null;
+  checks: string[]; why: string | null; as_of: string | null; next_check_after: string | null;
+  alert: "adverse" | "developing" | "opportunity" | "none"; alert_basis: "explained" | "unexplained" | null;
+  supersedes: { as_of: string; verdict: Verdict; text: string } | null;
+  versions: { spec: string | null; catalog: string | null; validator: string | null; data: string | null }; spec_link: string;
+}
+export const VERDICT_BADGE: Record<Verdict, string> = {
+  confirms: "b-confirmed", contradicts: "b-warn", no_effect: "b-noeffect", insufficient_data: "b-insufficient",
+  masked: "b-masked", not_yet: "b-notyet", error: "b-error",
+};
 export interface EventDetail extends Omit<EventRow, "hypotheses" | "tasks" | "developments"> {
   findings: FindingRow[]; hypotheses: Hypothesis[]; country_name: string | null; developments: Development[];
   set_aside: { product_type: string; angle: string; decision: string; reason: string }[];
-  tasks: { task_id: string; hypothesis_id: string; metric: string; watch?: { from: string; until: string }; scope_note?: string | null }[];
+  tasks: { task_id: string; hypothesis_id: string; metric: string; watch?: { from: string; until: string }; scope_note?: string | null;
+    status?: "pending" | "done" | "failed"; next_check_after?: string | null; check?: Check | null }[];
   run: { run_id: string; status: string; validation: boolean; report: string | null };
 }
 

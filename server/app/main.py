@@ -17,11 +17,15 @@ from app.assistant import api as assistant_api
 from app.assistant.agent import make_assistant
 from app.assistant.service import AssistantService
 from app.clock import Clock
+from app.connect import api as connect_api
+from app.connect.service import DataConnection
 from app.institutions import api as institutions_api
 from app.institutions.service import Institutions
 from app.investigation import api as investigation_api
 from app.investigation.client import InvestigationClient, MonitorClient, RadarClient
 from app.investigation.service import Investigations
+from app.mockinst import api as mock_api
+from app.mockinst.service import MockInstitutions
 from app.monitors import api as monitors_api
 from app.monitors.service import Monitors
 from app.problems import Problem, on_problem, on_validation
@@ -30,8 +34,11 @@ from app.radar import api as radar_api
 from app.radar.service import Radar
 from app.series import api as series_api
 from app.series.service import MarketSeries
+from app.spec import api as spec_api
 from app.studio import api as studio_api
 from app.studio.service import Studio
+from app.validation import api as validation_api
+from app.validation.service import Validation
 
 DESCRIPTION = """\
 Amiri Agent server API. This version covers **market series**: the prices and rates Amiri Agent
@@ -68,6 +75,10 @@ def create_app(*, database_url: str | None = None, provider: TwelveDataClient | 
         radar_client = radar or RadarClient()
         app.state.radar = Radar(pool, app.state.institutions, radar_client, clock or Clock())
         app.state.studio = Studio(pool, app.state.institutions, inv_client, mon_client, clock or Clock())
+        app.state.mock_institutions = MockInstitutions(pool, app.state.institutions, clock or Clock())
+        app.state.data_connection = DataConnection(pool, app.state.institutions, clock or Clock())
+        app.state.data_connection.app = app
+        app.state.validation = Validation(pool, app.state.data_connection, clock or Clock())
         app.state.started_at = datetime.now(UTC).isoformat()
         try:
             yield
@@ -108,6 +119,11 @@ def create_app(*, database_url: str | None = None, provider: TwelveDataClient | 
     app.include_router(alerts_api.router)
     app.include_router(overview.router)
     app.include_router(prototype.router)
+    app.include_router(mock_api.router)
+    app.include_router(mock_api.admin)
+    app.include_router(connect_api.router)
+    app.include_router(validation_api.router)
+    app.include_router(spec_api.router)
     app.include_router(tick.router)
     serve_web(app)
     return app

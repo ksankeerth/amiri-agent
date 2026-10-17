@@ -33,7 +33,7 @@ async def test_a_failing_tick_step_does_not_stop_the_others(app, caplog):
     with caplog.at_level(logging.INFO, logger="amiri.tick"):
         out = await tick.run_tick(app)
     steps = [s.get("step") for s in out["ran"]]
-    assert steps == ["market_series", "radar", "monitors", "investigate"]  # all four ran
+    assert steps == ["market_series", "radar", "monitors", "investigate", "validate"]  # all five ran
     assert "radar exploded" in out["ran"][1]["error"]
     lines = [r for r in caplog.records if r.name == "amiri.tick"]
     assert any(r.levelno == logging.ERROR and r.exc_info for r in lines)  # the step's traceback

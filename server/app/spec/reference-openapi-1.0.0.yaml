@@ -1,0 +1,1275 @@
+openapi: 3.1.0
+info:
+  title: Metrics Spec reference API
+  version: 1.0.0
+  summary: Aggregated product metrics served by a bank or insurer, per Metrics Spec v1.0.
+  description: |
+    The reference API of Metrics Spec v1.0 (`metrics-spec-v1.0.md`, `metrics-spec-v1.0.yaml`).
+    Institutions connect by implementing it exactly; there is no per-institution mapping. The
+    onboarding connector checks conformance (§9 of the spec) before a connection is approved.
+
+    **Aggregates only (guide R1).**
+    - No endpoint returns personal data, account, card or policy numbers, names, or identifiers of
+      single customers, employers or obligors.
+    - A cell is suppressed when it has fewer than the profile's minimum distinct contributors
+      (default 10), when one contributor holds more than 50% of its measured component, or when the
+      two largest hold more than 85%. Ratios are tested on the denominator and the numerator; net
+      flows on each gross side; rates on events and exposure.
+    - Suppressed rows return value, numerator, denominator, exposure and volume as null, with a
+      `suppression_reason`.
+    - A request filters on at most 3 dimensions. Complementary suppression covers every filter
+      combination the institution serves.
+    - New vintages are released only when the revision itself passes suppression (`revision_held`).
+    - `segment_as_of` must be a Monday, and is refused for a cell whose membership differs from the
+      previous Monday's by 1 to 9 customers.
+    - `/change-concentration` compares disjoint, equal-length windows and returns only a band.
+
+    **Absolute time only (guide R2).** Every date is a local date in the profile's IANA time zone.
+    Periods are `[from, until)` with `until` exclusive, on the metric's grid: business days (from the
+    calendar of the record's region, or the primary calendar for multi-region totals), calendar days
+    (always-on channels), ISO weeks (Monday to Monday), calendar months, and quarters for context
+    metrics. A request whose `start` or `until` is off the grid is rejected with `off_grid`. Relative
+    windows ("last 7 days", "month to date") do not exist in this API. An open period is never
+    returned.
+
+    **Vintages.** `known_through` (a local date, inclusive) reads every period as it was known at the
+    end of that date. `same_age_days` reads each
+    period as it was known that many days after it ended.
+
+    **Versioning.** Every response carries `Metrics-Spec-Version`. A client may send the same header
+    to state the version it expects; a different MAJOR is rejected with `unsupported_version`.
+
+    **Errors** are RFC 9457 problem details with a `code`. Each code always has the same status:
+    - 400: off_grid, relative_window, range_too_large, invalid_parameter, too_many_filters,
+      segment_date_not_on_grid, windows_invalid, alias_filter_conflict, known_through_in_future,
+      unsupported_version.
+    - 401: unauthorized.
+    - 403: forbidden.
+    - 404: unknown_product, unknown_metric.
+    - 422: unknown_breakdown, value_not_allowed, filter_set_not_allowed, unsupported_capability.
+    - 429: rate_limited.
+    - 500: internal.
+    - 501: not_implemented.
+    - 503: unavailable.
+
+    **Limits.**
+    - At most 1,200 days per call for daily metrics, and 120 months per call for weekly, monthly
+      and quarterly metrics.
+    - Responses hold at most `page_size` rows (default and maximum 500); follow `next_page_token`.
+      A page token keeps the `known_through` of the first page, so pages never mix vintages.
+    - The checks send at most 4 concurrent requests per institution and honour `Retry-After` on
+      429 and 503 responses.
+
+    **Authentication** is the institution's choice (OAuth 2.0 client credentials, mutual TLS, an
+    API key, a private network). The scheme below is a placeholder: declare your own in your
+    OpenAPI document. It is not designed here.
+  license:
+    name: Metrics Spec licence (to be decided)
+servers:
+  - url: https://metrics.institution.example
+    description: Placeholder; each institution serves its own host, normally inside its network.
+security:
+  - institutionAuth: []
+tags:
+  - name: catalog
+    description: What the institution serves.
+  - name: data
+    description: Metric values and change concentration.
+  - name: reference
+    description: Breaks and business calendars.
+
+paths:
+  /metrics/v1/catalog:
+    get:
+      tags: [catalog]
+      operationId: getCatalog
+      summary: The institution's profile, products, metrics offered, breakdown values, aliases and history.
+      parameters:
+        - $ref: '#/components/parameters/SpecVersionRequest'
+      responses:
+        '200':
+          description: The catalog.
+          headers:
+            Metrics-Spec-Version:
+              $ref: '#/components/headers/MetricsSpecVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Catalog'
+              examples:
+                gulf_islamic_bank:
+                  summary: A fictional Islamic bank in Saudi Arabia (Sunday-Thursday working week)
+                  value:
+                    spec_version: 1.0.0
+                    generated_at: '2026-10-11T07:00:00+03:00'
+                    profile:
+                      institution_type: bank
+                      legal_entity_name: Example Islamic Bank (fictional)
+                      lei: null
+                      country: SA
+                      spec_version: 1.0.0
+                      time_zone: Asia/Riyadh
+                      business_calendars:
+                        - id: sa-banks
+                          primary: true
+                          weekend_days: [5, 6]
+                          regions: []
+                          source: served
+                          url: null
+                      base_currency: SAR
+                      base_currency_history: []
+                      pivot_currency: USD
+                      fx_reference_sources:
+                        - use: default
+                          name: central bank daily reference rate
+                          rate_type: mid
+                          fixing_time: '12:00'
+                      inflation_regime: normal
+                      region_basis: home_branch
+                      region_levels: {l1: iso_3166_2, l2: mapped}
+                      sector_classification: ISIC Rev.4
+                      accounting_framework:
+                        framework: IFRS 9
+                        dpd_materiality: null
+                        dpd_reset_on_restructure: false
+                        dpd_note: 'Financing past due is counted in days from the oldest unpaid instalment; local buckets 1-30, 31-90, 91+ map directly.'
+                      suppression: {min_contributors: 10, dominance_one: 0.5, dominance_two: 0.85, local_rule: null}
+                      renewal_grace_days: null
+                      free_look_days: null
+                      capability_level: L4
+                      vintages_kept: true
+                      vintage_history_from: '2023-07-01'
+                      segment_snapshot: weekly_snapshot
+                      shariah_compliant: true
+                    products:
+                      - product_id: qard-current
+                        name: Qard current account
+                        category: savings
+                        product_type: current_account
+                        scope: product
+                        shariah_compliant: true
+                        launched_on: '2009-01-04'
+                        book_size: {value: 41200000000, unit: currency, currency: SAR, as_of: '2026-10-08'}
+                        metrics:
+                          - key: deposit_inflow
+                            grain: daily
+                            day_basis: business
+                            unit: currency
+                            currency_rule: product
+                            capability_level: L4
+                            history_from: '2023-07-01'
+                            max_lag_days: 1
+                            breakdowns:
+                              segment: [remittance_linked, pensioner, student, salaried, other_individual, government, non_bank_financial, importer, exporter, domestic_business, unknown]
+                              region_l1: [SA-01, SA-02, SA-04, unknown]
+                              channel: [branch, mobile, internet, atm, unknown]
+                            filter_sets: null
+                            extras: []
+                      - product_id: murabaha-personal
+                        name: Personal murabaha finance
+                        category: retail_loan
+                        product_type: personal_loan
+                        scope: product
+                        shariah_compliant: true
+                        launched_on: '2011-06-01'
+                        book_size: {value: 18900000000, unit: currency, currency: SAR, as_of: '2026-09-30'}
+                        metrics:
+                          - key: installment_collection_rate
+                            grain: weekly
+                            day_basis: null
+                            unit: percent
+                            currency_rule: base
+                            capability_level: L4
+                            history_from: '2023-07-03'
+                            max_lag_days: 7
+                            breakdowns:
+                              employer_sector: [O, P, Q, G, C, unknown]
+                              region_l1: [SA-01, SA-02, SA-04, unknown]
+                            filter_sets:
+                              - []
+                              - [employer_sector]
+                              - [region_l1]
+                              - [employer_sector, region_l1]
+                            extras: []
+                          - key: moratorium_enrolled
+                            grain: weekly
+                            day_basis: null
+                            unit: percent
+                            currency_rule: base
+                            capability_level: L3
+                            history_from: '2024-10-07'
+                            max_lag_days: 14
+                            breakdowns:
+                              region_l1: [SA-01, SA-02, SA-04, unknown]
+                            filter_sets: null
+                            extras: []
+                      - product_id: deposits-all
+                        name: All deposit products (category group)
+                        category: savings
+                        product_type: null
+                        scope: category
+                        shariah_compliant: true
+                        launched_on: null
+                        book_size: null
+                        metrics:
+                          - key: large_depositor_net_flow
+                            grain: daily
+                            day_basis: business
+                            unit: currency
+                            currency_rule: base
+                            capability_level: L5
+                            history_from: '2023-07-01'
+                            max_lag_days: 1
+                            breakdowns: {}
+                            filter_sets: null
+                            extras: []
+                    dimension_values:
+                      region_l1:
+                        - {value: SA-01, label: Riyadh, parent: null, official_code: SA-01, calendar_id: sa-banks}
+                        - {value: SA-02, label: Makkah, parent: null, official_code: SA-02, calendar_id: sa-banks}
+                        - {value: SA-04, label: Eastern Province, parent: null, official_code: SA-04, calendar_id: sa-banks}
+                    aliases: []
+                    deprecations: []
+                    declarations:
+                      cost_index_baskets: []
+                      gold_reference: null
+                      mcc_to_isic: null
+                      micro_insurance_ceiling: null
+                      remittance_currency_source: []
+                      offered_rate_reference_tenors: []
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+
+  /metrics/v1/series:
+    get:
+      tags: [data]
+      operationId: getSeries
+      summary: One metric for one product, one row per closed grid period.
+      description: |
+        Returns one row per closed period of the metric's grid in `[start, until)`, aggregated over
+        the records that match `filter` (at most 3 dimensions). With `known_through`, each period is
+        read as it was known at the end of that local date. With `same_age_days=N`, each period is
+        read as it was known N days after its last day (and never after `known_through`); a period
+        with no vintage that young is returned at its `known_through` value with `vintage: missing`.
+        Periods closed but not yet published by `known_through` are listed in `unpublished`.
+        Rows produced at onboarding say `backfilled: true` and have no `published_at`.
+      parameters:
+        - $ref: '#/components/parameters/SpecVersionRequest'
+        - $ref: '#/components/parameters/ProductId'
+        - $ref: '#/components/parameters/Metric'
+        - $ref: '#/components/parameters/Start'
+        - $ref: '#/components/parameters/Until'
+        - $ref: '#/components/parameters/Filter'
+        - $ref: '#/components/parameters/KnownThrough'
+        - $ref: '#/components/parameters/SameAgeDays'
+        - $ref: '#/components/parameters/SegmentAsOf'
+        - $ref: '#/components/parameters/CurrencyBasis'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/PageToken'
+      responses:
+        '200':
+          description: The series.
+          headers:
+            Metrics-Spec-Version:
+              $ref: '#/components/headers/MetricsSpecVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesResponse'
+              examples:
+                indian_motor_claims:
+                  summary: An Indian general insurer's motor claims per 1,000 vehicles in Maharashtra, read at the same age
+                  value:
+                    product_id: motor-private
+                    metric: claims_per_1000
+                    kind: rate
+                    unit: per_1000
+                    currency: null
+                    currency_rule: none
+                    currency_basis: original
+                    grain: weekly
+                    day_basis: null
+                    time_zone: Asia/Kolkata
+                    filter: {region_l1: IN-MH, claim_type: collision}
+                    known_through: '2026-12-09'
+                    same_age_days: 16
+                    segment_as_of: null
+                    vintages_kept: true
+                    rows:
+                      - from: '2026-11-02'
+                        until: '2026-11-09'
+                        value: 1.7795
+                        numerator: 2041
+                        denominator: null
+                        exposure: 1146980
+                        volume: 1146980
+                        suppressed: false
+                        suppression_reason: null
+                        published_at: '2026-11-16'
+                        backfilled: false
+                        data_as_of: '2026-11-24'
+                        vintage: same_age
+                        revised: true
+                        revision_held: false
+                        extras: {}
+                      - from: '2026-11-09'
+                        until: '2026-11-16'
+                        value: 1.9153
+                        numerator: 2198
+                        denominator: null
+                        exposure: 1147615
+                        volume: 1147615
+                        suppressed: false
+                        suppression_reason: null
+                        published_at: '2026-11-23'
+                        backfilled: false
+                        data_as_of: '2026-12-01'
+                        vintage: same_age
+                        revised: true
+                        revision_held: false
+                        extras: {}
+                      - from: '2026-11-16'
+                        until: '2026-11-23'
+                        value: 1.8399
+                        numerator: 2113
+                        denominator: null
+                        exposure: 1148402
+                        volume: 1148402
+                        suppressed: false
+                        suppression_reason: null
+                        published_at: '2026-11-30'
+                        backfilled: false
+                        data_as_of: '2026-12-08'
+                        vintage: same_age
+                        revised: false
+                        revision_held: false
+                        extras: {}
+                    unpublished: ['2026-11-30']
+                    next_page_token: null
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+
+  /metrics/v1/change-concentration:
+    get:
+      tags: [data]
+      operationId: getChangeConcentration
+      summary: A band for the largest single contributor's share of the change between two windows (L5, optional).
+      description: |
+        Compares window `a` with window `b` for the records matching `filter`, computes each
+        contributor's part of the change inside the institution, and returns only a **band** for the
+        largest part as a share of the total change. It never returns the change itself, an
+        identifier, a rank, a value or a count that could single out the contributor.
+
+        **Windows.** `a` and `b` must each be a whole number of grid periods, of the same length, and
+        disjoint, with `b` after `a`. Anything else is rejected with `windows_invalid`. Each window
+        needs at least the profile's minimum contributors, or the answer is suppressed
+        (`too_few_contributors`).
+
+        **Contributor parts.**
+        - Flows and counts: contributor i's part is its value in b minus its value in a.
+        - Ratios: its part is n_i,b ÷ D_b − n_i,a ÷ D_a, holding each window's denominator.
+        - Rates: the same, with exposure.
+        - Levels: not supported (422 `unsupported_capability`).
+
+        The top share = max |part| ÷ |total change|, capped at 1, then reported as a band. When the
+        total change is zero, the band is null with reason `no_change`. The contributor is the
+        metric's volume unit (obligor, customer, merchant or policyholder), named in
+        `contributor_basis`.
+      parameters:
+        - $ref: '#/components/parameters/SpecVersionRequest'
+        - $ref: '#/components/parameters/ProductId'
+        - $ref: '#/components/parameters/Metric'
+        - $ref: '#/components/parameters/Filter'
+        - name: a_start
+          in: query
+          required: true
+          description: First day of window a (local date, on the grid).
+          schema: {$ref: '#/components/schemas/LocalDate'}
+        - name: a_until
+          in: query
+          required: true
+          description: Day after the last day of window a (exclusive). Must be on or before b_start.
+          schema: {$ref: '#/components/schemas/LocalDate'}
+        - name: b_start
+          in: query
+          required: true
+          description: First day of window b (on the grid).
+          schema: {$ref: '#/components/schemas/LocalDate'}
+        - name: b_until
+          in: query
+          required: true
+          description: Day after the last day of window b; b holds the same number of grid periods as a.
+          schema: {$ref: '#/components/schemas/LocalDate'}
+        - $ref: '#/components/parameters/KnownThrough'
+        - $ref: '#/components/parameters/SameAgeDays'
+        - $ref: '#/components/parameters/SegmentAsOf'
+        - $ref: '#/components/parameters/CurrencyBasis'
+      responses:
+        '200':
+          description: The band.
+          headers:
+            Metrics-Spec-Version:
+              $ref: '#/components/headers/MetricsSpecVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeConcentration'
+              examples:
+                brazil_one_drawdown:
+                  summary: A Brazilian bank's corporate manufacturing utilisation; one obligor drove most of the move
+                  value:
+                    product_id: capital-de-giro
+                    metric: facility_utilization
+                    filter: {size_band: corporate, sector: C}
+                    time_zone: America/Sao_Paulo
+                    windows:
+                      a: {from: '2026-10-05', until: '2026-10-12'}
+                      b: {from: '2026-11-09', until: '2026-11-16'}
+                    known_through: '2026-11-16'
+                    same_age_days: 1
+                    segment_as_of: '2026-09-28'
+                    contributor_basis: obligor
+                    top_share_band: from_0.8
+                    suppressed: false
+                    reason: null
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/ServerError'
+        '501':
+          description: Not implemented (the institution serves L4 or below).
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+
+  /metrics/v1/breaks:
+    get:
+      tags: [reference]
+      operationId: getBreaks
+      summary: Declared breaks, lasting shifts and episodes with an end date.
+      parameters:
+        - $ref: '#/components/parameters/SpecVersionRequest'
+        - name: product_id
+          in: query
+          required: false
+          description: Only breaks that affect this product (or all products).
+          schema: {type: string}
+        - name: metric
+          in: query
+          required: false
+          description: Only breaks that affect this metric (or all metrics).
+          schema: {type: string}
+        - name: start
+          in: query
+          required: false
+          description: Only breaks active on or after this local date.
+          schema: {$ref: '#/components/schemas/LocalDate'}
+        - name: until
+          in: query
+          required: false
+          description: Only breaks starting before this local date.
+          schema: {$ref: '#/components/schemas/LocalDate'}
+      responses:
+        '200':
+          description: The breaks.
+          headers:
+            Metrics-Spec-Version:
+              $ref: '#/components/headers/MetricsSpecVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BreaksResponse'
+              examples:
+                german_bank:
+                  summary: A German bank's core migration (lasting) and a flood-relief moratorium (episode)
+                  value:
+                    time_zone: Europe/Berlin
+                    breaks:
+                      - break_id: brk-2026-014
+                        kind: system_migration
+                        type: lasting
+                        date: '2026-11-16'
+                        until: null
+                        product_ids: [ratenkredit]
+                        metrics: [installment_collection_rate]
+                        applies_to: {}
+                        relief_kind: null
+                        factor: null
+                        event_id: null
+                        description: 'Standing-order collections moved to the new core; posting moves from the due date to T+3.'
+                        declared_at: '2026-10-02T09:30:00+02:00'
+                      - break_id: brk-2026-009
+                        kind: relief
+                        type: episode
+                        date: '2026-07-20'
+                        until: '2026-10-20'
+                        product_ids: []
+                        metrics: []
+                        applies_to: {region_l1: [DE-RP]}
+                        relief_kind: credit_moratorium
+                        factor: null
+                        event_id: null
+                        description: 'Three-month repayment holiday offered to borrowers in flood-hit Rhineland-Palatinate.'
+                        declared_at: '2026-07-21T08:00:00+02:00'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /metrics/v1/calendar:
+    get:
+      tags: [reference]
+      operationId: getCalendar
+      summary: Business days, holidays and flags of one declared calendar (optional if the profile names public calendars).
+      parameters:
+        - $ref: '#/components/parameters/SpecVersionRequest'
+        - name: calendar_id
+          in: query
+          required: false
+          description: A calendar id from the profile's business_calendars; default the primary calendar.
+          schema: {type: string}
+        - name: start
+          in: query
+          required: true
+          schema: {$ref: '#/components/schemas/LocalDate'}
+        - name: until
+          in: query
+          required: true
+          description: Exclusive; at most 1,200 days after start.
+          schema: {$ref: '#/components/schemas/LocalDate'}
+      responses:
+        '200':
+          description: One row per calendar day.
+          headers:
+            Metrics-Spec-Version:
+              $ref: '#/components/headers/MetricsSpecVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarResponse'
+              examples:
+                nigeria_eid:
+                  summary: A Nigerian bank's primary calendar around Eid al-Fitr 2026 (dates illustrative; serve the gazetted ones)
+                  value:
+                    calendar_id: ng-banks
+                    primary: true
+                    regions: []
+                    time_zone: Africa/Lagos
+                    weekend_days: [6, 7]
+                    days:
+                      - {date: '2026-03-19', business: true, partial: false, holidays: [], flags: ['season:ramadan'], month_bday: 14, month_bday_from_end: 6}
+                      - {date: '2026-03-20', business: false, partial: false, holidays: [{name: Eid al-Fitr, moving: true, kind: public}], flags: [public_holiday, moving_holiday], month_bday: null, month_bday_from_end: null}
+                      - {date: '2026-03-21', business: false, partial: false, holidays: [], flags: [weekend], month_bday: null, month_bday_from_end: null}
+                      - {date: '2026-03-22', business: false, partial: false, holidays: [], flags: [weekend], month_bday: null, month_bday_from_end: null}
+                      - {date: '2026-03-23', business: false, partial: false, holidays: [{name: Eid al-Fitr holiday, moving: true, kind: public}], flags: [public_holiday, moving_holiday], month_bday: null, month_bday_from_end: null}
+                      - {date: '2026-03-24', business: true, partial: false, holidays: [], flags: [after_holiday], month_bday: 15, month_bday_from_end: 5}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Unknown calendar_id, or the institution doesn't serve calendars (the profile names its public sources).
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+components:
+  securitySchemes:
+    institutionAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Placeholder. The institution chooses the scheme (OAuth 2.0 client credentials, mutual TLS,
+        API key, private network) and declares it in its own OpenAPI document. Not designed here.
+
+  headers:
+    MetricsSpecVersion:
+      description: The Metrics Spec version the server implements (same MAJOR as requested).
+      required: true
+      schema: {type: string, pattern: '^\d+\.\d+\.\d+$', examples: ['1.0.0']}
+    RetryAfter:
+      description: Seconds to wait before retrying.
+      schema: {type: integer, minimum: 1}
+
+  parameters:
+    SpecVersionRequest:
+      name: Metrics-Spec-Version
+      in: header
+      required: false
+      description: 'The spec version the client expects. A different MAJOR is rejected with 400 unsupported_version.'
+      schema: {type: string, pattern: '^\d+\.\d+\.\d+$'}
+    ProductId:
+      name: product_id
+      in: query
+      required: true
+      description: A product id (or a category-level product group) from the catalog.
+      schema: {type: string, minLength: 1, maxLength: 128}
+    Metric:
+      name: metric
+      in: query
+      required: true
+      description: 'A spec metric key offered for the product. Aliases are accepted: an alias''s filter is added to the request''s filter, and a conflicting filter value is rejected with alias_filter_conflict.'
+      schema: {type: string, pattern: '^[a-z][a-z0-9_]*$'}
+    Start:
+      name: start
+      in: query
+      required: true
+      description: First day of the first period (local date, on the metric's grid).
+      schema: {$ref: '#/components/schemas/LocalDate'}
+    Until:
+      name: until
+      in: query
+      required: true
+      description: 'Day after the last period (exclusive, local date, on the grid). At most 1,200 days after start for daily metrics, 120 months for others.'
+      schema: {$ref: '#/components/schemas/LocalDate'}
+    Filter:
+      name: filter
+      in: query
+      required: false
+      style: deepObject
+      explode: true
+      description: 'One value per breakdown, at most 3 breakdowns, e.g. filter[region_l1]=IN-MH&filter[claim_type]=collision. Keys are spec dimension keys; values come from the catalog. More than 3 gives too_many_filters; a combination outside the metric''s filter_sets gives filter_set_not_allowed.'
+      schema:
+        type: object
+        maxProperties: 3
+        additionalProperties: {type: string}
+    KnownThrough:
+      name: known_through
+      in: query
+      required: false
+      description: 'Read every period as it was known at the end of this local date (inclusive). Default, the latest values. Later than today gives known_through_in_future.'
+      schema: {$ref: '#/components/schemas/LocalDate'}
+    SameAgeDays:
+      name: same_age_days
+      in: query
+      required: false
+      description: 'Read each period as it was known this many days after its last day (and not after known_through). Ignored, with vintage latest, by servers that keep no vintages.'
+      schema: {type: integer, minimum: 0, maximum: 730}
+    SegmentAsOf:
+      name: segment_as_of
+      in: query
+      required: false
+      description: 'A Monday. Evaluate customer and account attributes (segment, size_band, sector, sector_l2, employer_sector, age_band, regions) under the cohort rule (guide R4) as of this date. Default, each period''s own start. Not a Monday gives segment_date_not_on_grid.'
+      schema: {$ref: '#/components/schemas/LocalDate'}
+    CurrencyBasis:
+      name: currency_basis
+      in: query
+      required: false
+      description: 'original (default) serves metrics whose currency rule is original in the currency the customer paid or was paid in (the pivot currency without a currency filter); base converts them to the base currency at each transaction date''s reference rate. No effect on other metrics.'
+      schema: {type: string, enum: [original, base], default: original}
+    PageSize:
+      name: page_size
+      in: query
+      required: false
+      schema: {type: integer, minimum: 1, maximum: 500, default: 500}
+    PageToken:
+      name: page_token
+      in: query
+      required: false
+      description: 'The next_page_token of the previous page. Other parameters must not change; the token keeps the first page''s known_through.'
+      schema: {type: string}
+
+  responses:
+    BadRequest:
+      description: Invalid request.
+      headers:
+        Metrics-Spec-Version: {$ref: '#/components/headers/MetricsSpecVersion'}
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+          examples:
+            off_grid:
+              value:
+                type: https://metrics-spec.example/problems/off_grid
+                title: Dates are not on the metric's grid
+                status: 400
+                code: off_grid
+                detail: 'claims_per_1000 is weekly; start must be a Monday. Got 2026-11-04 (Wednesday).'
+                parameter: start
+            windows_invalid:
+              value:
+                type: https://metrics-spec.example/problems/windows_invalid
+                title: Change-concentration windows must be disjoint and of equal length
+                status: 400
+                code: windows_invalid
+                detail: 'Window a (2026-11-02 to 2026-11-16) and window b (2026-11-02 to 2026-11-23) overlap.'
+                parameter: b_start
+    Unauthorized:
+      description: Missing or invalid credentials.
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    Forbidden:
+      description: The client may not read this product or metric.
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    NotFound:
+      description: Unknown product or metric.
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    Unprocessable:
+      description: 'Valid syntax, but the request can''t be served (unknown breakdown or value, a filter combination not served, a capability not supported).'
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    RateLimited:
+      description: Too many requests.
+      headers:
+        Retry-After: {$ref: '#/components/headers/RetryAfter'}
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    ServerError:
+      description: Internal error.
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    Unavailable:
+      description: Temporarily unavailable (maintenance, end-of-day batch).
+      headers:
+        Retry-After: {$ref: '#/components/headers/RetryAfter'}
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+
+  schemas:
+    LocalDate:
+      type: string
+      format: date
+      description: A calendar date in the profile's time zone (no time, no offset).
+    NullableLocalDate:
+      oneOf:
+        - $ref: '#/components/schemas/LocalDate'
+        - type: 'null'
+    Grain:
+      type: string
+      enum: [daily, weekly, monthly, quarterly]
+    DayBasis:
+      type: [string, 'null']
+      enum: [business, calendar, null]
+      description: For daily metrics only.
+    Kind:
+      type: string
+      enum: [flow, stock, count, ratio, rate, level]
+    Unit:
+      type: string
+      enum: [currency, count, percent, per_1000, index, percent_pa, pp]
+    CurrencyRule:
+      type: string
+      enum: [base, product, original, none]
+    CurrencyCode:
+      type: string
+      pattern: '^[A-Z]{3}$'
+      description: ISO 4217 alphabetic code.
+    CapabilityLevel:
+      type: string
+      enum: [L1, L2, L3, L4, L5]
+
+    BusinessCalendar:
+      type: object
+      required: [id, primary, weekend_days, regions, source]
+      properties:
+        id: {type: string}
+        primary: {type: boolean, description: Exactly one calendar is primary.}
+        weekend_days:
+          type: array
+          items: {type: integer, minimum: 1, maximum: 7}
+          description: 'ISO weekday numbers (1 = Monday). Saudi Arabia [5, 6]; most of the world [6, 7].'
+        regions:
+          type: array
+          items: {type: string}
+          description: The region_l1 values this calendar applies to (empty for the primary).
+        source: {type: string, enum: [served, public]}
+        url: {type: [string, 'null'], format: uri, description: 'The public calendar, when source is public.'}
+
+    InstitutionProfile:
+      type: object
+      required: [institution_type, legal_entity_name, country, spec_version, time_zone, business_calendars,
+                 base_currency, pivot_currency, fx_reference_sources, inflation_regime, region_levels,
+                 sector_classification, accounting_framework, suppression, capability_level, vintages_kept]
+      properties:
+        institution_type: {type: string, enum: [bank, insurer]}
+        legal_entity_name: {type: string}
+        lei: {type: [string, 'null'], pattern: '^[A-Z0-9]{18}[0-9]{2}$', description: "The institution's own ISO 17442 LEI."}
+        country: {type: string, pattern: '^[A-Z]{2}$', description: ISO 3166-1 alpha-2.}
+        spec_version: {type: string, pattern: '^\d+\.\d+\.\d+$'}
+        time_zone: {type: string, description: 'IANA tz name, e.g. Asia/Riyadh. Never an offset.'}
+        business_calendars:
+          type: array
+          minItems: 1
+          items: {$ref: '#/components/schemas/BusinessCalendar'}
+        base_currency: {$ref: '#/components/schemas/CurrencyCode'}
+        base_currency_history:
+          type: array
+          description: Earlier base currencies (redenominations).
+          items:
+            type: object
+            required: [currency, until, factor]
+            properties:
+              currency: {$ref: '#/components/schemas/CurrencyCode'}
+              until: {$ref: '#/components/schemas/LocalDate'}
+              factor: {type: number, exclusiveMinimum: 0, description: Old units per new unit.}
+        pivot_currency: {$ref: '#/components/schemas/CurrencyCode'}
+        fx_reference_sources:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [use, name, rate_type]
+            properties:
+              use: {type: string, description: 'default, trade, remittance, card, ...'}
+              name: {type: string}
+              rate_type: {type: string, enum: [mid]}
+              fixing_time: {type: [string, 'null'], pattern: '^\d{2}:\d{2}$'}
+        inflation_regime: {type: string, enum: [normal, high]}
+        region_basis: {type: [string, 'null'], enum: [home_branch, customer_domicile, null], description: 'Banks only; customer_domicile where there are no branches. Insurers use risk location.'}
+        region_levels:
+          type: object
+          properties:
+            l1: {type: string, enum: [iso_3166_2]}
+            l2: {type: string, enum: [iso_3166_2, mapped]}
+        sector_classification: {type: string}
+        accounting_framework:
+          type: object
+          required: [framework, dpd_reset_on_restructure]
+          properties:
+            framework: {type: string, examples: ['IFRS 9', 'AAOIFI', 'US GAAP (CECL)']}
+            dpd_materiality:
+              type: [object, 'null']
+              properties:
+                amount: {type: [number, 'null']}
+                percent: {type: [number, 'null']}
+            dpd_reset_on_restructure: {type: boolean, description: 'Normally false; true only where a local rule forces it (also a rule_change break).'}
+            dpd_note: {type: [string, 'null']}
+        suppression:
+          type: object
+          required: [min_contributors, dominance_one, dominance_two]
+          properties:
+            min_contributors: {type: integer, minimum: 10}
+            dominance_one: {type: number, exclusiveMinimum: 0, maximum: 0.5}
+            dominance_two: {type: number, exclusiveMinimum: 0, maximum: 0.85}
+            local_rule: {type: [string, 'null']}
+        renewal_grace_days: {type: [integer, 'null'], minimum: 0}
+        free_look_days: {type: [integer, 'null'], minimum: 0}
+        capability_level: {$ref: '#/components/schemas/CapabilityLevel'}
+        vintages_kept: {type: boolean}
+        vintage_history_from: {$ref: '#/components/schemas/NullableLocalDate'}
+        segment_snapshot: {type: [string, 'null'], enum: [dated_history, weekly_snapshot, static, null]}
+        shariah_compliant: {type: [boolean, 'null']}
+
+    OfferedMetric:
+      type: object
+      required: [key, grain, unit, currency_rule, capability_level, history_from, max_lag_days, breakdowns]
+      properties:
+        key: {type: string, description: The spec metric key.}
+        grain: {$ref: '#/components/schemas/Grain'}
+        day_basis: {$ref: '#/components/schemas/DayBasis'}
+        unit: {$ref: '#/components/schemas/Unit'}
+        currency_rule: {$ref: '#/components/schemas/CurrencyRule'}
+        capability_level: {$ref: '#/components/schemas/CapabilityLevel'}
+        history_from: {$ref: '#/components/schemas/LocalDate'}
+        max_lag_days:
+          type: integer
+          minimum: 0
+          description: "Your lag, if longer than the spec's; the checks wait for it."
+        breakdowns:
+          type: object
+          description: Dimension key → allowed values (including unknown).
+          additionalProperties:
+            type: array
+            items: {type: string}
+        filter_sets:
+          type: [array, 'null']
+          description: 'The filter combinations served (each at most 3 dimensions); null = every combination of up to 3 breakdowns.'
+          items:
+            type: array
+            maxItems: 3
+            items: {type: string}
+        extras:
+          type: array
+          items: {type: string}
+        notes: {type: [string, 'null']}
+
+    Product:
+      type: object
+      required: [product_id, name, category, scope, metrics]
+      properties:
+        product_id: {type: string}
+        name: {type: string, description: Your product name.}
+        category: {type: string, description: A spec category id.}
+        product_type: {type: [string, 'null'], description: 'A spec product type (null for a category-level group).'}
+        scope: {type: string, enum: [product, category]}
+        shariah_compliant: {type: [boolean, 'null']}
+        launched_on: {$ref: '#/components/schemas/NullableLocalDate'}
+        book_size:
+          description: 'The product''s size for ranking: balance or outstanding at the date, or trailing 12-month GWP for insurers.'
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [value, unit, as_of]
+              properties:
+                value: {type: number}
+                unit: {$ref: '#/components/schemas/Unit'}
+                currency: {oneOf: [{$ref: '#/components/schemas/CurrencyCode'}, {type: 'null'}]}
+                as_of: {$ref: '#/components/schemas/LocalDate'}
+        metrics:
+          type: array
+          items: {$ref: '#/components/schemas/OfferedMetric'}
+
+    DimensionValue:
+      type: object
+      required: [value, label]
+      properties:
+        value: {type: string}
+        label: {type: string}
+        parent: {type: [string, 'null'], description: 'For region_l2, its region_l1; for sector_l2, its section.'}
+        official_code: {type: [string, 'null'], description: ISO 3166-2 or national statistics code.}
+        calendar_id: {type: [string, 'null'], description: 'For region_l1, the business calendar that applies.'}
+
+    AliasRef:
+      type: object
+      required: [category, key]
+      properties:
+        category: {type: string}
+        key: {type: string}
+        filter:
+          type: object
+          additionalProperties: {type: string}
+
+    Alias:
+      type: object
+      required: [old, new]
+      properties:
+        old: {$ref: '#/components/schemas/AliasRef'}
+        new: {$ref: '#/components/schemas/AliasRef'}
+        context: {type: boolean, description: 'True when the alias points to a different metric served as context.'}
+
+    Catalog:
+      type: object
+      required: [spec_version, generated_at, profile, products, aliases, deprecations]
+      properties:
+        spec_version: {type: string}
+        generated_at: {type: string, format: date-time}
+        profile: {$ref: '#/components/schemas/InstitutionProfile'}
+        products:
+          type: array
+          items: {$ref: '#/components/schemas/Product'}
+        dimension_values:
+          type: object
+          description: 'Labels, parents, official codes and calendars for region and institution-defined values.'
+          additionalProperties:
+            type: array
+            items: {$ref: '#/components/schemas/DimensionValue'}
+        aliases:
+          type: array
+          description: The spec aliases this server honours.
+          items: {$ref: '#/components/schemas/Alias'}
+        deprecations:
+          type: array
+          items:
+            type: object
+            required: [key, deprecated_in]
+            properties:
+              category: {type: string}
+              key: {type: string}
+              deprecated_in: {type: string}
+              replaced_by: {type: [string, 'null']}
+        declarations:
+          type: object
+          description: Declarations some metrics need.
+          properties:
+            cost_index_baskets:
+              type: array
+              description: 'For procedure_cost_index and parts_cost_index: items, weights and base period.'
+              items:
+                type: object
+                properties:
+                  metric: {type: string}
+                  product_id: {type: string}
+                  base_period: {type: string}
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code: {type: string}
+                        label: {type: string}
+                        weight: {type: number}
+            gold_reference:
+              type: [object, 'null']
+              description: 'For gold loans: the reference price source and fineness.'
+              properties:
+                source: {type: string}
+                fineness: {type: string, examples: ['22K', '21K', '999']}
+            mcc_to_isic:
+              type: [string, 'null']
+              format: uri
+              description: The table mapping merchant category codes to ISIC sections.
+            micro_insurance_ceiling:
+              type: [object, 'null']
+              properties:
+                rule: {type: string}
+                sum_insured_max: {type: number}
+                currency: {$ref: '#/components/schemas/CurrencyCode'}
+            remittance_currency_source:
+              type: array
+              description: "Corridors whose payment messages lack the sender's instructed currency, so settlement currency is served."
+              items:
+                type: object
+                properties:
+                  corridor: {type: string, pattern: '^[A-Z]{2}$'}
+                  currency_source: {type: string, enum: [instructed, settlement]}
+            offered_rate_reference_tenors:
+              type: array
+              items:
+                type: object
+                properties:
+                  product_id: {type: string}
+                  tenor_band: {type: string}
+
+    SeriesRow:
+      type: object
+      required: [from, until, value, volume, suppressed, published_at, backfilled, data_as_of, vintage, revised, revision_held]
+      properties:
+        from: {$ref: '#/components/schemas/LocalDate'}
+        until: {$ref: '#/components/schemas/LocalDate'}
+        value: {type: [number, 'null']}
+        numerator: {type: [number, 'null'], description: Ratios and rates.}
+        denominator: {type: [number, 'null'], description: Ratios.}
+        exposure: {type: [number, 'null'], description: Rates (units at risk).}
+        volume: {type: [integer, 'null'], minimum: 0, description: "Records behind the value, per the metric's volume definition; null when suppressed."}
+        suppressed: {type: boolean}
+        suppression_reason:
+          type: [string, 'null']
+          enum: [small_count, dominance, numerator_dominance, complementary, segment_difference, local_rule, null]
+        published_at:
+          oneOf:
+            - $ref: '#/components/schemas/LocalDate'
+            - type: 'null'
+          description: "The local date this period's value was first produced. Null for back-filled rows, and below L3."
+        backfilled: {type: boolean, description: 'Produced at onboarding rather than when the period closed.'}
+        data_as_of: {$ref: '#/components/schemas/LocalDate'}
+        vintage:
+          type: string
+          enum: [latest, known_through, same_age, missing]
+          description: 'latest = server keeps no vintages, or none requested; known_through = read as of known_through; same_age = read at same_age_days; missing = no vintage that young, so the known_through value is given.'
+        revised: {type: boolean, description: More than one vintage exists up to known_through.}
+        revision_held: {type: boolean, description: 'A newer revision exists but is held back by the revision guard (guide R1).'}
+        extras:
+          type: object
+          description: 'Metric-specific extras named in the spec (p75, settled_share, grams_fine, value_base, count, risks, external_failures, median_amount_pivot). Null when suppressed or below the median rule.'
+          additionalProperties: {type: [number, 'null']}
+
+    SeriesResponse:
+      type: object
+      required: [product_id, metric, kind, unit, currency, currency_rule, currency_basis, grain, time_zone, filter, vintages_kept, rows, unpublished]
+      properties:
+        product_id: {type: string}
+        metric: {type: string, description: 'The spec key (an alias in the request is answered with the current key).'}
+        kind: {$ref: '#/components/schemas/Kind'}
+        unit: {$ref: '#/components/schemas/Unit'}
+        currency: {oneOf: [{$ref: '#/components/schemas/CurrencyCode'}, {type: 'null'}]}
+        currency_rule: {$ref: '#/components/schemas/CurrencyRule'}
+        currency_basis: {type: string, enum: [original, base]}
+        grain: {$ref: '#/components/schemas/Grain'}
+        day_basis: {$ref: '#/components/schemas/DayBasis'}
+        time_zone: {type: string}
+        filter:
+          type: object
+          maxProperties: 4
+          description: The filter applied, including any added by an alias.
+          additionalProperties: {type: string}
+        known_through: {$ref: '#/components/schemas/NullableLocalDate'}
+        same_age_days: {type: [integer, 'null']}
+        segment_as_of: {$ref: '#/components/schemas/NullableLocalDate'}
+        vintages_kept: {type: boolean}
+        rows:
+          type: array
+          items: {$ref: '#/components/schemas/SeriesRow'}
+        unpublished:
+          type: array
+          description: 'from dates of closed periods in the range not yet published by known_through.'
+          items: {$ref: '#/components/schemas/LocalDate'}
+        next_page_token: {type: [string, 'null']}
+
+    ChangeConcentration:
+      type: object
+      required: [product_id, metric, windows, contributor_basis, top_share_band, suppressed]
+      properties:
+        product_id: {type: string}
+        metric: {type: string}
+        filter:
+          type: object
+          maxProperties: 3
+          additionalProperties: {type: string}
+        time_zone: {type: string}
+        windows:
+          type: object
+          required: [a, b]
+          properties:
+            a:
+              type: object
+              properties:
+                from: {$ref: '#/components/schemas/LocalDate'}
+                until: {$ref: '#/components/schemas/LocalDate'}
+            b:
+              type: object
+              properties:
+                from: {$ref: '#/components/schemas/LocalDate'}
+                until: {$ref: '#/components/schemas/LocalDate'}
+        known_through: {$ref: '#/components/schemas/NullableLocalDate'}
+        same_age_days: {type: [integer, 'null']}
+        segment_as_of: {$ref: '#/components/schemas/NullableLocalDate'}
+        contributor_basis: {type: string, enum: [customer, obligor, account, merchant, policyholder]}
+        top_share_band:
+          type: [string, 'null']
+          enum: [below_0.5, from_0.5_below_0.8, from_0.8, null]
+          description: "The largest contributor's share of the change, as a band. The checks treat a band whose lower bound is at or above the dominance limit (default 0.5) as dominated."
+        suppressed: {type: boolean, description: 'True when either window has too few contributors or is suppressed; the band is then null.'}
+        reason: {type: [string, 'null'], enum: [no_change, suppressed, too_few_contributors, null]}
+
+    Break:
+      type: object
+      required: [break_id, kind, type, date, description]
+      properties:
+        break_id: {type: string}
+        kind:
+          type: string
+          enum: [system_migration, product_change, rule_change, portfolio_transfer, large_scheme_change, classification_change,
+                 definition_change, currency_redenomination, relief, disaster, outage, campaign, market_disruption]
+        type: {type: string, enum: [lasting, episode]}
+        date: {$ref: '#/components/schemas/LocalDate'}
+        until:
+          description: Exclusive end of an episode; null for a lasting shift.
+          oneOf:
+            - $ref: '#/components/schemas/LocalDate'
+            - type: 'null'
+        product_ids:
+          type: array
+          items: {type: string}
+          description: Empty = all products.
+        metrics:
+          type: array
+          items: {type: string}
+          description: Empty = all metrics.
+        applies_to:
+          type: object
+          description: 'Dimension key → values the break is limited to (e.g. regions).'
+          additionalProperties:
+            type: array
+            items: {type: string}
+        relief_kind: {type: [string, 'null'], enum: [credit_moratorium, premium_grace_extension, fee_waiver, null]}
+        factor: {type: [number, 'null'], description: 'For currency_redenomination: old units per new unit.'}
+        event_id: {type: [string, 'null'], description: "The event this break is, when known (the checks then don't treat it as a break)."}
+        description: {type: string, description: 'Plain words; never names a customer, employer or obligor.'}
+        declared_at: {type: [string, 'null'], format: date-time}
+
+    BreaksResponse:
+      type: object
+      required: [breaks]
+      properties:
+        time_zone: {type: string}
+        breaks:
+          type: array
+          items: {$ref: '#/components/schemas/Break'}
+
+    CalendarDay:
+      type: object
+      required: [date, business, holidays, flags]
+      properties:
+        date: {$ref: '#/components/schemas/LocalDate'}
+        business: {type: boolean}
+        partial: {type: boolean, description: 'A business day with shortened hours (e.g. a Friday afternoon off).'}
+        holidays:
+          type: array
+          items:
+            type: object
+            required: [name, moving]
+            properties:
+              name: {type: string}
+              moving: {type: boolean, description: 'Its date moves from year to year (lunar or lunisolar calendars, Easter).'}
+              kind: {type: string, enum: [public, bank, regional]}
+        flags:
+          type: array
+          description: 'Standard flags (guide R2): weekend, public_holiday, regional_holiday, moving_holiday, partial, after_holiday, salary_day, pension_day, month_end, quarter_end, season:<name>, campaign:<name>, dst_change.'
+          items:
+            type: string
+            pattern: '^(weekend|public_holiday|regional_holiday|moving_holiday|partial|after_holiday|salary_day|pension_day|month_end|quarter_end|dst_change|season:[a-z0-9_]+|campaign:[a-z0-9_]+)$'
+        month_bday: {type: [integer, 'null'], minimum: 1, description: Rank of the business day in its month.}
+        month_bday_from_end: {type: [integer, 'null'], minimum: 0, description: "Business days to the month's last business day (0 = last)."}
+
+    CalendarResponse:
+      type: object
+      required: [calendar_id, primary, time_zone, weekend_days, days]
+      properties:
+        calendar_id: {type: string}
+        primary: {type: boolean}
+        regions:
+          type: array
+          items: {type: string}
+        time_zone: {type: string}
+        weekend_days:
+          type: array
+          items: {type: integer, minimum: 1, maximum: 7}
+        days:
+          type: array
+          items: {$ref: '#/components/schemas/CalendarDay'}
+
+    Problem:
+      type: object
+      description: RFC 9457 problem details. Each code always has the same HTTP status (see the API description).
+      required: [type, title, status, code]
+      properties:
+        type: {type: string, format: uri}
+        title: {type: string}
+        status: {type: integer}
+        code:
+          type: string
+          enum: [off_grid, relative_window, range_too_large, invalid_parameter, too_many_filters, segment_date_not_on_grid,
+                 windows_invalid, alias_filter_conflict, known_through_in_future, unsupported_version, unauthorized,
+                 forbidden, unknown_product, unknown_metric, unknown_breakdown, value_not_allowed, filter_set_not_allowed,
+                 unsupported_capability, rate_limited, internal, not_implemented, unavailable]
+        detail: {type: string}
+        parameter: {type: [string, 'null'], description: 'The offending parameter, when there is one.'}

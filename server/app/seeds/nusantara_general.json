@@ -1,0 +1,1217 @@
+{
+ "_about": "The bundled sample insurer (invented): served as the sample insurer's data when the installation's own institution is a bank. Figures are illustrative.",
+ "institution": {
+  "name": "Nusantara General Insurance",
+  "legal_name": "PT Nusantara General Insurance Tbk",
+  "short_name": "Nusantara General",
+  "institution_type": "insurer",
+  "subtype": "general",
+  "islamic": true,
+  "home_country": "ID",
+  "base_currency": "IDR",
+  "time_zone": "Asia/Jakarta",
+  "clearing_currencies": [
+   "USD",
+   "SGD",
+   "EUR"
+  ],
+  "governance_body": "Risk Management Committee",
+  "size_band": "mid",
+  "fiscal_year_start_month": 1,
+  "summary": "Mid-size Indonesian general insurer: motor, property and engineering, marine cargo and hull, group health and personal accident, with a sharia (takaful-style) unit; sells through agents, brokers, motor dealers and banks, and buys reinsurance in Jakarta, Singapore and Europe."
+ },
+ "sections": {
+  "footprint": [
+   {
+    "code": "SG",
+    "role": "representative_office",
+    "scope": "part",
+    "branch_count": 1,
+    "note": "Reinsurance placement and marine underwriting liaison. No direct policies."
+   }
+  ],
+  "watch-places": [
+   {
+    "id": "hormuz",
+    "name": "Strait of Hormuz",
+    "code": "chk:hormuz",
+    "kind": "chokepoint",
+    "reason": "Cargo and hulls insured for Gulf voyages; war-risk cover has been withdrawn or repriced since March 2026."
+   },
+   {
+    "id": "malacca",
+    "name": "Strait of Malacca",
+    "code": "chk:malacca",
+    "kind": "chokepoint",
+    "reason": "Busiest lane for the insured cargo and for coal and palm-oil exports."
+   },
+   {
+    "id": "taiwan-strait",
+    "name": "Taiwan Strait",
+    "code": "chk:taiwan-strait",
+    "kind": "chokepoint",
+    "reason": "A blockade or incident would disrupt marine cargo to East Asia."
+   },
+   {
+    "id": "saudi-arabia",
+    "name": "Saudi Arabia",
+    "code": "SA",
+    "kind": "country",
+    "reason": "Hajj and Umrah travel from Indonesia, and migrant workers there."
+   },
+   {
+    "id": "singapore-port",
+    "name": "Port of Singapore",
+    "code": "port:singapore",
+    "kind": "port",
+    "reason": "Transhipment hub for cargo and the main reinsurance marketplace."
+   },
+   {
+    "id": "china",
+    "name": "China",
+    "code": "CN",
+    "kind": "country",
+    "reason": "Largest buyer of Indonesian coal; its demand moves cargo volumes."
+   },
+   {
+    "id": "malaysia",
+    "name": "Malaysia",
+    "code": "MY",
+    "kind": "country",
+    "reason": "Neighbour for haze, migrant workers and trade."
+   }
+  ],
+  "segments": [
+   {
+    "id": "vehicle-owners",
+    "template_id": "insurer-vehicle-owners",
+    "label": "Vehicle owners",
+    "kind": "individual",
+    "note": "Car and motorcycle owners insured through dealers, agents and banks.",
+    "places": [
+     "ID-JK",
+     "ID-JB",
+     "ID-JI"
+    ],
+    "income_sources": [
+     "salary",
+     "business_income"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "segment",
+      "value": "other_individual"
+     }
+    ],
+    "share_of_customers_pct": 34
+   },
+   {
+    "id": "sme-property",
+    "template_id": "insurer-small-and-medium-businesses",
+    "label": "Small and medium businesses",
+    "kind": "business",
+    "note": "Shops, workshops and small factories with fire and all-risks policies.",
+    "places": [
+     "ID-JK",
+     "ID-JB",
+     "ID-JI",
+     "ID-SU"
+    ],
+    "income_sources": [
+     "business_income"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "size_band",
+      "value": "sme"
+     }
+    ],
+    "share_of_customers_pct": 14
+   },
+   {
+    "id": "industrial-corporates",
+    "template_id": "insurer-corporates",
+    "label": "Industrial and mining corporates",
+    "kind": "business",
+    "note": "Mining, energy, plantation and manufacturing groups: property, engineering and liability, often placed through brokers.",
+    "places": [
+     "ID-KI",
+     "ID-KT",
+     "ID-SU",
+     "ID-JB"
+    ],
+    "income_sources": [
+     "business_income"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "size_band",
+      "value": "corporate"
+     }
+    ],
+    "share_of_customers_pct": 3
+   },
+   {
+    "id": "traders-shippers",
+    "label": "Importers, exporters and shippers",
+    "kind": "business",
+    "note": "Coal, palm-oil, commodity and general cargo owners and freight forwarders; they insure each shipment or buy open covers.",
+    "places": [
+     "ID-JK",
+     "ID-JI",
+     "ID-KI"
+    ],
+    "income_sources": [
+     "business_income"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "segment",
+      "value": "importer"
+     },
+     {
+      "dimension": "segment",
+      "value": "exporter"
+     }
+    ],
+    "share_of_customers_pct": 5
+   },
+   {
+    "id": "group-health-employers",
+    "template_id": "insurer-employees-on-group-schemes",
+    "label": "Employees on group schemes",
+    "kind": "mixed",
+    "note": "Staff of employers who buy group health and personal accident cover.",
+    "places": [
+     "ID-JK",
+     "ID-BT",
+     "ID-JB"
+    ],
+    "income_sources": [
+     "salary"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "segment",
+      "value": "salaried"
+     }
+    ],
+    "share_of_customers_pct": 22
+   },
+   {
+    "id": "pilgrims-and-travellers",
+    "template_id": "insurer-travellers",
+    "label": "Pilgrims and travellers",
+    "kind": "individual",
+    "note": "Umrah and Hajj pilgrims and holiday travellers; many depart through Jakarta, Surabaya and Makassar.",
+    "places": [
+     "ID-JK",
+     "ID-JI",
+     "ID-SN"
+    ],
+    "income_sources": [
+     "salary",
+     "business_income"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "segment",
+      "value": "other_individual"
+     }
+    ],
+    "share_of_customers_pct": 6
+   },
+   {
+    "id": "migrant-worker-families",
+    "template_id": "insurer-migrant-worker-families",
+    "label": "Migrant-worker families",
+    "kind": "individual",
+    "note": "Workers in Malaysia, Saudi Arabia, Hong Kong and Taiwan, and their families in Java and Nusa Tenggara.",
+    "places": [
+     "ID-JB",
+     "ID-JI",
+     "ID-NT"
+    ],
+    "income_sources": [
+     "remittances"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "segment",
+      "value": "remittance_linked"
+     }
+    ],
+    "share_of_customers_pct": 5
+   },
+   {
+    "id": "farmers-and-plantations",
+    "template_id": "insurer-farmers",
+    "label": "Farmers and plantation smallholders",
+    "kind": "individual",
+    "note": "Rice, palm-oil and rubber growers under the subsidised crop-insurance scheme and private covers.",
+    "places": [
+     "ID-JA",
+     "ID-RI",
+     "ID-SS",
+     "ID-KB"
+    ],
+    "income_sources": [
+     "farm_income"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "sector",
+      "value": "agriculture"
+     }
+    ],
+    "share_of_customers_pct": 11
+   }
+  ],
+  "products": [
+   {
+    "id": "private-motor",
+    "name": "Private motor comprehensive",
+    "category": "motor",
+    "product_type": "private_motor",
+    "segments": [
+     "vehicle-owners"
+    ],
+    "owner": "Motor",
+    "currencies": [
+     "IDR"
+    ],
+    "book_size": {
+     "amount": 1350000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    },
+    "attributes": {
+     "cover": "comprehensive",
+     "retention_pct": 10,
+     "third_party_cover": true
+    },
+    "note": "Claims cost depends on spare-parts prices, many of them imported."
+   },
+   {
+    "id": "commercial-motor",
+    "name": "Commercial vehicles",
+    "category": "motor",
+    "product_type": "commercial_motor",
+    "segments": [
+     "sme-property",
+     "traders-shippers"
+    ],
+    "owner": "Motor",
+    "currencies": [
+     "IDR"
+    ],
+    "book_size": {
+     "amount": 400000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    },
+    "attributes": {
+     "fleet_policies": true
+    }
+   },
+   {
+    "id": "two-wheelers",
+    "name": "Motorcycle cover",
+    "category": "motor",
+    "product_type": "two_three_wheeler",
+    "segments": [
+     "vehicle-owners"
+    ],
+    "owner": "Motor",
+    "currencies": [
+     "IDR"
+    ],
+    "book_size": {
+     "amount": 120000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    }
+   },
+   {
+    "id": "syariah-motor",
+    "name": "Syariah motor",
+    "category": "motor",
+    "product_type": "private_motor",
+    "segments": [
+     "vehicle-owners"
+    ],
+    "islamic": true,
+    "owner": "Syariah unit",
+    "currencies": [
+     "IDR"
+    ],
+    "book_size": {
+     "amount": 90000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    },
+    "note": "Run on takaful principles with a separate fund."
+   },
+   {
+    "id": "home-cover",
+    "name": "Homeowners",
+    "category": "property",
+    "product_type": "home",
+    "segments": [
+     "vehicle-owners"
+    ],
+    "owner": "Property",
+    "currencies": [
+     "IDR"
+    ],
+    "book_size": {
+     "amount": 180000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    },
+    "attributes": {
+     "natural_perils_included": true
+    },
+    "note": "Flood and earthquake extensions are sold with most policies."
+   },
+   {
+    "id": "commercial-property",
+    "name": "Commercial property and fire",
+    "category": "property",
+    "product_type": "commercial_property",
+    "segments": [
+     "sme-property",
+     "industrial-corporates"
+    ],
+    "owner": "Property",
+    "currencies": [
+     "IDR",
+     "USD"
+    ],
+    "book_size": {
+     "amount": 780000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    },
+    "attributes": {
+     "sum_insured_band": "high",
+     "earthquake_extension": true
+    }
+   },
+   {
+    "id": "engineering",
+    "name": "Engineering and construction",
+    "category": "property",
+    "product_type": "engineering",
+    "segments": [
+     "industrial-corporates"
+    ],
+    "owner": "Property",
+    "currencies": [
+     "IDR",
+     "USD"
+    ],
+    "book_size": {
+     "amount": 420000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    },
+    "attributes": {
+     "sum_insured_band": "high"
+    }
+   },
+   {
+    "id": "marine-cargo",
+    "name": "Marine cargo",
+    "category": "marine",
+    "product_type": "marine_cargo",
+    "segments": [
+     "traders-shippers"
+    ],
+    "owner": "Marine",
+    "currencies": [
+     "IDR",
+     "USD"
+    ],
+    "book_size": {
+     "amount": 460000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    },
+    "attributes": {
+     "voyage_days_max": 45,
+     "war_risk": false,
+     "open_covers": true
+    },
+    "note": "War-risk extensions for Gulf voyages are excluded or priced case by case."
+   },
+   {
+    "id": "marine-hull",
+    "name": "Marine hull",
+    "category": "marine",
+    "product_type": "marine_hull",
+    "segments": [
+     "traders-shippers"
+    ],
+    "owner": "Marine",
+    "currencies": [
+     "USD",
+     "IDR"
+    ],
+    "book_size": {
+     "amount": 210000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    },
+    "attributes": {
+     "war_risk": false
+    }
+   },
+   {
+    "id": "general-liability",
+    "name": "General liability",
+    "category": "liability",
+    "product_type": "general_liability",
+    "segments": [
+     "sme-property",
+     "industrial-corporates"
+    ],
+    "owner": "Liability",
+    "currencies": [
+     "IDR"
+    ],
+    "book_size": {
+     "amount": 150000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    }
+   },
+   {
+    "id": "group-health",
+    "name": "Group health",
+    "category": "health",
+    "product_type": "group_health",
+    "segments": [
+     "group-health-employers"
+    ],
+    "owner": "Health",
+    "currencies": [
+     "IDR"
+    ],
+    "book_size": {
+     "amount": 620000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    },
+    "attributes": {
+     "settlement_mode": "cashless",
+     "medical_inflation_pct": 12.5
+    }
+   },
+   {
+    "id": "individual-health",
+    "name": "Individual health",
+    "category": "health",
+    "product_type": "individual_health",
+    "segments": [
+     "vehicle-owners"
+    ],
+    "owner": "Health",
+    "currencies": [
+     "IDR"
+    ],
+    "book_size": {
+     "amount": 110000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    }
+   },
+   {
+    "id": "personal-accident",
+    "name": "Personal accident",
+    "category": "health",
+    "product_type": "personal_accident",
+    "segments": [
+     "group-health-employers",
+     "migrant-worker-families"
+    ],
+    "owner": "Health",
+    "currencies": [
+     "IDR"
+    ],
+    "book_size": {
+     "amount": 90000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    }
+   },
+   {
+    "id": "pilgrim-travel",
+    "name": "Umrah and Hajj travel cover",
+    "category": "travel",
+    "product_type": "pilgrimage",
+    "segments": [
+     "pilgrims-and-travellers"
+    ],
+    "owner": "Travel",
+    "currencies": [
+     "IDR",
+     "SAR"
+    ],
+    "book_size": {
+     "amount": 70000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    },
+    "attributes": {
+     "destination": "SA",
+     "medical_evacuation": true
+    }
+   },
+   {
+    "id": "travel-annual",
+    "name": "Annual multi-trip travel",
+    "category": "travel",
+    "product_type": "annual_multi_trip",
+    "segments": [
+     "pilgrims-and-travellers"
+    ],
+    "owner": "Travel",
+    "currencies": [
+     "IDR"
+    ],
+    "book_size": {
+     "amount": 30000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    }
+   },
+   {
+    "id": "migrant-worker-cover",
+    "name": "Migrant worker protection",
+    "category": "travel",
+    "product_type": "migrant_worker",
+    "segments": [
+     "migrant-worker-families"
+    ],
+    "owner": "Travel",
+    "currencies": [
+     "IDR",
+     "MYR"
+    ],
+    "book_size": {
+     "amount": 50000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    },
+    "attributes": {
+     "destinations": "MY,SA,HK,TW"
+    }
+   },
+   {
+    "id": "crop-indemnity",
+    "name": "Rice crop insurance",
+    "category": "agriculture",
+    "product_type": "crop_indemnity",
+    "segments": [
+     "farmers-and-plantations"
+    ],
+    "owner": "Agriculture",
+    "currencies": [
+     "IDR"
+    ],
+    "book_size": {
+     "amount": 40000000000.0,
+     "currency": "IDR",
+     "as_of": "2026-09-30"
+    },
+    "attributes": {
+     "scheme": "public_subsidised"
+    }
+   }
+  ],
+  "flows": [
+   {
+    "id": "remit-id-my",
+    "kind": "remittances_in",
+    "local": "ID",
+    "counterpart": "MY",
+    "figure_id": "remittances-in-id-my-2024",
+    "value": {
+     "amount": 3000000000,
+     "currency": "USD",
+     "year": 2024
+    },
+    "source": {
+     "kind": "dataset",
+     "dataset": "Bank Indonesia, workers' remittances by country",
+     "dataset_year": 2024,
+     "sample": true
+    },
+    "segments": [
+     "migrant-worker-families"
+    ]
+   },
+   {
+    "id": "remit-id-sa",
+    "kind": "remittances_in",
+    "local": "ID",
+    "counterpart": "SA",
+    "figure_id": "remittances-in-id-sa-2024",
+    "value": {
+     "amount": 2500000000,
+     "currency": "USD",
+     "year": 2024
+    },
+    "source": {
+     "kind": "dataset",
+     "dataset": "Bank Indonesia, workers' remittances by country",
+     "dataset_year": 2024,
+     "sample": true
+    },
+    "segments": [
+     "migrant-worker-families",
+     "pilgrims-and-travellers"
+    ]
+   },
+   {
+    "id": "remit-id-hk",
+    "kind": "remittances_in",
+    "local": "ID",
+    "counterpart": "HK",
+    "figure_id": "remittances-in-id-hk-2024",
+    "value": {
+     "amount": 2000000000,
+     "currency": "USD",
+     "year": 2024
+    },
+    "source": {
+     "kind": "dataset",
+     "dataset": "Bank Indonesia, workers' remittances by country",
+     "dataset_year": 2024,
+     "sample": true
+    },
+    "segments": [
+     "migrant-worker-families"
+    ]
+   },
+   {
+    "id": "remit-id-tw",
+    "kind": "remittances_in",
+    "local": "ID",
+    "counterpart": "TW",
+    "figure_id": "remittances-in-id-tw-2024",
+    "value": {
+     "amount": 1800000000,
+     "currency": "USD",
+     "year": 2024
+    },
+    "source": {
+     "kind": "dataset",
+     "dataset": "Bank Indonesia, workers' remittances by country",
+     "dataset_year": 2024,
+     "sample": true
+    },
+    "segments": [
+     "migrant-worker-families"
+    ]
+   },
+   {
+    "id": "export-coal-cn",
+    "kind": "exports",
+    "local": "ID",
+    "counterpart": "CN",
+    "goods": "Coal",
+    "figure_id": "exports-id-cn-coal-2024",
+    "value": {
+     "amount": 20000000000,
+     "currency": "USD",
+     "year": 2024
+    },
+    "source": {
+     "kind": "dataset",
+     "dataset": "Statistics Indonesia, exports by destination",
+     "dataset_year": 2024,
+     "sample": true
+    },
+    "segments": [
+     "traders-shippers",
+     "industrial-corporates"
+    ],
+    "note": "Shipped through Malacca and the South China Sea; a driver of marine cargo and hull premiums."
+   },
+   {
+    "id": "export-palm-in",
+    "kind": "exports",
+    "local": "ID",
+    "counterpart": "IN",
+    "goods": "Palm oil",
+    "figure_id": "exports-id-in-palm-oil-2024",
+    "value": {
+     "amount": 4000000000,
+     "currency": "USD",
+     "year": 2024
+    },
+    "source": {
+     "kind": "dataset",
+     "dataset": "Statistics Indonesia, exports by destination",
+     "dataset_year": 2024,
+     "sample": true
+    },
+    "segments": [
+     "traders-shippers",
+     "farmers-and-plantations"
+    ]
+   }
+  ],
+  "regulators": [
+   {
+    "id": "ojk",
+    "regulator_id": "id-ojk",
+    "relation": "home",
+    "note": "Supervises insurers as well as banks."
+   },
+   {
+    "id": "bi",
+    "regulator_id": "id-bi",
+    "relation": "home",
+    "note": "Rupiah and rate decisions."
+   },
+   {
+    "id": "ppatk",
+    "regulator_id": "id-ppatk",
+    "relation": "home"
+   },
+   {
+    "id": "lps",
+    "regulator_id": "id-lps",
+    "relation": "home",
+    "note": "Deposit and policyholder protection scheme."
+   },
+   {
+    "id": "ofac",
+    "regulator_id": "sanctions-ofac",
+    "relation": "reach",
+    "note": "Applies through dollar premiums and reinsurance claims."
+   },
+   {
+    "id": "eu-sanctions",
+    "regulator_id": "sanctions-eu",
+    "relation": "reach"
+   },
+   {
+    "id": "iais",
+    "regulator_id": "global-iais",
+    "relation": "standard"
+   },
+   {
+    "id": "ifsb",
+    "regulator_id": "global-ifsb",
+    "relation": "standard",
+    "note": "For the sharia unit."
+   },
+   {
+    "id": "fatf",
+    "regulator_id": "global-fatf",
+    "relation": "standard"
+   },
+   {
+    "id": "un-sanctions",
+    "regulator_id": "global-un",
+    "relation": "standard"
+   }
+  ],
+  "rivals": [
+   {
+    "id": "allianz-utama",
+    "name": "Allianz Utama Indonesia",
+    "type": "insurer",
+    "places": [
+     "ID"
+    ],
+    "overlap": "high",
+    "categories": [
+     "motor",
+     "property",
+     "health",
+     "travel",
+     "marine"
+    ],
+    "aliases": [
+     "Allianz Indonesia"
+    ]
+   },
+   {
+    "id": "astra-buana",
+    "name": "Asuransi Astra Buana",
+    "type": "insurer",
+    "places": [
+     "ID"
+    ],
+    "overlap": "high",
+    "categories": [
+     "motor",
+     "property",
+     "health",
+     "marine"
+    ],
+    "aliases": [
+     "Garda Oto"
+    ]
+   },
+   {
+    "id": "jasindo",
+    "name": "Asuransi Jasa Indonesia",
+    "type": "insurer",
+    "places": [
+     "ID"
+    ],
+    "overlap": "high",
+    "categories": [
+     "property",
+     "marine",
+     "agriculture",
+     "motor"
+    ],
+    "aliases": [
+     "Jasindo"
+    ],
+    "note": "State-owned."
+   },
+   {
+    "id": "tugu-pratama",
+    "name": "Tugu Pratama Indonesia",
+    "type": "insurer",
+    "places": [
+     "ID"
+    ],
+    "overlap": "medium",
+    "categories": [
+     "property",
+     "marine",
+     "motor",
+     "liability"
+    ],
+    "aliases": [
+     "Tugu Insurance"
+    ]
+   },
+   {
+    "id": "sinar-mas",
+    "name": "Asuransi Sinar Mas",
+    "type": "insurer",
+    "places": [
+     "ID"
+    ],
+    "overlap": "medium",
+    "categories": [
+     "motor",
+     "property",
+     "health",
+     "travel"
+    ]
+   },
+   {
+    "id": "msig",
+    "name": "MSIG Insurance Indonesia",
+    "type": "insurer",
+    "places": [
+     "ID"
+    ],
+    "overlap": "medium",
+    "categories": [
+     "motor",
+     "marine",
+     "property",
+     "liability"
+    ]
+   },
+   {
+    "id": "takaful-umum",
+    "name": "Asuransi Takaful Umum",
+    "type": "takaful",
+    "places": [
+     "ID"
+    ],
+    "overlap": "low",
+    "categories": [
+     "motor",
+     "property",
+     "travel"
+    ],
+    "note": "Competes with the sharia unit."
+   }
+  ],
+  "counterparties": [
+   {
+    "id": "indonesia-re",
+    "name": "Indonesia Re",
+    "kind": "reinsurer",
+    "places": [
+     "ID"
+    ],
+    "importance": "critical",
+    "aliases": [
+     "Reasuransi Indonesia Utama",
+     "IndonesiaRe"
+    ],
+    "note": "Domestic reinsurer; takes the first cessions."
+   },
+   {
+    "id": "swiss-re",
+    "name": "Swiss Re",
+    "kind": "reinsurer",
+    "places": [
+     "CH",
+     "SG"
+    ],
+    "importance": "critical",
+    "note": "Property and marine treaty leader."
+   },
+   {
+    "id": "munich-re",
+    "name": "Munich Re",
+    "kind": "reinsurer",
+    "places": [
+     "DE",
+     "SG"
+    ],
+    "importance": "critical",
+    "note": "Property catastrophe and health treaties."
+   },
+   {
+    "id": "hannover-re",
+    "name": "Hannover Re",
+    "kind": "reinsurer",
+    "places": [
+     "DE",
+     "SG"
+    ],
+    "importance": "important"
+   },
+   {
+    "id": "aon",
+    "name": "Aon",
+    "kind": "distribution_partner",
+    "places": [
+     "SG",
+     "ID"
+    ],
+    "importance": "important",
+    "note": "Broker for large corporate risks and reinsurance placement."
+   },
+   {
+    "id": "dealer-partners",
+    "name": "Motor dealer and leasing partners",
+    "kind": "distribution_partner",
+    "places": [
+     "ID"
+    ],
+    "importance": "critical",
+    "note": "Sell most new-car policies at the point of sale."
+   },
+   {
+    "id": "claims-garages",
+    "name": "Authorised repair garage network",
+    "kind": "outsourcer",
+    "places": [
+     "ID"
+    ],
+    "importance": "important",
+    "note": "Repairs and spare-parts costs set the average motor claim."
+   }
+  ],
+  "risk-exposures": [
+   {
+    "id": "quakes",
+    "hazard_id": "id-earthquake-volcano",
+    "source": "finder",
+    "touches": {
+     "segments": [
+      "sme-property",
+      "industrial-corporates",
+      "vehicle-owners"
+     ],
+     "products": [
+      "commercial-property",
+      "engineering",
+      "home-cover",
+      "private-motor"
+     ]
+    },
+    "note": "Property and engineering carry earthquake extensions; most of it is reinsured."
+   },
+   {
+    "id": "haze",
+    "hazard_id": "id-haze",
+    "source": "finder",
+    "touches": {
+     "segments": [
+      "farmers-and-plantations",
+      "group-health-employers"
+     ],
+     "products": [
+      "crop-indemnity",
+      "group-health",
+      "individual-health"
+     ]
+    },
+    "note": "August to October: Sumatra and Kalimantan fires affect health claims and plantations."
+   },
+   {
+    "id": "jakarta-floods",
+    "hazard_id": "id-jakarta-floods",
+    "source": "finder",
+    "touches": {
+     "segments": [
+      "vehicle-owners",
+      "sme-property"
+     ],
+     "products": [
+      "private-motor",
+      "home-cover",
+      "commercial-property",
+      "two-wheelers"
+     ]
+    },
+    "note": "The rainy season starts in the coming weeks; flood claims for cars peak between December and February."
+   },
+   {
+    "id": "hormuz",
+    "hazard_id": "hormuz-disruption",
+    "source": "finder",
+    "touches": {
+     "segments": [
+      "traders-shippers"
+     ],
+     "products": [
+      "marine-cargo",
+      "marine-hull"
+     ],
+     "watch_places": [
+      "hormuz"
+     ]
+    },
+    "note": "Marine war-risk cover for Gulf voyages was withdrawn or repriced after March 2026."
+   },
+   {
+    "id": "gulf",
+    "hazard_id": "gulf-security",
+    "source": "finder",
+    "title": "Gulf conflict reaches pilgrims and workers",
+    "touches": {
+     "segments": [
+      "pilgrims-and-travellers",
+      "migrant-worker-families"
+     ],
+     "products": [
+      "pilgrim-travel",
+      "migrant-worker-cover",
+      "personal-accident"
+     ],
+     "flows": [
+      "remit-id-sa"
+     ],
+     "watch_places": [
+      "saudi-arabia"
+     ]
+    }
+   },
+   {
+    "id": "taiwan",
+    "hazard_id": "taiwan-strait-tension",
+    "source": "finder",
+    "touches": {
+     "segments": [
+      "traders-shippers"
+     ],
+     "products": [
+      "marine-cargo",
+      "marine-hull"
+     ],
+     "watch_places": [
+      "taiwan-strait"
+     ]
+    }
+   },
+   {
+    "id": "china-slowdown",
+    "hazard_id": "china-property-slowdown",
+    "source": "finder",
+    "touches": {
+     "segments": [
+      "traders-shippers",
+      "industrial-corporates"
+     ],
+     "products": [
+      "marine-cargo",
+      "marine-hull",
+      "engineering"
+     ],
+     "flows": [
+      "export-coal-cn"
+     ],
+     "watch_places": [
+      "china"
+     ]
+    }
+   },
+   {
+    "id": "rupiah-parts",
+    "title": "Rupiah at 18,000 raises claims and reinsurance costs",
+    "kind": "market",
+    "source": "user",
+    "places": [
+     "ID"
+    ],
+    "touches": {
+     "segments": [
+      "vehicle-owners"
+     ],
+     "products": [
+      "private-motor",
+      "commercial-motor",
+      "syariah-motor",
+      "marine-hull",
+      "engineering"
+     ]
+    },
+    "note": "Imported spare parts and dollar-priced reinsurance both cost more when the rupiah falls."
+   },
+   {
+    "id": "msci-portfolio",
+    "title": "MSCI downgrade and equity selloff hit the investment portfolio",
+    "kind": "market",
+    "source": "user",
+    "places": [
+     "ID"
+    ],
+    "touches": {},
+    "note": "Insurers hold shares, bonds and funds against their reserves. A move of Indonesia to standalone status would pressure the share price and capital."
+   },
+   {
+    "id": "reinsurance-renewal",
+    "title": "1 January reinsurance renewal: dearer cover for Middle East exposure",
+    "kind": "economic",
+    "source": "user",
+    "places": [
+     "ID",
+     "SG"
+    ],
+    "touches": {
+     "products": [
+      "marine-cargo",
+      "marine-hull",
+      "commercial-property",
+      "engineering"
+     ],
+     "segments": [
+      "traders-shippers",
+      "industrial-corporates"
+     ]
+    },
+    "note": "Reinsurers are focusing on Middle East exposure at the coming renewals."
+   }
+  ]
+ }
+}

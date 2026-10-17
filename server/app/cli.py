@@ -6,6 +6,7 @@
     uv run amiri seed-series      # watch the demo series (USD/LKR, AED/LKR, USD/INR, XAU/USD)
     uv run amiri seed-institution # the demo bank's profile (Serendib Commercial Bank, sample data)
     uv run amiri spec-sync        # refresh the Metrics Spec snapshot from its source file (metrics-spec-v1.0.yaml)
+    uv run amiri spec-pdf         # write the spec's PDF from its print page (needs web/dist and the dev dependencies)
     uv run amiri ref-load         # load reference data into the ref tables now (also done at start-up)
     uv run amiri fake-agent       # a fake setup agent on :8003 (contract 1.0); then ASSISTANT_BACKEND=http
     uv run amiri agent-contract   # write contracts/setup-agent-openapi.yaml
@@ -117,7 +118,7 @@ def _openapi() -> None:
 def main() -> None:
     p = argparse.ArgumentParser(prog="amiri", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("command", choices=["serve", "migrate", "tick", "seed-series", "seed-institution", "spec-sync", "ref-load",
+    p.add_argument("command", choices=["serve", "migrate", "tick", "seed-series", "seed-institution", "spec-sync", "spec-pdf", "ref-load",
                                        "coverage",
                                        "fake-agent", "agent-contract", "agent-check", "scenarios", "env-example", "openapi",
                                        "radar-fake", "radar-contract", "radar-check"])
@@ -220,6 +221,10 @@ def main() -> None:
         if not spec.SOURCE.exists():
             sys.exit(f"The Metrics Spec source isn't in this checkout ({spec.SOURCE.name}); the snapshot in app/spec is used.")
         print("spec", spec.sync()["spec_version"], "->", spec.SNAPSHOT)
+    elif a.command == "spec-pdf":
+        from app.spec import pdf
+
+        print("wrote", asyncio.run(pdf.make()))
     elif a.command == "env-example":
         (settings.PROJECT / ".env.example").write_text(settings.env_example() + "\n")
         print("wrote .env.example")

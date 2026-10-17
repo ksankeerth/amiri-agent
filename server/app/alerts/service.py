@@ -8,30 +8,40 @@ unowned → Risk management). Alerts are about risk only: an alert is an **early
 team's expected moves that are adverse for the metric (the Metrics Spec's adverse directions);
 favourable and neutral effects raise none and stay on the event. A change to a known alert escalates
 it (back to review).
+
+Once validation checks an effect against the institution's own data, the effect carries its check and the
+alert's level follows the checks: **adverse** when the data confirms an adverse move, **developing** when it
+starts to show one, an early warning otherwise. A rise reopens the alert, even after the event closed
+(verdicts come weeks later); a check that leaves the level as it is goes into the history only.
 """
 
 import uuid
 from datetime import datetime, timedelta
-from functools import cache
 
 from psycopg.types.json import Jsonb
 from psycopg_pool import AsyncConnectionPool
 
-from app import settings, spec
+from app import settings
 from app.clock import Clock
 from app.investigation.tone import adverse
 from app.problems import Problem
+from app.validation.explain import latest, metric_names
 
 UNOWNED = "Risk management"
+RANK = {"warning": 0, "developing": 1, "adverse": 2}
+CHECKED = ("confirms", "contradicts", "no_effect")  # verdicts that rest on the data
 
 
-@cache
-def metric_names() -> dict[str, str]:
-    out: dict[str, str] = {}
-    for metrics in spec.spec()["metrics"].values():
-        for m in metrics:
-            out.setdefault(m["key"], m["name"])
-    return out
+def _check(c: dict | None) -> dict | None:
+    """What an effect keeps of its latest check."""
+    if not c:
+        return None
+    return {k: c[k] for k in ("verdict", "verdict_text", "final", "line", "what", "alert", "as_of")}
+
+
+def _level(effects: list[dict]) -> str:
+    alerts = {(x.get("check") or {}).get("alert") for x in effects}
+    return "adverse" if "adverse" in alerts else "developing" if "developing" in alerts else "warning"
 
 
 def _effect(h: dict, product: dict | None) -> dict | None:
@@ -69,6 +79,9 @@ async def plan(conn, ev: dict) -> list[dict]:
     effects = [x for h in hyps if (x := _effect(h, products.get(h["product_id"]))) and x["adverse"]]
     if not effects:
         return []
+    checks = {c["hypothesis_id"]: c["check"] for c in (await latest(conn, ev["event_id"])).values()}
+    for x in effects:
+        x["check"] = _check(checks.get(x["hypothesis_id"]))
     teams: dict[str, list[dict]] = {}
     for x in effects:
         teams.setdefault((products.get(x["product_id"]) or {}).get("owner") or UNOWNED, []).append(x)
@@ -86,18 +99,27 @@ async def plan(conn, ev: dict) -> list[dict]:
                 via[team] = r["monitor_id"]
     out = []
     for team, xs in teams.items():
-        out.append({"owner": team, "level": "warning",  # verdicts add developing and adverse later
+        out.append({"owner": team, "level": _level(xs),
                     "title": _title(xs), "effects": xs, "product_ids": sorted({x["product_id"] for x in xs}),
                     "hypothesis_ids": sorted(x["hypothesis_id"] for x in xs), "finding_ids": findings,
                     "via_monitor": via.get(team)})
     return out
 
 
-async def sync(conn, event_id: str, now: datetime, why: str = "") -> int:
-    """Raises or escalates the event's alerts; returns how many were raised or escalated."""
+def _checks_changed(old: list[dict], new: list[dict]) -> list[dict]:
+    """The effects whose check is new or different."""
+    was = {x["hypothesis_id"]: (x.get("check") or {}) for x in old}
+    return [x for x in new if x.get("check") and
+            {k: x["check"][k] for k in ("verdict", "final", "alert")} !=
+            {k: was.get(x["hypothesis_id"], {}).get(k) for k in ("verdict", "final", "alert")}]
+
+
+async def sync(conn, event_id: str, now: datetime, why: str = "", checked: bool = False) -> int:
+    """Raises or escalates the event's alerts; returns how many were raised or escalated. `checked`: called
+    after validation, which also reaches a closed event's alerts."""
     cur = await conn.execute("SELECT * FROM cases.events WHERE event_id = %s", (event_id,))
     ev = await cur.fetchone()
-    if not ev or ev["world"] != "live" or ev["status"] != "open":
+    if not ev or ev["world"] != "live" or (ev["status"] != "open" and not checked):
         return 0
     changed = 0
     for a in await plan(conn, ev):
@@ -105,6 +127,8 @@ async def sync(conn, event_id: str, now: datetime, why: str = "") -> int:
         hyp_ids, findings = a["hypothesis_ids"], a["finding_ids"]
         cur = await conn.execute("SELECT * FROM core.alerts WHERE event_id = %s AND owner = %s FOR UPDATE", (event_id, team))
         old = await cur.fetchone()
+        if not old and ev["status"] != "open" and level == "warning":
+            continue
         if not old:
             await conn.execute(
                 """INSERT INTO core.alerts (alert_id, institution_id, event_id, owner, level, title, effects, product_ids,
@@ -118,7 +142,26 @@ async def sync(conn, event_id: str, now: datetime, why: str = "") -> int:
             continue
         new_effects = [x for x in hyp_ids if x not in old["hypothesis_ids"]]
         new_findings = [f for f in findings if f not in old["finding_ids"]]
+        moved = _checks_changed(old["effects"], xs)
         if not new_effects and not new_findings and old["level"] == level:
+            if moved:  # checked, the level as it was: the history says so, the alert stays where it is
+                await conn.execute(
+                    "UPDATE core.alerts SET effects = %s, history = history || %s, updated_at = %s WHERE alert_id = %s",
+                    (Jsonb(xs), Jsonb([{"at": now.isoformat(), "change": "checked", "by": "Amiri Agent",
+                                        "text": "; ".join(x["check"]["line"] for x in moved)}]), now, old["alert_id"]))
+            continue
+        rose, fell = RANK[level] > RANK[old["level"]], RANK[level] < RANK[old["level"]]
+        if rose or fell:
+            await conn.execute(
+                """UPDATE core.alerts SET level = %s, title = %s, effects = %s, product_ids = %s, hypothesis_ids = %s,
+                     finding_ids = %s, status = CASE WHEN %s THEN 'new' ELSE status END, history = history || %s,
+                     updated_at = %s WHERE alert_id = %s""",
+                (level, title, Jsonb(xs), a["product_ids"], hyp_ids, findings, rose,
+                 Jsonb([{"at": now.isoformat(), "by": "Amiri Agent",
+                         "change": ("confirmed" if level == "adverse" else "escalated") if rose else "withdrawn",
+                         "text": "; ".join(x["check"]["line"] for x in (moved or xs) if x.get("check"))
+                                 or f"now {level}"}]), now, old["alert_id"]))
+            changed += 1
             continue
         what = "; ".join(filter(None, [
             f"{len(new_effects)} more effect{'s' if len(new_effects) > 1 else ''}" if new_effects else "",
@@ -167,7 +210,12 @@ class Alerts:
                    AND (%s::text IS NULL OR a.event_id = %s)
                    ORDER BY a.updated_at DESC LIMIT %s""",
                 (self._iid(), alert_id, alert_id, status, status, owner, owner, level, level, event_id, event_id, limit))
-            return await cur.fetchall()
+            rows = await cur.fetchall()
+        for r in rows:  # what the alert rests on: the investigation's expectations, or the data too
+            verdicts = [x["check"]["verdict"] for x in r["effects"] if x.get("check")]
+            r["checked"] = {v: verdicts.count(v) for v in dict.fromkeys(verdicts)}
+            r["basis"] = "data" if any(v in CHECKED for v in verdicts) else "expected"
+        return rows
 
     async def get(self, alert_id: str) -> dict:
         rows = await self.all(None, None, None, 1, alert_id)

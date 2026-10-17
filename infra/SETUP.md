@@ -90,13 +90,13 @@ infra/scripts/secrets.sh
 ```
 
 It asks, without echoing, for the reCAPTCHA **secret** key and the Twelve Data key. It generates the rest
-itself: the database user and its password, and the session secret.
+itself: the database user and its password, the session secret, and the key that encrypts an institution API's key.
 
 **Check them** (nothing secret is printed):
 
 ```bash
 get() { gcloud secrets versions access latest --secret="$1"; }
-for s in DATABASE_URL SESSION_SECRET RECAPTCHA_SECRET TWELVEDATA_API_KEY; do
+for s in DATABASE_URL SESSION_SECRET DATA_SECRET_KEY RECAPTCHA_SECRET TWELVEDATA_API_KEY; do
   v=$(get $s 2>/dev/null); echo "$s: length=${#v} spaces=$(printf '%s' "$v" | grep -c '[[:space:]]')"
 done
 curl -s "https://api.twelvedata.com/api_usage?apikey=$(get TWELVEDATA_API_KEY)" | head -c 120; echo

@@ -19,6 +19,8 @@ import { RadarPage } from "./pages/radar/Radar";
 import { BotCheckPage, PausedPage } from "./pages/Login";
 import { authApi, type AuthConfig } from "./api/auth";
 import { AlertsPage } from "./pages/Alerts";
+import { DataConnectionsPage } from "./pages/admin/DataConnections";
+import { SpecPage, SpecPrintPage } from "./pages/spec/Spec";
 import { alertsApi, type AlertSummary } from "./api/alerts";
 
 // The menu follows the day: what needs me, what Amiri Agent watches, who I am, and the what-if tool.
@@ -27,19 +29,21 @@ const GROUPS: [string, string[]][] = [
   ["What Amiri Agent watches", ["/events", "/radar", "/monitors", "/series"]],
   ["Your institution", ["/institution"]],
   ["Try it", ["/studio"]],
+  ["Reference", ["/spec"]],
 ];
 
 const NAV: Record<Role, [string, string, string][]> = {
   risk_manager: [
     ["home", "Overview", "/home"], ["alert", "Alerts", "/alerts"], ["events", "Events", "/events"],
     ["radar", "Radar", "/radar"], ["monitor", "Monitors", "/monitors"], ["series", "Market series", "/series"],
-    ["bank", "Institution", "/institution"], ["studio", "Scenario Studio", "/studio"],
+    ["bank", "Institution", "/institution"], ["studio", "Scenario Studio", "/studio"], ["book", "Metrics Spec", "/spec"],
   ],
   platform_admin: [
     ["health", "Health", "/admin/health"], ["usage", "Usage", "/admin/usage"], ["cost", "Costs", "/admin/costs"],
     ["data", "Data connections", "/admin/data"], ["series", "Market series", "/series"], ["bank", "Institution", "/institution"],
     ["jobs", "Schedules and queues", "/admin/jobs"], ["studio", "Scenario Studio", "/studio"],
     ["users", "Users and roles", "/admin/users"], ["audit", "Audit log", "/admin/audit"], ["settings", "Settings", "/admin/settings"],
+    ["book", "Metrics Spec", "/spec"],
   ],
 };
 export interface Installation {
@@ -68,7 +72,7 @@ function NeedsInstitution({ title, what, children }: { title: string; what: stri
   );
 }
 
-const BUILT = new Set(["/home", "/events", "/radar", "/monitors", "/series", "/studio", "/alerts", "/institution"]);
+const BUILT = new Set(["/home", "/events", "/radar", "/monitors", "/series", "/studio", "/alerts", "/institution", "/admin/data", "/spec"]);
 
 function useTheme() {
   const [theme, setTheme] = useState<string | null>(() => { try { return localStorage.getItem("amiri.theme"); } catch { return null; } });
@@ -87,7 +91,7 @@ function useTheme() {
 /** Each page's heading becomes the tab title; after a navigation focus moves to the page and a screen reader
  *  hears where it is (a single-page app does neither by itself). */
 function useRouteA11y(): string {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   const first = useRef(true);
   const [said, setSaid] = useState("");
   useEffect(() => {
@@ -107,7 +111,7 @@ function useRouteA11y(): string {
       if (first.current) { first.current = false; return; }
       setSaid(n);
       const m = document.querySelector<HTMLElement>("main");
-      if (m) { m.scrollTop = 0; m.focus({ preventScroll: true }); }
+      if (m) { if (!hash) m.scrollTop = 0; m.focus({ preventScroll: true }); }  // a #link: the page scrolls to it itself
     }, 250);
     const t2 = setTimeout(() => { set(); scrollers(); }, 1500);  // headings that wait for data (an event's or a monitor's name)
     const t3 = setTimeout(scrollers, 4000);
@@ -130,6 +134,7 @@ function NotBuilt({ title }: { title: string }) {
 export function App() {
   // first: has this browser passed the bot check? (no login; AUTH_MODE=off: no check at all)
   const [gate, setGate] = useState<{ cfg: AuthConfig; signedIn: boolean } | null>(null);
+  const { pathname } = useLocation();
   useEffect(() => {
     Promise.all([authApi.config(), authApi.me()])
       .then(([cfg, me]) => setGate({ cfg, signedIn: me.signed_in }))
@@ -143,6 +148,7 @@ export function App() {
   if (!gate) return <PageSkeleton />;
   if (gate.cfg.asleep) return <PausedPage />;
   if (!gate.signedIn) return <BotCheckPage cfg={gate.cfg} />;
+  if (pathname === "/spec/print") return <SpecPrintPage />;  // the PDF's layout: no menu, no institution needed
   return <Installed />;
 }
 
@@ -256,6 +262,8 @@ function Frame({ inst }: { inst: Installation }) {
             <Route path="/institution/setup" element={<SetupWizard />} />
             <Route path="/institution/setup/:step" element={<SetupWizard />} />
             <Route path="/institution/:tab" element={<InstitutionPage />} />
+            <Route path="/admin/data" element={<DataConnectionsPage />} />
+            <Route path="/spec" element={<SpecPage />} />
             {[...NAV.risk_manager, ...NAV.platform_admin].filter(([, , to]) => !BUILT.has(to)).map(([, label, to]) => (
               <Route key={to} path={to} element={<NotBuilt title={label} />} />
             ))}

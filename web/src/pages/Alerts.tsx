@@ -3,13 +3,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { alertsApi, LEVEL, type AlertItem, type AlertSummary } from "../api/alerts";
+import { VERDICT_BADGE } from "../api/investigation";
 import { Icon } from "../components/Icon";
 import { Banner, Empty, PageHead, useNow, useToast, ListSkeleton } from "../components/ui";
 import { ago, dayTime, TIME_ZONE } from "../format";
 
 type Show = "new" | "acknowledged" | "resolved" | "all";
 const SHOW: [Show, string][] = [["new", "To review"], ["acknowledged", "Acknowledged"], ["resolved", "Resolved"], ["all", "All"]];
-const CHANGE: Record<string, string> = { raised: "Raised", escalated: "Escalated", acknowledged: "Acknowledged", resolved: "Resolved", reopened: "Reopened", confirmed: "Confirmed", withdrawn: "Withdrawn" };
+const CHANGE: Record<string, string> = { raised: "Raised", escalated: "Escalated", acknowledged: "Acknowledged", resolved: "Resolved", reopened: "Reopened", confirmed: "Confirmed", withdrawn: "Withdrawn", checked: "Checked" };
 
 // when Amiri Agent last raised or escalated it: a person acknowledging it doesn't move it on the page
 const changed = (a: AlertItem) => [...a.history].reverse().find(h => h.by === "Amiri Agent" && h.change !== "resolved")?.at ?? a.created_at;
@@ -57,7 +58,12 @@ function AlertCard({ a, onChange }: { a: AlertItem; onChange: (a: AlertItem) => 
         <li key={e.hypothesis_id}>
           <span className="arr">{e.direction === "fall" ? "▼" : "▲"}</span>
           <span><b>{e.product}</b>: {e.metric_name.toLowerCase()} expected to {e.direction}
-            {e.size || e.timing ? <span className="muted"> · {[e.size, e.timing].filter(Boolean).join(", ")}</span> : null}</span></li>))}</ul>
+            {e.size || e.timing ? <span className="muted"> · {[e.size, e.timing].filter(Boolean).join(", ")}</span> : null}
+            {e.check && <span className="al-ck"><span className={`badge ${VERDICT_BADGE[e.check.verdict]}`}>{e.check.verdict_text.toUpperCase()}</span>{" "}
+              <span className="small">{e.check.what ?? e.check.line}</span></span>}</span></li>))}</ul>
+      <div className="small muted">{a.basis === "data" ? "Checked against your own data: the level follows the checks."
+        : Object.keys(a.checked).length ? "Rests on the investigation's expectations: your own data can't tell yet."
+        : "Rests on the investigation's expectations only: not yet checked against your own data."}</div>
       <details className="al-why"><summary>Why Amiri Agent expects this</summary>
         <ul>{a.effects.map(e => <li key={e.hypothesis_id}><b>{e.product}</b>: {e.statement}{e.chain_label ? <span className="muted"> ({e.chain_label})</span> : null}</li>)}</ul>
         <p className="small muted">Traced by the investigation agent from the findings above; the product, the metric and its direction are checked by code against your profile. Sizes and timing are estimates.</p>
@@ -113,7 +119,7 @@ export function AlertsPage() {
   const s = sum;
   return (
     <div className="page">
-      <PageHead title="Alerts" sub="Early warnings when Amiri Agent traces an event to your products, for the team that owns them. Someone acknowledges each one; confirmations from your own data come later." />
+      <PageHead title="Alerts" sub="Early warnings when Amiri Agent traces an event to your products, for the team that owns them. Someone acknowledges each one. With validation on, each effect is checked against your own data and the alert follows the checks." />
       {err && <Banner kind="crit" icon="warn">{err}</Banner>}
       {s && <div className="rd-strip al-strip">
         <div className="card ov-kpi" style={{ ["--kpi" as string]: s.to_review ? "var(--critical)" : "var(--accent)" }}>

@@ -37,6 +37,7 @@ from app.investigation.client import AgentError, InvestigationClient
 from app.investigation.tone import tone
 from app.problems import Problem
 from app.text import plural
+from app.validation import explain
 
 log = logging.getLogger("amiri.investigation")
 
@@ -586,6 +587,9 @@ class Investigations:
             cur = await conn.execute("SELECT task FROM cases.validation_tasks WHERE event_id = %s ORDER BY task_id",
                                      (event_id,))
             tasks = [r["task"] for r in await cur.fetchall()]
+            checks = await explain.latest(conn, event_id)
+            tasks = [{**t, **{k: v for k, v in checks.get(t["task_id"], {}).items() if k != "hypothesis_id"}}
+                     for t in tasks]
             cur = await conn.execute(
                 """SELECT d.finding_id, d.joined_at, d.linked_by, d.reason, f.title, f.created_at
                    FROM cases.event_developments d JOIN signals.findings f USING (finding_id)

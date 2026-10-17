@@ -42,7 +42,7 @@ AI_AGENTS = re.compile(
     r"Google-CloudVertexBot|AI2Bot|PetalBot|Scrapy|python-requests|Go-http-client|HeadlessChrome",
     re.I)
 PUBLIC_API = ("/api/v1/auth/",)
-GATED_PREFIX = ("/api/", "/internal/", "/docs", "/redoc", "/openapi.json", "/health/")
+GATED_PREFIX = ("/api/", "/internal/", "/mock/", "/docs", "/redoc", "/openapi.json", "/health/")
 
 
 # ---------------------------------------------------------------- the session cookie
