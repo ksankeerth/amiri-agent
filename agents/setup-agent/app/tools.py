@@ -184,7 +184,28 @@ async def get_field_rules(section: str, tool_context: ToolContext) -> dict:
     s = _schema["institution"] if section == "institution" else _schema["sections"].get(section)
     if s is None:
         return _err(f"no section {section}")
-    return {"status": "ok", "section": section, "schema": s, "limits": _schema.get("limits")}
+    return {"status": "ok", "section": section, "schema": inline_refs(s), "limits": _schema.get("limits")}
+
+
+def inline_refs(schema: dict) -> dict:
+    """The schema with every "$ref": "#/$defs/X" replaced by X itself and $defs dropped. Gemini reads a "$ref" in a
+    tool's result as a pointer to an attached part and refuses the whole call (400 INVALID_ARGUMENT), so the
+    flows, products and segments schemas (Money, FlowSource, SpecValue, …) must not carry any."""
+    defs = schema.get("$defs", {})
+
+    def walk(x, depth=0):
+        if depth > 20:  # a self-referencing type: stop rather than loop
+            return {}
+        if isinstance(x, dict):
+            ref = x.get("$ref")
+            if isinstance(ref, str) and ref.startswith("#/$defs/") and ref[8:] in defs:
+                return walk({**defs[ref[8:]], **{k: v for k, v in x.items() if k != "$ref"}}, depth + 1)
+            return {k: walk(v, depth) for k, v in x.items() if k not in ("$defs", "$ref")}
+        if isinstance(x, list):
+            return [walk(v, depth) for v in x]
+        return x
+
+    return walk(schema)
 
 
 async def get_reference(name: str, tool_context: ToolContext) -> dict:
