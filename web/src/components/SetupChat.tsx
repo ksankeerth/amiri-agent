@@ -8,7 +8,12 @@ import { ApiError } from "../api/client";
 import { chat, type AssistantStatus, type ChatMessage, type Proposal, type TrackDef, type TrackState } from "../api/assistant";
 import { dayTime, plural } from "../format";
 import { Icon } from "./Icon";
+import { continuedTo, continueText, nextOpen, stepFrom } from "./setupFlow";
 import { ChatToggleCtx, Modal, useRole, useToast } from "./ui";
+
+// Applying the new institution remounts the chat (it now belongs to the institution): the move to the next
+// track is handed over through here, and dropped if nobody picks it up soon.
+const NEXT_KEY = "amiri.setupNext";
 
 const SECTION_WORDS: Record<string, string> = {
   institution: "Institution", footprint: "Footprint", "watch-places": "Place to watch", segments: "Customer group",
@@ -168,10 +173,10 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
   const follow = (id: string | null) => { const d = def(id); if (d && d.shown && d.tab !== null) onTrack?.(d); };
   const markTrack = (id: string, status: TrackState["status"]) => setTracks(ts => ts.map(t => (t.track === id ? { ...t, status } : t)));
 
-  const send = async (body: { text?: string; answer?: { question_id: string; options: string[] } }) => {
+  const send = async (body: { text?: string; answer?: { question_id: string; options: string[] } }, to?: string) => {
     if (busy) return;
     setBusy(true); setHeard(false);
-    const track = picked;
+    const track = to ?? picked;
     try {
       let sid = sessionId;
       if (!sid) { const s = await chat.start(institutionId); sid = s.session_id; setSessionId(sid); await load(); }
@@ -211,10 +216,30 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
   const pick = (t: TrackState) => {
     setPicked(t.track); follow(t.track);
   };
+  // Moving on: the next track's tab, and a turn in it, so the agent leads with its first question (using what was
+  // noted for it) instead of waiting for the person to type.
+  const advance = (t: TrackState) => { follow(t.track); send({ text: continueText(t.label) }, t.track); };
   const decided = (p: Proposal) => {
     setProposals(ps => ({ ...ps, [p.proposal_id]: p }));
-    if (p.status === "confirmed") { markTrack(p.track, "concluded"); follow(p.track); onApplied?.(p); load().catch(() => {}); }
+    if (p.status !== "confirmed") return;
+    markTrack(p.track, "concluded");
+    // only for the track the chat is in, so applying an older card from the history doesn't move it
+    const next = p.track === (picked ?? current) ? nextOpen(tracks, p.track) : null;
+    if (next && p.kind === "create_institution") {
+      try { sessionStorage.setItem(NEXT_KEY, JSON.stringify({ track: next.track, at: Date.now() })); } catch { /* */ }
+    }
+    follow(next?.track ?? p.track); onApplied?.(p); load().catch(() => {});
+    if (next && p.kind !== "create_institution") advance(next);
   };
+  useEffect(() => {  // the handed-over move, once this chat (the new institution's) has loaded
+    if (!institutionId || !tracks.length || !defs.length || busy) return;
+    let next: { track: string; at: number } | null = null;
+    try { next = JSON.parse(sessionStorage.getItem(NEXT_KEY) ?? "null"); sessionStorage.removeItem(NEXT_KEY); } catch { /* */ }
+    const t = next && Date.now() - next.at < 60_000 ? tracks.find(x => x.track === next!.track) : undefined;
+    if (t) advance(t);
+  }, [institutionId, tracks.length, defs.length]);  // eslint-disable-line react-hooks/exhaustive-deps
+  const here = picked ?? current;
+  const back = stepFrom(tracks, here, -1), fwd = stepFrom(tracks, here, 1);
   const answered = new Set(messages.filter(m => m.kind === "answer").map(m => m.content.question_id));
   const lastQuestion = [...messages].reverse().find(m => m.kind === "question");
   const shownTracks = tracks.filter(t => t.shown);
@@ -226,6 +251,8 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
     const tr = m.track && def(m.track)?.shown ? m.track : null;
     if (tr && tr !== prevTrack && m.kind !== "session") rows.push(<div key={`d${m.message_id}`} className="trackdiv"><span>{def(tr)?.label}</span></div>);
     if (tr) prevTrack = tr;
+    const moved = m.role === "user" && m.kind === "text" ? continuedTo(tracks, m.content.text) : null;
+    if (moved) { rows.push(<div key={m.message_id} className="msg sys">→ {moved.label}</div>); continue; }
     rows.push(<MessageRow key={m.message_id} m={m} proposals={proposals} flash={flash} open={m === lastQuestion && !answered.has(m.content.question_id)}
       busy={busy} onAnswer={(qid, o) => send({ answer: { question_id: qid, options: [o] } })} onDecided={decided} />);
   }
@@ -234,6 +261,10 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
     <div className="col" style={{ height: "100%", minHeight: 0 }}>
       <div style={{ padding: "12px 14px 10px", borderBottom: "1px solid var(--hairline)", display: "flex", flexDirection: "column", gap: 8 }}>
         <div className="row"><Icon name="chat" className="ico16" /><b>Setup agent</b><span className="spacer" />
+          <button className="btn btn--sm btn--ghost" type="button" disabled={!back || busy} onClick={() => back && pick(back)}
+            aria-label={back ? `Back to ${back.label}` : "Back"} title={back ? `Back to ${back.label}` : undefined}>←</button>
+          <button className="btn btn--sm btn--ghost" type="button" disabled={!fwd || busy} onClick={() => fwd && pick(fwd)}
+            aria-label={fwd ? `Next: ${fwd.label}` : "Next"} title={fwd ? `Next: ${fwd.label}` : undefined}>→</button>
           {chatToggle && <button className="btn btn--sm btn--ghost" type="button" onClick={chatToggle.toggle} aria-label="Hide the setup agent">Hide<Icon name="x" /></button>}</div>
         <div className="row wrap" style={{ gap: 4 }}>
           {shownTracks.map(t => (
