@@ -11,6 +11,12 @@ test("an unanswered question holds the move; anything said after it releases it"
   assert.equal(waitingForAnswer([q, said, card, applied]), false);   // answered by typing counts too
   assert.equal(waitingForAnswer([said, card, applied]), false);      // no question at all
   assert.equal(waitingForAnswer([]), false);
+  // asked in the reply's own words rather than with options
+  const asks = { role: "assistant", kind: "text", content: { text: "I've proposed Samoa. Would you like to add any places to watch? " } };
+  const tells = { role: "assistant", kind: "text", content: { text: "Nothing changes until you apply it; next is customers and products." } };
+  assert.equal(waitingForAnswer([said, card, asks, applied]), true);
+  assert.equal(waitingForAnswer([said, card, tells, applied]), false);
+  assert.equal(waitingForAnswer([said, card, asks, said, applied]), false);
 });
 
 const t = (track: string, order: number | null, status = "not_started", extra: Record<string, unknown> = {}) =>

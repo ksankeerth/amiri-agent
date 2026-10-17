@@ -191,6 +191,7 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
       setMessages(m => [...m, mine]);
       let text = "";
       let here = track ?? current, ended: string | null = null;  // the turn's track, and a track the agent concluded in it
+      let leftOpen = false;  // the reply asked a new question or brought a card to apply
       const onEvent = ({ event, data }: { event: string; data: Record<string, any> }) => {
         if (event !== "start") setHeard(true);
         if (event === "text_delta") { text += data.text; setLive(text); return; }
@@ -201,6 +202,7 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
           setMessages(m => m.map(x => (x.message_id === mine.message_id ? { ...x, track: data.track } : x)));  // it led here
         }
         if (event === "track_concluded") { markTrack(data.track, "concluded"); ended = data.track; }
+        if (event === "question" || event === "proposal") leftOpen = true;
         if (event === "proposal") setProposals(p => ({ ...p, [data.proposal.proposal_id]: data.proposal }));
         setLive(null); text = "";
         const kind = (event === "message" ? "text" : event) as ChatMessage["kind"];
@@ -219,6 +221,12 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
       if (ended && ended === here) {
         const next = nextOpen(tracks.map(t => (t.track === ended ? { ...t, status: "concluded" as const } : t)), ended);
         if (next) setNextUp(next.track);
+        setHeld(null);
+      } else if (held) {
+        // The question that held a move back is answered. Still in that track and nothing new to apply or answer:
+        // go ahead. A new card or question keeps waiting (its Apply moves on as usual); another track drops it.
+        if (here !== held.from) setHeld(null);
+        else if (!leftOpen) { setNextUp(held.to); setHeld(null); }
       }
     } catch (e) {
       if (e instanceof ApiError && e.code === "turn_in_progress") { setWriting(true); setMessages(m => m.filter(x => x.message_id >= 0)); }
@@ -228,7 +236,7 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
   };
 
   const pick = (t: TrackState) => {
-    setPicked(t.track); follow(t.track);
+    setPicked(t.track); follow(t.track); setHeld(null);  // steering by hand: no move waits any more
   };
   // Moving on: the next track's tab, and a turn in it, so the agent leads with its first question (using what was
   // noted for it) instead of waiting for the person to type.
@@ -236,8 +244,12 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
   // The move waits here until the agent's turn is over: a card can be applied while the agent is still writing
   // the text after it, and a new turn can't start until that one ends.
   const [nextUp, setNextUp] = useState<string | null>(null);
+  // A move held back by a question the agent asked with its proposal: it goes ahead once that question is answered
+  // and the reply leaves nothing else open (no new card to apply, no new question) in the same track.
+  const [held, setHeld] = useState<{ from: string; to: string } | null>(null);
   const decided = (p: Proposal) => {
     setProposals(ps => ({ ...ps, [p.proposal_id]: p }));
+    setHeld(null);  // an apply moves on by itself (below); "Not now" stays
     if (p.status !== "confirmed") return;
     markTrack(p.track, "concluded");
     // only for the track the chat is in, so applying an older card from the history doesn't move it
@@ -245,7 +257,7 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
     if (next && p.kind === "create_institution") {
       try { sessionStorage.setItem(NEXT_KEY, JSON.stringify({ track: next.track, at: Date.now() })); } catch { /* */ }
     }
-    follow(next?.track ?? p.track); onApplied?.(p); load().catch(() => {});
+    follow(p.track); onApplied?.(p); load().catch(() => {});  // the page follows the move itself (advance), not before it
     if (next && p.kind !== "create_institution") setNextUp(next.track);
   };
   useEffect(() => {  // the handed-over move, once this chat (the new institution's) has loaded
@@ -258,9 +270,11 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
     if (!nextUp || busy || writing || !tracks.length) return;
     const t = tracks.find(x => x.track === nextUp);
     setNextUp(null);
+    if (!t) return;
     // The agent asked something along with its proposal ("any places to watch?") and it isn't answered yet:
-    // stay for the answer. The person moves on with → or by answering.
-    if (t && !waitingForAnswer(messages)) advance(t);
+    // stay for the answer, and move on after it (see send).
+    if (waitingForAnswer(messages)) { const from = picked ?? current; if (from) setHeld({ from, to: t.track }); }
+    else advance(t);
   }, [nextUp, busy, writing, tracks.length]);  // eslint-disable-line react-hooks/exhaustive-deps
   // the agent is busy with something: this chat's reply, one still running on the server (a reload, another tab), or
   // the move to the next section waiting its turn. The message box waits too.
