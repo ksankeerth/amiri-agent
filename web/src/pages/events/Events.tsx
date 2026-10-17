@@ -6,6 +6,7 @@ import { Icon } from "../../components/Icon";
 import { TONE } from "../../api/studio";
 import { Banner, Empty, PageHead, useNow, useRole, useToast, InlineSkeleton } from "../../components/ui";
 import { ago, dayTime, until, plural, placeName } from "../../format";
+import { DAYS, useRecentFindings } from "../findings/recent";
 
 export const themeText = (t: Theme) =>
   `${t.theme}${t.item ? ` (${t.item})` : ""}: ${t.currency ? `${t.currency} ` : ""}${t.direction.replace(/_/g, " ")}`;
@@ -94,12 +95,17 @@ export function EventsPage() {
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [runs, setRuns] = useState<Run[]>([]);
   const [err, setErr] = useState<string | null>(null);
+  const [loadedAt, setLoadedAt] = useState<Date | null>(null);
+  const recent = useRecentFindings();
   const load = useCallback(async () => {
     try {
       const [e, r] = await Promise.all([investigationApi.events(), investigationApi.runs()]);
-      setEvents(e); setRuns(r); setErr(null); reloadStatus();
+      setEvents(e); setRuns(r); setErr(null); setLoadedAt(new Date()); reloadStatus();
     } catch (e) { setErr(e instanceof ApiError ? e.full : String(e)); }
   }, [reloadStatus]);
+  const refresh = () => { load(); recent.load(); };
+  const inProgress = (recent.items ?? []).filter(f => f.status === "grouped");
+  const noEvent = (recent.items ?? []).filter(f => f.status === "set_aside");
   useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t); }, [load]);
   const nSim = (events ?? []).filter(e => e.world !== "live").length;
   const rows = (events ?? []).filter(e => (show === "all" || e.status === show) && (sim || e.world === "live"));
@@ -107,8 +113,10 @@ export function EventsPage() {
     <div className="page">
       <PageHead title="Events" sub="Each event is something that happened in the world, traced to your products by the investigation agent."
         actions={<>
+          <span className="small muted">Updated {loadedAt ? ago(loadedAt.toISOString(), now) : ""}</span>
+          <button className="btn" type="button" onClick={refresh}><Icon name="refresh" />Refresh</button>
           {sim && ((events ?? []).some(e => e.world === "sandbox") || runs.some(r => r.world === "sandbox")) ? <ClearSandbox onDone={load} /> : null}
-          {status && status.findings_waiting > 0 && status.connected ? <InvestigateNowButton onDone={load} /> : null}
+          {status && status.findings_waiting > 0 && status.connected ? <InvestigateNowButton onDone={refresh} /> : null}
         </>} />
       <div className="banners">
         {err && <Banner kind="crit" icon="warn">{err}</Banner>}
@@ -121,6 +129,13 @@ export function EventsPage() {
           </Banner>
         )}
       </div>
+      {(inProgress.length > 0 || noEvent.length > 0) && <div className="card ev-strip">
+        <Icon name="search" className="ico16" />
+        <span>{inProgress.length > 0 && <><b>Being investigated: {inProgress.length}</b> ({inProgress[0].title}{inProgress.length > 1 ? ` and ${inProgress.length - 1} more` : ""})</>}
+          {inProgress.length > 0 && noEvent.length > 0 && " · "}
+          {noEvent.length > 0 && <>Investigated, no event (last {DAYS} days): {noEvent.length}</>}</span>
+        <span className="spacer" /><Link className="small" to="/findings">See findings →</Link>
+      </div>}
       <div className="row mb wrap" style={{ gap: 12 }}><span className="seg" role="group" aria-label="Which events">{(["open", "closed", "all"] as const).map(x => (
         <button key={x} type="button" aria-pressed={show === x} onClick={() => setShow(x)}>{x[0].toUpperCase() + x.slice(1)}</button>))}</span>
         {nSim > 0 && <label className="check small"><input type="checkbox" checked={sim} onChange={e => setSim(e.target.checked)} /> Also show {plural(nSim, "simulated event")} (from tests; not real)</label>}</div>

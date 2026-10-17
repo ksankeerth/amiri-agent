@@ -20,6 +20,8 @@ import { BotCheckPage, PausedPage } from "./pages/Login";
 import { authApi, type AuthConfig } from "./api/auth";
 import { AlertsPage } from "./pages/Alerts";
 import { DataConnectionsPage } from "./pages/admin/DataConnections";
+import { SettingsPage } from "./pages/admin/Settings";
+import { FindingsPage } from "./pages/findings/Findings";
 import { SpecPage } from "./pages/spec/Spec";
 import { SpecPrintPage } from "./pages/spec/SpecPrint";
 import { alertsApi, type AlertSummary } from "./api/alerts";
@@ -27,7 +29,7 @@ import { alertsApi, type AlertSummary } from "./api/alerts";
 // The menu follows the day: what needs me, what Amiri Agent watches, who I am, and the what-if tool.
 const GROUPS: [string, string[]][] = [
   ["Today", ["/home", "/alerts"]],
-  ["What Amiri Agent watches", ["/events", "/radar", "/monitors", "/series"]],
+  ["What Amiri Agent watches", ["/findings", "/events", "/radar", "/monitors", "/series"]],
   ["Your institution", ["/institution"]],
   ["Try it", ["/studio"]],
   ["Reference", ["/spec"]],
@@ -35,7 +37,7 @@ const GROUPS: [string, string[]][] = [
 
 const NAV: Record<Role, [string, string, string][]> = {
   risk_manager: [
-    ["home", "Overview", "/home"], ["alert", "Alerts", "/alerts"], ["events", "Events", "/events"],
+    ["home", "Overview", "/home"], ["alert", "Alerts", "/alerts"], ["search", "Findings", "/findings"], ["events", "Events", "/events"],
     ["radar", "Radar", "/radar"], ["monitor", "Monitors", "/monitors"], ["series", "Market series", "/series"],
     ["bank", "Institution", "/institution"], ["studio", "Scenario Studio", "/studio"], ["book", "Metrics Spec", "/spec"],
   ],
@@ -73,7 +75,7 @@ function NeedsInstitution({ title, what, children }: { title: string; what: stri
   );
 }
 
-const BUILT = new Set(["/home", "/events", "/radar", "/monitors", "/series", "/studio", "/alerts", "/institution", "/admin/data", "/spec"]);
+const BUILT = new Set(["/home", "/events", "/radar", "/monitors", "/series", "/studio", "/alerts", "/institution", "/admin/data", "/admin/settings", "/spec", "/findings"]);
 
 function useTheme() {
   const [theme, setTheme] = useState<string | null>(() => { try { return localStorage.getItem("amiri.theme"); } catch { return null; } });
@@ -249,6 +251,7 @@ function Frame({ inst }: { inst: Installation }) {
             <Route path="/home" element={<OverviewPage />} />
             <Route path="/radar" element={<NeedsInstitution title="Radar" what="What Radar watches"><RadarPage /></NeedsInstitution>} />
             <Route path="/alerts" element={<NeedsInstitution title="Alerts" what="Alerts"><AlertsPage /></NeedsInstitution>} />
+            <Route path="/findings" element={<NeedsInstitution title="Findings" what="Findings"><FindingsPage /></NeedsInstitution>} />
             <Route path="/events" element={<NeedsInstitution title="Events" what="Events"><EventsPage /></NeedsInstitution>} />
             <Route path="/events/:id" element={<NeedsInstitution title="Events" what="Events"><EventDetailPage /></NeedsInstitution>} />
             <Route path="/monitors" element={<NeedsInstitution title="Monitors" what="Monitors"><MonitorsPage /></NeedsInstitution>} />
@@ -264,6 +267,7 @@ function Frame({ inst }: { inst: Installation }) {
             <Route path="/institution/setup/:step" element={<SetupWizard />} />
             <Route path="/institution/:tab" element={<InstitutionPage />} />
             <Route path="/admin/data" element={<DataConnectionsPage />} />
+            <Route path="/admin/settings" element={<SettingsPage />} />
             <Route path="/spec" element={<SpecPage />} />
             {[...NAV.risk_manager, ...NAV.platform_admin].filter(([, , to]) => !BUILT.has(to)).map(([, label, to]) => (
               <Route key={to} path={to} element={<NotBuilt title={label} />} />

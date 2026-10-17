@@ -423,3 +423,9 @@ html:has(.sp-print), body:has(.sp-print) { background:#fff; }
 .sp-print .pr-toc-dots { flex:1; border-bottom:.6pt dotted #8a8a8a; margin:0 1.5mm; transform:translateY(-1mm); }
 .sp-print .pr-toc-pg { min-width:8mm; text-align:right; font-variant-numeric:tabular-nums; }
 .sp-files .btn { white-space:normal; max-width:100%; height:auto; min-height:32px; flex-wrap:wrap; text-align:left; overflow-wrap:anywhere; }
+
+/* findings: the one the Overview opened on; the Events page's investigation strip */
+.fd-row { scroll-margin-top:72px; }
+.fd-target { background:var(--hover-bg); box-shadow:inset 3px 0 0 var(--accent); }
+.ev-strip { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 14px; margin-bottom:12px; font-size:13.5px; }
+.ov-finding { text-decoration:none; color:inherit; }

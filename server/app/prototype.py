@@ -1,6 +1,8 @@
 """Prototype reset: wipe the institution and everything Amiri Agent made for it, so the platform
-can be shown again from the start. Kept: market series and their prices (slow and costly to fetch again), the
-reference data, the Metrics Spec and the tick log. Off with PROTOTYPE_RESET=false.
+can be shown again from the start, as for a new institution. That includes the data connection (its approval
+and validation switch describe the old institution), its check reports, and the sample institutions' switches
+and conditions. Kept: market series and their prices (slow and costly to fetch again), the reference data, the
+Metrics Spec and the tick log. Off with PROTOTYPE_RESET=false.
 
 Two ways back: `empty` (the Overview's first run: set up an institution from scratch) or `demo` (the demo bank,
 Serendib Commercial Bank, imported and activated, nothing else: no monitors, events or scenarios yet).
@@ -22,7 +24,7 @@ from app.tick import TICK_LOCK
 router = APIRouter(prefix="/api/v1", tags=["prototype"])
 log = logging.getLogger("amiri.prototype")
 
-SCHEMAS = ("assistant", "cases", "core", "studio")  # all of it is the institution's
+SCHEMAS = ("assistant", "cases", "core", "studio", "ops")  # all of it is the institution's
 SIGNALS = ("signals.findings", "signals.monitor_runs", "signals.radar_runs", "signals.radar_stories")
 
 
@@ -54,6 +56,7 @@ async def reset(request: Request, body: ResetIn, actor: Actor = None):
         finally:
             await lock.execute("SELECT pg_advisory_unlock(%s)", (TICK_LOCK,))
     out = {"reset": True, "then": body.then, "kept": ["market series and prices", "reference data"]}
+    log.info("prototype reset: %d tables emptied", len(tables))
     if body.then == "demo":
         doc = json.loads((settings.PROJECT / "app" / "seeds" / "serendib_bank.json").read_text())
         inst = request.app.state.institutions

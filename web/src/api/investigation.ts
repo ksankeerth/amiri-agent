@@ -6,6 +6,8 @@ export interface FindingRow {
   finding_id: string; world: "live" | "sandbox" | "studio"; source: string; kind: string; title: string; explanation: string;
   score: number; themes: Theme[]; places: string[]; status: "new" | "grouped" | "linked" | "set_aside";
   run_id: string | null; outcome: { event_id?: string; reason?: string; note?: string; attempts?: number } | null; created_at: string;
+  source_ref?: Record<string, string> | null;
+  run_status?: Run["status"] | null; run_started_at?: string | null;  // the investigation run it went to
 }
 export interface InvestigationStatus {
   connected: boolean; agent_url: string | null; validation: boolean; wait_minutes: number; findings_waiting: number;

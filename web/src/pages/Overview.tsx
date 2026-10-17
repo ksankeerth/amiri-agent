@@ -25,7 +25,7 @@ function greeting(now: Date): string {
 const longDate = (now: Date) => new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: TIME_ZONE }).format(now);
 
 function findingStatus(f: Overview["findings"][number]) {
-  if (f.event_id) return <Link to={`/events/${f.event_id}`}>in an event</Link>;
+  if (f.event_id) return "in an event";
   return { new: "waiting for the investigation", grouped: "being investigated", set_aside: `set aside${f.reason ? `: ${f.reason.replace(/_/g, " ")}` : ""}` }[f.status] ?? f.status;
 }
 
@@ -103,7 +103,7 @@ export function OverviewPage() {
           <div className="step">1 · Watching</div>
           <div className="v"><CountUp value={c.monitors_live + c.series_watched + (s.radar.connected ? 1 : 0)} /></div><div className="l">Sources</div>
           <div className="s">{plural(c.monitors_live, "monitor")} · {plural(c.series_watched, "market series", "market series")}{s.radar.connected ? " · Radar" : ""}{c.monitors_waiting_approval ? ` · ${c.monitors_waiting_approval} waiting for approval` : ""}</div></Link>
-        <Link to="/events" className="card ov-kpi" style={{ ["--kpi" as string]: f24 ? "var(--info)" : "var(--hairline-2)" }}>
+        <Link to="/findings" className="card ov-kpi" style={{ ["--kpi" as string]: f24 ? "var(--info)" : "var(--hairline-2)" }}>
           <div className="step">2 · Found</div>
           <div className="v"><CountUp value={f24} /></div><div className="l">Findings, last 24 h</div>
           <div className="s">{c.findings_24h.timeseries} market series · {c.findings_24h.monitor} monitors{c.findings_24h.radar ? ` · ${c.findings_24h.radar} Radar` : ""}</div></Link>
@@ -152,11 +152,12 @@ export function OverviewPage() {
                     <span>last news {ago(e.last_finding_at, now)}</span></div>
                 </Link>))}
           </div>
-          <div className="card"><div className="hd"><h2>Latest findings</h2></div>
+          <div className="card"><div className="hd"><h2>Latest findings</h2><span className="spacer" /><Link className="small" to="/findings">All findings →</Link></div>
             {!o.findings.length ? <div className="bd small muted">None yet.</div> : <div className="list">{o.findings.map(f => (
-              <div key={f.finding_id} className="li"><Icon name={f.source === "monitor" ? "monitor" : f.source === "radar" ? "radar" : "series"} className="ico16" />
+              <Link key={f.finding_id} to={f.event_id ? `/events/${f.event_id}` : `/findings#f-${f.finding_id}`} className="li ov-finding">
+                <Icon name={f.source === "monitor" ? "monitor" : f.source === "radar" ? "radar" : "series"} className="ico16" />
                 <div className="col" style={{ gap: 2, minWidth: 0 }}><span className="small" style={{ color: "var(--ink)" }}>{f.title}</span>
-                  <span className="meta">{dayTime(f.created_at)} · {findingStatus(f)}</span></div></div>))}</div>}
+                  <span className="meta">{dayTime(f.created_at)} · {findingStatus(f)}</span></div></Link>))}</div>}
           </div>
 
         </div>
