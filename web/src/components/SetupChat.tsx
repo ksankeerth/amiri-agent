@@ -17,6 +17,9 @@ const NEXT_KEY = "amiri.setupNext";
 // One message, one topic: room for a few sentences (the longest real answers are about 250 characters), not a pasted
 // essay covering every section at once. The server's own limit (4,000) stays as the backstop.
 const MAX_CHARS = 600;
+// Errors that waiting can fix, so the chat offers "Try again" (the agent's, then the server's codes).
+const RETRYABLE = new Set(["models_busy", "turn_timeout", "server_unavailable",
+  "assistant_timeout", "assistant_unavailable", "assistant_not_connected", "agent_session_lost"]);
 
 const SECTION_WORDS: Record<string, string> = {
   institution: "Institution", footprint: "Footprint", "watch-places": "Place to watch", segments: "Customer group",
@@ -260,6 +263,17 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
   // the agent is busy with something: this chat's reply, one still running on the server (a reload, another tab), or
   // the move to the next section waiting its turn. The message box waits too.
   const working = busy || writing || nextUp !== null;
+  // The last turn failed in a way that waiting can fix (models busy or out of quota, a timeout, the agent starting
+  // or unreachable): offer to send the same message again. Errors that would fail the same way get no button.
+  const lastMsg = messages[messages.length - 1];
+  const retryable = lastMsg?.kind === "error" && RETRYABLE.has(lastMsg.content.code);
+  const retry = () => {
+    const u = [...messages].reverse().find(m => m.role === "user" && (m.kind === "text" || m.kind === "answer"));
+    if (!u) return;
+    const moved = u.kind === "text" ? continuedTo(tracks, u.content.text) : null;  // a "continue with …" keeps its track
+    send(u.kind === "answer" ? { answer: { question_id: u.content.question_id, options: u.content.options } } : { text: u.content.text },
+      moved?.track);
+  };
   const here = picked ?? current;
   const back = stepFrom(tracks, here, -1), fwd = stepFrom(tracks, here, 1);
   const answered = new Set(messages.filter(m => m.kind === "answer").map(m => m.content.question_id));
@@ -305,6 +319,8 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
           ? "Ask me to fill in or change any part of your profile, to check it, or how something got there. You can also pick a track above. Every change comes back for you to apply."
           : "I can set up your institution with you: what kind it is, where you operate, your customers and products, flows, rules, rivals and risks. Tell me in plain words; nothing is saved until you apply it. The forms work too."}</div>}
         {rows}
+        {retryable && !working && <div className="row" style={{ justifyContent: "center" }}>
+          <button className="btn btn--sm" type="button" onClick={retry}><Icon name="refresh" />Try again</button></div>}
         {live && <div className="msg ai">{live}<span className="muted">▍</span></div>}
         {working && <div className="agentwork" role="status" aria-live="polite"><span className="orb" aria-hidden="true" />
           <span>{busy ? (live ? "Writing…" : slow ? "Waiting for the assistant… If it was asleep, the first reply can take up to a minute."
