@@ -14,6 +14,7 @@ export interface Connection {
   openapi_url?: string | null; auth_header?: string | null; auth_set?: boolean;
   approved: { check_id: string; at: string; by: string } | null;
   validation_enabled: boolean; validation_allowed: boolean; latest_check: CheckSummary | null;
+  auth_allowed?: boolean;  // false: no key or token (DATA_SECRET_KEY isn't set); the prototype connects without
   updated_at?: string; updated_by?: string;
 }
 export interface ConformanceCheck {

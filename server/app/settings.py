@@ -242,8 +242,9 @@ SETTINGS: dict[str, Setting] = {
                 "(local development only; never on a public deployment)."),
         Setting("VALIDATION_TASKS_PER_TICK", "20", "Validation tasks judged per tick at most (each reads the "
                 "institution's API several times); the rest wait for the next tick."),
-        Setting("DATA_SECRET_KEY", "", "Encrypts the institution API's key or token in the database (32+ random "
-                "characters). Changing it means entering the key again.", secret=True),
+        Setting("DATA_SECRET_KEY", "", "Empty (the prototype): data connections have no authorization. Set it (32+ "
+                "random characters) to let a connection send a key or token, stored encrypted with it; changing it "
+                "means entering the key again.", secret=True),
         Setting("SUPPORTED_REGION", "japac", "The region the prototype is tested for: an institution's home country and "
                 "base currency must be in it (app/reference/regions.json). Empty: anywhere."),
         Setting("SINGLE_INSTITUTION", "true", "One institution per platform (a deployment serves one bank or insurer); "

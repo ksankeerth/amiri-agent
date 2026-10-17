@@ -82,7 +82,6 @@ locals {
     SESSION_SECRET     = "signs the cookie a passed bot check sets (the script generates it)"
     RECAPTCHA_SECRET   = "the reCAPTCHA key's secret key"
     TWELVEDATA_API_KEY = "Twelve Data, for the market series"
-    DATA_SECRET_KEY    = "encrypts the institution API's key in the database (the script generates it)"
   }
 }
 

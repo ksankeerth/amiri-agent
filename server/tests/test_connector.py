@@ -151,8 +151,14 @@ async def test_addresses_are_checked_and_the_key_is_never_shown(client, env, sql
     env.setenv("DATA_CONNECTION_ALLOW_LOCAL", "true")  # a local test server, as in development
     r = await client.put(C, json={"source": "url", "base_url": "http://127.0.0.1:9/metrics/v1",
                                   "auth_header": "Authorization", "auth_value": "Bearer s3cret-token"}, headers=ME)
-    assert r.status_code == 422 and r.json()["code"] == "secret_key_missing"
+    assert r.status_code == 422 and r.json()["code"] == "auth_off"  # the prototype: no DATA_SECRET_KEY, no keys
+    r = await client.put(C, json={"source": "url", "base_url": "http://127.0.0.1:9/metrics/v1",
+                                  "auth_header": "Authorization"}, headers=ME)
+    assert r.status_code == 422 and r.json()["code"] == "auth_off"
+    v = (await client.put(C, json={"source": "url", "base_url": "http://127.0.0.1:9/metrics/v1"}, headers=ME)).json()
+    assert v["auth_allowed"] is False and v["auth_set"] is False  # connecting without authorization still works
     env.setenv("DATA_SECRET_KEY", "k" * 40)
+    assert (await client.get(C, headers=ME)).json()["auth_allowed"] is True
     v = (await client.put(C, json={"source": "url", "base_url": "http://127.0.0.1:9/metrics/v1",
                                    "auth_header": "Authorization", "auth_value": "Bearer s3cret-token"}, headers=ME)).json()
     assert v["auth_set"] is True and "s3cret" not in str(v)

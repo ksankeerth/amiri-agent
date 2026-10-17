@@ -112,8 +112,8 @@ function ConnectionCard({ conn, samples, checking, onSaved, onCheck, onApprove, 
     setBusy(true);
     try {
       const c = await connectApi.put(source === "sample" ? { source, sample } : {
-        source, base_url: base.trim(), openapi_url: openapi.trim() || undefined, auth_header: header.trim() || undefined,
-        auth_value: secret || undefined });
+        source, base_url: base.trim(), openapi_url: openapi.trim() || undefined,
+        ...(conn.auth_allowed !== false ? { auth_header: header.trim() || undefined, auth_value: secret || undefined } : {}) });
       setSecret(""); setEditing(false); onSaved(c); toast("Saved. Check it next.");
     } catch (e) { toast(errText(e)); }
     finally { setBusy(false); }
@@ -125,6 +125,7 @@ function ConnectionCard({ conn, samples, checking, onSaved, onCheck, onApprove, 
     <div className="card">
       <div className="hd"><h2>The connection</h2>{conn.configured && !editing && <button className="btn btn--sm btn--ghost" type="button" style={{ marginLeft: "auto" }} onClick={() => setEditing(true)}><Icon name="edit" />Change</button>}</div>
       <div className="bd col gap12">
+        {conn.auth_allowed === false && <Banner kind="warn" icon="warn"><b>Prototype: no authorization.</b> Use only the sample institutions or a test API with no real data.</Banner>}
         {conn.configured && !editing && <div className="col gap8">
           <div className="row wrap"><b>{conn.source === "sample" ? `The sample ${conn.sample}` : "Your institution's API"}</b>
             <span className="mono small" style={{ wordBreak: "break-all" }}>{conn.base_url}</span>
@@ -150,12 +151,14 @@ function ConnectionCard({ conn, samples, checking, onSaved, onCheck, onApprove, 
                 <span className="small muted">The reference API's base, ending in /metrics/v1. https only.</span></div>
               <div className="field" style={{ gridColumn: "1 / -1" }}><label htmlFor="dc-openapi">OpenAPI document (optional)</label>
                 <input id="dc-openapi" className="input mono" placeholder="Default: the address without /metrics/v1, then /openapi.json" value={openapi} onChange={e => setOpenapi(e.target.value)} /></div>
+              {conn.auth_allowed !== false && <>
               <div className="field"><label htmlFor="dc-header">Key header (optional)</label>
                 <input id="dc-header" className="input mono" placeholder="Authorization" value={header} onChange={e => setHeader(e.target.value)} /></div>
               <div className="field"><label htmlFor="dc-secret">Key or token</label>
                 <input id="dc-secret" className="input mono" type="password" autoComplete="off"
                   placeholder={conn.auth_set ? "Stored; type to replace" : "e.g. Bearer …"} value={secret} onChange={e => setSecret(e.target.value)} />
                 <span className="small muted">Stored encrypted, never shown again.</span></div>
+              </>}
             </div>}
           <div className="row"><button className="btn btn--primary" type="button" onClick={save} disabled={busy || (source === "url" && !base.trim())}>Save</button>
             {conn.configured && <button className="btn" type="button" onClick={() => setEditing(false)}>Cancel</button>}

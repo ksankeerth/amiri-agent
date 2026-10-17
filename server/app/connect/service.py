@@ -24,6 +24,12 @@ from app.problems import Problem
 INTERNAL = "http://amiri.internal"  # the base an in-process call to a sample institution uses
 
 
+def auth_allowed() -> bool:
+    """Calls with a key or token: only once DATA_SECRET_KEY is set to encrypt it. The prototype runs without, so it
+    connects to sample institutions and test APIs with no authorization (the page says so)."""
+    return len(settings.raw("DATA_SECRET_KEY")) >= 32
+
+
 def _fernet() -> Fernet:
     key = settings.raw("DATA_SECRET_KEY")
     if len(key) < 32:
@@ -55,13 +61,14 @@ class DataConnection:
             latest = {**latest, "current": bool(row) and latest["connection_version"] == row["version"]}
         if row is None:
             return {"configured": False, "validation_enabled": False, "validation_allowed": self._validation_allowed(),
-                    "approved": None, "latest_check": latest}
+                    "auth_allowed": auth_allowed(), "approved": None, "latest_check": latest}
         return {"configured": True, "source": row["source"], "sample": row["sample"],
                 "base_url": self._shown_url(row, public), "openapi_url": row["openapi_url"],
                 "auth_header": row["auth_header"], "auth_set": row["auth_value"] is not None,
                 "approved": {"check_id": row["approved_check_id"], "at": row["approved_at"], "by": row["approved_by"]}
                 if row["approved_check_id"] else None,
                 "validation_enabled": row["validation_enabled"], "validation_allowed": self._validation_allowed(),
+                "auth_allowed": auth_allowed(),
                 "latest_check": latest, "updated_at": row["updated_at"], "updated_by": row["updated_by"]}
 
     @staticmethod
@@ -88,6 +95,8 @@ class DataConnection:
                 except UnsafeURL as e:
                     raise Problem(422, "unsafe_url", str(e)) from e
             header = (body.get("auth_header") or "").strip() or None
+            if (header or body.get("auth_value")) and not auth_allowed():
+                raise Problem(422, "auth_off", "This installation connects without authorization: leave the key out.")
             if body.get("auth_value"):
                 if not header:
                     raise Problem(422, "validation_error", "Name the header the key goes in (e.g. Authorization).")
