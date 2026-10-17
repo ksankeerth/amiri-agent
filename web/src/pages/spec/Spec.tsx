@@ -1,7 +1,6 @@
 // The Metrics Spec, for both roles: the guide, every category's metrics with their definitions and how they are
 // judged, the dimensions, and the conformance checks. Each metric has its own anchor (#metric-<key>), so the
-// connector's report and the event page link straight to its definition. /spec/print is the same body laid out for
-// the PDF (`uv run amiri spec-pdf`).
+// connector's report and the event page link straight to its definition. The PDF has its own layout (SpecPrint.tsx).
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ApiError } from "../../api/client";
@@ -34,12 +33,11 @@ function anchors(cats: SpecCategory[]): Map<string, string> {
 
 const matches = (m: SpecMetric, q: string) => !q || [m.key, m.name, m.question].some(x => x.toLowerCase().includes(q));
 
-function Fold({ print, summary, children }: { print: boolean; summary: string; children: React.ReactNode }) {
-  return print ? <div className="sp-fold"><div className="label">{summary}</div>{children}</div>
-    : <details className="sp-fold"><summary>{summary}</summary>{children}</details>;
+function Fold({ summary, children }: { summary: string; children: React.ReactNode }) {
+  return <details className="sp-fold"><summary>{summary}</summary>{children}</details>;
 }
 
-function MetricCard({ m, id, print }: { m: SpecMetric; id: string; print: boolean }) {
+function MetricCard({ m, id }: { m: SpecMetric; id: string }) {
   const d = m.definition, v = m.validation;
   return (
     <article className="sp-metric" id={id} aria-labelledby={`${id}-h`}>
@@ -60,7 +58,7 @@ function MetricCard({ m, id, print }: { m: SpecMetric; id: string; print: boolea
         <div><dt>For</dt><dd>{Array.isArray(m.applies_to) ? m.applies_to.map(words).join(", ") : "every product type"}</dd></div>
       </dl>
       {m.breakdowns.length > 0 && <div className="small"><b>Breakdowns:</b> {m.breakdowns.map((b, i) => <span key={b}>{i ? ", " : ""}<a href={`#dim-${b}`}>{words(b)}</a></span>)}</div>}
-      <Fold print={print} summary="Definition">
+      <Fold summary="Definition">
         <div className="small col" style={{ gap: 4 }}>
           {d.numerator && <div><b>Numerator:</b> {d.numerator}</div>}
           {d.denominator && <div><b>Denominator:</b> {d.denominator}</div>}
@@ -73,7 +71,7 @@ function MetricCard({ m, id, print }: { m: SpecMetric; id: string; print: boolea
           {d.notes && <div><b>Notes:</b> {d.notes}</div>}
         </div>
       </Fold>
-      {v && <Fold print={print} summary="How it is judged">
+      {v && <Fold summary="How it is judged">
         <div className="small col" style={{ gap: 4 }}>
           <div><b>Method:</b> <code>{v.method}</code>{v.judge_grain ? `, judged ${v.judge_grain}` : ""}
             {v.stable_age_days != null ? ` · stable after ${v.stable_age_days} days` : ""}
@@ -95,7 +93,7 @@ function dimValues(d: SpecDimension): string {
   return Object.entries(d.values).map(([k, vs]) => `${words(k)}: ${vs.join(", ")}`).join(" · ");
 }
 
-function SpecBody({ s, print, q }: { s: Spec; print: boolean; q: string }) {
+function SpecBody({ s, q }: { s: Spec; q: string }) {
   const ids = useMemo(() => anchors(s.categories), [s]);
   const g = (n: string) => s.guide[n];
   const guideSection = (n: string) => g(n) && (
@@ -118,7 +116,7 @@ function SpecBody({ s, print, q }: { s: Spec; print: boolean; q: string }) {
           <div key={c.id} id={`cat-${c.id}`} className="sp-cat">
             <h3>{c.name} <span className="small muted">{c.institution} · <code>{c.id}</code></span></h3>
             {!q && c.supervisory_note && <p className="small muted">{c.supervisory_note}</p>}
-            <div className="col" style={{ gap: 12 }}>{ms.map(m => <MetricCard key={m.key} m={m} id={ids.get(`${c.id}/${m.key}`)!} print={print} />)}</div>
+            <div className="col" style={{ gap: 12 }}>{ms.map(m => <MetricCard key={m.key} m={m} id={ids.get(`${c.id}/${m.key}`)!} />)}</div>
             {!q && c.derived_metrics?.length ? <div className="small mt8"><b>Derived:</b> {c.derived_metrics.map(x => `${x.key} = ${x.formula}${x.note ? ` (${x.note})` : ""}`).join("; ")}</div> : null}
           </div>))}
       </section>
@@ -145,7 +143,7 @@ function SpecBody({ s, print, q }: { s: Spec; print: boolean; q: string }) {
         {GUIDE_AFTER.filter(n => n !== "8").map(guideSection)}
         <section id="changes" className="sp-sec"><h2>Change log</h2>
           <ScrollTable label="Change log"><table><thead><tr><th scope="col">Version</th><th scope="col">Date</th><th scope="col">Change</th><th scope="col">What changed</th></tr></thead>
-            <tbody>{s.changelog.map(c => <tr key={c.version}><td><b>{c.version}</b></td><td>{c.date}</td><td>{c.kind}</td><td className="small">{c.text}</td></tr>)}</tbody></table></ScrollTable>
+            <tbody>{s.changelog.map(c => <tr key={`${c.version} ${c.date}`}><td><b>{c.version}</b></td><td>{c.date}</td><td>{c.kind}</td><td className="small">{c.text}</td></tr>)}</tbody></table></ScrollTable>
           {!s.aliases.length && !s.deprecations.length && <p className="small muted">No aliases or deprecations in this version.</p>}
         </section>
       </>}
@@ -153,7 +151,7 @@ function SpecBody({ s, print, q }: { s: Spec; print: boolean; q: string }) {
   );
 }
 
-function useSpec(): [Spec | null, string | null] {
+export function useSpec(): [Spec | null, string | null] {
   const [s, setS] = useState<Spec | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => { specApi.get().then(setS).catch(e => setErr(e instanceof ApiError ? e.full : String(e))); }, []);
@@ -193,27 +191,8 @@ export function SpecPage() {
           {q ? <div className="small mt8" role="status">{found.length} metric{found.length === 1 ? "" : "s"}</div>
             : <ol className="sp-toc-list">{CONTENTS.map(([id, label]) => <li key={id}><a href={`#${id}`}>{label}</a></li>)}</ol>}
         </nav>
-        <div className="sp-body card"><div className="bd"><SpecBody s={s} print={false} q={q} /></div></div>
+        <div className="sp-body card"><div className="bd"><SpecBody s={s} q={q} /></div></div>
       </div>
     </div>
-  );
-}
-
-/** The same spec laid out for print: everything open, a title page and contents; `data-spec-ready` once drawn. */
-export function SpecPrintPage() {
-  const [s, err] = useSpec();
-  useEffect(() => { if (s) document.title = `${s.title} ${s.spec_version}`; }, [s]);
-  if (err) return <main className="sp-print"><p>{err}</p></main>;
-  if (!s) return <main className="sp-print"><p>Loading the spec…</p></main>;
-  return (
-    <main className="sp-print" data-spec-ready="">
-      <header className="sp-title">
-        <h1>{s.title} {s.spec_version}</h1>
-        <p>Aggregated metrics for banks and insurers</p>
-        <p className="small">Status: {s.status} · published {s.published} · validation parameters {s.validation_params_version}</p>
-        <ol className="sp-toc-list">{CONTENTS.map(([id, label]) => <li key={id}>{label}</li>)}</ol>
-      </header>
-      <SpecBody s={s} print q="" />
-    </main>
   );
 }

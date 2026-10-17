@@ -62,7 +62,7 @@
    "product_types": [
     {
      "id": "gold_loan",
-     "typical_products": "pawning and gold loans by banks (Sri Lanka, India, Bangladesh, Turkey), jewellery-secured loans",
+     "typical_products": "pawning and gold loans by banks (Sri Lanka, India, Bangladesh, Türkiye), jewellery-secured loans",
      "islamic_variant": "rahn-based gold financing, qard hasan secured by gold"
     }
    ]
@@ -7131,16 +7131,16 @@
  },
  "themes": {
   "fx": "exchange-rate moves of the base currency",
-  "rates": "policy, market or administered interest/profit-rate changes ",
-  "prices": "consumer, fuel, food, energy or utility price changes ",
+  "rates": "policy, market or administered interest/profit-rate changes",
+  "prices": "consumer, fuel, food, energy or utility price changes",
   "commodities": "commodity prices that act on a product directly: gold, crops, oil as cargo",
-  "remittance": "changes in cross-border personal remittances ",
-  "regulation": "taxes, central-bank or supervisor directions, relief schemes, import controls, tariffs ",
+  "remittance": "changes in cross-border personal remittances",
+  "regulation": "taxes, central-bank or supervisor directions, relief schemes, import controls, tariffs",
   "competitor": "a rival's pricing, new product, failure or partner switch",
-  "macro": "growth, employment, recession or recovery news ",
-  "sector": "a shock or boost to one economic sector ",
-  "disaster": "natural or man-made disasters and epidemics, at home or abroad ",
-  "trust": "news that could shake confidence in this institution, a rival or the system ",
-  "markets": "equity and bond market moves "
+  "macro": "growth, employment, recession or recovery news",
+  "sector": "a shock or boost to one economic sector",
+  "disaster": "natural or man-made disasters and epidemics, at home or abroad",
+  "trust": "news that could shake confidence in this institution, a rival or the system",
+  "markets": "equity and bond market moves"
  }
 }

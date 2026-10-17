@@ -1,12 +1,13 @@
-# Metrics Spec v1.0: machine-readable form of metrics-spec-v1.0.md.
-# The guide and this file carry the same content; edit both together.
+# Metrics Spec 1.0.0, machine-readable. Published by Amiri Agent.
+# The guide (metrics-spec-1.0.0.pdf) gives the same content in prose; the reference API is
+# metrics-spec-1.0.0-openapi.yaml.
 spec_version: 1.0.0
 validation_params_version: 1.0.0
 title: Metrics Spec
 status: release for implementation feedback
 published: '2026-10-11'
-guide: metrics-spec-v1.0.md
-reference_api: metrics-spec-v1.0-openapi.yaml
+guide: metrics-spec-1.0.0.pdf
+reference_api: metrics-spec-1.0.0-openapi.yaml
 scope:
   institutions:
   - bank (commercial, retail, savings, specialised, Islamic)
@@ -214,17 +215,17 @@ institution_profile:
 vocabularies:
   themes:
     fx: exchange-rate moves of the base currency
-    rates: 'policy, market or administered interest/profit-rate changes '
-    prices: 'consumer, fuel, food, energy or utility price changes '
+    rates: policy, market or administered interest/profit-rate changes
+    prices: consumer, fuel, food, energy or utility price changes
     commodities: 'commodity prices that act on a product directly: gold, crops, oil as cargo'
-    remittance: 'changes in cross-border personal remittances '
-    regulation: 'taxes, central-bank or supervisor directions, relief schemes, import controls, tariffs '
+    remittance: changes in cross-border personal remittances
+    regulation: taxes, central-bank or supervisor directions, relief schemes, import controls, tariffs
     competitor: a rival's pricing, new product, failure or partner switch
-    macro: 'growth, employment, recession or recovery news '
-    sector: 'a shock or boost to one economic sector '
-    disaster: 'natural or man-made disasters and epidemics, at home or abroad '
-    trust: 'news that could shake confidence in this institution, a rival or the system '
-    markets: 'equity and bond market moves '
+    macro: growth, employment, recession or recovery news
+    sector: a shock or boost to one economic sector
+    disaster: natural or man-made disasters and epidemics, at home or abroad
+    trust: news that could shake confidence in this institution, a rival or the system
+    markets: equity and bond market moves
   kinds:
     flow: a total over the period. Each flow says whether it is gross or net and its sign. Never averaged.
     stock: a level at the end of the period's last business day. Never summed over periods.
@@ -2006,7 +2007,7 @@ categories:
   name: Gold-secured loans
   product_types:
   - id: gold_loan
-    typical_products: pawning and gold loans by banks (Sri Lanka, India, Bangladesh, Turkey), jewellery-secured
+    typical_products: pawning and gold loans by banks (Sri Lanka, India, Bangladesh, Türkiye), jewellery-secured
       loans
     islamic_variant: rahn-based gold financing, qard hasan secured by gold
   supervisory_note: Outstanding balances are reported to supervisors; most banks also report gold-loan LTV breaches
@@ -8686,8 +8687,7 @@ conformance_checks:
   check: Every product in the catalog names a category and product type from this spec; every metric key is a spec
     key or an alias, offered only for categories that define it.
   passes: No unknown category, product type or metric key.
-  fix: Map the product to the nearest type, or report it as unmapped; rename keys or declare the mapping in the
-    connector.
+  fix: Map the product to the nearest type, or leave it out of the catalog; rename keys to spec keys.
 - id: C03
   level: L1
   name: Grid periods

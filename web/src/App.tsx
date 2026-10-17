@@ -20,7 +20,8 @@ import { BotCheckPage, PausedPage } from "./pages/Login";
 import { authApi, type AuthConfig } from "./api/auth";
 import { AlertsPage } from "./pages/Alerts";
 import { DataConnectionsPage } from "./pages/admin/DataConnections";
-import { SpecPage, SpecPrintPage } from "./pages/spec/Spec";
+import { SpecPage } from "./pages/spec/Spec";
+import { SpecPrintPage } from "./pages/spec/SpecPrint";
 import { alertsApi, type AlertSummary } from "./api/alerts";
 
 // The menu follows the day: what needs me, what Amiri Agent watches, who I am, and the what-if tool.

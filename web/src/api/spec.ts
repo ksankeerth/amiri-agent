@@ -6,6 +6,7 @@ export interface SpecMetric {
   day_basis: string | null; max_lag_days: number; max_lag_rule?: string | null; history_months: number; breakdowns: string[];
   volume: string | null; adverse: string[] | null; tier: "required" | "recommended" | "optional"; starter: boolean;
   themes: string[]; applies_to: string[] | "all"; scope: string; since: string; commonly_reported: boolean;
+  extras?: string[];
   deprecated_in?: string | null; replaced_by?: string | null;
   definition: { includes: string[]; excludes: string[]; booking_date: string; flow_basis?: string; notes?: string;
     numerator?: string; denominator?: string; exposure?: string };
@@ -25,6 +26,7 @@ export interface SpecFile { name: string; label: string; available: boolean; byt
 export interface Spec {
   spec_version: string; validation_params_version: string; title: string; status: string; published: string;
   guide: Record<string, { title: string; md: string }>;
+  drawn: Record<string, { title: string; md: string }>;  // the guide's text of the sections the pages draw from the YAML
   capability_levels: { level: string; name: string; requires: string; unlocks: string; lost_without: string }[];
   vocabularies: Record<string, Record<string, string | number>>;
   dimensions: Record<string, SpecDimension>; categories: SpecCategory[]; conformance_checks: SpecCheck[];

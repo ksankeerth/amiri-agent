@@ -1,11 +1,11 @@
-# Metrics Spec v1.0: aggregated metrics for banks and insurers
+# Metrics Spec 1.0.0: aggregated metrics for banks and insurers
 
-**Version** 1.0.0 · **Status** release for implementation feedback · **Date** 11 Oct 2026
+**Version** 1.0.0 · **Status** release for implementation feedback · **Published** 11 Oct 2026 · **Revised** 17 Oct 2026 (editorial) · **Publisher** Amiri Agent
 
 **Files:**
-- `metrics-spec-v1.0.md`: this guide
-- `metrics-spec-v1.0.yaml`: the same content, machine-readable
-- `metrics-spec-v1.0-openapi.yaml`: the reference API
+- `metrics-spec-1.0.0.pdf`: this guide
+- `metrics-spec-1.0.0.yaml`: the same content, machine-readable
+- `metrics-spec-1.0.0-openapi.yaml`: the reference API
 
 This spec tells a bank or an insurer **which aggregated numbers to expose, per product category**. For each number it gives:
 - what goes in it and what stays out;
@@ -51,16 +51,16 @@ The checks run **inside the institution** (on its premises or in its own cloud).
 
 | Reader | Uses |
 |---|---|
-| Data and IT teams at banks and insurers | §2 rules, §5 definitions, §7 dimensions, §8 breaks, §9 checks, the OpenAPI file |
+| Data and IT teams at banks and insurers | §2 rules, §5 definitions, §7 dimensions, §8 breaks, §9 checks, the reference API (`metrics-spec-1.0.0-openapi.yaml`) |
 | Product, risk and finance owners | §4 taxonomy, the "question" of each metric in §5, §3 levels |
-| The onboarding connector | the YAML and the OpenAPI file: it checks that the institution's API implements the reference API, test-calls the endpoints and reports coverage and fixes |
+| The onboarding connector | the machine-readable spec (`metrics-spec-1.0.0.yaml`) and the reference API: it checks that the institution's API implements the reference API, test-calls the endpoints and reports coverage and fixes |
 | The checking system | §6 validation parameters (owned by the checks, not served by institutions) |
 
 ### 1.3 How institutions use it
 
-- You keep your own systems, and put an API in front of them that implements the **reference API** (`metrics-spec-v1.0-openapi.yaml`): its paths, parameters, fields, metric keys and dimension values. This is the only way to connect; there is no per-institution mapping.
+- You keep your own systems, and put an API in front of them that implements the **reference API** (`metrics-spec-1.0.0-openapi.yaml`): its paths, parameters, fields, metric keys and dimension values. This is the only way to connect; there is no per-institution mapping.
 - At onboarding, the connector reads your OpenAPI document, checks that it is the reference API (same MAJOR version), test-calls it with the conformance checks (§9) and reports coverage and fixes. A person on your side approves the connection.
-- **A coarser grain is accepted at reduced capability.** A daily metric served weekly still counts as served, but the checks that need days timing (`recent_vs_prior`) are off for it, and the coverage report says so.
+- **A coarser grain is accepted at reduced capability.** A daily metric served weekly still counts as served, but the checks that need day-level timing (`recent_vs_prior`) are off for it, and the coverage report says so.
 - Start with the **starter set** (R8): about a dozen metrics that most institutions can serve in days. Then add the required metrics of each category you offer.
 
 ### 1.4 Versioning
@@ -81,7 +81,7 @@ The spec uses semantic versioning, `MAJOR.MINOR.PATCH`.
 
 **Validation parameters are versioned separately** (`validation_params_version`). They belong to the checking system, which recalibrates them from placebo runs. Changing them never changes the spec version and never asks anything of an institution.
 
-**Declaring what you implement.** The institution profile below is returned by `GET /metrics/v1/catalog`, or served by every conforming API. Every response also carries the header `Metrics-Spec-Version: 1.0.0`. The checks accept any version with the same MAJOR.
+**Declaring what you implement.** Every conforming API returns the institution profile below in `GET /metrics/v1/catalog`. Every response also carries the header `Metrics-Spec-Version: 1.0.0`. The checks accept any version with the same MAJOR.
 
 | Profile field | Required | What to give | Examples |
 |---|---|---|---|
@@ -99,11 +99,27 @@ The spec uses semantic versioning, `MAJOR.MINOR.PATCH`.
 | `sector_classification` | yes | ISIC Rev.4, or the classification mapped to it | NACE Rev.2, NAICS 2022 |
 | `accounting_framework` | yes | IFRS 9 / IFRS 17, AAOIFI, US GAAP (CECL) or local GAAP, plus `dpd_materiality` (default none), `dpd_reset_on_restructure` (normally false) and a note on how local arrears buckets map to days past due | |
 | `suppression` | yes | minimum contributors (default 10) and dominance limits (default one above 50%, two above 85%); a stricter local rule if any | |
-| `renewal_grace_days`, `free_look_days` | insurers | grace period before renewals are measured, and free-look period (defaults 30 and 30) | |
+| `renewal_grace_days`, `free_look_days` | insurers | grace period before renewals are measured, and free-look period (default 30 days each) | |
 | `capability_level` | yes | L1-L5 (§3): the lowest level across your required metrics; metrics may declare their own | |
 | `vintages_kept`, `vintage_history_from` | yes | whether you serve vintages (L4), and from which date they are true or reconstructed | |
 | `segment_snapshot` | no | how `segment_as_of` is honoured: dated attribute history, weekly snapshots, or static | |
 | `shariah_compliant` | no | true for an Islamic bank or a takaful operator (products also carry the flag) | |
+
+### 1.5 Terms used in this guide
+
+| Term | Meaning |
+|---|---|
+| the checks | The statistical tests that judge an institution's data (§1.1, §6). They run inside the institution. The **checking system** runs them and owns the validation parameters. |
+| the connector | The onboarding tool. It reads the institution's OpenAPI document, test-calls the API with the conformance checks (§9) and reports coverage and fixes. |
+| task | One hypothesis handed to the checks: a metric of a product, the direction the event should move it, and the expected size (`small`, `medium` or `large`). |
+| anchor | The date a task is judged from, normally the date of the event behind it. |
+| watch | The periods after the anchor that the checks judge. |
+| span, baseline | A span is a run of whole grid periods. The baseline is the set of earlier spans, aligned on the calendar (§2, R2), that the watch is compared with. |
+| verdict | The checks' answer on a task: whether the change is real, how big it is against normal seasonality, and whether it is still developing (§1.1). A verdict is provisional or final; §3 (L4) says when it becomes final. |
+| stable age | The number of days after a period's last day when its value stops being revised (§6). |
+| vintage | A period's value as it was known on a given date (R3, L4). |
+| contributor | A distinct customer, obligor, policyholder or merchant behind an aggregate (R1). |
+| placebo run | The checks run on past dates where no event is known, to measure how often they would raise a false alarm. The checking system recalibrates the validation parameters with them (§6). |
 
 ---
 
@@ -236,7 +252,7 @@ Each metric in §5 lists what is **in** and what is **out**, its **booking date*
 | Redenomination and high inflation | A redenominated base currency is restated over the whole history at the legal factor, and declared as a `currency_redenomination` break. Where `inflation_regime: high`, you still serve nominal amounts; the checks judge base-currency amounts in real terms using a CPI reference series (§6). |
 | Region | Banks: the account's **home branch** (default) or the **customer's domicile** (declared once in the profile, required where there are no branches). Customer-level metrics (`digital_transactions`, `cash_withdrawals`) use the customer's region, not a device's or agent's location. Branch mergers are `classification_change` breaks. Insurers: the **risk location**, which is each insured location, the vehicle's registered or garaging address, or the insured person's address. |
 | Insurance counts | Exposure and claims count **risks** (insured locations, vehicles, lives), not policies. A claim is **one per risk per loss event**: a hailstorm damaging 50 fleet vehicles is 50 claims, and a 40-site policy is 40 locations, each in its own region. Policy counts (`new_policies`) count policies, with the risks they cover as the `risks` extra. A group scheme, fleet or portfolio above 5% of exposure joining or leaving is a `large_scheme_change` break. |
-| Frozen attributes: the cohort rule | Customer and account attributes (`segment`, `size_band`, `sector`, `sector_l2`, `employer_sector`, `age_band`, regions) are evaluated **as of `segment_as_of`** when a request gives one, which must be a Monday. Customers who **left before** that date keep the attribute of their **last day**. Customers who **joined after** it take their attribute at onboarding. Limits and other frozen account terms are held at their level on the **earlier of the period's start and the segment date**. So history before the segment date is the ordinary series, and the watch holds them fixed. Without `segment_as_of`, each period uses the attributes at its own start. |
+| Frozen attributes: the cohort rule | Customer and account attributes (`segment`, `size_band`, `sector`, `sector_l2`, `employer_sector`, `age_band`, regions) are evaluated **as of `segment_as_of`** when a request gives one, which must be a Monday. Customers who **left before** that date keep the attribute of their **last day**. Customers who **joined after** it take their attribute at onboarding. Limits and other frozen account terms are held at their level on the **earlier of the period's start and the segment date**. So history before the segment date is the ordinary series, and the watch period holds them fixed. Without `segment_as_of`, each period uses the attributes at its own start. |
 | Unknown attribute | Records missing an attribute go to the value `unknown`, never dropped, so breakdowns add up to the total (C07). |
 | Islamic measurement | Financing balances exclude **unearned (deferred) profit**. Instalments include profit, and ijara rentals count as instalments. Late-payment amounts given to charity are not collections. `offered_rate` is the **announced expected** profit rate, not the rate later distributed. Takaful contributions are **gross of the wakala fee**. |
 
@@ -307,15 +323,15 @@ Everything else is recommended or optional. Vintages (L4) and change concentrati
 |---|---|---|---|
 | bank | `savings` | `deposit_inflow` | one query over transaction or snapshot tables |
 | bank | `savings` | `withdrawals` | one query over transaction or snapshot tables |
-| bank | `savings` | `balance` | already in supervisory or MIS reports |
+| bank | `savings` | `balance` | already in supervisory or management reports |
 | bank | `retail_loan` | `roll_rate_to_30` | one query over transaction or snapshot tables |
-| bank | `retail_loan` | `outstanding` | already in supervisory or MIS reports |
-| bank | `cards` | `card_spend` | already in supervisory or MIS reports |
-| bank | `trade_finance` | `lc_openings` | already in supervisory or MIS reports |
-| bank | `payments` | `digital_transactions` | already in supervisory or MIS reports |
-| bank | `remittances` | `inward_remittances` | already in supervisory or MIS reports |
-| insurer | `life` | `new_policies` | already in supervisory or MIS reports |
-| insurer | `life` | `gwp` | already in supervisory or MIS reports |
+| bank | `retail_loan` | `outstanding` | already in supervisory or management reports |
+| bank | `cards` | `card_spend` | already in supervisory or management reports |
+| bank | `trade_finance` | `lc_openings` | already in supervisory or management reports |
+| bank | `payments` | `digital_transactions` | already in supervisory or management reports |
+| bank | `remittances` | `inward_remittances` | already in supervisory or management reports |
+| insurer | `life` | `new_policies` | already in supervisory or management reports |
+| insurer | `life` | `gwp` | already in supervisory or management reports |
 | insurer | `health` | `claims_per_1000` | one query over transaction or snapshot tables |
 | insurer | `motor` | `claims_per_1000` | one query over transaction or snapshot tables |
 | insurer | `property` | `claims_per_1000` | one query over transaction or snapshot tables |
@@ -367,7 +383,7 @@ Your catalog lists your own products (with your names), each mapped to one categ
 
 Metrics marked `scope: category` (`large_depositor_net_flow`, the digital-channel and cash metrics, the company-level insurer metrics) are about customers or the whole entity, not one product. They are served under a **category-level product group** that the catalog lists with `scope: category`.
 
-Islamic and takaful variants are product types' variants, not separate categories: the same metrics apply, with the wording and measurement rules of R4 and R6.
+Islamic and takaful variants are variants of product types, not separate categories: the same metrics apply, with the wording and measurement rules of R4 and R6.
 
 
 **Banks**
@@ -376,7 +392,7 @@ Islamic and takaful variants are product types' variants, not separate categorie
 |---|---|---|
 | `savings`: Deposits and accounts | `current_account`: current and checking accounts, including business current accounts<br>`savings_account`: passbook and online savings; youth, child, senior and migrant-worker savings<br>`term_deposit`: fixed and time deposits, retail certificates of deposit<br>`fc_deposit`: resident and non-resident foreign-currency accounts (e.g. NRFC and PFCA in Sri Lanka, FCNR(B) in India, domiciliary accounts in Nigeria and Ghana, USD accounts in Latin America) | `current_account`: qard or wadiah current accounts<br>`savings_account`: wadiah or mudarabah savings accounts<br>`term_deposit`: mudarabah or wakala term investment accounts, commodity murabaha deposits<br>`fc_deposit`: foreign-currency wadiah or mudarabah accounts |
 | `wealth`: Investment and retirement products sold to customers | `retirement_plan`: bank-administered provident, pension and retirement savings plans<br>`investment_funds`: mutual funds, unit trusts and UCITS funds distributed to customers<br>`structured_products`: structured deposits and notes<br>`securities_sold`: government bills and bonds, retail bonds sold to customers | `retirement_plan`: Shariah-compliant retirement plans<br>`investment_funds`: Shariah funds<br>`structured_products`: Shariah-compliant structured products (e.g. wa'd-based)<br>`securities_sold`: sukuk |
-| `gold_loan`: Gold-secured loans | `gold_loan`: pawning and gold loans by banks (Sri Lanka, India, Bangladesh, Turkey), jewellery-secured loans | `gold_loan`: rahn-based gold financing, qard hasan secured by gold |
+| `gold_loan`: Gold-secured loans | `gold_loan`: pawning and gold loans by banks (Sri Lanka, India, Bangladesh, Türkiye), jewellery-secured loans | `gold_loan`: rahn-based gold financing, qard hasan secured by gold |
 | `retail_loan`: Retail lending | `personal_loan`: unsecured personal instalment loans<br>`housing_loan`: mortgages and home-equity loans<br>`education_loan`: student and education loans<br>`other_secured_consumer`: loans against deposits, securities or insurance policies<br>`personal_overdraft`: personal overdrafts and unsecured credit lines (credit cards excluded) | `personal_loan`: tawarruq or commodity-murabaha personal finance<br>`housing_loan`: murabaha, ijarah or diminishing-musharakah home finance<br>`education_loan`: qard or murabaha education finance<br>`other_secured_consumer`: financing secured on investment accounts<br>`personal_overdraft`: tawarruq-based credit lines |
 | `vehicle_finance`: Vehicle finance | `vehicle_lease`: finance leases and hire purchase of vehicles<br>`auto_loan`: loans secured on the vehicle | `vehicle_lease`: ijarah muntahia bittamleek<br>`auto_loan`: murabaha vehicle finance |
 | `cards`: Cards | `credit_card`: revolving credit cards<br>`charge_card`: cards repaid in full each cycle<br>`debit_card`: cards on current or savings accounts<br>`prepaid_card`: prepaid and gift cards issued by the bank | `credit_card`: ujrah- or tawarruq-based credit cards |
@@ -403,7 +419,7 @@ Islamic and takaful variants are product types' variants, not separate categorie
 | `micro_insurance`: Micro insurance | `micro_life`: micro life and funeral cover<br>`micro_health`: hospital cash and micro health<br>`micro_property`: micro property, crop and livestock<br>`mobile_insurance`: cover sold and paid through mobile networks or wallets | `micro_life`: micro family takaful |
 | `insurer_company`: Insurer company level | `company`: all lines of the insurer together | `company`: takaful operator and participants' funds |
 
-**Out of scope in v1.0:**
+**Out of scope in this version:**
 - institutions: finance companies, microfinance institutions, brokers, asset managers, payment-only firms;
 - products: a treasury and ALM view (repricing gaps, securities marked to market), bank guarantees as a tested product (claims are too rare to test), custody and corporate cash management.
 
@@ -421,7 +437,7 @@ Islamic and takaful variants are product types' variants, not separate categorie
 - **Tier:** required, recommended or optional. ★ marks the starter set.
 - **Themes:** the event themes the metric helps check.
 
-Below each table, each metric gives its question, its numerator and denominator (or exposure), what is in and out, its booking date and its breakdowns. Themes are explained in §11 and listed in the YAML's `vocabularies.themes`.
+After each category's summary table, each metric gives its question, its numerator and denominator (or exposure), what is in and out, its booking date and its breakdowns. Themes are explained in §11 and listed under `vocabularies.themes` in `metrics-spec-1.0.0.yaml`.
 
 The rules of §2 apply to every metric and are not repeated. A ratio's value is numerator ÷ denominator × 100; a rate's is numerator ÷ exposure × 1,000 for the period, not annualised.
 
@@ -1779,7 +1795,7 @@ These parameters are **owned by the checking system**, not served by institution
 
 | Field | Meaning |
 |---|---|
-| `method` | default test: `recent_vs_prior` (days timing), `seasonal_ratio` (weeks and months timing, flows and counts), `level_change` (ratios and levels at the same position in the month or cycle), `trend` (monthly ratios that drift). `context`, `book_size` and `mask` metrics are never tested. |
+| `method` | default test: `recent_vs_prior` (day-level timing), `seasonal_ratio` (weekly and monthly timing, flows and counts), `level_change` (ratios and levels at the same position in the month or cycle), `trend` (monthly ratios that drift). `context`, `book_size` and `mask` metrics are never tested. |
 | `judge_grain` | when a daily metric is judged on a coarser grain (remittances are judged monthly) |
 | `stable_age_days` | days after a period's last day when its value stops being revised. Without vintages, no final verdict is given before it. With vintages, a final verdict is re-checked at this age. For new policies it is the free-look period + 7. |
 | `min_volume` | the smallest volume a verdict is built on (below it, no verdict) |
@@ -2019,7 +2035,7 @@ A **break** is anything other than customer behaviour that changes a metric: a n
 | `campaign` | episode (with until) | a one-off promotion large enough to move a metric (recurring campaigns go in the calendar as flags) |
 | `market_disruption` | episode (with until) | a market closure, bank holiday declared at short notice, or capital-control episode |
 
-**Fields** (schema `Break` in the OpenAPI file):
+**Fields** (schema `Break` in the reference API):
 
 | Field | Meaning |
 |---|---|
@@ -2104,11 +2120,11 @@ You can run these checks yourself before onboarding; the connector runs the same
 ## 10. Open points and assumptions
 
 **Open points**
-1. **Region basis.** Banks may choose home branch or customer domicile (domicile is required without branches), so two banks' regional numbers aren't strictly comparable. The checks only compare an institution with itself, so v1.0 allows both.
+1. **Region basis.** Banks may choose home branch or customer domicile (domicile is required without branches), so two banks' regional numbers aren't strictly comparable. The checks only compare an institution with itself, so this version allows both.
 2. **Claims by loss date.** Frequency uses the reported date, compared at the same age. Loss-date counts with development factors (the actuarial standard) are deferred.
 3. **Segment precedence.** One value per customer means a salaried customer who also receives remittances is only `remittance_linked`. Flag dimensions would allow overlaps, at the cost of more suppression.
 4. **Cost indices.** Procedure and parts baskets are chosen by each insurer. They are comparable over time within an insurer, not across insurers.
-5. **Multi-time-zone countries** (the US, Brazil, Indonesia, Australia). v1.0 assumes one time zone per profile (normally the head office's), with every transaction dated in it.
+5. **Multi-time-zone countries** (the US, Brazil, Indonesia, Australia). This version assumes one time zone per profile (normally the head office's), with every transaction dated in it.
 6. **Fund returns** come from public prices. They could become reference data supplied by the checks rather than an institution metric.
 7. **Still missing:** a treasury and ALM view; mortgage collateral value (house-price LTV); unit-linked and annuity flows for insurers; fee-cap effects on payments; a trust signal for insurers.
 8. **The clearing window** (3 business days) is a convention chosen to absorb weekend and holiday due dates. Placebo runs may show a shorter window is enough.
@@ -2116,7 +2132,7 @@ You can run these checks yourself before onboarding; the connector runs the same
 10. **Micro insurance** is defined by the local rule, or by a declared sum-insured ceiling where none exists. A neutral default ceiling hasn't been chosen.
 
 **Assumptions**
-- The checks run inside the institution, and only verdicts and the aggregates behind them leave it. Suppression still applies inside, because model prompts, briefs and operators see the aggregates.
+- The checks run inside the institution, and only verdicts and the aggregates behind them leave it. Suppression still applies inside, because the aggregates reach model prompts, event briefs and the people who operate the checks.
 - The (1, 50%) and (2, 85%) dominance rules, the 10-contributor minimum and the 3-dimension filter limit are acceptable to most supervisors. Stricter local rules are honoured.
 - Institutions can keep dated history of customer attributes, or at least weekly snapshots, and can reconstruct vintages from posting dates.
 - Rival rates, gold prices, FX reference rates, CPI, building-material prices and system-wide cheque-return rates are public. The checking system collects them, not the institution.
@@ -2126,7 +2142,7 @@ You can run these checks yourself before onboarding; the connector runs the same
 
 ## 11. Event themes each category helps check
 
-The checking system tests hypotheses raised by twelve kinds of event (the themes in the YAML's `vocabularies.themes`). This matrix shows, per category, the metrics that help check each kind. ° marks context, book-size or mask metrics (shown next to verdicts, never tested).
+The checking system tests hypotheses raised by twelve kinds of event (the themes under `vocabularies.themes` in `metrics-spec-1.0.0.yaml`). This table shows, per category, the metrics that help check each kind. ° marks context, book-size or mask metrics (shown next to verdicts, never tested).
 
 | Category | fx | rates | prices | commodities | remittance | regulation | competitor | macro | sector | disaster | trust | markets |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|

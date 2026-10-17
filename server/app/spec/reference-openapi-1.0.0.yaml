@@ -2,11 +2,13 @@ openapi: 3.1.0
 info:
   title: Metrics Spec reference API
   version: 1.0.0
-  summary: Aggregated product metrics served by a bank or insurer, per Metrics Spec v1.0.
+  summary: Aggregated product metrics served by a bank or insurer, per Metrics Spec 1.0.0.
   description: |
-    The reference API of Metrics Spec v1.0 (`metrics-spec-v1.0.md`, `metrics-spec-v1.0.yaml`).
-    Institutions connect by implementing it exactly; there is no per-institution mapping. The
-    onboarding connector checks conformance (§9 of the spec) before a connection is approved.
+    The reference API of Metrics Spec 1.0.0, published by Amiri Agent. The guide is
+    `metrics-spec-1.0.0.pdf` and the machine-readable spec is `metrics-spec-1.0.0.yaml`; references
+    such as "guide R1" or "§9" point into the guide. Institutions connect by implementing this API
+    exactly; there is no per-institution mapping. The onboarding connector runs the conformance
+    checks (guide §9) before a connection is approved.
 
     **Aggregates only (guide R1).**
     - No endpoint returns personal data, account, card or policy numbers, names, or identifiers of
@@ -61,13 +63,11 @@ info:
       429 and 503 responses.
 
     **Authentication** is the institution's choice (OAuth 2.0 client credentials, mutual TLS, an
-    API key, a private network). The scheme below is a placeholder: declare your own in your
-    OpenAPI document. It is not designed here.
-  license:
-    name: Metrics Spec licence (to be decided)
+    API key, a private network). This specification does not define it: the scheme below is an
+    example only, and each institution declares its own in its OpenAPI document.
 servers:
   - url: https://metrics.institution.example
-    description: Placeholder; each institution serves its own host, normally inside its network.
+    description: Example only. Each institution serves the API from its own host, normally inside its own network.
 security:
   - institutionAuth: []
 tags:
@@ -619,8 +619,9 @@ components:
       type: http
       scheme: bearer
       description: |
-        Placeholder. The institution chooses the scheme (OAuth 2.0 client credentials, mutual TLS,
-        API key, private network) and declares it in its own OpenAPI document. Not designed here.
+        An example only. The institution chooses the scheme (OAuth 2.0 client credentials, mutual
+        TLS, API key, private network) and declares it in its own OpenAPI document. This
+        specification does not define it.
 
   headers:
     MetricsSpecVersion:
@@ -1099,7 +1100,7 @@ components:
         revision_held: {type: boolean, description: 'A newer revision exists but is held back by the revision guard (guide R1).'}
         extras:
           type: object
-          description: 'Metric-specific extras named in the spec (p75, settled_share, grams_fine, value_base, count, risks, external_failures, median_amount_pivot). Null when suppressed or below the median rule.'
+          description: 'Metric-specific extras, named per metric in the spec (count, denominator_loans, denominator_obligors, external_failures, grams_fine, median_amount_pivot, numerator_loans, numerator_obligors, p75, risks, settled_share, sum_insured_base, value_base). Null when suppressed or below the median rule.'
           additionalProperties: {type: [number, 'null']}
 
     SeriesResponse:

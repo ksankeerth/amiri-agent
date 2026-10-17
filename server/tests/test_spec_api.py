@@ -1,9 +1,8 @@
 """The Metrics Spec for people: its pages' data, and the files to download, each named with the version; the PDF,
 the YAML and the server's snapshot never say different versions."""
 
-import re
-
 import yaml
+from pypdf import PdfReader
 
 from app import spec
 from app.spec import api as spec_api
@@ -37,7 +36,7 @@ async def test_the_files_download_with_their_versions(client):
 def test_the_pdf_yaml_and_snapshot_say_the_same_version():
     v = yaml.safe_load(spec_api.yaml_path().read_text())["spec_version"]
     assert v == spec.spec()["spec_version"] == spec.reference_openapi()["info"]["version"]
-    pdf = spec_api.pdf_path().read_bytes()
-    title = re.search(rb"/Title \(([^)]*)\)", pdf)
-    assert title and title.group(1).decode() == f"Metrics Spec {v}", "remake it: uv run amiri spec-pdf"
+    pdf = PdfReader(spec_api.pdf_path())
+    assert pdf.metadata.title == f"Metrics Spec {v}", "remake it: uv run amiri spec-pdf"
+    assert [x.title for x in pdf.outline if not isinstance(x, list)][:3] == ["Document control", "Contents", "Introduction"]
     assert sorted(p.name for p in spec_api.HERE.glob("metrics-spec-*.pdf")) == [f"metrics-spec-{v}.pdf"]  # no stale PDF

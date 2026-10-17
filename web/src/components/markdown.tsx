@@ -1,8 +1,11 @@
 // A small renderer for text built by code or bundled with the app (the investigation's report, the Metrics Spec's
-// guide): headings, paragraphs, bullets and numbered lists, tables, quotes, bold and `code`. Nothing here runs HTML.
+// guide): headings, paragraphs, bullets and numbered lists, tables (a <br> breaks a line in a cell), quotes, bold and
+// `code`. Nothing here runs HTML.
 import { Fragment, type ReactNode } from "react";
 
 function inline(text: string): ReactNode[] {
+  const lines = text.split("<br>");
+  if (lines.length > 1) return lines.map((l, i) => <Fragment key={i}>{i ? <br /> : null}{inline(l)}</Fragment>);
   return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((part, i) =>
     part.startsWith("**") && part.endsWith("**") && part.length > 4 ? <b key={i}>{inline(part.slice(2, -2))}</b>
       : part.startsWith("`") && part.endsWith("`") && part.length > 2 ? <code key={i}>{part.slice(1, -1)}</code>
@@ -16,9 +19,14 @@ export function ScrollTable({ label, children }: { label: string; children: Reac
 
 const cells = (row: string) => row.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(c => c.trim());
 
-export function Markdown({ text }: { text: string }) {
+/** `shift` moves every heading level (the print layout's sections are h1, so its guide subsections are h2). */
+export function Markdown({ text, shift = 0 }: { text: string; shift?: number }) {
   const out: ReactNode[] = [];
   let bullets: string[] = [], numbered: string[] = [], rows: string[] = [], quote: string[] = [];
+  const heading = (level: number, body: string) => {
+    const H = `h${Math.min(6, Math.max(1, level + shift))}` as "h2";
+    return <H key={out.length} className="md-h">{inline(body)}</H>;
+  };
   const flush = () => {
     const k = out.length;
     if (bullets.length) out.push(<ul key={`u${k}`} className="md-list">{bullets.map((b, i) => <li key={i}>{inline(b)}</li>)}</ul>);
@@ -41,9 +49,9 @@ export function Markdown({ text }: { text: string }) {
     if (line.startsWith("> ")) { if (bullets.length || numbered.length || rows.length) flush(); quote.push(line.slice(2)); continue; }
     flush();
     if (!line.trim() || line.trim() === "---") continue;
-    if (line.startsWith("### ")) out.push(<h4 key={out.length} className="md-h">{inline(line.slice(4))}</h4>);
-    else if (line.startsWith("## ")) out.push(<h3 key={out.length} className="md-h">{inline(line.slice(3))}</h3>);
-    else if (line.startsWith("# ")) out.push(<h2 key={out.length} className="md-h">{inline(line.slice(2))}</h2>);
+    if (line.startsWith("### ")) out.push(heading(4, line.slice(4)));
+    else if (line.startsWith("## ")) out.push(heading(3, line.slice(3)));
+    else if (line.startsWith("# ")) out.push(heading(2, line.slice(2)));
     else out.push(<p key={out.length}>{inline(line)}</p>);
   }
   flush();
