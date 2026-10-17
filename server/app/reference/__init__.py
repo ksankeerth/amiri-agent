@@ -44,6 +44,11 @@ def flow_rows() -> dict:
     return _file("flows.json")
 
 
+def institution_rows() -> list[dict]:
+    """Licensed banks and insurers by market, for rival suggestions (a sample, to be reviewed)."""
+    return _file("institutions.json")["institutions"]
+
+
 def gazetteer() -> dict:
     return _file("gazetteer.json")
 

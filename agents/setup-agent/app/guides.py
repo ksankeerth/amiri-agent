@@ -57,8 +57,12 @@ GUIDES: dict[str, Guide] = {
         [*T.READS, *ASK, *PROPOSE]),
     "rivals_partners": Guide(
         "rivals (competitors) and counterparties (firms it depends on: correspondent banks, reinsurers, payment networks)",
-        """- Rivals and counterparties are named by the user; there are no suggestions. Record names, type,
-  aliases, the places they compete in (search_places), and how much they overlap.
+        """- Rivals: start from get_suggestions("rivals"): licensed banks or insurers in the institution's markets,
+  of a similar size, each with "why". Offer the ones not yet added with ask_user (multi: true, their names
+  as options), then propose the ones picked as they are. If there are none (no data for these markets yet),
+  say so in one sentence and ask the user to name their competitors; never suggest names of your own.
+- Rivals the user names, and all counterparties: record names, type, aliases, the places they compete in
+  (search_places), and how much they overlap.
 - An insurer's counterparties are reinsurers and brokers; a bank's, correspondent banks and networks.""",
         [*T.READS, *ASK, *PROPOSE]),
     "risks": Guide(

@@ -19,7 +19,7 @@ from pydantic import ValidationError
 
 from app import reference, settings, spec
 from app.clock import Clock
-from app.institutions import privacy, rules, store
+from app.institutions import privacy, rivals, rules, store
 from app.institutions.rules import Item, State
 from app.institutions.schemas import (
     NAME_FIELD,
@@ -765,9 +765,9 @@ class Institutions:
         state = await self.state(institution_id)
         fn = {"products": self._product_suggestions, "segments": self._segment_suggestions,
               "regulators": self._regulator_suggestions, "flows": self._flow_suggestions,
-              "risk-exposures": self._exposure_suggestions}.get(section)
+              "risk-exposures": self._exposure_suggestions, "rivals": self._rival_suggestions}.get(section)
         if fn is None:
-            raise Problem(404, "not_found", f"No suggestions for {section} (products, segments, regulators, flows, risk-exposures).")
+            raise Problem(404, "not_found", f"No suggestions for {section} (products, segments, regulators, flows, risk-exposures, rivals).")
         items = fn(state)
         return {"section": section, "items": items,
                 "note": {"regulators": "From the rule table (to be reviewed by compliance).",
@@ -775,7 +775,16 @@ class Institutions:
                          "products": "Metrics Spec product types for this institution type.",
                          "segments": "Common customer groups, each mapped to a Metrics Spec value.",
                          "risk-exposures": "The risk finder: hazards from the hazard library whose places overlap "
-                                           "your footprint, customer groups, flows or sea routes."}[section]}
+                                           "your footprint, customer groups, flows or sea routes.",
+                         "rivals": "Licensed banks and insurers in your markets, of a similar size, from a sample reference "
+                                   "list (AU, NZ, LK so far; to be reviewed). None for other markets: name your own."}[section]}
+
+    def _rival_suggestions(self, state: State) -> list[dict]:
+        f = state.inst["fields"]
+        have = {n.casefold() for it in state.section("rivals").values() for n in [it.data["name"], *it.data.get("aliases", [])]}
+        kinds = {it.data.get("kind") for it in state.section("segments").values()}
+        return rivals.suggest(reference.institution_rows(), state.type, f.get("size_band"), f["home_country"],
+                              state.footprint_countries() | {f["home_country"]}, kinds, have, reference.place_name)
 
     def _product_suggestions(self, state: State) -> list[dict]:
         have = {(it.data["category"], it.data["product_type"]) for it in state.section("products").values()}

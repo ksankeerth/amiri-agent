@@ -304,9 +304,9 @@ async def undo(request: Request, institution_id: str, batch_id: str):
 
 
 @router.get("/institutions/{institution_id}/suggestions/{section}", response_model=Suggestions,
-            summary="Code-made suggestions (products, segments, regulators, flows; the risk finder), in create shape")
+            summary="Code-made suggestions (products, segments, regulators, flows, rivals; the risk finder), in create shape")
 async def suggestions(request: Request, institution_id: str,
-                      section: Literal["products", "segments", "regulators", "flows", "risk-exposures"]):
+                      section: Literal["products", "segments", "regulators", "flows", "risk-exposures", "rivals"]):
     return await svc(request).suggestions(institution_id, section)
 
 

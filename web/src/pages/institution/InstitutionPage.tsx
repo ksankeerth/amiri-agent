@@ -313,7 +313,7 @@ export function InstitutionPage() {
         <SectionList section="regulators" ctx={ctx} reload={S.reload} suggest itemAction={monitorButton("regulators")} />
       </div>}
       {tab === "rivals" && <div className="col gap16">
-        <SectionList section="rivals" ctx={ctx} reload={S.reload} itemAction={monitorButton("rivals")} />
+        <SectionList section="rivals" ctx={ctx} reload={S.reload} suggest itemAction={monitorButton("rivals")} />
         <SectionList section="counterparties" ctx={ctx} reload={S.reload} itemAction={monitorButton("counterparties")} />
       </div>}
       {tab === "risks" && <div className="col gap16">

@@ -22,7 +22,7 @@ from app.server_api import seg
 from app.sessions import Session
 from app.tracks import TRACKS
 
-SUGGESTION_SECTIONS = ("products", "segments", "regulators", "flows", "risk-exposures")
+SUGGESTION_SECTIONS = ("products", "segments", "regulators", "flows", "risk-exposures", "rivals")
 BOOKKEEPING = ("version", "created_at", "updated_at", "updated_by")
 MAX_OPTIONS = 8
 
@@ -120,11 +120,12 @@ async def get_readiness(tool_context: ToolContext) -> dict:
 
 async def get_suggestions(section: str, tool_context: ToolContext) -> dict:
     """Code's suggestions for a section, from reference data (the product taxonomy, customer
-    templates, the regulators' rule table, published flow figures, the risk finder). Each item
-    is ready to propose as it is ("item"); "added" says it is already in the profile.
+    templates, the regulators' rule table, published flow figures, the risk finder, the list of
+    licensed banks and insurers for rivals). Each item is ready to propose as it is ("item");
+    "added" says it is already in the profile.
 
     Args:
-        section: products, segments, regulators, flows or risk-exposures.
+        section: products, segments, regulators, flows, risk-exposures or rivals.
 
     Returns:
         status; items: {added, item, why?}. Numbers in an item (a flow's value, a hazard's months)
