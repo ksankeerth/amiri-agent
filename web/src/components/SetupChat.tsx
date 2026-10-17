@@ -257,6 +257,9 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
     setNextUp(null);
     if (t) advance(t);
   }, [nextUp, busy, writing, tracks.length]);  // eslint-disable-line react-hooks/exhaustive-deps
+  // the agent is busy with something: this chat's reply, one still running on the server (a reload, another tab), or
+  // the move to the next section waiting its turn. The message box waits too.
+  const working = busy || writing || nextUp !== null;
   const here = picked ?? current;
   const back = stepFrom(tracks, here, -1), fwd = stepFrom(tracks, here, 1);
   const answered = new Set(messages.filter(m => m.kind === "answer").map(m => m.content.question_id));
@@ -303,18 +306,21 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
           : "I can set up your institution with you: what kind it is, where you operate, your customers and products, flows, rules, rivals and risks. Tell me in plain words; nothing is saved until you apply it. The forms work too."}</div>}
         {rows}
         {live && <div className="msg ai">{live}<span className="muted">▍</span></div>}
-        {busy && !live && <div className="msg sys" role="status">{slow ? "Waiting for the assistant… If it was asleep, the first reply can take up to a minute." : "…"}</div>}
-        {writing && !busy && <div className="msg sys">A reply is still being written… it will appear here.</div>}
+        {working && <div className="agentwork" role="status" aria-live="polite"><span className="orb" aria-hidden="true" />
+          <span>{busy ? (live ? "Writing…" : slow ? "Waiting for the assistant… If it was asleep, the first reply can take up to a minute."
+            : "The setup agent is working on it…")
+            : writing ? "A reply is still being written… it will appear here."
+            : `Moving on to ${(def(nextUp) ?? { label: "the next section" }).label.toLowerCase()}…`}</span></div>}
       </div>
       {draft.length >= MAX_CHARS * 0.8 && <div className="small" role="status" style={{ padding: "6px 12px 0", color: draft.length >= MAX_CHARS ? "var(--medium-ink)" : "var(--ink-3)" }}>
         {draft.length}/{MAX_CHARS}{draft.length >= MAX_CHARS ? " · That's the limit: keep to one topic, and send the rest after the reply." : ""}</div>}
       <div style={{ borderTop: "1px solid var(--hairline)", padding: 12, display: "flex", gap: 8, alignItems: "center" }}>
-        <textarea className="input" rows={2} aria-label="Message to the setup agent" style={{ flex: 1, resize: "none" }} value={draft} disabled={busy}
+        <textarea className="input" rows={2} aria-label="Message to the setup agent" style={{ flex: 1, resize: "none" }} value={draft} disabled={working}
           maxLength={MAX_CHARS}
-          placeholder={picked ? `About ${def(picked)?.label.toLowerCase()}…` : institutionId ? "Ask, check, or ask for a change…" : "e.g. We're a commercial bank in Sri Lanka with branches in Kerala"}
+          placeholder={working ? "The setup agent is working… you can type once it's done." : picked ? `About ${def(picked)?.label.toLowerCase()}…` : institutionId ? "Ask, check, or ask for a change…" : "e.g. We're a commercial bank in Sri Lanka with branches in Kerala"}
           onChange={e => setDraft(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (draft.trim()) { send({ text: draft.trim() }); setDraft(""); } } }} />
-        <button className="btn btn--primary" type="button" disabled={busy || writing || !draft.trim()} onClick={() => { send({ text: draft.trim() }); setDraft(""); }}>Send</button>
+          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (draft.trim() && !working) { send({ text: draft.trim() }); setDraft(""); } } }} />
+        <button className="btn btn--primary" type="button" disabled={working || !draft.trim()} onClick={() => { send({ text: draft.trim() }); setDraft(""); }}>Send</button>
       </div>
     </div>
   );
