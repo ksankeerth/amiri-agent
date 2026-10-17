@@ -95,9 +95,22 @@ async def test_investigate_now_sends_the_profile_and_stores_the_event(client, en
     assert health["checks"]["investigation"]["last_run"]["status"] == "completed"
 
 
-async def test_with_validation_on_tasks_are_stored(client, env, agent):
-    env.setenv("METRICS_VALIDATION", "on")
+async def test_the_server_setting_alone_asks_for_no_tasks(client, env, agent):
+    env.setenv("METRICS_VALIDATION", "on")  # the server allows it, but the Platform Admin hasn't switched it on
     await bank(client, env)
+    status = (await client.get("/api/v1/investigation:status")).json()
+    assert status["validation"] is False and any("validation is off" in n for n in status["notes"])
+    await sandbox_move(client)
+    await client.post("/api/v1/investigations", json={})
+    assert agent.requests[0]["validation"] is False
+
+
+async def test_with_validation_on_tasks_are_stored(client, env, agent):
+    from tests.test_coverage_connected import connect_sample
+
+    await bank(client, env)
+    await connect_sample(client, env)  # METRICS_VALIDATION on, a sample approved, the switch on
+    assert (await client.get("/api/v1/investigation:status")).json()["validation"] is True
     await sandbox_move(client)
     await client.post("/api/v1/investigations", json={})
     assert agent.requests[0]["validation"] is True

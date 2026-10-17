@@ -22,7 +22,7 @@ import json
 import logging
 import re
 import uuid
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from datetime import datetime, timedelta
 
 from psycopg.types.json import Jsonb
@@ -93,11 +93,18 @@ def _short(run_id: str) -> str:
 class Investigations:
     def __init__(self, pool: AsyncConnectionPool, institutions: Institutions, client: InvestigationClient,
                  clock: Clock, *, worlds: tuple[str, ...] = TICK_WORLDS, run_ids: Callable[[], str] | None = None,
-                 as_of: bool = False, poll_all: bool = False, max_attempts: int | None = None):
+                 as_of: bool = False, poll_all: bool = False, max_attempts: int | None = None,
+                 validation_on: Callable[[], Awaitable[bool]] | None = None):
         self.pool, self.institutions, self.client, self.clock = pool, institutions, client, clock
+        # whether runs ask for validation tasks: the live app follows the Platform Admin's switch (set in main);
+        # without it (Studio, replays) the server setting alone decides, as before
+        self.validation_on = validation_on
         self.worlds = list(worlds)
         self._run_ids, self.as_of, self.poll_all = run_ids, as_of, poll_all
         self.max_attempts = max_attempts
+
+    async def _validation(self) -> bool:
+        return await self.validation_on() if self.validation_on else settings.raw("METRICS_VALIDATION") == "on"
 
     def _run_id(self) -> str:
         return self._run_ids() if self._run_ids else f"inv-{self.clock.now():%Y%m%d%H%M%S}-{uuid.uuid4().hex[:4]}"
@@ -145,15 +152,16 @@ class Investigations:
                                      "AND world = ANY(%s)", (self.worlds,))
             running = (await cur.fetchone())["n"]
         wait = settings.integer("INVESTIGATION_WAIT_MINUTES")
+        validation = await self._validation()
         return {
             "connected": self.client.connected(), "agent_url": self.client.url or None,
-            "validation": settings.raw("METRICS_VALIDATION") == "on", "wait_minutes": wait,
+            "validation": validation, "wait_minutes": wait,
             "findings_waiting": f["waiting"], "oldest_waiting_since": f["oldest"],
             "next_batch_at": f["oldest"] + timedelta(minutes=wait) if f["oldest"] else None,
             "runs_running": running,
             "notes": ([] if self.client.connected() else
                       ["The investigation agent isn't connected (INVESTIGATION_URL); new findings wait."])
-                     + ([] if settings.raw("METRICS_VALIDATION") == "on" else
+                     + ([] if validation else
                         ["Metrics validation is off: investigations stop at a readable report, with no validation tasks."])
                      + ([f"{plural(f['stranded'], 'finding')} were written for {', '.join(f['others'])}, not this installation's "
                          f"institution ({iid}); they wait until a profile with that id exists."] if f["stranded"] else []),
@@ -267,7 +275,7 @@ class Investigations:
             return
         now = self.clock.now()
         run_id = self._run_id()
-        validation = settings.raw("METRICS_VALIDATION") == "on"
+        validation = await self._validation()
         async with self.pool.connection() as conn:
             req = {**await self._request(conn, run_id, ctx, [row], validation),
                    "extend": {"event_id": event_id, "themes": themes, **(resize or {})}}
@@ -310,7 +318,7 @@ class Investigations:
             return None
         now = self.clock.now()
         run_id = self._run_id()
-        validation = settings.raw("METRICS_VALIDATION") == "on"
+        validation = await self._validation()
         async with self.pool.connection() as conn, conn.transaction():
             cur = await conn.execute(
                 """SELECT * FROM signals.findings WHERE status = 'new' AND institution_id = %s AND world = %s

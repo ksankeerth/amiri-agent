@@ -77,6 +77,7 @@ def create_app(*, database_url: str | None = None, provider: TwelveDataClient | 
         app.state.studio = Studio(pool, app.state.institutions, inv_client, mon_client, clock or Clock())
         app.state.mock_institutions = MockInstitutions(pool, app.state.institutions, clock or Clock())
         app.state.data_connection = DataConnection(pool, app.state.institutions, clock or Clock())
+        app.state.investigations.validation_on = app.state.data_connection.validation_on  # the Platform Admin's switch
         app.state.data_connection.app = app
         app.state.validation = Validation(pool, app.state.data_connection, clock or Clock())
         app.state.started_at = datetime.now(UTC).isoformat()

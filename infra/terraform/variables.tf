@@ -56,6 +56,12 @@ variable "prototype_reset" {
   default     = false
 }
 
+variable "metrics_validation" {
+  description = "Allow checking events against the institution's own data. The Platform Admin still switches it on in the app (Data connections), after approving a connection."
+  type        = bool
+  default     = true
+}
+
 variable "institution_id" {
   description = "The institution this installation serves."
   type        = string
