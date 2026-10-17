@@ -187,15 +187,17 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
         kind: body.text ? "text" : "answer", content: body.text ? { text: body.text } : body.answer!, at: new Date().toISOString() };
       setMessages(m => [...m, mine]);
       let text = "";
+      let here = track ?? current, ended: string | null = null;  // the turn's track, and a track the agent concluded in it
       const onEvent = ({ event, data }: { event: string; data: Record<string, any> }) => {
         if (event !== "start") setHeard(true);
         if (event === "text_delta") { text += data.text; setLive(text); return; }
         if (event === "start" || event === "done") return;
         if (event === "track") {
+          here = data.track;
           setCurrent(data.track); markTrack(data.track, "in_progress"); follow(data.track);
           setMessages(m => m.map(x => (x.message_id === mine.message_id ? { ...x, track: data.track } : x)));  // it led here
         }
-        if (event === "track_concluded") markTrack(data.track, "concluded");
+        if (event === "track_concluded") { markTrack(data.track, "concluded"); ended = data.track; }
         if (event === "proposal") setProposals(p => ({ ...p, [data.proposal.proposal_id]: data.proposal }));
         setLive(null); text = "";
         const kind = (event === "message" ? "text" : event) as ChatMessage["kind"];
@@ -209,6 +211,12 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
         await chat.send(s.session_id, { ...body, track }, onEvent);
       }
       if (track) { setCurrent(track); setPicked(null); }
+      // The agent closed the track it was in without anything to apply ("nothing to add here"): move on, as an
+      // applied proposal does. A track closed in passing, while the chat is elsewhere, doesn't move it.
+      if (ended && ended === here) {
+        const next = nextOpen(tracks.map(t => (t.track === ended ? { ...t, status: "concluded" as const } : t)), ended);
+        if (next) setNextUp(next.track);
+      }
     } catch (e) {
       if (e instanceof ApiError && e.code === "turn_in_progress") { setWriting(true); setMessages(m => m.filter(x => x.message_id >= 0)); }
       toast(e instanceof ApiError ? e.full : String(e));
