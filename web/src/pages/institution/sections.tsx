@@ -177,6 +177,7 @@ function suggestionText(section: SectionName, s: Suggestion, ctx: Ctx, routeName
     case "products": return { title: i.name, sub: <>{s.typical_products}{s.islamic_variant ? ` · Islamic: ${s.islamic_variant}` : ""}</>, group: s.category_name };
     case "segments": return { title: i.label, sub: <>{i.note || i.kind}{i.spec_mapping.length ? ` · data: ${i.spec_mapping.map((m: any) => valueWord(m.value)).join(", ")}` : ""}</> };
     case "regulators": return { title: <>{i.name}{i.short ? ` (${i.short})` : ""}</>, sub: <>{s.why} · {i.area.replace(/_/g, " ")}</>, group: i.relation };
+    case "rivals": return { title: <>{i.name}{i.aliases?.length ? ` (${i.aliases[0]})` : ""}</>, sub: <>{s.why} · overlap {i.overlap}</>, group: `${i.overlap} overlap` };
     case "flows": return { title: <>{FLOW_WORDS[i.kind]} {i.goods ? `(${i.goods}) ` : ""}· {pn(ctx, i.local)} ↔ {pn(ctx, i.counterpart)}</>,
       sub: <>{usdText(i.value.amount)} a year · {i.source.dataset} ({i.source.dataset_year}){i.source.sample ? " · sample figure" : ""}</>, group: FLOW_WORDS[i.kind] };
     case "risk-exposures": {

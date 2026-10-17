@@ -24,6 +24,18 @@ export function nextOpen<T extends FlowTrack>(ts: T[], done: string): T | null {
   return i < 0 ? null : o.slice(i + 1).find(t => t.status !== "concluded") ?? null;
 }
 
+/** Whether the agent's latest question still waits for its answer: nothing typed or picked since it was asked.
+ *  A question is one with options, or a reply of the agent's that ends by asking ("…any places to watch?"). */
+export function waitingForAnswer(messages: { role: string; kind: string; content?: Record<string, any> }[]): boolean {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.role === "user" && (m.kind === "text" || m.kind === "answer")) return false;
+    if (m.kind === "question") return true;
+    if (m.role === "assistant" && m.kind === "text" && typeof m.content?.text === "string" && m.content.text.trim().endsWith("?")) return true;
+  }
+  return false;
+}
+
 /** The message that moves the chat on to a track; shown as a marker, not as something the person typed. */
 export const continueText = (label: string) => `Continue with ${label.toLowerCase()}.`;
 

@@ -323,7 +323,7 @@ async def test_product_and_segment_suggestions_by_type(client):
     assert any(x["item"]["label"] == "Vehicle owners" for x in seg)
     await add(client, ins, "segments", seg[0]["item"])
     assert (await client.get(f"{B}/{ins}/suggestions/segments")).json()["items"][0]["added"] is True
-    r = await client.get(f"{B}/{ins}/suggestions/rivals")
+    r = await client.get(f"{B}/{ins}/suggestions/counterparties")  # no suggestions for that section
     assert r.status_code == 422
 
 

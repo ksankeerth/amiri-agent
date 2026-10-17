@@ -22,7 +22,7 @@ from app.server_api import seg
 from app.sessions import Session
 from app.tracks import TRACKS
 
-SUGGESTION_SECTIONS = ("products", "segments", "regulators", "flows", "risk-exposures")
+SUGGESTION_SECTIONS = ("products", "segments", "regulators", "flows", "risk-exposures", "rivals")
 BOOKKEEPING = ("version", "created_at", "updated_at", "updated_by")
 MAX_OPTIONS = 8
 
@@ -120,11 +120,12 @@ async def get_readiness(tool_context: ToolContext) -> dict:
 
 async def get_suggestions(section: str, tool_context: ToolContext) -> dict:
     """Code's suggestions for a section, from reference data (the product taxonomy, customer
-    templates, the regulators' rule table, published flow figures, the risk finder). Each item
-    is ready to propose as it is ("item"); "added" says it is already in the profile.
+    templates, the regulators' rule table, published flow figures, the risk finder, the list of
+    licensed banks and insurers for rivals). Each item is ready to propose as it is ("item");
+    "added" says it is already in the profile.
 
     Args:
-        section: products, segments, regulators, flows or risk-exposures.
+        section: products, segments, regulators, flows, risk-exposures or rivals.
 
     Returns:
         status; items: {added, item, why?}. Numbers in an item (a flow's value, a hazard's months)
@@ -183,7 +184,28 @@ async def get_field_rules(section: str, tool_context: ToolContext) -> dict:
     s = _schema["institution"] if section == "institution" else _schema["sections"].get(section)
     if s is None:
         return _err(f"no section {section}")
-    return {"status": "ok", "section": section, "schema": s, "limits": _schema.get("limits")}
+    return {"status": "ok", "section": section, "schema": inline_refs(s), "limits": _schema.get("limits")}
+
+
+def inline_refs(schema: dict) -> dict:
+    """The schema with every "$ref": "#/$defs/X" replaced by X itself and $defs dropped. Gemini reads a "$ref" in a
+    tool's result as a pointer to an attached part and refuses the whole call (400 INVALID_ARGUMENT), so the
+    flows, products and segments schemas (Money, FlowSource, SpecValue, …) must not carry any."""
+    defs = schema.get("$defs", {})
+
+    def walk(x, depth=0):
+        if depth > 20:  # a self-referencing type: stop rather than loop
+            return {}
+        if isinstance(x, dict):
+            ref = x.get("$ref")
+            if isinstance(ref, str) and ref.startswith("#/$defs/") and ref[8:] in defs:
+                return walk({**defs[ref[8:]], **{k: v for k, v in x.items() if k != "$ref"}}, depth + 1)
+            return {k: walk(v, depth) for k, v in x.items() if k not in ("$defs", "$ref")}
+        if isinstance(x, list):
+            return [walk(v, depth) for v in x]
+        return x
+
+    return walk(schema)
 
 
 async def get_reference(name: str, tool_context: ToolContext) -> dict:

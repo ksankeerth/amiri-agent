@@ -107,8 +107,16 @@ async def _turn(s: Session, turn: TurnIn) -> AsyncIterator[BaseModel]:
     except ServerError as e:
         yield ErrorEv(code="server_unavailable", message=str(e))
     except errors.APIError as e:
-        why = "out of quota" if e.code == 429 else "busy" if e.code and e.code >= 500 else f"error {e.code}"
-        yield ErrorEv(code="models_unavailable", message=f"Every model was unavailable ({why}). The forms still work.")
+        # Busy, out of quota or timed out: every model was tried (app/models.py fails over) and waiting can help.
+        # Anything else (a 400: the request itself is wrong) fails at once, the same on every model, every time:
+        # say so, and log it, so it gets fixed rather than retried.
+        if e.code in (408, 429) or (e.code or 0) >= 500:
+            why = "out of quota" if e.code == 429 else "busy"
+            yield ErrorEv(code="models_busy", message=f"The models are {why} right now. Try again in a minute; the forms still work.")
+        else:
+            logger.error("turn %s: the model refused the request (%s): %s", turn.turn_id, e.code, str(e)[:500])
+            yield ErrorEv(code="model_request_failed",
+                          message=f"Something went wrong on our side (model error {e.code}); trying again won't help. The forms still work.")
     except DefaultCredentialsError:
         yield ErrorEv(code="models_unavailable", message="The setup agent has no model credentials (GEMINI_API_KEY or "
                                                          "Vertex AI). The forms still work.")

@@ -1,7 +1,23 @@
 // Run with `npm test` (Node runs the TypeScript directly).
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { continuedTo, continueText, nextOpen, setupOrder, stepFrom } from "./setupFlow.ts";
+import { continuedTo, continueText, nextOpen, setupOrder, stepFrom, waitingForAnswer } from "./setupFlow.ts";
+
+test("an unanswered question holds the move; anything said after it releases it", () => {
+  const q = { role: "assistant", kind: "question" }, said = { role: "user", kind: "text" }, picked = { role: "user", kind: "answer" };
+  const applied = { role: "system", kind: "applied" }, card = { role: "assistant", kind: "proposal" };
+  assert.equal(waitingForAnswer([said, card, q, applied]), true);   // proposed, asked, then applied: wait
+  assert.equal(waitingForAnswer([q, picked, card, applied]), false); // the question was answered before
+  assert.equal(waitingForAnswer([q, said, card, applied]), false);   // answered by typing counts too
+  assert.equal(waitingForAnswer([said, card, applied]), false);      // no question at all
+  assert.equal(waitingForAnswer([]), false);
+  // asked in the reply's own words rather than with options
+  const asks = { role: "assistant", kind: "text", content: { text: "I've proposed Samoa. Would you like to add any places to watch? " } };
+  const tells = { role: "assistant", kind: "text", content: { text: "Nothing changes until you apply it; next is customers and products." } };
+  assert.equal(waitingForAnswer([said, card, asks, applied]), true);
+  assert.equal(waitingForAnswer([said, card, tells, applied]), false);
+  assert.equal(waitingForAnswer([said, card, asks, said, applied]), false);
+});
 
 const t = (track: string, order: number | null, status = "not_started", extra: Record<string, unknown> = {}) =>
   ({ track, label: track[0].toUpperCase() + track.slice(1).replace(/_/g, " "), order, read_only: order === null, shown: true, status, ...extra });

@@ -8,12 +8,18 @@ import { ApiError } from "../api/client";
 import { chat, type AssistantStatus, type ChatMessage, type Proposal, type TrackDef, type TrackState } from "../api/assistant";
 import { dayTime, plural } from "../format";
 import { Icon } from "./Icon";
-import { continuedTo, continueText, nextOpen, stepFrom } from "./setupFlow";
+import { continuedTo, continueText, nextOpen, stepFrom, waitingForAnswer } from "./setupFlow";
 import { ChatToggleCtx, Modal, useRole, useToast } from "./ui";
 
 // Applying the new institution remounts the chat (it now belongs to the institution): the move to the next
 // track is handed over through here, and dropped if nobody picks it up soon.
 const NEXT_KEY = "amiri.setupNext";
+// One message, one topic: room for a few sentences (the longest real answers are about 250 characters), not a pasted
+// essay covering every section at once. The server's own limit (4,000) stays as the backstop.
+const MAX_CHARS = 600;
+// Errors that waiting can fix, so the chat offers "Try again" (the agent's, then the server's codes).
+const RETRYABLE = new Set(["models_busy", "turn_timeout", "server_unavailable",
+  "assistant_timeout", "assistant_unavailable", "assistant_not_connected", "agent_session_lost"]);
 
 const SECTION_WORDS: Record<string, string> = {
   institution: "Institution", footprint: "Footprint", "watch-places": "Place to watch", segments: "Customer group",
@@ -184,15 +190,19 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
         kind: body.text ? "text" : "answer", content: body.text ? { text: body.text } : body.answer!, at: new Date().toISOString() };
       setMessages(m => [...m, mine]);
       let text = "";
+      let here = track ?? current, ended: string | null = null;  // the turn's track, and a track the agent concluded in it
+      let leftOpen = false;  // the reply asked a new question or brought a card to apply
       const onEvent = ({ event, data }: { event: string; data: Record<string, any> }) => {
         if (event !== "start") setHeard(true);
         if (event === "text_delta") { text += data.text; setLive(text); return; }
         if (event === "start" || event === "done") return;
         if (event === "track") {
+          here = data.track;
           setCurrent(data.track); markTrack(data.track, "in_progress"); follow(data.track);
           setMessages(m => m.map(x => (x.message_id === mine.message_id ? { ...x, track: data.track } : x)));  // it led here
         }
-        if (event === "track_concluded") markTrack(data.track, "concluded");
+        if (event === "track_concluded") { markTrack(data.track, "concluded"); ended = data.track; }
+        if (event === "question" || event === "proposal") leftOpen = true;
         if (event === "proposal") setProposals(p => ({ ...p, [data.proposal.proposal_id]: data.proposal }));
         setLive(null); text = "";
         const kind = (event === "message" ? "text" : event) as ChatMessage["kind"];
@@ -206,6 +216,18 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
         await chat.send(s.session_id, { ...body, track }, onEvent);
       }
       if (track) { setCurrent(track); setPicked(null); }
+      // The agent closed the track it was in without anything to apply ("nothing to add here"): move on, as an
+      // applied proposal does. A track closed in passing, while the chat is elsewhere, doesn't move it.
+      if (ended && ended === here) {
+        const next = nextOpen(tracks.map(t => (t.track === ended ? { ...t, status: "concluded" as const } : t)), ended);
+        if (next) setNextUp(next.track);
+        setHeld(null);
+      } else if (held) {
+        // The question that held a move back is answered. Still in that track and nothing new to apply or answer:
+        // go ahead. A new card or question keeps waiting (its Apply moves on as usual); another track drops it.
+        if (here !== held.from) setHeld(null);
+        else if (!leftOpen) { setNextUp(held.to); setHeld(null); }
+      }
     } catch (e) {
       if (e instanceof ApiError && e.code === "turn_in_progress") { setWriting(true); setMessages(m => m.filter(x => x.message_id >= 0)); }
       toast(e instanceof ApiError ? e.full : String(e));
@@ -214,7 +236,7 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
   };
 
   const pick = (t: TrackState) => {
-    setPicked(t.track); follow(t.track);
+    setPicked(t.track); follow(t.track); setHeld(null);  // steering by hand: no move waits any more
   };
   // Moving on: the next track's tab, and a turn in it, so the agent leads with its first question (using what was
   // noted for it) instead of waiting for the person to type.
@@ -222,8 +244,12 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
   // The move waits here until the agent's turn is over: a card can be applied while the agent is still writing
   // the text after it, and a new turn can't start until that one ends.
   const [nextUp, setNextUp] = useState<string | null>(null);
+  // A move held back by a question the agent asked with its proposal: it goes ahead once that question is answered
+  // and the reply leaves nothing else open (no new card to apply, no new question) in the same track.
+  const [held, setHeld] = useState<{ from: string; to: string } | null>(null);
   const decided = (p: Proposal) => {
     setProposals(ps => ({ ...ps, [p.proposal_id]: p }));
+    setHeld(null);  // an apply moves on by itself (below); "Not now" stays
     if (p.status !== "confirmed") return;
     markTrack(p.track, "concluded");
     // only for the track the chat is in, so applying an older card from the history doesn't move it
@@ -231,7 +257,7 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
     if (next && p.kind === "create_institution") {
       try { sessionStorage.setItem(NEXT_KEY, JSON.stringify({ track: next.track, at: Date.now() })); } catch { /* */ }
     }
-    follow(next?.track ?? p.track); onApplied?.(p); load().catch(() => {});
+    follow(p.track); onApplied?.(p); load().catch(() => {});  // the page follows the move itself (advance), not before it
     if (next && p.kind !== "create_institution") setNextUp(next.track);
   };
   useEffect(() => {  // the handed-over move, once this chat (the new institution's) has loaded
@@ -244,8 +270,26 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
     if (!nextUp || busy || writing || !tracks.length) return;
     const t = tracks.find(x => x.track === nextUp);
     setNextUp(null);
-    if (t) advance(t);
+    if (!t) return;
+    // The agent asked something along with its proposal ("any places to watch?") and it isn't answered yet:
+    // stay for the answer, and move on after it (see send).
+    if (waitingForAnswer(messages)) { const from = picked ?? current; if (from) setHeld({ from, to: t.track }); }
+    else advance(t);
   }, [nextUp, busy, writing, tracks.length]);  // eslint-disable-line react-hooks/exhaustive-deps
+  // the agent is busy with something: this chat's reply, one still running on the server (a reload, another tab), or
+  // the move to the next section waiting its turn. The message box waits too.
+  const working = busy || writing || nextUp !== null;
+  // The last turn failed in a way that waiting can fix (models busy or out of quota, a timeout, the agent starting
+  // or unreachable): offer to send the same message again. Errors that would fail the same way get no button.
+  const lastMsg = messages[messages.length - 1];
+  const retryable = lastMsg?.kind === "error" && RETRYABLE.has(lastMsg.content.code);
+  const retry = () => {
+    const u = [...messages].reverse().find(m => m.role === "user" && (m.kind === "text" || m.kind === "answer"));
+    if (!u) return;
+    const moved = u.kind === "text" ? continuedTo(tracks, u.content.text) : null;  // a "continue with …" keeps its track
+    send(u.kind === "answer" ? { answer: { question_id: u.content.question_id, options: u.content.options } } : { text: u.content.text },
+      moved?.track);
+  };
   const here = picked ?? current;
   const back = stepFrom(tracks, here, -1), fwd = stepFrom(tracks, here, 1);
   const answered = new Set(messages.filter(m => m.kind === "answer").map(m => m.content.question_id));
@@ -291,16 +335,24 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
           ? "Ask me to fill in or change any part of your profile, to check it, or how something got there. You can also pick a track above. Every change comes back for you to apply."
           : "I can set up your institution with you: what kind it is, where you operate, your customers and products, flows, rules, rivals and risks. Tell me in plain words; nothing is saved until you apply it. The forms work too."}</div>}
         {rows}
+        {retryable && !working && <div className="row" style={{ justifyContent: "center" }}>
+          <button className="btn btn--sm" type="button" onClick={retry}><Icon name="refresh" />Try again</button></div>}
         {live && <div className="msg ai">{live}<span className="muted">▍</span></div>}
-        {busy && !live && <div className="msg sys" role="status">{slow ? "Waiting for the assistant… If it was asleep, the first reply can take up to a minute." : "…"}</div>}
-        {writing && !busy && <div className="msg sys">A reply is still being written… it will appear here.</div>}
+        {working && <div className="agentwork" role="status" aria-live="polite"><span className="orb" aria-hidden="true" />
+          <span>{busy ? (live ? "Writing…" : slow ? "Waiting for the assistant… If it was asleep, the first reply can take up to a minute."
+            : "The setup agent is working on it…")
+            : writing ? "A reply is still being written… it will appear here."
+            : `Moving on to ${(def(nextUp) ?? { label: "the next section" }).label.toLowerCase()}…`}</span></div>}
       </div>
+      {draft.length >= MAX_CHARS * 0.8 && <div className="small" role="status" style={{ padding: "6px 12px 0", color: draft.length >= MAX_CHARS ? "var(--medium-ink)" : "var(--ink-3)" }}>
+        {draft.length}/{MAX_CHARS}{draft.length >= MAX_CHARS ? " · That's the limit: keep to one topic, and send the rest after the reply." : ""}</div>}
       <div style={{ borderTop: "1px solid var(--hairline)", padding: 12, display: "flex", gap: 8, alignItems: "center" }}>
-        <textarea className="input" rows={2} aria-label="Message to the setup agent" style={{ flex: 1, resize: "none" }} value={draft} disabled={busy}
-          placeholder={picked ? `About ${def(picked)?.label.toLowerCase()}…` : institutionId ? "Ask, check, or ask for a change…" : "e.g. We're a commercial bank in Sri Lanka with branches in Kerala"}
+        <textarea className="input" rows={2} aria-label="Message to the setup agent" style={{ flex: 1, resize: "none" }} value={draft} disabled={working}
+          maxLength={MAX_CHARS}
+          placeholder={working ? "The setup agent is working… you can type once it's done." : picked ? `About ${def(picked)?.label.toLowerCase()}…` : institutionId ? "Ask, check, or ask for a change…" : "e.g. We're a commercial bank in Sri Lanka with branches in Kerala"}
           onChange={e => setDraft(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (draft.trim()) { send({ text: draft.trim() }); setDraft(""); } } }} />
-        <button className="btn btn--primary" type="button" disabled={busy || writing || !draft.trim()} onClick={() => { send({ text: draft.trim() }); setDraft(""); }}>Send</button>
+          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (draft.trim() && !working) { send({ text: draft.trim() }); setDraft(""); } } }} />
+        <button className="btn btn--primary" type="button" disabled={working || !draft.trim()} onClick={() => { send({ text: draft.trim() }); setDraft(""); }}>Send</button>
       </div>
     </div>
   );

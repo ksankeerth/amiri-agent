@@ -720,3 +720,17 @@ a.evrow:hover .row-l, a.lrow:hover .row-l { text-decoration:underline !important
 .badge::first-letter { text-transform:uppercase; }
 .badge svg, .badge .d { display:inline-block; vertical-align:-1px; margin-right:5px; }
 .ph-about { font-size:13.5px; color:var(--ink-2); max-width:80ch; margin:0; }
+
+/* the setup agent at work: a glowing orb with a slow swirl, beside what it's doing (static with reduced motion) */
+.agentwork { display:flex; align-items:center; gap:12px; padding:6px 2px; color:var(--ink-3); font-size:13px; }
+.orb { position:relative; flex:none; width:26px; height:26px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.85), var(--accent) 42%, var(--info) 100%);
+  animation:orbbreath 2.4s ease-in-out infinite; }
+.orb::before { content:""; position:absolute; inset:-3px; border-radius:50%;
+  background:conic-gradient(from 0deg, transparent 0 55%, var(--accent-line) 70%, var(--info) 85%, transparent 100%);
+  -webkit-mask:radial-gradient(circle, transparent 58%, #000 60%); mask:radial-gradient(circle, transparent 58%, #000 60%);
+  animation:spin 1.6s linear infinite; }
+.orb::after { content:""; position:absolute; inset:0; border-radius:50%; box-shadow:0 0 14px 2px var(--accent-soft);
+  animation:orbglow 2.4s ease-in-out infinite; }
+@keyframes orbbreath { 0%, 100% { transform:scale(.92); } 50% { transform:scale(1.06); } }
+@keyframes orbglow { 0%, 100% { opacity:.35; } 50% { opacity:1; } }
