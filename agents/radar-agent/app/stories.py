@@ -31,7 +31,7 @@ from app import settings
 from app.articles import Article
 from app.contract import Headline, RadarRunRequest, Story, Theme
 from app.geo import themes_vocabulary
-from app.memory import Remembered
+from app.memory import Remembered, seen_fingerprints
 from app.queries import score_themes
 
 SIMILAR = 0.3       # title overlap (Jaccard) for two articles to be one story
@@ -220,7 +220,7 @@ def to_story(c: Candidate, j: Judgement, req: RadarRunRequest) -> Story:
     else:  # the judge didn't say so, but code sees the same story: keep its fingerprint
         close = [m for m in c.remembered if m.places & c.places and jaccard(c.terms, m.terms) >= SAME]
         fp = close[0].fingerprint if close else fingerprint(req.institution.name, c)
-    development = j.continues if (j.continues in set(req.seen) and j.continues != fp) else None
+    development = j.continues if (j.continues in seen_fingerprints(req) and j.continues != fp) else None
     relevance = j.relevance if j.relevance in WEIGHT else "low"
     scope = set(req.scope.places)
     places = sorted(c.about & scope) or sorted(c.places & scope) or sorted(c.about | c.places)  # what it's about first

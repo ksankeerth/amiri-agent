@@ -25,7 +25,7 @@ async def test_a_run_on_the_tick_stores_stories_and_sends_what_the_agent_chose(c
     assert "SA" in req["scope"]["places"] and "Coastal Remit" in req["scope"]["actors"]
     assert req["scope"]["places_why"]["LK"] == ["footprint (home)"] and req["institution"]["country"] == "LK"
     assert req["limits"]["max_queries"] == 1 and req["limits"]["max_bytes_per_query"] == 1_500_000_000  # the cost guards
-    assert req["seen"] == []
+    assert req["seen"] == [] and req["seen_stories"] == [] and req["model_calls_left_today"] == 300
     await client.post("/internal/tick")  # collected
     items = (await client.get(f"{R}/stories")).json()["items"]
     by = {s["fingerprint"]: s for s in items}
@@ -55,6 +55,11 @@ async def test_the_schedule_and_a_story_seen_again(client, env, radar_agent, clo
     await client.post("/internal/tick")
     r2 = radar_agent.requests[1]
     assert r2["seen"] == ["ksa-visas"] and r2["window"]["since"] == radar_agent.requests[0]["window"]["until"]
+    # the agent keeps no memory: the server sends what it needs to recognise the story again
+    (s1,) = r2["seen_stories"]
+    assert s1["fingerprint"] == "ksa-visas" and s1["title"] == "Saudi Arabia tightens visa renewals"
+    assert s1["places"] == ["SA", "LK"] and s1["headlines"] == ["Saudi Arabia tightens visa renewals"]
+    assert r2["model_calls_left_today"] == 300 - 1  # the first run's call counts against the day
     items = (await client.get(f"{R}/stories")).json()["items"]
     assert len(items) == 1 and items[0]["runs_seen"] == 2 and items[0]["publishers"] == 8
     assert len(items[0]["headlines"]) == 2  # merged, not repeated

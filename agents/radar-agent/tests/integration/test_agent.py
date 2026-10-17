@@ -10,7 +10,6 @@ import os
 import pytest
 
 from app import settings
-from app.memory import Memory
 from app.radar_runner import Deps, run_radar
 from tests.unit.conftest import UNTIL, request
 
@@ -26,10 +25,10 @@ NEWS = [
 ]
 
 
-async def test_the_judge_answers_every_shortlisted_story(tmp_path):
+async def test_the_judge_answers_every_shortlisted_story():
     news = [{**n, "published_at": UNTIL.isoformat()} for n in NEWS]
     r = await run_radar(request(run_id="rad-live-1", provided_news=news),
-                        Deps(bq=None, memory=Memory(tmp_path / "runs.db")))  # type: ignore[arg-type]
+                        Deps(bq=None))  # type: ignore[arg-type]
     assert r.stop_reason == "finished" and r.usage.model_calls >= 1
     assert r.considered == 4 and r.stories and r.bytes_processed == 0
     for s in r.stories:

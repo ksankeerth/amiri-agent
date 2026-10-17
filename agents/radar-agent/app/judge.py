@@ -82,8 +82,7 @@ def batch_item(c: Candidate, req: RadarRunRequest) -> dict:
             "remembered": [{"fingerprint": m.fingerprint, "title": m.title} for m in c.remembered]}
 
 
-async def judge(cands: list[Candidate], req: RadarRunRequest, calls_left: int, ask: Ask = adk_ask,
-                on_call: Callable[[], None] | None = None) -> Judged:
+async def judge(cands: list[Candidate], req: RadarRunRequest, calls_left: int, ask: Ask = adk_ask) -> Judged:
     """Judges candidates in order (best first) until done or out of calls."""
     out = Judged()
     size = max(1, settings.integer("JUDGE_BATCH_SIZE"))
@@ -96,8 +95,6 @@ async def judge(cands: list[Candidate], req: RadarRunRequest, calls_left: int, a
         state = {"institution": institution_brief(req), "batch": [batch_item(c, req) for c in batch], "vocabulary": vocab}
         asked = await ask(f"{req.run_id}-{n // size}", state)
         out.calls += 1
-        if on_call:
-            on_call()
         out.model = asked.model or out.model
         out.input_tokens += asked.input_tokens
         out.output_tokens += asked.output_tokens

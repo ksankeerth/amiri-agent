@@ -15,7 +15,7 @@ from dataclasses import dataclass
 import httpx
 from pydantic import ValidationError
 
-from app.radar.contract import RadarRunStatus
+from app.radar.contract import CONTRACT_VERSION, RadarRunStatus
 
 TIMEOUT_S = 600
 
@@ -42,6 +42,10 @@ def sample_request(provided: bool = False) -> dict:
                   "actors": ["CBSL", "Coastal Remit"]},
         "window": {"since": iso(now - 6 * 3600), "until": iso(now)},
         "seen": ["check-seen-1"],
+        "seen_stories": [{"fingerprint": "check-seen-1", "title": "Saudi Arabia reviews visa rules for foreign workers",
+                          "places": ["SA"], "headlines": ["Saudi Arabia reviews visa rules for foreign workers"],
+                          "last_seen_at": iso(now - 86400)}],
+        "model_calls_left_today": 20,
         "limits": {"max_stories": 5, "max_model_calls": 20, "timeout_seconds": 300, "max_queries": 2,
                    "max_bytes_per_query": 2_000_000_000},
     }
@@ -132,5 +136,5 @@ class Checker:
 def report(results: list[Result]) -> str:
     lines = [f"{'PASS' if r.ok else 'FAIL'}  {r.check}{'' if r.ok or not r.detail else '  -- ' + r.detail}" for r in results]
     bad = sum(1 for r in results if not r.ok)
-    lines.append(f"\n{len(results) - bad} passed, {bad} failed (Radar contract 2.0)")
+    lines.append(f"\n{len(results) - bad} passed, {bad} failed (Radar contract {CONTRACT_VERSION})")
     return "\n".join(lines)

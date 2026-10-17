@@ -27,7 +27,6 @@ from app import logs, radar_api, settings
 from app.app_utils import services
 from app.app_utils.a2a import attach_a2a_routes
 from app.bq import BigQuery
-from app.memory import Memory
 from app.radar_runner import Deps
 from app.runs import RadarService, RunStore
 
@@ -63,7 +62,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     if interrupted:
         logger.warning("marked %d unfinished run(s) from a previous process failed", interrupted)
     store.purge()
-    app.state.radar = RadarService(store, Deps(bq=BigQuery(), memory=Memory(settings.path("RUNS_DB_PATH"))))
+    app.state.radar = RadarService(store, Deps(bq=BigQuery()))
     await attach_a2a_routes(
         app,
         agent=root_agent,

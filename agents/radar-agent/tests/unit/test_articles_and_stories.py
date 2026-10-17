@@ -56,6 +56,11 @@ def test_the_judges_picks_are_checked():
     assert s.development_of is None and s.fingerprint.startswith("rdr-") and s.fingerprint != "rdr-not-remembered"
     j2 = Judgement(relevance="high", send=True, why="Link.", title="T", summary="S", continues="rdr-000000000001")
     assert to_story(c, j2, req).development_of == "rdr-000000000001"
+    # a 2.1 server sends the story itself in seen_stories
+    req21 = request(seen_stories=[{"fingerprint": "rdr-000000000002", "title": "Earlier", "places": ["LK"],
+                                   "last_seen_at": "2026-10-16T06:00:00+00:00"}])
+    j3 = Judgement(relevance="high", send=True, why="Link.", title="T", summary="S", continues="rdr-000000000002")
+    assert to_story(c, j3, req21).development_of == "rdr-000000000002"
 
 
 def test_at_most_three_sent_and_one_story_per_fingerprint(monkeypatch):
