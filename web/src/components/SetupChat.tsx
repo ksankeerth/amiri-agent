@@ -8,7 +8,7 @@ import { ApiError } from "../api/client";
 import { chat, type AssistantStatus, type ChatMessage, type Proposal, type TrackDef, type TrackState } from "../api/assistant";
 import { dayTime, plural } from "../format";
 import { Icon } from "./Icon";
-import { continuedTo, continueText, nextOpen, stepFrom } from "./setupFlow";
+import { continuedTo, continueText, nextOpen, stepFrom, waitingForAnswer } from "./setupFlow";
 import { ChatToggleCtx, Modal, useRole, useToast } from "./ui";
 
 // Applying the new institution remounts the chat (it now belongs to the institution): the move to the next
@@ -258,7 +258,9 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
     if (!nextUp || busy || writing || !tracks.length) return;
     const t = tracks.find(x => x.track === nextUp);
     setNextUp(null);
-    if (t) advance(t);
+    // The agent asked something along with its proposal ("any places to watch?") and it isn't answered yet:
+    // stay for the answer. The person moves on with → or by answering.
+    if (t && !waitingForAnswer(messages)) advance(t);
   }, [nextUp, busy, writing, tracks.length]);  // eslint-disable-line react-hooks/exhaustive-deps
   // the agent is busy with something: this chat's reply, one still running on the server (a reload, another tab), or
   // the move to the next section waiting its turn. The message box waits too.
