@@ -1,5 +1,6 @@
 """The contract's endpoints and the routing rules, with a scripted router (no model)."""
 
+import pytest
 from conftest import H, start, turn
 
 from app.contract import EVENT
@@ -101,6 +102,25 @@ async def test_a_failure_ends_the_turn_with_an_error_event(client, monkeypatch):
     valid(evs)
     assert ("error", {"code": "agent_failed", "message": "The setup agent failed (RuntimeError)."}) in evs
     assert kinds(evs)[-2:] == ["usage", "done"]
+
+
+@pytest.mark.parametrize("status, code", [(429, "models_busy"), (503, "models_busy"), (400, "model_request_failed")])
+async def test_model_errors_say_whether_trying_again_helps(client, monkeypatch, status, code):
+    from google.genai import errors
+
+    from app import engine
+
+    async def refused(s, turn, r, usage):
+        raise errors.APIError(status, {"error": {"code": status, "message": "nope", "status": "X"}})
+        yield
+
+    monkeypatch.setattr(engine, "_responder", refused)
+    sid = await start(client, "bank-1")
+    evs = await turn(client, sid, "bank-1", text="hi", requested_track="risks")
+    valid(evs)
+    err = next(d for e, d in evs if e == "error")
+    assert err["code"] == code
+    assert ("Try again" in err["message"]) == (code == "models_busy")
 
 
 async def test_no_credentials_is_said_plainly(client, monkeypatch):
