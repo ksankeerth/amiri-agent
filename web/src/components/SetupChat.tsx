@@ -219,6 +219,9 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
   // Moving on: the next track's tab, and a turn in it, so the agent leads with its first question (using what was
   // noted for it) instead of waiting for the person to type.
   const advance = (t: TrackState) => { follow(t.track); send({ text: continueText(t.label) }, t.track); };
+  // The move waits here until the agent's turn is over: a card can be applied while the agent is still writing
+  // the text after it, and a new turn can't start until that one ends.
+  const [nextUp, setNextUp] = useState<string | null>(null);
   const decided = (p: Proposal) => {
     setProposals(ps => ({ ...ps, [p.proposal_id]: p }));
     if (p.status !== "confirmed") return;
@@ -229,15 +232,20 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
       try { sessionStorage.setItem(NEXT_KEY, JSON.stringify({ track: next.track, at: Date.now() })); } catch { /* */ }
     }
     follow(next?.track ?? p.track); onApplied?.(p); load().catch(() => {});
-    if (next && p.kind !== "create_institution") advance(next);
+    if (next && p.kind !== "create_institution") setNextUp(next.track);
   };
   useEffect(() => {  // the handed-over move, once this chat (the new institution's) has loaded
-    if (!institutionId || !tracks.length || !defs.length || busy) return;
+    if (!institutionId || !tracks.length || !defs.length) return;
     let next: { track: string; at: number } | null = null;
     try { next = JSON.parse(sessionStorage.getItem(NEXT_KEY) ?? "null"); sessionStorage.removeItem(NEXT_KEY); } catch { /* */ }
-    const t = next && Date.now() - next.at < 60_000 ? tracks.find(x => x.track === next!.track) : undefined;
+    if (next && Date.now() - next.at < 60_000) setNextUp(next.track);
+  }, [institutionId, tracks.length, defs.length]);
+  useEffect(() => {  // the queued move, once no turn is running
+    if (!nextUp || busy || writing || !tracks.length) return;
+    const t = tracks.find(x => x.track === nextUp);
+    setNextUp(null);
     if (t) advance(t);
-  }, [institutionId, tracks.length, defs.length]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [nextUp, busy, writing, tracks.length]);  // eslint-disable-line react-hooks/exhaustive-deps
   const here = picked ?? current;
   const back = stepFrom(tracks, here, -1), fwd = stepFrom(tracks, here, 1);
   const answered = new Set(messages.filter(m => m.kind === "answer").map(m => m.content.question_id));
