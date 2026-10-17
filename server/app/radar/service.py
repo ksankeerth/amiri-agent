@@ -31,7 +31,7 @@ from app.institutions.service import Institutions
 from app.investigation.client import AgentError, RadarClient
 from app.monitors import request as mreq
 from app.problems import Problem
-from app.radar.contract import RadarRunResult
+from app.radar.contract import MAX_SEEN_STORIES, RadarRunResult
 
 FINISHED = ("completed", "stopped_early")
 MAX_REPOSTS = 3
@@ -91,6 +91,16 @@ class Radar:
         local_midnight = _day_start(self.clock.now().astimezone(tz))
         cur = await conn.execute("SELECT count(*) AS n FROM signals.radar_runs WHERE institution_id = %s "
                                  "AND trigger = 'now' AND status <> 'failed' AND created_at >= %s", (self._iid(), local_midnight))
+        return int((await cur.fetchone())["n"])
+
+    async def _model_calls_today(self, conn) -> int:
+        """Model calls Radar's runs made today (local day); a run still working counts as its whole limit."""
+        tz = await self._tz()
+        cur = await conn.execute(
+            """SELECT COALESCE(SUM(COALESCE((result -> 'usage' ->> 'model_calls')::int,
+                 CASE WHEN status = 'running' THEN (request -> 'limits' ->> 'max_model_calls')::int ELSE 0 END)), 0) AS n
+               FROM signals.radar_runs WHERE institution_id = %s AND created_at >= %s""",
+            (self._iid(), _day_start(self.clock.now().astimezone(tz))))
         return int((await cur.fetchone())["n"])
 
     # ------------------------------------------------------------ status
@@ -224,15 +234,25 @@ class Radar:
             last = (await cur.fetchone())["u"]
             lookback = now - timedelta(hours=settings.integer("RADAR_FIRST_LOOKBACK_HOURS"))
             since = min(max(last, lookback) if last else lookback, now - timedelta(minutes=15))
+            # the agent keeps no memory: what it needs to recognise a story again comes with each run
             cur = await conn.execute(
-                "SELECT fingerprint FROM signals.radar_stories WHERE institution_id = %s AND last_seen_at > %s",
-                (iid, now - timedelta(days=settings.integer("RADAR_SEEN_DAYS"))))
-            seen = [r["fingerprint"] for r in await cur.fetchall()]
+                """SELECT fingerprint, title, places, headlines, last_seen_at FROM signals.radar_stories
+                   WHERE institution_id = %s AND last_seen_at > %s ORDER BY last_seen_at DESC LIMIT %s""",
+                (iid, now - timedelta(days=settings.integer("RADAR_SEEN_DAYS")), MAX_SEEN_STORIES))
+            stories = await cur.fetchall()
+            seen = [r["fingerprint"] for r in stories]
+            seen_stories = [{"fingerprint": r["fingerprint"], "title": (r["title"] or "")[:300],
+                             "places": list(r["places"] or [])[:30],
+                             "headlines": [str(h.get("title", ""))[:300] for h in (r["headlines"] or [])
+                                           if isinstance(h, dict) and h.get("title")][:3],
+                             "last_seen_at": r["last_seen_at"].isoformat()} for r in stories]
+            left_today = max(0, settings.integer("RADAR_MODEL_CALLS_PER_DAY") - await self._model_calls_today(conn))
             run_id = f"rad-{now:%Y%m%d%H%M%S}-{uuid.uuid4().hex[:6]}"
             req = {"run_id": run_id, "institution": mreq.institution(state),
                    "scope": {"places": scope["places"], "places_why": scope.get("why", {}), "themes": scope["themes"],
                              "actors": scope["actors"]},
                    "window": {"since": since.isoformat(), "until": now.isoformat()}, "seen": seen,
+                   "seen_stories": seen_stories, "model_calls_left_today": left_today,
                    "limits": {"max_stories": settings.integer("RADAR_MAX_STORIES"),
                               "max_model_calls": settings.integer("RADAR_MAX_MODEL_CALLS"),
                               "timeout_seconds": settings.integer("RADAR_TIMEOUT_SECONDS"),

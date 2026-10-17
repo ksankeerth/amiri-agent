@@ -7,6 +7,8 @@ locals {
     investigation = { cpu_idle = false, env = { DATA_AUTH = "id_token" } }
     monitor       = { cpu_idle = false, env = {} }
     setup         = { cpu_idle = true, env = { SERVER_AUTH = "id_token" } }
+    # BigQuery jobs run in (and are billed to) this project; GDELT's tables are public
+    radar = { cpu_idle = false, env = { BQ_PROJECT = var.project_id } }
   }
   # logs: one JSON line per entry, linked to its trace; no line per request (Cloud Run's request log has those)
   log_env = {
@@ -42,7 +44,7 @@ locals {
     ASSISTANT_BACKEND     = "http"
     ASSISTANT_URL         = google_cloud_run_v2_service.agent["setup"].uri
     ASSISTANT_AUTH        = "id_token"
-    RADAR_URL             = var.radar_url
+    RADAR_URL             = var.radar_url != "" ? var.radar_url : google_cloud_run_v2_service.agent["radar"].uri
     RADAR_AUTH            = "id_token"
     RADAR_DAILY_BYTES_CAP = tostring(var.radar_daily_bytes_cap)
     RADAR_EVERY_MINUTES   = tostring(var.radar_every_minutes)

@@ -69,13 +69,13 @@ variable "institution_id" {
 }
 
 variable "radar_url" {
-  description = "The Radar agent's URL, once it exists. Empty: Radar isn't connected."
+  description = "Another Radar agent's URL, to use instead of the one deployed here (amiri-radar). Empty: the deployed one."
   type        = string
   default     = ""
 }
 
 variable "radar_daily_bytes_cap" {
-  description = "BigQuery bytes Radar may scan a day (a cost guard). The free tier is 1 TiB a month (about 34 GB a day); Radar uses about 1 to 7 GB."
+  description = "BigQuery bytes Radar may scan a day (a cost guard). The free tier is 1 TiB a month (about 34 GB a day); a run reads about 0.9 GB (the daily run and up to 5 Check nows: about 5.5 GB)."
   type        = number
   default     = 20000000000
 }

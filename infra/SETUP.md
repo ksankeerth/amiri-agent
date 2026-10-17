@@ -114,7 +114,7 @@ To fix one: `infra/scripts/secrets.sh <NAME>`.
 ## 8. Images
 
 ```bash
-infra/scripts/build.sh           # Cloud Build makes the four images in your project; about 5–10 minutes
+infra/scripts/build.sh           # Cloud Build makes the five images in your project; about 5–10 minutes
 ```
 
 You don't need Docker. The images are tagged with the current git commit.
@@ -122,14 +122,14 @@ You don't need Docker. The images are tagged with the current git commit.
 ## 9. Everything
 
 ```bash
-infra/scripts/deploy.sh          # the four services and the tick; shows the plan, asks, applies
+infra/scripts/deploy.sh          # the five services and the tick; shows the plan, asks, applies
 ```
 
 ## 10. Check it runs
 
 ```bash
 URL=$(terraform -chdir=infra/terraform output -raw server_url)
-gcloud run services list                      # four services, each ✔
+gcloud run services list                      # five services, each ✔
 curl -s $URL/health; echo                     # {"status":"ok"}
 curl -s $URL/api/v1/auth/config; echo         # … "asleep": false   (the server reached its database)
 echo $URL

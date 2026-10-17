@@ -15,7 +15,7 @@ from fastapi import FastAPI, Request, Response
 from pydantic import ValidationError
 
 from app import reference
-from app.radar.contract import RadarRunRequest, RadarRunStatus
+from app.radar.contract import CONTRACT_VERSION, RadarRunRequest, RadarRunStatus
 
 CREATED = "2026-10-07T00:00:00Z"
 
@@ -125,7 +125,7 @@ class FakeRadar:
 
 def create_fake_agent() -> FastAPI:
     fake = FakeRadar()
-    app = FastAPI(title="amiri-radar (fake)", description="Implements the Radar agent contract 2.0 without a model.")
+    app = FastAPI(title="amiri-radar (fake)", description=f"Implements the Radar agent contract {CONTRACT_VERSION} without a model.")
 
     @app.get("/health")
     async def health():

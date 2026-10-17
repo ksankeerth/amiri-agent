@@ -39,8 +39,6 @@ SETTINGS: dict[str, Setting] = {
         Setting("MODEL_COOLDOWN_SECONDS", "60", "Seconds a failed model is skipped."),
         Setting("JUDGE_BATCH_SIZE", "5", "Stories per model call."),
         Setting("SHORTLIST_FACTOR", "3", "The model judges at most this many times max_stories (the best by score)."),
-        Setting("MODEL_CALLS_PER_DAY", "300", "Cost guard: model calls a day (UTC) at most; over it, stories are "
-                "reported from code scoring alone, held back (send false)."),
         # BigQuery (GDELT 2.0, public)
         Setting("BQ_PROJECT", "", "The project that runs and pays for the queries; empty: GOOGLE_CLOUD_PROJECT."),
         Setting("BQ_LOCATION", "US", "Where GDELT's dataset lives."),
@@ -56,10 +54,9 @@ SETTINGS: dict[str, Setting] = {
                 "at least this share of the article's place mentions (and 2 or more)."),
         Setting("HOME_MENTIONS", "3", "The home country counts when the article mentions it this many times (or in the title)."),
         # Stories
-        Setting("MEMORY_DAYS", "14", "Stories reported are remembered this long (stable fingerprints, developments)."),
         Setting("SEND_MAX_PER_RUN", "3", "At most this many stories a run are sent for investigation; never a low one."),
         # Server
-        Setting("RUNS_DB_PATH", "data/runs.db", "Runs, memory and the model-call count (SQLite, relative to the project)."),
+        Setting("RUNS_DB_PATH", "data/runs.db", "The runs being worked on, kept 24 hours (SQLite, relative to the project)."),
         Setting("MAX_CONCURRENT_RUNS", "2", "Runs worked at once; more wait as queued."),
         Setting("ALLOW_ORIGINS", "", "Comma-separated CORS origins for the API; empty = none."),
         Setting("LOG_FORMAT", "text", "text (local) or json (Cloud Run; app/logs.py)."),

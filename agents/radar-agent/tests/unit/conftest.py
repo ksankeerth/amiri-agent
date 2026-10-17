@@ -8,7 +8,6 @@ import pytest
 
 from app.contract import RadarRunRequest
 from app.judge import Asked
-from app.memory import Memory
 
 UNTIL = datetime(2026, 10, 17, 6, 0, tzinfo=UTC)
 
@@ -121,7 +120,3 @@ def scripted(answers: dict | None = None, default: dict | None = None):
     ask.calls = calls
     return ask
 
-
-@pytest.fixture
-def memory(tmp_path):
-    return Memory(tmp_path / "memory.db")

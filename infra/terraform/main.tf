@@ -20,7 +20,7 @@ locals {
   server_url      = "https://${local.server_hostname}"
 
   registry = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.amiri.repository_id}"
-  images   = { for k in ["server", "investigation", "monitor", "setup"] : k => "${local.registry}/${k}:${var.image_tag}" }
+  images   = { for k in ["server", "investigation", "monitor", "setup", "radar"] : k => "${local.registry}/${k}:${var.image_tag}" }
 
   apis = [
     "run.googleapis.com",
@@ -35,7 +35,7 @@ locals {
     "logging.googleapis.com",
     "cloudtrace.googleapis.com",
     "billingbudgets.googleapis.com",
-    "bigquery.googleapis.com", # Radar (GDELT), once its agent is connected
+    "bigquery.googleapis.com", # Radar reads GDELT
   ]
 }
 

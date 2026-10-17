@@ -267,9 +267,12 @@ SETTINGS: dict[str, Setting] = {
         Setting("RADAR_RUN_NOW_PER_DAY", "5", "Check now runs allowed per local day (the prototype's limit; shown on the "
                 "Radar page). Runs refused by a budget don't count."),
         Setting("RADAR_FIRST_LOOKBACK_HOURS", "24", "The first run reads this many hours back."),
-        Setting("RADAR_SEEN_DAYS", "14", "Stories reported in this many days are sent as seen (for developments)."),
+        Setting("RADAR_SEEN_DAYS", "14", "Stories reported in this many days go with each run (seen_stories): the "
+                "agent keeps no memory, so this is how it recognises a story again and links developments."),
         Setting("RADAR_MAX_STORIES", "10", "Stories a run may return at most."),
         Setting("RADAR_MAX_MODEL_CALLS", "40", "Model calls a run may make at most."),
+        Setting("RADAR_MODEL_CALLS_PER_DAY", "300", "Cost guard: model calls Radar may make a day (the institution's "
+                "local day). Past it, a run reports stories from code scoring alone and sends none."),
         Setting("RADAR_TIMEOUT_SECONDS", "300", "Longest a run may take inside the agent."),
         Setting("RADAR_MAX_QUERIES", "1", "BigQuery queries a run may make at most."),
         Setting("RADAR_MAX_BYTES_PER_QUERY", "1500000000",

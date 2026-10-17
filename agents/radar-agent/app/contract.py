@@ -1,4 +1,4 @@
-"""The contract between amiri-server and the Radar agent (this service), version 2.0. A copy of
+"""The contract between amiri-server and the Radar agent (this service), version 2.1. A copy of
 server/app/radar/contract.py: keep the two identical.
 
 The single source: the server validates every answer against these models, the fake agent
@@ -14,6 +14,12 @@ context, each capped by limits.max_bytes_per_query, at most limits.max_queries),
 into stories, scores each in code (footprint match x corroboration x freshness x relevance
 weight), and decides which to send for investigation (`send`, with `why`). With `provided_news`
 (a simulation) it reads only those headlines: no BigQuery, no web search.
+
+The server holds everything that lasts; the agent keeps only the runs it is working on. Each request
+carries the institution's recent stories (`seen_stories`: fingerprint, title, places, a few headlines),
+so the agent can keep a story's fingerprint and tell a development from a new story without a memory
+of its own, and the model calls left in the day (`model_calls_left_today`). 2.1 adds both; a 2.0
+request (only `seen`) still works.
 """
 
 from datetime import date
@@ -21,7 +27,8 @@ from typing import Annotated, Any, Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
-CONTRACT_VERSION = "2.0"
+CONTRACT_VERSION = "2.1"
+MAX_SEEN_STORIES = 3000  # 14 days at the busiest is ~840; a bound so a bug can't send an unbounded list
 Code = Annotated[str, Field(pattern=r"^([A-Z]{2}(-[A-Z0-9]{1,3})?|[a-z]+:[a-z0-9_-]+)$")]
 Fingerprint = Annotated[str, Field(min_length=4, max_length=80, pattern=r"^[A-Za-z0-9_.:-]+$")]
 
@@ -98,12 +105,28 @@ class Limits(Model):
                                      description="BigQuery maximum_bytes_billed for each query.")
 
 
+class SeenStory(Model):
+    """A story already reported for this institution, as the server keeps it."""
+
+    fingerprint: Fingerprint
+    title: str = Field(max_length=300)
+    places: list[Code] = Field(default_factory=list, max_length=30)
+    headlines: list[Annotated[str, Field(max_length=300)]] = Field(default_factory=list, max_length=3,
+                                                                    description="Its newest headline titles.")
+    last_seen_at: AwareDatetime
+
+
 class RadarRunRequest(Model):
     run_id: str = Field(min_length=1, max_length=64)
     institution: Institution
     scope: Scope
     window: Window
     seen: list[Fingerprint] = Field(default_factory=list, description="Stories already reported (for development_of).")
+    seen_stories: list[SeenStory] = Field(default_factory=list, max_length=MAX_SEEN_STORIES,
+                                          description="The same stories with what the agent needs to recognise "
+                                                      "them again, newest first (2.1).")
+    model_calls_left_today: int | None = Field(None, ge=0, description="Model calls the institution has left today "
+                                               "(the server's daily cap); 0: report from code alone (2.1).")
     provided_news: list[ProvidedNews] | None = Field(None, description="A simulation: read these only.")
     limits: Limits = Field(default_factory=Limits)
 

@@ -20,7 +20,7 @@ radar-agent/
 │   ├── stories.py          # grouping, scoring, shortlist, fingerprints, send rules
 │   ├── judge.py, prompt.py # the judge's batches and instruction
 │   ├── agent.py            # the ADK judge (structured output, no tools)
-│   ├── memory.py           # stories remembered, model calls counted (SQLite)
+│   ├── memory.py           # the stories the server sends back (seen_stories), ready to compare
 │   ├── contract.py         # the API's models: a copy of the server's, kept identical
 │   ├── reference/          # gazetteer and theme vocabulary (copies of the server's)
 │   └── settings.py         # every setting (see .env.example)
@@ -69,8 +69,14 @@ watched, themes, actors), the window, the stories it has already seen and the li
    number: the score is code's.
 5. **Check and send (code).** Themes outside the vocabulary are dropped. A low story is never
    sent, and at most 3 stories are sent per run (`SEND_MAX_PER_RUN`). Fingerprints stay stable
-   across runs: one remembered story keeps its fingerprint, even when the judge misses it. Stories
-   are remembered for 14 days.
+   across runs: a story the server sent back keeps its fingerprint, even when the judge misses it.
+
+**The agent keeps no memory.** The server holds everything that lasts. Each request brings the
+institution's stories of the last 14 days (`seen_stories`: fingerprint, title, places, a few
+headlines; a few KB, at most 3,000) and the model calls left in its day
+(`model_calls_left_today`). A restart, a redeploy or a second instance loses nothing, and the
+prototype reset clears Radar's memory with the rest. The agent's only file is its run store:
+the runs it is working on, kept 24 hours.
 
 In a simulation (`provided_news`), the run reads those headlines instead of querying BigQuery.
 
@@ -84,8 +90,9 @@ In a simulation (`provided_news`), the run reads those headlines instead of quer
 | The server | Its own daily byte cap, the daily schedule, and Check now 5 times a day |
 | The Google project | A custom BigQuery quota ("Query usage per day") and a budget alert |
 
-Model calls are capped too: `max_model_calls` per run, and `MODEL_CALLS_PER_DAY` (300) a day.
-Past the daily cap, stories are still reported from the code's score, but nothing is sent.
+Model calls are capped too: `max_model_calls` per run, and the server's daily cap
+(`RADAR_MODEL_CALLS_PER_DAY`, 300), which arrives as `model_calls_left_today`. Past it, stories
+are still reported from the code's score, but nothing is sent.
 
 ## Run it locally
 
