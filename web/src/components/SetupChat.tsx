@@ -254,7 +254,7 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
     const moved = m.role === "user" && m.kind === "text" ? continuedTo(tracks, m.content.text) : null;
     if (moved) { rows.push(<div key={m.message_id} className="msg sys">→ {moved.label}</div>); continue; }
     rows.push(<MessageRow key={m.message_id} m={m} proposals={proposals} flash={flash} open={m === lastQuestion && !answered.has(m.content.question_id)}
-      busy={busy} onAnswer={(qid, o) => send({ answer: { question_id: qid, options: [o] } })} onDecided={decided} />);
+      busy={busy} onAnswer={(qid, options) => send({ answer: { question_id: qid, options } })} onDecided={decided} />);
   }
 
   return (
@@ -298,9 +298,34 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
   );
 }
 
+/** The agent's question with its options: one click answers, or, when several may be chosen (multi), the
+ *  clicks pick and Send answers with all of them. */
+function QuestionRow({ m, open, busy, onAnswer }: {
+  m: ChatMessage; open: boolean; busy: boolean; onAnswer: (questionId: string, options: string[]) => void;
+}) {
+  const [chosen, setChosen] = useState<string[]>([]);
+  const multi = m.content.multi === true;
+  const click = (o: string) => {
+    if (!multi) { onAnswer(m.content.question_id, [o]); return; }
+    setChosen(c => (c.includes(o) ? c.filter(x => x !== o) : [...c, o]));
+  };
+  return (
+    <div className="col" style={{ gap: 6 }}>
+      <div className="msg ai">{m.content.text}</div>
+      {open && <div className="row wrap" role={multi ? "group" : undefined} aria-label={multi ? "Pick one or more" : undefined} style={{ gap: 6 }}>
+        {(m.content.options ?? []).map((o: string) => (
+          <button key={o} className={`chip click ${chosen.includes(o) ? "sel" : ""}`} type="button" disabled={busy}
+            aria-pressed={multi ? chosen.includes(o) : undefined} onClick={() => click(o)}>{multi && chosen.includes(o) ? "✓ " : ""}{o}</button>))}
+        {multi && <button className="btn btn--sm btn--primary" type="button" disabled={busy || !chosen.length}
+          onClick={() => onAnswer(m.content.question_id, chosen)}>{chosen.length > 1 ? `Send ${chosen.length}` : "Send"}</button>}
+      </div>}
+      {open && multi && <span className="small muted">Pick one or more, then Send.</span>}
+    </div>);
+}
+
 function MessageRow({ m, proposals, flash, open, busy, onAnswer, onDecided }: {
   m: ChatMessage; proposals: Record<string, Proposal>; flash: string | null; open: boolean; busy: boolean;
-  onAnswer: (questionId: string, option: string) => void; onDecided: (p: Proposal) => void;
+  onAnswer: (questionId: string, options: string[]) => void; onDecided: (p: Proposal) => void;
 }) {
   switch (m.kind) {
     case "session": return <div className="msg sys">New session · {dayTime(m.at)}{m.content.profile_version ? ` · profile v${m.content.profile_version}` : ""}
@@ -314,12 +339,7 @@ function MessageRow({ m, proposals, flash, open, busy, onAnswer, onDecided }: {
       const p = proposals[m.content.proposal_id];
       return p ? <div style={flash === p.proposal_id ? { outline: "2px solid var(--accent)", borderRadius: 12 } : undefined}><ProposalCard p={p} onDecided={onDecided} /></div> : null;
     }
-    case "question": return (
-      <div className="col" style={{ gap: 6 }}>
-        <div className="msg ai">{m.content.text}</div>
-        {open && <div className="row wrap" style={{ gap: 6 }}>{(m.content.options ?? []).map((o: string) => (
-          <button key={o} className="chip click" type="button" disabled={busy} onClick={() => onAnswer(m.content.question_id, o)}>{o}</button>))}</div>}
-      </div>);
+    case "question": return <QuestionRow m={m} open={open} busy={busy} onAnswer={onAnswer} />;
     default:
       if (m.role === "user") return <div className="msg me">{m.kind === "answer" ? (m.content.options ?? []).join(", ") : m.content.text}</div>;
       return <div className="msg ai">{m.content.text}
