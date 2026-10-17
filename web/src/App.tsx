@@ -20,6 +20,7 @@ import { BotCheckPage, PausedPage } from "./pages/Login";
 import { authApi, type AuthConfig } from "./api/auth";
 import { AlertsPage } from "./pages/Alerts";
 import { DataConnectionsPage } from "./pages/admin/DataConnections";
+import { SettingsPage } from "./pages/admin/Settings";
 import { SpecPage, SpecPrintPage } from "./pages/spec/Spec";
 import { alertsApi, type AlertSummary } from "./api/alerts";
 
@@ -72,7 +73,7 @@ function NeedsInstitution({ title, what, children }: { title: string; what: stri
   );
 }
 
-const BUILT = new Set(["/home", "/events", "/radar", "/monitors", "/series", "/studio", "/alerts", "/institution", "/admin/data", "/spec"]);
+const BUILT = new Set(["/home", "/events", "/radar", "/monitors", "/series", "/studio", "/alerts", "/institution", "/admin/data", "/admin/settings", "/spec"]);
 
 function useTheme() {
   const [theme, setTheme] = useState<string | null>(() => { try { return localStorage.getItem("amiri.theme"); } catch { return null; } });
@@ -263,6 +264,7 @@ function Frame({ inst }: { inst: Installation }) {
             <Route path="/institution/setup/:step" element={<SetupWizard />} />
             <Route path="/institution/:tab" element={<InstitutionPage />} />
             <Route path="/admin/data" element={<DataConnectionsPage />} />
+            <Route path="/admin/settings" element={<SettingsPage />} />
             <Route path="/spec" element={<SpecPage />} />
             {[...NAV.risk_manager, ...NAV.platform_admin].filter(([, , to]) => !BUILT.has(to)).map(([, label, to]) => (
               <Route key={to} path={to} element={<NotBuilt title={label} />} />

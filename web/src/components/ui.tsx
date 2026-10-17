@@ -62,7 +62,7 @@ export function ResetModal({ onClose }: { onClose: () => void }) {
     <Modal title="Reset the prototype" onClose={onClose} footer={<>
       <button className="btn" type="button" onClick={onClose}>Cancel</button>
       <button className="btn btn--danger" type="button" disabled={busy || typed.trim().toUpperCase() !== "RESET"} onClick={go}>{busy ? "Resetting…" : "Reset"}</button></>}>
-      <p style={{ margin: 0 }}>Starts the prototype again. <b>Removed:</b> the institution profile, monitors, findings, events, alerts, Radar stories, scenarios and the setup chat. <b>Kept:</b> market series and their prices, and the reference data.</p>
+      <p style={{ margin: 0 }}>Starts the prototype again. <b>Removed:</b> the institution profile, monitors, findings, events, alerts, Radar stories, scenarios, the setup chat, and the data connection with its checks, approval and validation switch (the sample institutions go back to off). <b>Kept:</b> market series and their prices, and the reference data.</p>
       <div className="col" role="radiogroup" aria-label="Then" style={{ gap: 8 }}>
         {([["demo", "Reload the demo bank", "Serendib Commercial Bank, ready to use. Monitors, events and scenarios start empty."],
            ["empty", "Start empty", "The welcome page: set up an institution from scratch with the setup agent or the forms."]] as const).map(([k, t, d]) => (
