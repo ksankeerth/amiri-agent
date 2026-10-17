@@ -528,11 +528,13 @@ class Investigations:
 
     async def findings(self, status: str | None, world: str | None, source: str | None, limit: int) -> list[dict]:
         async with self.pool.connection() as conn:
-            cur = await conn.execute(
-                """SELECT * FROM signals.findings WHERE (%s::text IS NULL OR status = %s)
-                   AND (CASE WHEN %s::text IS NULL THEN world <> 'studio' ELSE world = %s END)
-                   AND (%s::text IS NULL OR source = %s)
-                   ORDER BY created_at DESC LIMIT %s""", (status, status, world, world, source, source, limit))
+            cur = await conn.execute(  # with its investigation run's status and start, for "being investigated"
+                """SELECT f.*, i.status AS run_status, i.created_at AS run_started_at
+                   FROM signals.findings f LEFT JOIN cases.investigations i ON i.run_id = f.run_id
+                   WHERE (%s::text IS NULL OR f.status = %s)
+                   AND (CASE WHEN %s::text IS NULL THEN f.world <> 'studio' ELSE f.world = %s END)
+                   AND (%s::text IS NULL OR f.source = %s)
+                   ORDER BY f.created_at DESC LIMIT %s""", (status, status, world, world, source, source, limit))
             return await cur.fetchall()
 
     async def finding(self, finding_id: str) -> dict:

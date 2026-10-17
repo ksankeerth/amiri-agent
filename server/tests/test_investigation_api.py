@@ -387,3 +387,16 @@ async def test_a_cold_agent_gets_the_run_sent_again():
     c = MonitorClient("http://agent", transport=httpx.MockTransport(handler))
     assert (await c.start({"run_id": "r1"}))["status"] == "queued"
     assert len(calls) == 2 and calls[0].content == calls[1].content
+
+
+async def test_a_finding_says_how_its_investigation_is_going(client, env, agent):
+    await bank(client, env)
+    f = await sandbox_move(client)
+    await client.post("/api/v1/investigations", json={})
+    items = (await client.get("/api/v1/findings", params={"world": "sandbox"})).json()["items"]
+    got = next(x for x in items if x["finding_id"] == f["finding_id"])
+    assert got["status"] == "grouped" and got["run_status"] == "running" and got["run_started_at"]
+    await client.post(f"/api/v1/investigations/{got['run_id']}:collect")
+    items = (await client.get("/api/v1/findings", params={"world": "sandbox"})).json()["items"]
+    got = next(x for x in items if x["finding_id"] == f["finding_id"])
+    assert got["status"] == "linked" and got["run_status"] == "completed" and got["outcome"]["event_id"]
