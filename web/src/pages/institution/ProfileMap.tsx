@@ -11,6 +11,7 @@ import { usdText, useLoad } from "./fields";
 import { FLOW_WORDS } from "./forms";
 
 type World = FeatureCollection<Geometry, { name: string }>;
+const MIN_SPAN = 30;  // degrees: the smallest area the map zooms to (about Borneo with its neighbours)
 let worldP: Promise<World> | null = null;
 function loadWorld(): Promise<World> {
   worldP ??= import("world-atlas/countries-50m.json").then(m => {
@@ -82,10 +83,11 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
     if (!pts.length) add(home);
     const proj = geoNaturalEarth1();
     if (pts.length) {
-      // pad a small area (one country, one point) so the fit stays finite and readable
+      // pad a small area (one country, one point) to at least MIN_SPAN degrees, so the neighbours show
+      // and the place is recognisable (Brunei alone filled the map)
       const lons = pts.map(p => p[0]), lats = pts.map(p => p[1]);
       const [cx, cy] = [(Math.min(...lons) + Math.max(...lons)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2];
-      const pad = Math.max(0, 6 - (Math.max(...lons) - Math.min(...lons)), 6 - (Math.max(...lats) - Math.min(...lats))) / 2;
+      const pad = Math.max(0, MIN_SPAN - (Math.max(...lons) - Math.min(...lons)), MIN_SPAN - (Math.max(...lats) - Math.min(...lats))) / 2;
       if (pad > 0) pts.push([cx - pad - 1, cy - pad - 1], [cx + pad + 1, cy + pad + 1]);
       const fc = { type: "Feature", geometry: { type: "MultiPoint", coordinates: pts }, properties: {} } as Feature;
       const m = compact ? 56 : 30;  // the compact map (Overview) keeps the home country clear of the edges
