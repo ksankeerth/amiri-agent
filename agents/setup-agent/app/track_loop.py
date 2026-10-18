@@ -110,9 +110,10 @@ def instruction(b: TurnBox, ctx: dict | None, readiness: dict | None, earlier: l
     if b.turn.profile_changes:
         parts.append("Changed with the forms since your last turn (data): " +
                      json.dumps(b.turn.profile_changes, ensure_ascii=False, default=str)[:3000])
-    pending = b.s.context.get("pending_proposals") or []
+    pending = b.s.state.get("pending", b.s.context.get("pending_proposals")) or []
     if pending:
-        parts.append("Proposals already waiting for the user: " + "; ".join(p.get("summary", "") for p in pending))
+        parts.append("Proposals already waiting for the user (NOT saved until applied): " +
+                     "; ".join(p.get("summary", "") for p in pending))
     if earlier:
         lines = []
         for m in earlier[-EARLIER:]:
@@ -160,6 +161,9 @@ async def _decided(s: Session, thread_id: str) -> list[str]:
     r = await s.api.get("/api/v1/proposals", thread_id=thread_id)
     if not r.ok or not isinstance(r.body, list):
         return []
+    # still waiting for Apply: nothing of these is saved, so a track can't end on them (tools.conclude)
+    s.state["pending"] = [{"track": p.get("track"), "summary": p.get("summary", "")} for p in r.body
+                          if p.get("status") == "pending"]
     seen: set = s.state.setdefault("decided_seen", set())
     recent = datetime.now(UTC) - timedelta(hours=1)  # a new session doesn't relive old history
     out = []

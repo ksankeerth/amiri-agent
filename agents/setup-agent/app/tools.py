@@ -450,7 +450,7 @@ def conclude(summary: str, tool_context: ToolContext) -> dict:
     changing). Not after propose: applying the proposal concludes the track.
 
     Args:
-        summary: one line on what was settled.
+        summary: one line on what was settled. Never a change ("added …"): only an applied proposal saves anything.
 
     Returns:
         status.
@@ -458,6 +458,11 @@ def conclude(summary: str, tool_context: ToolContext) -> dict:
     b = box(tool_context)
     if b.proposed:
         return _blocked("a proposal is waiting: applying it concludes the track")
+    # seen: a footprint card left unapplied, then "Added Seoul and Gyeonggi" as the track ended with nothing saved
+    waiting = [p["summary"] for p in b.s.state.get("pending") or [] if p.get("track") == b.track]
+    if waiting:
+        return _blocked(f"“{waiting[-1]}” is still waiting for the user's Apply: nothing of it is saved. Don't say it "
+                        "was added; ask the user to apply that card, or propose again if it's out of date")
     if b.track == "institution" and not b.iid:
         return _blocked("there is no institution yet (nothing was applied): the institution track can't end; "
                         "tell the user what's needed to create it")

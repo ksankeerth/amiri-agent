@@ -311,3 +311,16 @@ async def test_a_short_yes_after_a_question_stays_in_the_track_that_asked(world)
     from app.engine import is_short_reply
     assert is_short_reply("Yes please.") and is_short_reply("no") and is_short_reply("Both, thanks")
     assert not is_short_reply("Yesterday we opened a branch in Kerala") and not is_short_reply("We also lend to farmers")
+
+
+async def test_a_track_cant_end_while_its_proposal_waits_for_apply(world):
+    client, server, llm = world
+    server.decided = [{"proposal_id": "prop-9", "status": "pending", "track": "footprint_flows",
+                       "summary": "Add Seoul and Gyeonggi", "decided_at": None}]
+    llm.script = [[("conclude", {"summary": "Added Seoul and Gyeonggi"})], "The card above still needs your Apply."]
+    sid = await start(client)
+    evs = await turn(client, sid, track="footprint_flows", text="Yes, add Seoul and Gyeonggi as branches.")
+    assert "track_concluded" not in [e for e, _ in evs]
+    reply = llm.requests[1].contents[-1].parts[0].function_response.response
+    assert reply["status"] == "blocked" and "“Add Seoul and Gyeonggi” is still waiting" in reply["message"]
+    assert "NOT saved until applied): Add Seoul and Gyeonggi" in system_text(llm.requests[0])

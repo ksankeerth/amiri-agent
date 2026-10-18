@@ -14,6 +14,7 @@ router model fails, the turn stays in its current track; routing never fails a t
 import asyncio
 import json
 import logging
+import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 
@@ -56,7 +57,8 @@ Choose the track it belongs to. Tracks:
 {tracks}
 
 Rules:
-- Stay in the current track ({current}) unless the message clearly belongs to another track.
+- Stay in the current track ({current}) unless the message clearly belongs to another track. Asking to work on,
+  propose or add another track's items ("propose our risks" in rivals_partners) is clearly that other track.
 - A question that changes nothing and fits no track is "question"; anything unrelated to setting up
   Amiri Agent for this institution is "offtopic".
 - Facts in the message that belong to other tracks go in notes (track id and the fact), so later tracks
@@ -67,6 +69,19 @@ Message: {message}
 """
 
 RouterFn = Callable[[str, str | None, bool], Awaitable[tuple[RouterChoice | None, int]]]
+
+# "move on to risks", "proceed to monitors", "switch to the rules track": an explicit move needs no model.
+# Seen: "Yes, please proceed to risks" stayed in rivals_partners twice, and that track can't switch.
+ALIASES = {"institution": r"institution", "footprint_flows": r"footprint|flows", "customers_products":
+           r"customers|products|segments", "rules": r"rules|regulators|sanctions", "rivals_partners": r"rivals|partners",
+           "risks": r"risks?", "monitors": r"monitors?", "verification": r"verification|verify"}
+MOVE = re.compile(r"\b(?:move on|move|go|proceed|switch|skip|jump|continue|on)(?: on)? to (?:the )?(" +
+                  "|".join(ALIASES.values()) + r")\b", re.I)
+
+
+def explicit_move(text: str) -> str | None:
+    m = MOVE.search(text)
+    return next((t for t, a in ALIASES.items() if m and re.fullmatch(a, m.group(1), re.I)), None)
 
 
 async def gemini_router(message: str, current: str | None, has_institution: bool) -> tuple[RouterChoice | None, int]:
@@ -134,6 +149,9 @@ async def route(*, text: str | None, is_answer: bool, requested: str | None, cur
         return Route(stay, stay != current, "router unavailable: stays in the current track", model_calls=calls)
     if choice.track == "offtopic":
         return Route(current or "question", False, choice.reason, notes, offtopic=True, model_calls=calls)
+    if moved := explicit_move(text or ""):
+        notes = [n for n in notes if n["track"] != moved]
+        return Route(moved, moved != current, "asked to move there", notes, model_calls=calls)
     track = choice.track if (current is None or choice.track == current or choice.clearly_elsewhere) else current
     notes = [n for n in notes if n["track"] != track]
     return Route(track, track != current, choice.reason, notes, model_calls=calls)
