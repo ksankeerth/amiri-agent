@@ -67,7 +67,9 @@ RULES = """Rules:
 - Only the propose tool makes a proposal. Never write that you proposed or prepared something unless you called
   propose in this turn; the user only sees a card when you do.
 - Cover everything the message asks for in this track in one proposal. If part of it can't be done here or now,
-  say which part and why; facts for other tracks, say they'll be handled there."""
+  say which part and why; facts for other tracks, say they'll be handled there.
+- If propose comes back refused, fix exactly what its errors say and propose again. If it still can't be done,
+  tell the user the server's reason in plain words; never invent a limitation of your own."""
 
 
 def _who(ctx: dict | None) -> str:
@@ -148,7 +150,9 @@ async def _region_line(s: Session) -> str | None:
     return (f"Supported region: this prototype supports institutions based in {_region['label']}: the home country "
             f"and the base currency must be one of theirs ({', '.join(_region['countries'])}). If the user's home "
             f"country or base currency is outside it, tell them so plainly before anything else and don't propose "
-            f"the institution. Branches, customers, flows and rivals elsewhere are fine.")
+            f"the institution; offer to set it up with a home in that region instead. Never offer to conclude or "
+            f"skip this track: nothing else works without the institution. Branches, customers, flows and rivals "
+            f"elsewhere are fine.")
 
 
 async def _decided(s: Session, thread_id: str) -> list[str]:
