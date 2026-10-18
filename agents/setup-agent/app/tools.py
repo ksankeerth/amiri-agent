@@ -432,6 +432,14 @@ async def propose(summary: str, operations: list[dict[str, Any]] | None, institu
         kind, body = "create_institution", {"institution": institution or {}}
     else:
         kind, body = "profile", {"operations": operations or []}
+    # seen: currencies and regulators on one card, so the sanctions that follow the new currencies (OFAC for USD)
+    # were never suggested; they appear only once the currencies are saved (T01)
+    ops = operations or []
+    if (b.track == "rules" and any(o.get("section") == "institution" and "clearing_currencies" in (o.get("data") or {})
+                                   for o in ops) and any(o.get("section") == "regulators" for o in ops)):
+        return _err("propose the clearing currencies on their own first: the sanctions regimes that follow them only "
+                    "appear in get_suggestions('regulators') once they are applied. Then ask whether to add the "
+                    "regulators and those sanctions next")
     unused = [n for n, v in (("operations", operations), ("institution", institution), ("monitors", monitors))
               if v and n not in body]
     if unused:
@@ -442,8 +450,13 @@ async def propose(summary: str, operations: list[dict[str, Any]] | None, institu
     if r.status == 201:
         b.proposed = r.body["proposal_id"]
         b.events.append(ProposalEv(proposal_id=b.proposed))
+        # seen: a card holding only the UN regulator described as "currencies and the global regulators" (T01)
+        held = "; ".join(f"{c.get('op')} {c.get('section')} {c.get('id') or ''}".strip()
+                         for c in r.body.get("changes") or [])
         msg = ("The user sees the proposal as a card to apply. Tell them in a sentence or two what "
-               "it does and that nothing changes until they apply it.")
+               "it does and that nothing changes until they apply it."
+               + (f" The card holds exactly: {held[:800]}. Describe only these; if something you meant to include "
+                  "is missing, say so." if held else ""))
         # seen: four products proposed with no customer group, four warnings on the card, none mentioned (T01)
         if warns := r.body.get("warnings"):
             msg += (" The server flagged these; say them plainly, and for a product with no customer group ask "

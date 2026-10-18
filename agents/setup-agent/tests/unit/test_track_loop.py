@@ -349,3 +349,29 @@ async def test_proposal_warnings_reach_the_model(world):
     await turn(client, sid, track="customers_products", text="We offer savings.")
     reply = llm.requests[1].contents[-1].parts[0].function_response.response
     assert "ask which groups use it: savings: no customer group" in reply["message"]
+
+
+async def test_currencies_go_on_their_own_card_before_regulators(world):
+    client, server, llm = world
+    ops = [{"op": "update", "section": "institution", "data": {"clearing_currencies": ["USD", "AUD"]}},
+           {"op": "create", "section": "regulators", "data": {"name": "UN"}}]
+    llm.script = [[("propose", {"summary": "x", "operations": ops, "institution": None, "monitors": None,
+                                "evidence": None})], "ok"]
+    sid = await start(client)
+    await turn(client, sid, track="rules", text="We settle in USD and AUD; add the regulators.")
+    reply = llm.requests[1].contents[-1].parts[0].function_response.response
+    assert reply["status"] == "error" and "clearing currencies on their own first" in reply["message"]
+    assert server.posted() == []
+
+
+async def test_the_model_hears_what_the_card_actually_holds(world):
+    client, server, llm = world
+    server.proposal_answers = [(201, {"proposal_id": "prop-1", "changes": [
+        {"op": "create", "section": "regulators", "id": "global-un"}]})]
+    llm.script = [[("propose", {"summary": "Add regulators", "operations": [
+        {"op": "create", "section": "regulators", "data": {"name": "UN"}}], "institution": None, "monitors": None,
+        "evidence": None})], "Here it is."]
+    sid = await start(client)
+    await turn(client, sid, track="rules", text="Add the regulators.")
+    reply = llm.requests[1].contents[-1].parts[0].function_response.response
+    assert "The card holds exactly: create regulators global-un." in reply["message"]
