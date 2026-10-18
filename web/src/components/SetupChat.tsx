@@ -392,7 +392,8 @@ function MessageRow({ m, proposals, flash, open, busy, onAnswer, onDecided }: {
       {m.content.changes_since_last_session ? ` · ${plural(m.content.changes_since_last_session, "change")} since last time` : ""}</div>;
     case "track": return null;  // shown as the divider
     case "track_concluded": return <div className="msg sys">✓ {m.content.summary ?? "Track concluded"}</div>;
-    case "applied": return <div className="msg sys">{m.content.status === "confirmed" ? "✓ Applied" : "✗ Not applied"}: {m.content.summary}</div>;
+    case "applied": return <div className="msg sys">{m.content.status === "confirmed" ? "✓ Applied" : "✗ Not applied"}: {m.content.summary}
+      {m.content.status === "failed" && m.content.detail ? <span style={{ color: "var(--medium-ink)" }}> · {m.content.detail}</span> : null}</div>;
     case "notes": return <div className="msg sys">Noted for later: {(m.content.notes ?? []).map((n: any) => `${n.track.replace(/_/g, " ")}: ${n.text}`).join(" · ")}</div>;
     case "error": return <div className="msg sys">{m.content.message}</div>;
     case "proposal": {

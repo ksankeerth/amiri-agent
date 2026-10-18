@@ -9,7 +9,9 @@ model's closing text becomes the message.
 """
 
 import json
+import re
 from collections.abc import AsyncIterator, Callable
+from datetime import UTC, datetime, timedelta
 
 from google.adk.agents import Agent
 from google.adk.agents.invocation_context import LlmCallsLimitExceededError
@@ -61,7 +63,11 @@ RULES = """Rules:
   or phone numbers.
 - If the user wants something another track does, say which and carry on; the chat moves when they ask.
 - Never end a turn with nothing to say. If you can't do what was asked (no data for it, not this track's job),
-  say so in one plain sentence and ask for what you need to carry on."""
+  say so in one plain sentence and ask for what you need to carry on.
+- Only the propose tool makes a proposal. Never write that you proposed or prepared something unless you called
+  propose in this turn; the user only sees a card when you do.
+- Cover everything the message asks for in this track in one proposal. If part of it can't be done here or now,
+  say which part and why; facts for other tracks, say they'll be handled there."""
 
 
 def _who(ctx: dict | None) -> str:
@@ -71,12 +77,13 @@ def _who(ctx: dict | None) -> str:
     return f"{ctx.get('name')}, {kind} in {ctx.get('country')}"
 
 
-def instruction(b: TurnBox, ctx: dict | None, readiness: dict | None, earlier: list[dict] | None) -> str:
+def instruction(b: TurnBox, ctx: dict | None, readiness: dict | None, earlier: list[dict] | None,
+                region: str | None = None, decided: list[str] | None = None) -> str:
     t, g = TRACKS[b.track], GUIDES[b.track]
     nxt = next_in_setup(b.track)
-    after = (f"After a proposal, say what it does and that nothing changes until they apply it; then that the "
-             f"next step is {TRACKS[nxt].label.lower()}." if nxt else
-             "After a proposal, say what it does and that nothing changes until they apply it.")
+    after = ("After a proposal, say what it does and that nothing changes until they apply it; then, if something "
+             "the user asked for in this track is still to come, ask whether to do it next (name it)"
+             + (f"; otherwise say that the next step is {TRACKS[nxt].label.lower()}." if nxt else "."))
     parts = [
         f"You are the setup agent of Amiri Agent, which watches the world for {_who(ctx)} and traces events to its "
         f"products and customers. You are in the {t.label} track of the setup chat.",
@@ -84,6 +91,11 @@ def instruction(b: TurnBox, ctx: dict | None, readiness: dict | None, earlier: l
         f"How to work:\n{g.steps}",
         RULES + f"\n- {after}",
     ]
+    if region:
+        parts.append(region)
+    if decided:
+        parts.append("What happened to your proposals since your last turn (say so plainly if it matters now; never "
+                     "describe a proposal that wasn't applied as done):\n" + "\n".join(f"- {d}" for d in decided))
     if ctx:
         shown = {k: v for k, v in ctx.items() if k != "radar_scope"}
         parts.append("The institution's profile now (data):\n" + json.dumps(shown, ensure_ascii=False, default=str))
@@ -119,6 +131,49 @@ def user_message(s: Session, turn: TurnIn) -> str:
     return turn.text or ""
 
 
+_region: dict | None = None  # the server's supported region, read once: {"label", "countries"} or {} (everywhere)
+
+
+async def _region_line(s: Session) -> str | None:
+    """Where an institution may be based (the server's SUPPORTED_REGION), so the agent says so up front."""
+    global _region
+    if _region is None:
+        r = await s.api.get("/api/v1/reference/countries", scope="home")
+        if not r.ok:
+            return None
+        reg = (r.body or {}).get("region")
+        _region = {"label": reg["label"], "countries": [c["code"] for c in r.body.get("items", [])]} if reg else {}
+    if not _region:
+        return None
+    return (f"Supported region: this prototype supports institutions based in {_region['label']}: the home country "
+            f"and the base currency must be one of theirs ({', '.join(_region['countries'])}). If the user's home "
+            f"country or base currency is outside it, tell them so plainly before anything else and don't propose "
+            f"the institution. Branches, customers, flows and rivals elsewhere are fine.")
+
+
+async def _decided(s: Session, thread_id: str) -> list[str]:
+    """Proposals the user declined, or whose Apply failed, since the agent last looked: it can't see the buttons."""
+    r = await s.api.get("/api/v1/proposals", thread_id=thread_id)
+    if not r.ok or not isinstance(r.body, list):
+        return []
+    seen: set = s.state.setdefault("decided_seen", set())
+    recent = datetime.now(UTC) - timedelta(hours=1)  # a new session doesn't relive old history
+    out = []
+    for p in reversed(r.body):  # oldest first
+        if p["proposal_id"] in seen or p["status"] not in ("rejected", "failed"):
+            continue
+        decided = p.get("decided_at")
+        if not decided or datetime.fromisoformat(str(decided).replace("Z", "+00:00")) < recent:
+            continue
+        seen.add(p["proposal_id"])
+        if p["status"] == "rejected":
+            out.append(f"The user declined “{p['summary']}” (Not now): nothing was saved.")
+        else:
+            why = (p.get("result") or {}).get("detail") or "it was refused"
+            out.append(f"Applying “{p['summary']}” FAILED, nothing was saved: {why}")
+    return out
+
+
 async def _fresh(s: Session, iid: str | None) -> tuple[dict | None, dict | None]:
     if not iid:
         return None, None
@@ -127,26 +182,42 @@ async def _fresh(s: Session, iid: str | None) -> tuple[dict | None, dict | None]
     return (c.body if c.ok else None), (r.body if r.ok else None)
 
 
+NUDGE = ("(Your last step ended without a reply. Answer the user now. If they asked for changes, call the propose tool "
+         "with them: writing that you proposed something is not proposing. Otherwise ask one question with ask_user, or "
+         "say in one or two sentences what you can't do and what you need.)")
+PHANTOM_NUDGE = ("(You wrote that you proposed something, but you didn't call propose, so the user sees no card. Call "
+                 "propose now with those items, or say plainly that nothing has been proposed yet and why.)")
+NO_PROPOSAL = "I haven't made a proposal for that yet. Shall I put one together now?"
+# a reply that says a proposal was made: "I have proposed …", "I've prepared a proposal", "please review and apply"
+CLAIMS_PROPOSAL = re.compile(r"\b(i(?: have|'ve| ha?ve)? (?:proposed|prepared (?:a|the) proposal|drafted (?:a|the) proposal|"
+                             r"put together (?:a|the) proposal)|please (?:review|apply) (?:it|the proposal)|"
+                             r"(?:review|apply) the proposal)", re.I)
+
+
 async def respond(s: Session, turn: TurnIn, route: Route, usage: Usage) -> AsyncIterator[BaseModel]:
     track = route.track
     ctx, readiness = await _fresh(s, turn.institution_id)
     s.state["institution"] = ctx
+    region = await _region_line(s) if track == "institution" or not ctx else None
+    decided = await _decided(s, turn.thread_id)
     b = TurnBox(s, turn, track)
     sid = f"{s.id}.{track}"
     first = await SESSIONS.get_session(app_name=APP_NAME, user_id=turn.user_id, session_id=sid) is None
     if first:
         await SESSIONS.create_session(app_name=APP_NAME, user_id=turn.user_id, session_id=sid)
     agent = Agent(
-        name=f"{track}_track", model=_model(), instruction=instruction(b, ctx, readiness, s.context.get("recent_messages") if first else None),
+        name=f"{track}_track", model=_model(),
+        instruction=instruction(b, ctx, readiness, s.context.get("recent_messages") if first else None, region, decided),
         tools=GUIDES[track].tools,
         generate_content_config=types.GenerateContentConfig(temperature=settings.number("AGENT_TEMPERATURE")))
     runner = Runner(app=App(name=APP_NAME, root_agent=agent), session_service=SESSIONS)
     BOXES[sid] = b
     texts: list[str] = []
-    try:
+
+    async def run(message: str) -> AsyncIterator[BaseModel]:
         async for ev in runner.run_async(
                 user_id=turn.user_id, session_id=sid,
-                new_message=types.Content(role="user", parts=[types.Part(text=user_message(s, turn))]),
+                new_message=types.Content(role="user", parts=[types.Part(text=message)]),
                 run_config=RunConfig(max_llm_calls=settings.integer("MAX_STEPS_PER_TURN"))):
             if ev.author == agent.name:
                 if ev.usage_metadata:
@@ -154,9 +225,28 @@ async def respond(s: Session, turn: TurnIn, route: Route, usage: Usage) -> Async
                     usage.input_tokens += ev.usage_metadata.prompt_token_count or 0
                     usage.output_tokens += ev.usage_metadata.candidates_token_count or 0
                 if ev.content and ev.content.parts and not ev.partial and not ev.get_function_calls():
-                    texts += [p.text for p in ev.content.parts if p.text and not p.thought]
+                    texts.extend(p.text for p in ev.content.parts if p.text and not p.thought)
             while b.events:
                 yield b.events.pop(0)
+
+    def empty() -> bool:
+        return not any(t.strip() for t in texts) and not (b.asked or b.proposed or b.concluded)
+
+    def phantom() -> bool:
+        return not b.proposed and any(CLAIMS_PROPOSAL.search(t) for t in texts)
+
+    try:
+        async for ev in run(user_message(s, turn)):
+            yield ev
+        if empty():  # the model stopped without a word (seen after a tool call it couldn't finish): one more go
+            async for ev in run(NUDGE):
+                yield ev
+        if phantom():  # it says it proposed but didn't: one more go, then never let the claim through
+            texts.clear()
+            async for ev in run(PHANTOM_NUDGE):
+                yield ev
+            if phantom():
+                texts[:] = [NO_PROPOSAL]
     except LlmCallsLimitExceededError:
         yield ErrorEv(code="step_limit", message="I took too many steps on that. Could you say it again, more simply?")
     finally:
@@ -164,8 +254,8 @@ async def respond(s: Session, turn: TurnIn, route: Route, usage: Usage) -> Async
     while b.events:
         yield b.events.pop(0)
     text = "\n\n".join(t.strip() for t in texts if t.strip())
+    s.state["asked"] = bool(b.asked or text.rstrip().endswith("?"))
     if text:
         yield MessageEv(text=text[:8000])
     elif not (b.asked or b.proposed or b.concluded):
         yield MessageEv(text="I'm not sure how to help with that here. Could you say it another way?")
-

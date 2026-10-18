@@ -8,6 +8,7 @@ tracks, then the track's own events (message, question, proposal, track_conclude
 
 import asyncio
 import logging
+import re
 import time
 from collections.abc import AsyncIterator, Callable
 
@@ -56,6 +57,15 @@ def set_responder(fn: Responder) -> None:
     _responder = fn
 
 
+SHORT_REPLY = re.compile(r"^\s*(yes|yeah|yep|yup|y|no|nope|n|ok|okay|sure|please|go ahead|do it|sounds good|correct|"
+                         r"right|agreed|fine|all of them|all|both|none|neither|not now|later|skip)\b", re.I)
+
+
+def is_short_reply(text: str | None) -> bool:
+    """A yes, no, ok, both, none, …, of a few words: an answer to the question just asked, not a new topic."""
+    return bool(text) and len(text) <= 60 and bool(SHORT_REPLY.match(text))
+
+
 def offtopic_reply(track: str | None) -> str:
     back = f" Back to {TRACKS[track].label.lower()}: " if track and track in TRACKS and track not in ("question",) else " "
     return ("I can only help set up Amiri Agent for your institution: who you are, where you operate, your customers, "
@@ -89,7 +99,10 @@ async def _turn(s: Session, turn: TurnIn) -> AsyncIterator[BaseModel]:
                 yield ErrorEv(code="empty_turn", message="A turn needs a message or an answer.")
                 return
             current = turn.current_track or s.current_track
-            r = await router.route(text=turn.text, is_answer=turn.answer is not None, requested=turn.requested_track,
+            # A short yes/no typed straight after the agent asked something answers it, like a chip would: it stays
+            # in the track that asked (seen: "Yes please." routed to another track and the accept was lost).
+            replying = turn.answer is not None or (s.state.get("asked") and is_short_reply(turn.text))
+            r = await router.route(text=turn.text, is_answer=bool(replying), requested=turn.requested_track,
                                    current=current, has_institution=turn.institution_id is not None)
             usage.model_calls += r.model_calls
             if r.changed:

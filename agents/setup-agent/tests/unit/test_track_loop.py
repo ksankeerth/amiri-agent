@@ -3,6 +3,7 @@ and a fake amiri-server behind httpx's mock transport."""
 
 import json
 from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
 
 import httpx
 import pytest
@@ -15,6 +16,7 @@ from google.genai import types
 from pydantic import Field
 
 from app import engine, router, track_loop, turn_api
+from app.router import RouterChoice
 from app.sessions import SessionStore
 
 CTX = {"institution_id": "bank-1", "name": "Test Bank", "institution_type": "bank", "country": "LK", "currency": "LKR",
@@ -45,6 +47,7 @@ class FakeServer:
     def __init__(self):
         self.requests: list[httpx.Request] = []
         self.proposal_answers: list[tuple[int, dict]] = []  # (status, body) for POST /proposals, in order
+        self.decided: list[dict] = []  # GET /proposals: proposals and how they were decided
 
     def handler(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
@@ -56,6 +59,11 @@ class FakeServer:
                 {"id": "flows", "level": "recommended", "ok": False, "message": "No flows yet", "section": "flows"}]})
         if p.endswith("/suggestions/flows"):
             return httpx.Response(200, json={"items": [{"added": False, "item": FLOW}]})
+        if p == "/api/v1/proposals" and request.method == "GET":  # what was decided (track_loop._decided)
+            return httpx.Response(200, json=self.decided)
+        if p == "/api/v1/reference/countries":
+            return httpx.Response(200, json={"items": [{"code": "LK"}, {"code": "PH"}],
+                                             "region": {"id": "japac", "label": "Japan and Asia-Pacific (JAPAC)"}})
         if p == "/api/v1/proposals":
             status, body = self.proposal_answers.pop(0) if self.proposal_answers else (201, {"proposal_id": "prop-1"})
             return httpx.Response(status, json=body)
@@ -207,3 +215,99 @@ async def test_every_track_has_a_guide_and_valid_tools():
     for t, g in GUIDES.items():
         names = {f.__name__ for f in g.tools}
         assert ("propose" in names) != TRACKS[t].read_only, t
+
+
+def system_text(req: LlmRequest) -> str:
+    si = req.config.system_instruction
+    return si if isinstance(si, str) else " ".join(p.text or "" for p in getattr(si, "parts", []) or [])
+
+
+async def test_first_setup_states_the_supported_region(world, monkeypatch):
+    client, _server, llm = world
+    monkeypatch.setattr(track_loop, "_region", None)
+    llm.script = ["This prototype supports institutions based in Japan and Asia-Pacific; a UK home isn't supported yet."]
+    sid = await start(client, institution=False)
+    await turn(client, sid, track="institution", institution=False, text="We're a UK insurer in London.")
+    txt = system_text(llm.requests[0])
+    assert "Japan and Asia-Pacific (JAPAC)" in txt and "LK, PH" in txt and "don't propose" in txt
+    # not repeated in a track of an existing institution
+    llm.script = ["ok"]
+    sid = await start(client)
+    await turn(client, sid, text="hi")
+    assert "Supported region" not in system_text(llm.requests[-1])
+
+
+async def test_a_failed_or_declined_proposal_is_told_once(world):
+    client, server, llm = world
+    now = datetime.now(UTC).isoformat()
+    server.decided = [
+        {"proposal_id": "p-1", "status": "failed", "summary": "Create Thamesgate General", "decided_at": now,
+         "result": {"detail": "the prototype covers JAPAC only"}},
+        {"proposal_id": "p-2", "status": "rejected", "summary": "Add Kuwait", "decided_at": now, "result": None},
+        {"proposal_id": "p-3", "status": "confirmed", "summary": "Add Kerala", "decided_at": now, "result": {}},
+        {"proposal_id": "p-4", "status": "failed", "summary": "Old one", "decided_at": "2026-01-01T00:00:00+00:00",
+         "result": {"detail": "x"}},
+    ]
+    llm.script = ["Sorry, that didn't go through.", "ok"]
+    sid = await start(client)
+    await turn(client, sid, text="Did it work?")
+    txt = system_text(llm.requests[0])
+    assert "“Create Thamesgate General” FAILED, nothing was saved: the prototype covers JAPAC only" in txt
+    assert "declined “Add Kuwait”" in txt and "Add Kerala" not in txt and "Old one" not in txt
+    await turn(client, sid, text="And now?")
+    assert "FAILED" not in system_text(llm.requests[-1])  # said once
+
+
+async def test_the_institution_track_cant_end_without_an_institution(world):
+    client, _server, llm = world
+    llm.script = [[("conclude", {"summary": "Set up Thamesgate General"})], "Not set up yet."]
+    sid = await start(client, institution=False)
+    evs = await turn(client, sid, track="institution", institution=False, text="We write motor cover.")
+    assert "track_concluded" not in [e for e, _ in evs]
+    reply = llm.requests[1].contents[-1].parts[0].function_response.response
+    assert reply["status"] == "blocked" and "no institution yet" in reply["message"]
+
+
+async def test_an_empty_turn_gets_one_more_try(world):
+    client, _server, llm = world
+    llm.script = ["", "Which regulator shall I add first: RBNZ or APRA?"]
+    sid = await start(client)
+    evs = await turn(client, sid, text="Our home regulator, the Australian one, and sanctions for USD?")
+    msgs = [d["text"] for e, d in evs if e == "message"]
+    assert msgs == ["Which regulator shall I add first: RBNZ or APRA?"]
+    assert "ended without a reply" in llm.requests[-1].contents[-1].parts[0].text
+
+
+async def test_a_claimed_proposal_that_wasnt_made_never_reaches_the_user(world):
+    client, _server, llm = world
+    claim = "I have proposed adding New Zealand earthquakes. Please review and apply the proposal."
+    # it claims, is told it didn't propose, and then proposes for real
+    llm.script = [claim, [("propose", {"summary": "Add earthquakes", "operations": [
+        {"op": "create", "section": "flows", "data": FLOW}], "institution": None, "monitors": None, "evidence": None})],
+        "Here it is: nothing changes until you apply it."]
+    sid = await start(client)
+    evs = await turn(client, sid, track="footprint_flows", text="Add earthquakes and droughts.")
+    assert ("proposal", {"proposal_id": "prop-1"}) in evs
+    assert claim not in [d["text"] for e, d in evs if e == "message"]
+    assert "didn't call propose" in llm.requests[1].contents[-1].parts[0].text
+    # it claims twice: the user is told plainly that nothing was proposed
+    llm.script = [claim, claim]
+    sid = await start(client)
+    evs = await turn(client, sid, track="footprint_flows", text="Add earthquakes and droughts.")
+    assert "proposal" not in [e for e, _ in evs]
+    assert [d["text"] for e, d in evs if e == "message"] == [track_loop.NO_PROPOSAL]
+
+
+async def test_a_short_yes_after_a_question_stays_in_the_track_that_asked(world):
+    client, _server, llm = world
+    route = router._router
+    llm.script = ["Shall I add all four regulators?", "Done: here's the proposal."]
+    sid = await start(client)
+    await turn(client, sid, track="rules", text="Which regulators apply to us?")
+    route.script = [RouterChoice(track="institution", reason="mentions the bank", clearly_elsewhere=True)]
+    evs = await turn(client, sid, track=None, current_track="rules", text="Yes please.")
+    assert "track" not in [e for e, _ in evs]  # stayed in rules
+    assert "Yes please." not in [m for m, _, _ in route.calls]  # the router wasn't even asked
+    from app.engine import is_short_reply
+    assert is_short_reply("Yes please.") and is_short_reply("no") and is_short_reply("Both, thanks")
+    assert not is_short_reply("Yesterday we opened a branch in Kerala") and not is_short_reply("We also lend to farmers")
