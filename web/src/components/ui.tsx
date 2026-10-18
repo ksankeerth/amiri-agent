@@ -37,9 +37,15 @@ export function MenuButton({ label, children }: { label: string; children: React
   );
 }
 
+/** The two demo institutions, both invented: the reset and the empty first screen load them (app/demo.py on the server). */
+export const DEMOS = [
+  { kind: "bank", label: "Demo bank", name: "Serendib Commercial Bank", what: "A bank in Sri Lanka" },
+  { kind: "insurer", label: "Demo insurer", name: "Samudra Raya General Insurance", what: "A general insurer in Indonesia" },
+] as const;
+
 /** The prototype reset: wipes the institution and everything Amiri Agent made for it; keeps market prices and reference data. */
 export function ResetModal({ onClose }: { onClose: () => void }) {
-  const [then, setThen] = useState<"demo" | "empty">("demo");
+  const [then, setThen] = useState<"demo-bank" | "demo-insurer" | "empty">("demo-bank");
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -58,8 +64,8 @@ export function ResetModal({ onClose }: { onClose: () => void }) {
       <button className="btn btn--danger" type="button" disabled={busy || typed.trim().toUpperCase() !== "RESET"} onClick={go}>{busy ? "Resetting…" : "Reset"}</button></>}>
       <p style={{ margin: 0 }}>Starts the prototype again. <b>Removed:</b> the institution profile, monitors, findings, events, alerts, Radar stories, scenarios, the setup chat, and the data connection with its checks, approval and validation switch (the sample institutions go back to off). <b>Kept:</b> market series and their prices, and the reference data.</p>
       <div className="col" role="radiogroup" aria-label="Then" style={{ gap: 8 }}>
-        {([["demo", "Reload the demo bank", "Serendib Commercial Bank, ready to use. Monitors, events and scenarios start empty."],
-           ["empty", "Start empty", "The welcome page: set up an institution from scratch with the setup agent or the forms."]] as const).map(([k, t, d]) => (
+        {([...DEMOS.map(d => [`demo-${d.kind}`, `${d.label}: ${d.name}`, `${d.what}, ready to use. Monitors, events and scenarios start empty.`] as const),
+           ["empty", "Start empty", "The welcome page: set up an institution from scratch with the setup agent or the forms."] as const]).map(([k, t, d]) => (
           <label key={k} className={`choice ${then === k ? "sel" : ""}`}><input type="radio" name="then" checked={then === k} onChange={() => setThen(k)} />
             <span className="col" style={{ gap: 2 }}><b>{t}</b><span className="small muted">{d}</span></span></label>))}
       </div>
