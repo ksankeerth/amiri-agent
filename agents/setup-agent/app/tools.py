@@ -139,7 +139,17 @@ async def get_suggestions(section: str, tool_context: ToolContext) -> dict:
     r = await b.s.api.get(f"/api/v1/institutions/{seg(b.iid)}/suggestions/{section}")
     if not r.ok:
         return _err(f"suggestions couldn't be read ({r.status})")
-    return {"status": "ok", "section": section, "items": r.body["items"]}
+    items = r.body["items"]
+    out = {"status": "ok", "section": section, "items": items}
+    # The guides say both; the model skipped them about half the time (remittance corridors dropped, a
+    # missing home regulator not mentioned), so the reminder comes with the result it is reacting to.
+    if section == "flows" and not items:
+        out["note"] = ("No published figures. Flows the user described (e.g. remittances sent home to a country) "
+                       "are still proposed, without a value; never drop them for lack of a figure.")
+    if section == "regulators" and not any(i["item"].get("relation") == "home" for i in items):
+        out["note"] = ("The rule table has no regulator for the home country. Say so plainly and ask the user to "
+                       "name theirs; don't add one they haven't named.")
+    return out
 
 
 async def search_places(query: str, countries_only: bool, tool_context: ToolContext) -> dict:

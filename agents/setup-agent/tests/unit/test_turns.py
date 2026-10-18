@@ -148,3 +148,13 @@ async def test_an_explicit_move_switches_without_the_model_agreeing(client, scri
     evs = await turn(client, sid, "bank-1", text="Our expats send money home to Indonesia.",
                      current_track="rivals_partners")
     assert "track" not in kinds(evs)
+
+
+
+async def test_naming_a_tracks_job_moves_there(client, scripted):
+    sid = await start(client, "bank-1")
+    for text, want in [("Please verify the full profile now.", "verification"),
+                       ("Please re-run the risk check now.", "risks")]:
+        scripted.script = [RouterChoice(track="rivals_partners", clearly_elsewhere=False, reason="stays")]
+        evs = await turn(client, sid, "bank-1", text=text, current_track="rivals_partners")
+        assert real(evs)[0] == ("track", {"track": want, "reason": "asked to move there"})

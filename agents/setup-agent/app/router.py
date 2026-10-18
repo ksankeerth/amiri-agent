@@ -79,9 +79,17 @@ MOVE = re.compile(r"\b(?:move on|move|go|proceed|switch|skip|jump|continue|on)(?
                   "|".join(ALIASES.values()) + r")\b", re.I)
 
 
+# requests that name a track's job without "move to" (seen: "verify the full profile" answered in risks,
+# "re-run the risk check" sent to verification)
+PHRASES = [("risks", re.compile(r"\brisk (?:check|finder|suggestions)\b", re.I)),
+           ("verification", re.compile(r"\b(?:verify|check) (?:the |our )?(?:full |whole )?(?:profile|setup)\b|"
+                                       r"\brun (?:the )?verification\b", re.I))]
+
+
 def explicit_move(text: str) -> str | None:
-    m = MOVE.search(text)
-    return next((t for t, a in ALIASES.items() if m and re.fullmatch(a, m.group(1), re.I)), None)
+    if m := MOVE.search(text):
+        return next(t for t, a in ALIASES.items() if re.fullmatch(a, m.group(1), re.I))
+    return next((t for t, p in PHRASES if p.search(text)), None)
 
 
 async def gemini_router(message: str, current: str | None, has_institution: bool) -> tuple[RouterChoice | None, int]:
