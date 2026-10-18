@@ -236,6 +236,10 @@ async def get_reference(name: str, tool_context: ToolContext) -> dict:
     names = ("product-taxonomy", "segment-dimensions", "institution-types", "currencies", "time-zones", "hazards", "routes")
     if name not in names:
         return _err(f"one of: {', '.join(names)}")
+    # seen: Japan, US and China hazards from the worldwide library offered as choices to a Korea-only insurer (T02)
+    if name == "hazards" and b.track == "risks":
+        return _blocked("the hazard library is worldwide; only get_suggestions('risk-exposures') meets this profile. "
+                        "If it has nothing, say so and ask which risks the user has in mind, without offering any")
     params = {"institution_type": b.institution_type} if name == "product-taxonomy" else {}
     r = await b.s.api.get(f"/api/v1/reference/{name}", **params)
     if not r.ok:

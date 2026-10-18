@@ -475,3 +475,12 @@ async def test_products_created_with_groups_must_be_linked(world):
     reply = llm.requests[1].contents[-1].parts[0].function_response.response
     assert reply["status"] == "error" and reply["message"].startswith("Home: no customer group")
     assert server.posted() == []
+
+
+async def test_the_risks_track_cant_browse_the_worldwide_hazard_library(world):
+    client, _server, llm = world
+    llm.script = [[("get_reference", {"name": "hazards"})], "The risk finder has nothing for your places."]
+    sid = await start(client)
+    await turn(client, sid, track="risks", text="Propose our main risks.")
+    reply = llm.requests[1].contents[-1].parts[0].function_response.response
+    assert reply["status"] == "blocked" and "the hazard library is worldwide" in reply["message"]
