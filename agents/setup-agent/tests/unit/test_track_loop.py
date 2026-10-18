@@ -405,3 +405,16 @@ async def test_facts_noted_for_other_tracks_are_offered_next(world, monkeypatch)
     await turn(client, sid, track="customers_products", requested_track=None,
                text="We write motor cover in Seoul and Gyeonggi.")
     assert "“Operate in Seoul and Gyeonggi” → Footprint and flows" in system_text(llm.requests[0])
+
+
+async def test_a_card_waiting_in_another_track_is_pointed_out_once(world):
+    client, server, llm = world
+    server.decided = [{"proposal_id": "prop-9", "status": "pending", "track": "footprint_flows",
+                       "summary": "Add Seoul and Gyeonggi", "decided_at": None}]
+    llm.script = ["Which groups buy motor cover?", "Noted."]
+    sid = await start(client)
+    evs = await turn(client, sid, track="customers_products", text="We sell motor cover.")
+    msg = next(d["text"] for e, d in evs if e == "message")
+    assert msg.endswith("Still waiting for your Apply, so nothing of it is saved yet: “Add Seoul and Gyeonggi”.")
+    evs = await turn(client, sid, track="customers_products", text="To households.")
+    assert "Still waiting" not in next(d["text"] for e, d in evs if e == "message")

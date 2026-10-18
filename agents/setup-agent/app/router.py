@@ -174,4 +174,6 @@ async def route(*, text: str | None, is_answer: bool, requested: str | None, cur
         return Route(current or "question", False, choice.reason, notes, offtopic=True, model_calls=calls)
     track = choice.track if (current is None or choice.track == current or choice.clearly_elsewhere) else current
     notes = [n for n in notes if n["track"] != track]
+    if track in ("rivals_partners", "risks"):  # a place said there is the rival's, partner's or hazard's, not
+        notes = [n for n in notes if n["track"] != "footprint_flows"]  # footprint ("Example Re is in Germany", T02)
     return Route(track, track != current, choice.reason, notes, model_calls=calls)

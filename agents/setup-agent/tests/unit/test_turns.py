@@ -182,3 +182,13 @@ async def test_settlement_and_regulator_notes_go_to_rules(client, scripted):
                      current_track="footprint_flows")
     notes = next(d["notes"] for e, d in evs if e == "track_notes")
     assert notes == [{"track": "footprint_flows", "text": "remittances to Fiji"}]  # the rules note was the chosen track's
+
+
+async def test_a_place_said_in_rivals_is_not_a_footprint_note(client, scripted):
+    from app.router import RouterNote
+
+    sid = await start(client, "bank-1")
+    scripted.script = [RouterChoice(track="rivals_partners", clearly_elsewhere=True, reason="partner", notes=[
+        RouterNote(track="footprint_flows", text="Example Re is based in Germany")])]
+    evs = await turn(client, sid, "bank-1", text="Add Example Re, a reinsurer in Germany.", current_track="rules")
+    assert "track_notes" not in kinds(evs)
