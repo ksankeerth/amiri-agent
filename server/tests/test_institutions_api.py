@@ -340,23 +340,23 @@ async def seed(client, iid="serendib-bank"):
 
 async def test_import_profile_context_and_round_trip(client):
     i = await seed(client)
-    assert i["counts"] == {"footprint": 4, "watch-places": 6, "segments": 4, "products": 10, "flows": 5,
-                           "regulators": 6, "rivals": 4, "counterparties": 1, "risk-exposures": 3}
+    assert i["counts"] == {"footprint": 1, "watch-places": 6, "segments": 4, "products": 10, "flows": 7,
+                           "regulators": 5, "rivals": 5, "counterparties": 1, "risk-exposures": 3}
     p = await client.get(f"{B}/serendib-bank/profile")
     prof = p.json()
     assert p.headers["ETag"] == f'"{prof["institution"]["profile_version"]}"'
-    assert prof["place_names"]["IN-KL"] == "Kerala" and prof["place_names"]["city:jaffna"] == "Jaffna"
+    assert prof["place_names"]["LK-12"] == "Gampaha" and prof["place_names"]["city:jaffna"] == "Jaffna"
     assert prof["readiness"]["ready"] is True
 
     ctx = (await client.get(f"{B}/serendib-bank/context")).json()
     assert ctx["institution_type"] == "bank" and ctx["country"] == "LK" and ctx["currency"] == "LKR"
-    assert ctx["corridors"][0] == "AE"  # the largest remittance flow first
+    assert ctx["corridors"][0] == "KW"  # the largest remittance flow first (the only one with an official figure)
     scope = ctx["radar_scope"]
-    assert {"LK", "IN-KL", "SA", "AE", "US"} <= set(scope["places"])
+    assert {"LK", "KW", "SA", "AE", "US"} <= set(scope["places"]) and not any(p.startswith("IN") for p in scope["places"])
     assert "chk:hormuz" in scope["places"] and scope["named_places"] == []
     assert {"fx", "remittance", "commodities", "competitor", "regulation"} <= set(scope["themes"])
     assert {"CBSL", "Coastal Remit", "OFAC"} <= set(scope["actors"])
-    assert ctx["flows"][0]["value"]["sample"] is True
+    assert ctx["flows"][0]["value"]["sample"] is False  # an official figure (Kuwait), with its source
 
     # export and import as a copy (e.g. a sandbox institution)
     copy = {**prof["institution"]}
@@ -497,12 +497,12 @@ async def test_risk_finder(client):
     found = {x["hazard"]["hazard_id"]: x for x in (await client.get(f"{B}/serendib-bank/suggestions/risk-exposures")).json()["items"]}
     # already in the profile
     assert found["gulf-security"]["added"] is True and found["gulf-security"]["existing_id"] == "gulf"
-    # Kerala floods: Kerala is in the footprint; migrant families live there; a remittance flow lands there
-    kl = found["in-kl-monsoon-floods"]
-    assert kl["added"] is False and kl["matched"]["footprint"] == ["IN-KL"]
-    assert "migrant-families" in kl["item"]["touches"]["segments"] and "remit-kl-ae" in kl["item"]["touches"]["flows"]
+    # Northeast monsoon floods: Sri Lanka is the footprint; migrant families live in the north (Jaffna)
+    kl = found["lk-ne-monsoon-floods"]
+    assert kl["added"] is False and kl["matched"]["footprint"] == ["LK"]
+    assert "migrant-families" in kl["item"]["touches"]["segments"]
     assert {"migrant-savings", "inward-remittances"} <= set(kl["item"]["touches"]["products"])
-    assert kl["item"]["title"] == "Kerala monsoon floods meets remittances"
+    assert kl["item"]["title"] == "Northeast monsoon floods (Sri Lanka) meets migrant-worker families"
     # Hormuz: no place of ours is there, but the crude-oil imports take the Hormuz route
     hz = found["hormuz-disruption"]
     assert hz["item"]["touches"]["flows"] == ["crude-ae"] and hz["item"]["touches"]["routes"] == ["colombo-hormuz-gulf"]
@@ -510,13 +510,13 @@ async def test_risk_finder(client):
     assert "ph-typhoons" not in found
     r = await add(client, "serendib-bank", "risk-exposures", kl["item"])
     eid = r["item"]["id"]
-    assert r["item"]["months"] == [6, 7, 8, 9] and r["item"]["source"] == "finder"
+    assert r["item"]["months"] == [1, 10, 11, 12] and r["item"]["source"] == "finder"
     await client.patch(f"{B}/serendib-bank/risk-exposures/{eid}", json={"status": "dismissed"})
     again = {x["hazard"]["hazard_id"]: x for x in (await client.get(f"{B}/serendib-bank/suggestions/risk-exposures")).json()["items"]}
-    assert again["in-kl-monsoon-floods"]["added"] is True and again["in-kl-monsoon-floods"]["status"] == "dismissed"
+    assert again["lk-ne-monsoon-floods"]["added"] is True and again["lk-ne-monsoon-floods"]["status"] == "dismissed"
     ctx = (await client.get(f"{B}/serendib-bank/context")).json()
-    assert "in-kl-monsoon-floods" not in {x["hazard_id"] for x in ctx["risk_exposures"]}
-    r = await client.post(f"{B}/serendib-bank/risk-exposures", json={"hazard_id": "in-kl-monsoon-floods", "title": "Again"})
+    assert "lk-ne-monsoon-floods" not in {x["hazard_id"] for x in ctx["risk_exposures"]}
+    r = await client.post(f"{B}/serendib-bank/risk-exposures", json={"hazard_id": "lk-ne-monsoon-floods", "title": "Again"})
     assert r.status_code == 409 and r.json()["code"] == "duplicate"  # one exposure per hazard
 
 
@@ -544,7 +544,7 @@ async def test_japac_institutions_get_their_own_suggestions(client):
     risks = {x["item"]["hazard_id"] for x in (await client.get(f"{B}/{ph}/suggestions/risk-exposures")).json()["items"]}
     assert {"ph-typhoons", "ph-metro-manila-floods"} <= risks
 
-    idn = (await new(client, {**INSURER, "name": "Nusantara Proteksi", "subtype": "general", "home_country": "ID",
+    idn = (await new(client, {**INSURER, "name": "Samudra Proteksi", "subtype": "general", "home_country": "ID",
                               "base_currency": "IDR", "time_zone": "Asia/Jakarta"}))["institution_id"]
     regs = {x["item"]["short"] for x in (await client.get(f"{B}/{idn}/suggestions/regulators")).json()["items"]}
     assert {"OJK", "PPATK", "IAIS"} <= regs and "BI" not in regs and "LPS" not in regs and "Basel" not in regs

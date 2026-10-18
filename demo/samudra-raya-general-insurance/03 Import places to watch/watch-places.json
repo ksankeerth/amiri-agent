@@ -1,0 +1,53 @@
+{
+  "items": [
+    {
+      "id": "hormuz",
+      "name": "Strait of Hormuz",
+      "code": "chk:hormuz",
+      "kind": "chokepoint",
+      "reason": "Cargo and hulls insured for Gulf voyages; war-risk cover has been withdrawn or repriced since March 2026."
+    },
+    {
+      "id": "malacca",
+      "name": "Strait of Malacca",
+      "code": "chk:malacca",
+      "kind": "chokepoint",
+      "reason": "Busiest lane for the insured cargo and for coal and palm-oil exports."
+    },
+    {
+      "id": "taiwan-strait",
+      "name": "Taiwan Strait",
+      "code": "chk:taiwan-strait",
+      "kind": "chokepoint",
+      "reason": "A blockade or incident would disrupt marine cargo to East Asia."
+    },
+    {
+      "id": "saudi-arabia",
+      "name": "Saudi Arabia",
+      "code": "SA",
+      "kind": "country",
+      "reason": "Hajj and Umrah travel from Indonesia, and migrant workers there."
+    },
+    {
+      "id": "singapore-port",
+      "name": "Port of Singapore",
+      "code": "port:singapore",
+      "kind": "port",
+      "reason": "Transhipment hub for cargo and the main reinsurance marketplace."
+    },
+    {
+      "id": "china",
+      "name": "China",
+      "code": "CN",
+      "kind": "country",
+      "reason": "Largest buyer of Indonesian coal; its demand moves cargo volumes."
+    },
+    {
+      "id": "malaysia",
+      "name": "Malaysia",
+      "code": "MY",
+      "kind": "country",
+      "reason": "Neighbour for haze, migrant workers and trade."
+    }
+  ]
+}

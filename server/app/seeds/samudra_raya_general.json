@@ -1,9 +1,9 @@
 {
- "_about": "The bundled sample insurer (invented): served as the sample insurer's data when the installation's own institution is a bank. Figures are illustrative.",
+ "_about": "The demo insurer (invented), in Indonesia only. Load it from the Reset dialog, the empty first screen, or demo/ in the repository (uv run amiri demo-export writes demo/ from this file). No flow carries an amount: no official full-year figure by country was found; the notes say what is published.",
  "institution": {
-  "name": "Nusantara General Insurance",
-  "legal_name": "PT Nusantara General Insurance Tbk",
-  "short_name": "Nusantara General",
+  "name": "Samudra Raya General Insurance",
+  "legal_name": "PT Samudra Raya General Insurance Tbk",
+  "short_name": "Samudra Raya",
   "institution_type": "insurer",
   "subtype": "general",
   "islamic": true,
@@ -23,11 +23,10 @@
  "sections": {
   "footprint": [
    {
-    "code": "SG",
-    "role": "representative_office",
-    "scope": "part",
-    "branch_count": 1,
-    "note": "Reinsurance placement and marine underwriting liaison. No direct policies."
+    "code": "ID",
+    "role": "home",
+    "scope": "all",
+    "branch_count": 42
    }
   ],
   "watch-places": [
@@ -636,85 +635,54 @@
     "kind": "remittances_in",
     "local": "ID",
     "counterpart": "MY",
-    "figure_id": "remittances-in-id-my-2024",
-    "value": {
-     "amount": 3000000000,
-     "currency": "USD",
-     "year": 2024
-    },
     "source": {
-     "kind": "dataset",
-     "dataset": "Bank Indonesia, workers' remittances by country",
-     "dataset_year": 2024,
-     "sample": true
+     "kind": "user",
+     "url": "https://www.cnbcindonesia.com/research/20250221102759-128-612484/fenomena-kaburajadulu-ri-untung-duit-kiriman-tki-tembus-rp-255-t"
     },
     "segments": [
      "migrant-worker-families"
-    ]
+    ],
+    "note": "Malaysia is the largest source: Bank Indonesia reported US$ 1.18 billion in Q3 2024 alone (as reported by CNBC Indonesia)."
    },
    {
     "id": "remit-id-sa",
     "kind": "remittances_in",
     "local": "ID",
     "counterpart": "SA",
-    "figure_id": "remittances-in-id-sa-2024",
-    "value": {
-     "amount": 2500000000,
-     "currency": "USD",
-     "year": 2024
-    },
     "source": {
-     "kind": "dataset",
-     "dataset": "Bank Indonesia, workers' remittances by country",
-     "dataset_year": 2024,
-     "sample": true
+     "kind": "user"
     },
     "segments": [
      "migrant-worker-families",
      "pilgrims-and-travellers"
-    ]
+    ],
+    "note": "No official full-year figure by country found; Bank Indonesia publishes quarterly remittance data."
    },
    {
     "id": "remit-id-hk",
     "kind": "remittances_in",
     "local": "ID",
     "counterpart": "HK",
-    "figure_id": "remittances-in-id-hk-2024",
-    "value": {
-     "amount": 2000000000,
-     "currency": "USD",
-     "year": 2024
-    },
     "source": {
-     "kind": "dataset",
-     "dataset": "Bank Indonesia, workers' remittances by country",
-     "dataset_year": 2024,
-     "sample": true
+     "kind": "user"
     },
     "segments": [
      "migrant-worker-families"
-    ]
+    ],
+    "note": "No official full-year figure by country found; Bank Indonesia publishes quarterly remittance data."
    },
    {
     "id": "remit-id-tw",
     "kind": "remittances_in",
     "local": "ID",
     "counterpart": "TW",
-    "figure_id": "remittances-in-id-tw-2024",
-    "value": {
-     "amount": 1800000000,
-     "currency": "USD",
-     "year": 2024
-    },
     "source": {
-     "kind": "dataset",
-     "dataset": "Bank Indonesia, workers' remittances by country",
-     "dataset_year": 2024,
-     "sample": true
+     "kind": "user"
     },
     "segments": [
      "migrant-worker-families"
-    ]
+    ],
+    "note": "No official full-year figure by country found; Bank Indonesia publishes quarterly remittance data."
    },
    {
     "id": "export-coal-cn",
@@ -722,23 +690,14 @@
     "local": "ID",
     "counterpart": "CN",
     "goods": "Coal",
-    "figure_id": "exports-id-cn-coal-2024",
-    "value": {
-     "amount": 20000000000,
-     "currency": "USD",
-     "year": 2024
-    },
     "source": {
-     "kind": "dataset",
-     "dataset": "Statistics Indonesia, exports by destination",
-     "dataset_year": 2024,
-     "sample": true
+     "kind": "user"
     },
     "segments": [
      "traders-shippers",
      "industrial-corporates"
     ],
-    "note": "Shipped through Malacca and the South China Sea; a driver of marine cargo and hull premiums."
+    "note": "China is a main buyer of Indonesian coal (all coal exports: about US$ 30.5 billion in 2024, BPS as reported); no official figure for China alone found."
    },
    {
     "id": "export-palm-in",
@@ -746,22 +705,14 @@
     "local": "ID",
     "counterpart": "IN",
     "goods": "Palm oil",
-    "figure_id": "exports-id-in-palm-oil-2024",
-    "value": {
-     "amount": 4000000000,
-     "currency": "USD",
-     "year": 2024
-    },
     "source": {
-     "kind": "dataset",
-     "dataset": "Statistics Indonesia, exports by destination",
-     "dataset_year": 2024,
-     "sample": true
+     "kind": "user"
     },
     "segments": [
      "traders-shippers",
      "farmers-and-plantations"
-    ]
+    ],
+    "note": "India is a main buyer of Indonesian palm oil; no official 2024 figure for India alone found."
    }
   ],
   "regulators": [
@@ -1195,8 +1146,7 @@
     "kind": "economic",
     "source": "user",
     "places": [
-     "ID",
-     "SG"
+     "ID"
     ],
     "touches": {
      "products": [

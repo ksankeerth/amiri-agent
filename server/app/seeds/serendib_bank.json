@@ -1,5 +1,5 @@
 {
- "_about": "Demo institution (sample data). uv run amiri seed-institution",
+ "_about": "The demo bank (invented), in Sri Lanka only. Load it from the Reset dialog, the empty first screen, or demo/ in the repository (uv run amiri demo-export writes demo/ from this file). Every amount is from a named, published source (each flow's source.url); a flow with no official figure has no amount and says so in its note.",
  "institution": {
   "institution_id": "serendib-bank",
   "name": "Serendib Commercial Bank",
@@ -14,26 +14,15 @@
   ],
   "governance_body": "Board Risk Committee",
   "size_band": "mid",
-  "summary": "Mid-size commercial bank: retail deposits, SME and corporate lending, trade finance, pawning and cards; branches in Sri Lanka and in Tamil Nadu, Kerala and Karnataka."
+  "summary": "Mid-size commercial bank in Sri Lanka: retail deposits and pawning, SME and corporate lending, trade finance, cards and inward remittances from Gulf migrant workers; 172 branches across Sri Lanka."
  },
  "sections": {
   "footprint": [
    {
     "code": "LK",
     "role": "home",
-    "scope": "all"
-   },
-   {
-    "code": "IN-TN",
-    "role": "branches"
-   },
-   {
-    "code": "IN-KL",
-    "role": "branches"
-   },
-   {
-    "code": "IN-KA",
-    "role": "branches"
+    "scope": "all",
+    "branch_count": 172
    }
   ],
   "watch-places": [
@@ -85,7 +74,7 @@
     "places": [
      "city:jaffna",
      "LK-61",
-     "IN-KL"
+     "LK-12"
     ],
     "income_sources": [
      "remittances"
@@ -106,7 +95,7 @@
     "places": [
      "LK-11",
      "LK-12",
-     "IN-TN"
+     "LK-13"
     ],
     "income_sources": [
      "business_income"
@@ -147,8 +136,8 @@
     "note": "Employees of IT and service firms and the state.",
     "places": [
      "LK-11",
-     "IN-TN",
-     "IN-KA"
+     "LK-12",
+     "LK-21"
     ],
     "income_sources": [
      "salary"
@@ -296,110 +285,126 @@
   ],
   "flows": [
    {
+    "id": "remit-kw",
+    "kind": "remittances_in",
+    "local": "LK",
+    "counterpart": "KW",
+    "figure_id": "remittances-in-lk-kw-2025",
+    "value": {
+     "amount": 893000000,
+     "currency": "USD",
+     "year": 2025
+    },
+    "source": {
+     "kind": "dataset",
+     "dataset": "Sri Lanka Bureau of Foreign Employment, remittances from Kuwait (as reported)",
+     "dataset_year": 2025,
+     "url": "https://adaderana.lk/news/cmqk5lh6y00023b6pmetfwbvo",
+     "sample": false
+    },
+    "segments": [
+     "migrant-families"
+    ],
+    "note": "Kuwait is the largest source: about 30% of Sri Lankans working abroad go there."
+   },
+   {
+    "id": "remit-qa",
+    "kind": "remittances_in",
+    "local": "LK",
+    "counterpart": "QA",
+    "source": {
+     "kind": "user"
+    },
+    "segments": [
+     "migrant-families"
+    ],
+    "note": "No official full-year figure by country is published; the Central Bank of Sri Lanka publishes quarterly figures by country. All corridors together: US$ 8.07 billion in 2025."
+   },
+   {
+    "id": "remit-ae",
+    "kind": "remittances_in",
+    "local": "LK",
+    "counterpart": "AE",
+    "source": {
+     "kind": "user"
+    },
+    "segments": [
+     "migrant-families"
+    ],
+    "note": "No official full-year figure by country is published; the Central Bank of Sri Lanka publishes quarterly figures by country. All corridors together: US$ 8.07 billion in 2025."
+   },
+   {
+    "id": "remit-sa",
     "kind": "remittances_in",
     "local": "LK",
     "counterpart": "SA",
-    "value": {
-     "amount": 1200000000,
-     "currency": "USD",
-     "year": 2024
-    },
     "source": {
-     "kind": "dataset",
-     "dataset": "Central Bank of Sri Lanka, workers' remittances by country",
-     "dataset_year": 2024,
-     "sample": true
+     "kind": "user"
     },
     "segments": [
      "migrant-families"
     ],
-    "id": "remit-sa",
-    "figure_id": "remittances-in-lk-sa-2024"
+    "note": "No official full-year figure by country is published; the Central Bank of Sri Lanka publishes quarterly figures by country. All corridors together: US$ 8.07 billion in 2025."
    },
    {
-    "kind": "remittances_in",
-    "local": "LK",
-    "counterpart": "AE",
-    "value": {
-     "amount": 1000000000,
-     "currency": "USD",
-     "year": 2024
-    },
-    "source": {
-     "kind": "dataset",
-     "dataset": "Central Bank of Sri Lanka, workers' remittances by country",
-     "dataset_year": 2024,
-     "sample": true
-    },
-    "segments": [
-     "migrant-families"
-    ],
-    "id": "remit-ae",
-    "figure_id": "remittances-in-lk-ae-2024"
-   },
-   {
-    "kind": "remittances_in",
-    "local": "IN-KL",
-    "counterpart": "AE",
-    "value": {
-     "amount": 4500000000,
-     "currency": "USD",
-     "year": 2023
-    },
-    "source": {
-     "kind": "dataset",
-     "dataset": "World Bank / KNOMAD bilateral remittance matrix",
-     "dataset_year": 2023,
-     "sample": true
-    },
-    "segments": [
-     "migrant-families"
-    ],
-    "id": "remit-kl-ae",
-    "figure_id": "remittances-in-in-kl-ae-2023"
-   },
-   {
+    "id": "garments-us",
     "kind": "exports",
     "local": "LK",
     "counterpart": "US",
     "goods": "Garments",
+    "figure_id": "exports-lk-us-garments-2025",
+    "route_id": "colombo-suez-europe",
     "value": {
-     "amount": 1900000000,
+     "amount": 1960000000,
      "currency": "USD",
-     "year": 2024
+     "year": 2025
     },
     "source": {
      "kind": "dataset",
-     "dataset": "UN Comtrade, trade by partner",
-     "dataset_year": 2024,
-     "sample": true
+     "dataset": "Sri Lanka Export Development Board, apparel exports by market (as reported)",
+     "dataset_year": 2025,
+     "url": "https://www.dailymirror.lk/print/breaking-news/Sri-Lanka-exports-top-US-17-2bn-in-2025/108-331344",
+     "sample": false
     },
     "segments": [
      "exporters-smes"
-    ],
-    "id": "garments-us",
-    "figure_id": "exports-lk-us-garments-2024",
-    "route_id": "colombo-suez-europe"
+    ]
    },
    {
+    "id": "garments-gb",
+    "kind": "exports",
+    "local": "LK",
+    "counterpart": "GB",
+    "goods": "Garments",
+    "figure_id": "exports-lk-gb-garments-2025",
+    "route_id": "colombo-suez-europe",
+    "value": {
+     "amount": 688500000,
+     "currency": "USD",
+     "year": 2025
+    },
+    "source": {
+     "kind": "dataset",
+     "dataset": "Sri Lanka Export Development Board, apparel exports by market (as reported)",
+     "dataset_year": 2025,
+     "url": "https://www.dailymirror.lk/print/breaking-news/Sri-Lanka-exports-top-US-17-2bn-in-2025/108-331344",
+     "sample": false
+    },
+    "segments": [
+     "exporters-smes"
+    ]
+   },
+   {
+    "id": "crude-ae",
     "kind": "imports",
     "local": "LK",
     "counterpart": "AE",
     "goods": "Crude oil",
-    "value": {
-     "amount": 1000000000,
-     "currency": "USD",
-     "year": 2024
-    },
+    "route_id": "colombo-hormuz-gulf",
     "source": {
-     "kind": "dataset",
-     "dataset": "UN Comtrade, trade by partner",
-     "dataset_year": 2024,
-     "sample": true
+     "kind": "user"
     },
-    "id": "crude-ae",
-    "figure_id": "imports-lk-ae-crude-oil-2024",
-    "route_id": "colombo-hormuz-gulf"
+    "note": "The Sapugaskanda refinery has run on Murban crude from the UAE; no current official figure by supplier."
    }
   ],
   "regulators": [
@@ -410,10 +415,6 @@
    {
     "regulator_id": "lk-fiu",
     "relation": "home"
-   },
-   {
-    "regulator_id": "in-rbi",
-    "relation": "host"
    },
    {
     "regulator_id": "sanctions-ofac",
@@ -430,7 +431,41 @@
   ],
   "rivals": [
    {
-    "name": "Kandy Merchant Bank",
+    "name": "Commercial Bank of Ceylon",
+    "type": "bank",
+    "places": [
+     "LK"
+    ],
+    "categories": [
+     "savings",
+     "business_loan",
+     "cards",
+     "remittances"
+    ],
+    "overlap": "high",
+    "aliases": [
+     "ComBank"
+    ]
+   },
+   {
+    "name": "Hatton National Bank",
+    "type": "bank",
+    "places": [
+     "LK"
+    ],
+    "categories": [
+     "savings",
+     "business_loan",
+     "gold_loan",
+     "remittances"
+    ],
+    "overlap": "high",
+    "aliases": [
+     "HNB"
+    ]
+   },
+   {
+    "name": "Sampath Bank",
     "type": "bank",
     "places": [
      "LK"
@@ -440,7 +475,20 @@
      "business_loan",
      "cards"
     ],
-    "overlap": "high"
+    "overlap": "medium"
+   },
+   {
+    "name": "Seylan Bank",
+    "type": "bank",
+    "places": [
+     "LK"
+    ],
+    "categories": [
+     "savings",
+     "gold_loan",
+     "vehicle_finance"
+    ],
+    "overlap": "medium"
    },
    {
     "name": "Coastal Remit",
@@ -448,8 +496,7 @@
     "places": [
      "AE",
      "SA",
-     "LK",
-     "IN-KL"
+     "LK"
     ],
     "categories": [
      "remittances"
@@ -457,31 +504,8 @@
     "overlap": "high",
     "aliases": [
      "CoastalRemit"
-    ]
-   },
-   {
-    "name": "Malabar Cooperative Bank",
-    "type": "cooperative",
-    "places": [
-     "IN-KL"
     ],
-    "categories": [
-     "savings",
-     "gold_loan"
-    ],
-    "overlap": "medium"
-   },
-   {
-    "name": "Coromandel Finance",
-    "type": "finance_company",
-    "places": [
-     "IN-TN"
-    ],
-    "categories": [
-     "business_loan",
-     "vehicle_finance"
-    ],
-    "overlap": "medium"
+    "note": "An invented remittance app, used in the demo's scenarios."
    }
   ],
   "counterparties": [
@@ -509,9 +533,10 @@
       "inward-remittances"
      ],
      "flows": [
-      "remit-sa",
+      "remit-kw",
+      "remit-qa",
       "remit-ae",
-      "remit-kl-ae"
+      "remit-sa"
      ]
     }
    },

@@ -863,7 +863,7 @@ class Institutions:
                     "figure_id": r["figure_id"],
                     "value": {"amount": r["amount"], "currency": "USD", "year": r["year"]},
                     "source": {"kind": "dataset", "dataset": r["dataset"], "dataset_year": r["year"],
-                               "sample": r.get("sample", False)},
+                               "url": r.get("url"), "sample": r.get("sample", False)},
                     "status": "suggested"}
             out.append({"added": (r["kind"], local, counterpart, r.get("goods")) in have, "item": item})
         return out

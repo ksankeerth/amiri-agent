@@ -1,0 +1,40 @@
+{
+  "title": "What if a Gulf ceasefire reopens Hormuz",
+  "headlines": [
+    {
+      "id": "c-cf-1",
+      "title": "Iran and the United States announce a ceasefire and a phased lifting of the blockade",
+      "day": 1,
+      "time": "09:00"
+    },
+    {
+      "id": "c-cf-2",
+      "title": "Navies begin escorting tankers through the Strait of Hormuz",
+      "day": 1,
+      "time": "13:00"
+    },
+    {
+      "id": "c-cf-3",
+      "title": "Brent crude falls 12 percent to $92 as shipping resumes",
+      "day": 2,
+      "time": "10:00"
+    },
+    {
+      "id": "c-cf-4",
+      "title": "War-risk insurers cut premiums for Gulf voyages",
+      "day": 4,
+      "time": "11:00"
+    },
+    {
+      "id": "c-cf-5",
+      "title": "Central Bank of Sri Lanka says rupee pressure is easing",
+      "day": 6,
+      "time": "09:00"
+    }
+  ],
+  "prices": {
+    "direction": "stronger",
+    "size_pct": 4,
+    "ramp_days": 6
+  }
+}

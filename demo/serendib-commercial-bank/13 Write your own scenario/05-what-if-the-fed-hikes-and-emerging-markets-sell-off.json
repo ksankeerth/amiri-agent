@@ -1,0 +1,40 @@
+{
+  "title": "What if the Fed hikes and emerging markets sell off",
+  "headlines": [
+    {
+      "id": "c-fed-1",
+      "title": "US Federal Reserve raises rates by a quarter point and signals more",
+      "day": 1,
+      "time": "19:00"
+    },
+    {
+      "id": "c-fed-2",
+      "title": "Asian emerging-market currencies fall to record lows against the dollar",
+      "day": 2,
+      "time": "09:00"
+    },
+    {
+      "id": "c-fed-3",
+      "title": "Central Bank of Sri Lanka sells dollars as the rupee slides",
+      "day": 2,
+      "time": "14:00"
+    },
+    {
+      "id": "c-fed-4",
+      "title": "Foreign investors sell Sri Lankan government bonds",
+      "day": 3,
+      "time": "10:00"
+    },
+    {
+      "id": "c-fed-5",
+      "title": "Rating agency warns of pressure on Sri Lanka's external position",
+      "day": 5,
+      "time": "11:00"
+    }
+  ],
+  "prices": {
+    "direction": "weaker",
+    "size_pct": 6,
+    "ramp_days": 4
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "items": [
+    {
+      "id": "vehicle-owners",
+      "template_id": "insurer-vehicle-owners",
+      "label": "Vehicle owners",
+      "kind": "individual",
+      "note": "Car and motorcycle owners insured through dealers, agents and banks.",
+      "places": [
+        "ID-JK",
+        "ID-JB",
+        "ID-JI"
+      ],
+      "income_sources": [
+        "salary",
+        "business_income"
+      ],
+      "spec_mapping": [
+        {
+          "dimension": "segment",
+          "value": "other_individual"
+        }
+      ],
+      "share_of_customers_pct": 34
+    },
+    {
+      "id": "sme-property",
+      "template_id": "insurer-small-and-medium-businesses",
+      "label": "Small and medium businesses",
+      "kind": "business",
+      "note": "Shops, workshops and small factories with fire and all-risks policies.",
+      "places": [
+        "ID-JK",
+        "ID-JB",
+        "ID-JI",
+        "ID-SU"
+      ],
+      "income_sources": [
+        "business_income"
+      ],
+      "spec_mapping": [
+        {
+          "dimension": "size_band",
+          "value": "sme"
+        }
+      ],
+      "share_of_customers_pct": 14
+    },
+    {
+      "id": "industrial-corporates",
+      "template_id": "insurer-corporates",
+      "label": "Industrial and mining corporates",
+      "kind": "business",
+      "note": "Mining, energy, plantation and manufacturing groups: property, engineering and liability, often placed through brokers.",
+      "places": [
+        "ID-KI",
+        "ID-KT",
+        "ID-SU",
+        "ID-JB"
+      ],
+      "income_sources": [
+        "business_income"
+      ],
+      "spec_mapping": [
+        {
+          "dimension": "size_band",
+          "value": "corporate"
+        }
+      ],
+      "share_of_customers_pct": 3
+    },
+    {
+      "id": "traders-shippers",
+      "label": "Importers, exporters and shippers",
+      "kind": "business",
+      "note": "Coal, palm-oil, commodity and general cargo owners and freight forwarders; they insure each shipment or buy open covers.",
+      "places": [
+        "ID-JK",
+        "ID-JI",
+        "ID-KI"
+      ],
+      "income_sources": [
+        "business_income"
+      ],
+      "spec_mapping": [
+        {
+          "dimension": "segment",
+          "value": "importer"
+        },
+        {
+          "dimension": "segment",
+          "value": "exporter"
+        }
+      ],
+      "share_of_customers_pct": 5
+    },
+    {
+      "id": "group-health-employers",
+      "template_id": "insurer-employees-on-group-schemes",
+      "label": "Employees on group schemes",
+      "kind": "mixed",
+      "note": "Staff of employers who buy group health and personal accident cover.",
+      "places": [
+        "ID-JK",
+        "ID-BT",
+        "ID-JB"
+      ],
+      "income_sources": [
+        "salary"
+      ],
+      "spec_mapping": [
+        {
+          "dimension": "segment",
+          "value": "salaried"
+        }
+      ],
+      "share_of_customers_pct": 22
+    },
+    {
+      "id": "pilgrims-and-travellers",
+      "template_id": "insurer-travellers",
+      "label": "Pilgrims and travellers",
+      "kind": "individual",
+      "note": "Umrah and Hajj pilgrims and holiday travellers; many depart through Jakarta, Surabaya and Makassar.",
+      "places": [
+        "ID-JK",
+        "ID-JI",
+        "ID-SN"
+      ],
+      "income_sources": [
+        "salary",
+        "business_income"
+      ],
+      "spec_mapping": [
+        {
+          "dimension": "segment",
+          "value": "other_individual"
+        }
+      ],
+      "share_of_customers_pct": 6
+    },
+    {
+      "id": "migrant-worker-families",
+      "template_id": "insurer-migrant-worker-families",
+      "label": "Migrant-worker families",
+      "kind": "individual",
+      "note": "Workers in Malaysia, Saudi Arabia, Hong Kong and Taiwan, and their families in Java and Nusa Tenggara.",
+      "places": [
+        "ID-JB",
+        "ID-JI",
+        "ID-NT"
+      ],
+      "income_sources": [
+        "remittances"
+      ],
+      "spec_mapping": [
+        {
+          "dimension": "segment",
+          "value": "remittance_linked"
+        }
+      ],
+      "share_of_customers_pct": 5
+    },
+    {
+      "id": "farmers-and-plantations",
+      "template_id": "insurer-farmers",
+      "label": "Farmers and plantation smallholders",
+      "kind": "individual",
+      "note": "Rice, palm-oil and rubber growers under the subsidised crop-insurance scheme and private covers.",
+      "places": [
+        "ID-JA",
+        "ID-RI",
+        "ID-SS",
+        "ID-KB"
+      ],
+      "income_sources": [
+        "farm_income"
+      ],
+      "spec_mapping": [
+        {
+          "dimension": "sector",
+          "value": "agriculture"
+        }
+      ],
+      "share_of_customers_pct": 11
+    }
+  ]
+}

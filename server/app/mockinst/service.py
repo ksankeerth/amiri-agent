@@ -11,13 +11,14 @@ from psycopg_pool import AsyncConnectionPool
 
 from app import settings
 from app.clock import Clock
+from app.demo import DEMOS
 from app.institutions.service import Institutions
 from app.mockinst import conditions as cond
 from app.mockinst.model import Institution, build
 from app.problems import Problem
 
 KINDS = ("bank", "insurer")
-SEEDS = {"bank": "serendib_bank.json", "insurer": "nusantara_general.json"}
+SEEDS = {k: v["file"] for k, v in DEMOS.items()}
 SEED_DIR = Path(__file__).resolve().parents[1] / "seeds"
 
 

@@ -1,0 +1,88 @@
+{
+  "items": [
+    {
+      "id": "migrant-families",
+      "label": "Migrant-worker families",
+      "kind": "individual",
+      "note": "Households with a member working abroad, mostly in the Gulf.",
+      "places": [
+        "city:jaffna",
+        "LK-61",
+        "LK-12"
+      ],
+      "income_sources": [
+        "remittances"
+      ],
+      "spec_mapping": [
+        {
+          "dimension": "segment",
+          "value": "remittance_linked"
+        }
+      ],
+      "template_id": "bank-migrant-worker-families"
+    },
+    {
+      "id": "exporters-smes",
+      "label": "Exporters, importers and SMEs",
+      "kind": "business",
+      "note": "Garment, food and trading firms; many import on LCs.",
+      "places": [
+        "LK-11",
+        "LK-12",
+        "LK-13"
+      ],
+      "income_sources": [
+        "business_income"
+      ],
+      "spec_mapping": [
+        {
+          "dimension": "size_band",
+          "value": "sme"
+        }
+      ],
+      "template_id": "bank-small-and-medium-businesses"
+    },
+    {
+      "id": "farmers",
+      "label": "Farmers and estate workers",
+      "kind": "individual",
+      "note": "Tea estates, paddy and vegetables.",
+      "places": [
+        "LK-21",
+        "LK-71",
+        "LK-81"
+      ],
+      "income_sources": [
+        "farm_income"
+      ],
+      "spec_mapping": [
+        {
+          "dimension": "sector",
+          "value": "A"
+        }
+      ],
+      "template_id": "bank-farmers"
+    },
+    {
+      "id": "salaried",
+      "label": "Salaried (IT, services, government)",
+      "kind": "individual",
+      "note": "Employees of IT and service firms and the state.",
+      "places": [
+        "LK-11",
+        "LK-12",
+        "LK-21"
+      ],
+      "income_sources": [
+        "salary"
+      ],
+      "spec_mapping": [
+        {
+          "dimension": "segment",
+          "value": "salaried"
+        }
+      ],
+      "template_id": "bank-salaried-employees"
+    }
+  ]
+}

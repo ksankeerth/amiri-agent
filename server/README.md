@@ -32,8 +32,8 @@ cd server
 cp .env.example .env                    # then set TWELVEDATA_API_KEY in .env
 uv sync
 uv run amiri serve                      # http://localhost:8000/docs
-uv run amiri seed-series                # optional: USD/LKR, AED/LKR, USD/INR, XAU/USD
-uv run amiri seed-institution           # optional: the demo bank's profile (sample data)
+uv run amiri seed-series                # optional: the demo bank's series (--institution insurer: the insurer's)
+uv run amiri seed-institution           # optional: the demo bank (--institution insurer: the demo insurer); see demo/
 ```
 
 The web app: `cd ../web && npm install && npm run build`, and the server serves it at

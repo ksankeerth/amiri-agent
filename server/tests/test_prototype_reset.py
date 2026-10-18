@@ -48,6 +48,34 @@ async def test_reset_to_the_demo_bank(client, env):
     assert i["profile"] is True and i["status"] == "active"
 
 
+async def test_reset_switches_between_the_two_demos(client, env):
+    env.setenv("INSTITUTION_ID", "serendib-bank")
+    for then, name, home in (("demo-insurer", "Samudra Raya General Insurance", "ID"), ("demo-bank", "Serendib Commercial Bank", "LK")):
+        r = await client.post(R, json={"confirm": "RESET", "then": then})
+        assert r.status_code == 200, r.text
+        p = (await client.get("/api/v1/institutions/serendib-bank/profile")).json()
+        assert p["institution"]["name"] == name and p["institution"]["status"] == "active"
+        assert [f["code"] for f in p["sections"]["footprint"]] == [home]  # home only: no branches abroad
+
+
+async def test_the_empty_first_screen_loads_a_demo_once(client, env):
+    env.setenv("INSTITUTION_ID", "serendib-bank")
+    D = "/api/v1/prototype:demo"
+    assert (await client.post(D, json={"kind": "shop"})).status_code == 422
+    r = await client.post(D, json={"kind": "insurer"})
+    assert r.status_code == 200 and r.json() == {"institution_id": "serendib-bank", "name": "Samudra Raya General Insurance",
+                                                 "kind": "insurer"}
+    r = await client.post(D, json={"kind": "bank"})
+    assert r.status_code == 409 and r.json()["code"] == "not_empty"  # never over an institution
+
+
+async def test_both_demo_profiles_download(client):
+    for kind, name in (("bank", "serendib-commercial-bank"), ("insurer", "samudra-raya-general-insurance")):
+        r = await client.get("/api/v1/reference/demo-profile", params={"kind": kind})
+        assert r.status_code == 200 and f"{name}.json" in r.headers["content-disposition"]
+        assert r.json()["institution"]["institution_type"] == kind
+
+
 async def test_reset_can_be_switched_off(client, env):
     env.setenv("PROTOTYPE_RESET", "false")
     assert (await client.post(R, json={"confirm": "RESET"})).status_code == 403

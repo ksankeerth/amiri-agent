@@ -1,0 +1,97 @@
+{
+  "spec": {
+    "about": {
+      "name": "Oil, fuel prices and Indonesia's subsidies",
+      "owner": "Strategy and Finance",
+      "also_notify": [],
+      "check_frequency": 360,
+      "kind": "trend",
+      "key_dates": [],
+      "review_by": "2026-12-31"
+    },
+    "public": {
+      "watch": [
+        {
+          "name": "Brent crude",
+          "type": "topic"
+        },
+        {
+          "name": "Indonesia fuel subsidy",
+          "type": "topic",
+          "other_forms": [
+            "Pertalite subsidy"
+          ]
+        },
+        {
+          "name": "Pertamina",
+          "type": "organisation"
+        },
+        {
+          "name": "Russian refinery strikes",
+          "type": "topic"
+        }
+      ],
+      "in_one_sentence": "Oil and fuel moves, and changes to Indonesia's fuel prices or subsidies, that change what drivers and fleets spend and how many claims follow.",
+      "tell_me_if": [
+        "The government changes fuel prices or the subsidy scheme, or the subsidy budget is revised",
+        "Brent moves more than 5% in a day on Gulf, Russian or sanctions news",
+        "Ukrainian strikes on Russian refineries, or Russian export bans, lift diesel prices in Asia"
+      ],
+      "ignore": [
+        "Fuel price forecasts with no new decision"
+      ],
+      "example_headlines": {
+        "match": [
+          {
+            "headline": "Indonesia raises subsidised fuel prices as oil stays above $100",
+            "line": 1
+          },
+          {
+            "headline": "Brent jumps 5% as Iran steps up attacks on Hormuz tankers",
+            "line": 2
+          },
+          {
+            "headline": "Ukraine strikes Russia's Ryazan refinery",
+            "line": 3
+          }
+        ],
+        "not_match": [
+          "Pertamina opens new filling stations"
+        ]
+      },
+      "places": [
+        "ID",
+        "RU",
+        "IR"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": {
+        "mode": "any_reputable",
+        "check_first": []
+      }
+    },
+    "private": {
+      "exposure": [
+        {
+          "id": "product:private-motor",
+          "how_it_reaches_us": "Fuel costs change driving and claims frequency."
+        },
+        {
+          "id": "product:commercial-motor",
+          "how_it_reaches_us": "Fleets feel diesel prices first."
+        },
+        {
+          "id": "risk:rupiah-parts",
+          "how_it_reaches_us": "Oil lifts the dollar bill and weakens the rupiah."
+        }
+      ],
+      "serious": [
+        "A fuel price rise of more than 15% in one step"
+      ],
+      "notes": "Fuel prices, the rupiah and oil all move together in this environment; the user suggested Russian refinery strikes as a test case."
+    },
+    "alert_level": 4
+  }
+}

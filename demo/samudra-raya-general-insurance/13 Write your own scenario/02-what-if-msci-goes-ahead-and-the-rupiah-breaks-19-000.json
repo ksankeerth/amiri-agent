@@ -1,0 +1,46 @@
+{
+  "title": "What if MSCI goes ahead and the rupiah breaks 19,000",
+  "headlines": [
+    {
+      "id": "c-ms-1",
+      "title": "Foreign funds dump Indonesian shares for a fifth day; the index falls to a seven-year low",
+      "day": 1,
+      "time": "09:00"
+    },
+    {
+      "id": "c-ms-2",
+      "title": "Bank Indonesia raises its policy rate by 50 basis points to defend the rupiah",
+      "day": 2,
+      "time": "10:00"
+    },
+    {
+      "id": "c-ms-3",
+      "title": "Rupiah breaks 19,000 per dollar for the first time",
+      "day": 2,
+      "time": "15:00"
+    },
+    {
+      "id": "c-ms-4",
+      "title": "OJK says it is considering temporary valuation relief for insurers and funds",
+      "day": 3,
+      "time": "09:30"
+    },
+    {
+      "id": "c-ms-5",
+      "title": "Rating agency puts Indonesian insurers' investment portfolios on watch",
+      "day": 4,
+      "time": "11:00"
+    },
+    {
+      "id": "c-ms-6",
+      "title": "Government unveils measures to calm markets and reassure foreign investors",
+      "day": 6,
+      "time": "10:00"
+    }
+  ],
+  "prices": {
+    "direction": "weaker",
+    "size_pct": 6,
+    "ramp_days": 6
+  }
+}

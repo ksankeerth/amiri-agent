@@ -1,0 +1,123 @@
+{
+  "items": [
+    {
+      "id": "allianz-utama",
+      "name": "Allianz Utama Indonesia",
+      "type": "insurer",
+      "places": [
+        "ID"
+      ],
+      "overlap": "high",
+      "categories": [
+        "motor",
+        "property",
+        "health",
+        "travel",
+        "marine"
+      ],
+      "aliases": [
+        "Allianz Indonesia"
+      ]
+    },
+    {
+      "id": "astra-buana",
+      "name": "Asuransi Astra Buana",
+      "type": "insurer",
+      "places": [
+        "ID"
+      ],
+      "overlap": "high",
+      "categories": [
+        "motor",
+        "property",
+        "health",
+        "marine"
+      ],
+      "aliases": [
+        "Garda Oto"
+      ]
+    },
+    {
+      "id": "jasindo",
+      "name": "Asuransi Jasa Indonesia",
+      "type": "insurer",
+      "places": [
+        "ID"
+      ],
+      "overlap": "high",
+      "categories": [
+        "property",
+        "marine",
+        "agriculture",
+        "motor"
+      ],
+      "aliases": [
+        "Jasindo"
+      ],
+      "note": "State-owned."
+    },
+    {
+      "id": "tugu-pratama",
+      "name": "Tugu Pratama Indonesia",
+      "type": "insurer",
+      "places": [
+        "ID"
+      ],
+      "overlap": "medium",
+      "categories": [
+        "property",
+        "marine",
+        "motor",
+        "liability"
+      ],
+      "aliases": [
+        "Tugu Insurance"
+      ]
+    },
+    {
+      "id": "sinar-mas",
+      "name": "Asuransi Sinar Mas",
+      "type": "insurer",
+      "places": [
+        "ID"
+      ],
+      "overlap": "medium",
+      "categories": [
+        "motor",
+        "property",
+        "health",
+        "travel"
+      ]
+    },
+    {
+      "id": "msig",
+      "name": "MSIG Insurance Indonesia",
+      "type": "insurer",
+      "places": [
+        "ID"
+      ],
+      "overlap": "medium",
+      "categories": [
+        "motor",
+        "marine",
+        "property",
+        "liability"
+      ]
+    },
+    {
+      "id": "takaful-umum",
+      "name": "Asuransi Takaful Umum",
+      "type": "takaful",
+      "places": [
+        "ID"
+      ],
+      "overlap": "low",
+      "categories": [
+        "motor",
+        "property",
+        "travel"
+      ],
+      "note": "Competes with the sharia unit."
+    }
+  ]
+}

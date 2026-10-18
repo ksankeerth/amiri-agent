@@ -1,0 +1,125 @@
+{
+  "spec": {
+    "about": {
+      "name": "Hormuz and marine war risk",
+      "owner": "Marine Underwriting",
+      "also_notify": [],
+      "check_frequency": 60,
+      "kind": "events",
+      "key_dates": [],
+      "review_by": "2026-12-31"
+    },
+    "public": {
+      "watch": [
+        {
+          "name": "Strait of Hormuz",
+          "type": "place"
+        },
+        {
+          "name": "Marine war-risk insurance",
+          "type": "topic",
+          "other_forms": [
+            "war risk cover"
+          ]
+        },
+        {
+          "name": "Joint War Committee listed areas",
+          "type": "regulation",
+          "other_forms": [
+            "JWC"
+          ]
+        },
+        {
+          "name": "Iran",
+          "type": "place"
+        },
+        {
+          "name": "Persian Gulf",
+          "type": "region"
+        }
+      ],
+      "in_one_sentence": "Attacks on shipping, or changes to war-risk cover and prices, that affect cargo and hulls we insure or reinsure.",
+      "tell_me_if": [
+        "Merchant ships are attacked, sunk or detained in or near the Strait of Hormuz or the Gulf of Oman",
+        "Underwriters or reinsurers withdraw, exclude or sharply reprice war-risk cover for Gulf voyages",
+        "The Joint War Committee adds or removes listed areas",
+        "A large marine loss is reported that involves cargo, a hull or a crew from Indonesia or Southeast Asia",
+        "A ceasefire, escort scheme or reopening changes the outlook for Gulf shipping"
+      ],
+      "ignore": [
+        "General oil price forecasts",
+        "Naval exercises with no incident"
+      ],
+      "example_headlines": {
+        "match": [
+          {
+            "headline": "Container ship sinks near Strait of Hormuz after projectile strike",
+            "line": 1
+          },
+          {
+            "headline": "Underwriters raise war-risk premiums for Gulf voyages again",
+            "line": 2
+          },
+          {
+            "headline": "Joint War Committee widens listed areas around the Gulf",
+            "line": 3
+          }
+        ],
+        "not_match": [
+          "Insurers report strong first-half profits"
+        ]
+      },
+      "places": [
+        "chk:hormuz",
+        "sea:persian-gulf",
+        "IR",
+        "ID"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": {
+        "mode": "any_reputable",
+        "check_first": [
+          "Reuters",
+          "Lloyd's List",
+          "Insurance Insider"
+        ]
+      }
+    },
+    "private": {
+      "exposure": [
+        {
+          "id": "risk:hormuz",
+          "how_it_reaches_us": "The risk this monitor was built from."
+        },
+        {
+          "id": "product:marine-cargo",
+          "how_it_reaches_us": "War-risk extensions are excluded or priced case by case."
+        },
+        {
+          "id": "product:marine-hull",
+          "how_it_reaches_us": "Hulls trading to the Gulf."
+        },
+        {
+          "id": "segment:traders-shippers",
+          "how_it_reaches_us": "Cargo owners and forwarders."
+        },
+        {
+          "id": "counterparty:swiss-re",
+          "how_it_reaches_us": "Marine treaty leader."
+        },
+        {
+          "id": "risk:reinsurance-renewal",
+          "how_it_reaches_us": "Renewal terms for Middle East exposure."
+        }
+      ],
+      "serious": [
+        "A hull or cargo we insure is lost or stranded in the Gulf",
+        "A treaty reinsurer announces a Middle East exclusion"
+      ],
+      "notes": "Additional war-risk premiums in the Gulf rose from about 1-3% of hull value to 7.5-10% by late July. Our marine policies exclude or price war risk case by case; the question is whether any exposure sits outside that."
+    },
+    "alert_level": 7
+  }
+}

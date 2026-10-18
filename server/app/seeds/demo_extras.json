@@ -1,0 +1,2134 @@
+{
+ "bank": {
+  "monitors": [
+   {
+    "about": {
+     "name": "Hormuz and Gulf shipping",
+     "owner": "Treasury",
+     "also_notify": [],
+     "check_frequency": 60,
+     "kind": "events",
+     "key_dates": [],
+     "review_by": "2026-12-31"
+    },
+    "public": {
+     "watch": [
+      {
+       "name": "Strait of Hormuz",
+       "type": "place"
+      },
+      {
+       "name": "Persian Gulf",
+       "type": "region"
+      },
+      {
+       "name": "Iran",
+       "type": "place"
+      },
+      {
+       "name": "US blockade of Iranian ports",
+       "type": "topic"
+      },
+      {
+       "name": "Gulf shipping war-risk insurance",
+       "type": "topic"
+      }
+     ],
+     "in_one_sentence": "Attacks on, or the closing or reopening of, Gulf shipping that change what Sri Lanka pays for fuel, or whether cargo arrives.",
+     "tell_me_if": [
+      "Ships are attacked, sunk or stopped in or near the Strait of Hormuz or the Gulf of Oman",
+      "Brent or Dubai crude moves more than 5% in a day on Gulf news",
+      "A ceasefire, deal or naval escort scheme reopens Hormuz, or the blockade of Iranian ports changes",
+      "Colombo or other South Asian ports report diverted, delayed or stranded cargo from the Gulf",
+      "War-risk insurance for Gulf voyages is withdrawn or its price jumps"
+     ],
+     "ignore": [
+      "Analyst forecasts of oil prices with no new event",
+      "Nuclear-talks headlines with no effect on shipping"
+     ],
+     "example_headlines": {
+      "match": [
+       {
+        "headline": "Container ship sinks near Strait of Hormuz after projectile strike",
+        "line": 1
+       },
+       {
+        "headline": "Brent jumps 5% as Iran steps up attacks on Hormuz tankers",
+        "line": 2
+       },
+       {
+        "headline": "Navies agree escort scheme to reopen Strait of Hormuz",
+        "line": 3
+       }
+      ],
+      "not_match": [
+       "Iran and US negotiators meet again with no announcement",
+       "Oil analysts raise year-end price forecast"
+      ]
+     },
+     "places": [
+      "chk:hormuz",
+      "sea:persian-gulf",
+      "IR",
+      "LK"
+     ],
+     "languages": [
+      "en"
+     ],
+     "sources": {
+      "mode": "any_reputable",
+      "check_first": [
+       "Reuters",
+       "Lloyd's List",
+       "Economy Next"
+      ]
+     }
+    },
+    "private": {
+     "exposure": [
+      {
+       "id": "flow:crude-ae",
+       "how_it_reaches_us": "Crude passes Hormuz; a stop raises the import bill."
+      },
+      {
+       "id": "product:trade-finance",
+       "how_it_reaches_us": "Fuel and goods letters of credit grow or stall."
+      },
+      {
+       "id": "segment:exporters-smes",
+       "how_it_reaches_us": "Importers face higher costs and delays."
+      }
+     ],
+     "serious": [
+      "Colombo-bound fuel cargoes stopped or diverted",
+      "Sri Lanka announces fuel rationing or an emergency purchase"
+     ],
+     "notes": "Hormuz transits fell to a fraction of normal after attacks since March 2026. Treasury cares about the dollar bill and the rupee; trade finance about delays on import LCs."
+    },
+    "alert_level": 7
+   },
+   {
+    "about": {
+     "name": "Gulf workers and remittances",
+     "owner": "Retail banking",
+     "also_notify": [],
+     "check_frequency": 360,
+     "kind": "events",
+     "key_dates": [],
+     "review_by": "2026-12-31"
+    },
+    "public": {
+     "watch": [
+      {
+       "name": "Sri Lankan migrant workers",
+       "type": "topic"
+      },
+      {
+       "name": "Saudi Arabia",
+       "type": "place"
+      },
+      {
+       "name": "United Arab Emirates",
+       "type": "place"
+      },
+      {
+       "name": "Kuwait",
+       "type": "place"
+      },
+      {
+       "name": "Qatar",
+       "type": "place"
+      },
+      {
+       "name": "Gulf exchange houses",
+       "type": "sector"
+      }
+     ],
+     "in_one_sentence": "Events in the Gulf that threaten Sri Lankan workers' jobs, safety or the channels that carry their money home.",
+     "tell_me_if": [
+      "Gulf states lay off foreign workers, freeze visas or order evacuations that affect Sri Lankans",
+      "Missile, drone or shipping attacks hit Gulf cities, ports or airports where Sri Lankan workers live",
+      "An exchange house or bank in the Gulf suspends transfers to Sri Lanka, or payment rails are cut",
+      "Sri Lanka's central bank or government reports a notable change in monthly remittances"
+     ],
+     "ignore": [
+      "Routine labour-market statistics with no Sri Lanka angle",
+      "Sports or entertainment news from the Gulf"
+     ],
+     "example_headlines": {
+      "match": [
+       {
+        "headline": "Saudi Arabia limits visas for foreign workers",
+        "line": 1
+       },
+       {
+        "headline": "Sri Lankan embassy in Kuwait advises citizens after drone strike",
+        "line": 2
+       },
+       {
+        "headline": "Workers' remittances to Sri Lanka rise 19.8% in the first eight months",
+        "line": 4
+       }
+      ],
+      "not_match": [
+       "Dubai opens new shopping festival",
+       "Qatar hosts regional football tournament"
+      ]
+     },
+     "places": [
+      "SA",
+      "AE",
+      "KW",
+      "QA",
+      "BH",
+      "OM",
+      "LK"
+     ],
+     "languages": [
+      "en"
+     ],
+     "sources": {
+      "mode": "any_reputable",
+      "check_first": []
+     }
+    },
+    "private": {
+     "exposure": [
+      {
+       "id": "risk:gulf",
+       "how_it_reaches_us": "The risk this monitor was built from."
+      },
+      {
+       "id": "segment:migrant-families",
+       "how_it_reaches_us": "Their income is the remittance."
+      },
+      {
+       "id": "product:migrant-savings",
+       "how_it_reaches_us": "Deposits follow monthly transfers."
+      },
+      {
+       "id": "product:inward-remittances",
+       "how_it_reaches_us": "Volume depends on workers' pay and channels."
+      },
+      {
+       "id": "flow:remit-sa",
+       "how_it_reaches_us": "Largest source."
+      },
+      {
+       "id": "flow:remit-ae",
+       "how_it_reaches_us": "Second largest and the exchange-house hub."
+      }
+     ],
+     "serious": [
+      "Several thousand Sri Lankan workers evacuated or laid off in one country",
+      "A large exchange-house partner stops sending to Sri Lanka"
+     ],
+     "notes": "Remittances have been strong in 2026 (up about 20% on the year to August), which is cushioning higher import costs. A Gulf shock would hit that cushion first."
+    },
+    "alert_level": 6
+   },
+   {
+    "about": {
+     "name": "Sri Lanka rupee, prices and CBSL",
+     "owner": "Treasury",
+     "also_notify": [],
+     "check_frequency": 360,
+     "kind": "trend",
+     "key_dates": [],
+     "review_by": "2026-12-31"
+    },
+    "public": {
+     "watch": [
+      {
+       "name": "Central Bank of Sri Lanka",
+       "type": "organisation",
+       "other_forms": [
+        "CBSL"
+       ]
+      },
+      {
+       "name": "Sri Lankan rupee",
+       "type": "topic"
+      },
+      {
+       "name": "Sri Lanka inflation",
+       "type": "topic"
+      },
+      {
+       "name": "Ceylon Petroleum Corporation",
+       "type": "organisation",
+       "other_forms": [
+        "CPC"
+       ]
+      },
+      {
+       "name": "IMF programme for Sri Lanka",
+       "type": "topic"
+      }
+     ],
+     "in_one_sentence": "Changes in Sri Lanka's policy rate, rupee, inflation, fuel prices or IMF programme that move what the bank earns, pays or must report.",
+     "tell_me_if": [
+      "CBSL changes its policy rate, reserve requirement or issues a new direction to banks",
+      "The rupee moves more than 2% against the dollar in a week",
+      "Ceylon Petroleum Corporation or the government revises fuel or electricity prices",
+      "Inflation, reserves or the external position are reported to have changed direction",
+      "The IMF announces a review result, delay or conditions for Sri Lanka"
+     ],
+     "ignore": [
+      "Opinion pieces about the economy with no new data"
+     ],
+     "example_headlines": {
+      "match": [
+       {
+        "headline": "Central Bank raises policy rate by 100 basis points to 8.75 percent",
+        "line": 1
+       },
+       {
+        "headline": "Rupee weakens past 335 to the dollar",
+        "line": 2
+       },
+       {
+        "headline": "Ceylon Petroleum Corporation raises petrol and diesel prices",
+        "line": 3
+       },
+       {
+        "headline": "IMF staff reach agreement on next review for Sri Lanka",
+        "line": 5
+       }
+      ],
+      "not_match": [
+       "Cricket board announces new coach"
+      ]
+     },
+     "places": [
+      "LK"
+     ],
+     "languages": [
+      "en"
+     ],
+     "sources": {
+      "mode": "any_reputable",
+      "check_first": [
+       "Central Bank of Sri Lanka",
+       "Economy Next",
+       "Daily FT"
+      ]
+     }
+    },
+    "private": {
+     "exposure": [
+      {
+       "id": "product:term-deposits",
+       "how_it_reaches_us": "Deposit rates follow the policy rate."
+      },
+      {
+       "id": "regulator:central-bank-of-sri-lanka",
+       "how_it_reaches_us": "Sets rates and rules."
+      }
+     ],
+     "serious": [
+      "CBSL announces a moratorium or relief direction to banks",
+      "Sudden large fall in reserves"
+     ],
+     "notes": "Inflation reached 8% in August, the policy rate was raised to 8.75% in May, and the rupee has moved both ways this year (about 331 to the dollar on 15 October)."
+    },
+    "alert_level": 5
+   },
+   {
+    "about": {
+     "name": "US rates and emerging-market currencies",
+     "owner": "Treasury",
+     "also_notify": [],
+     "check_frequency": 360,
+     "kind": "trend",
+     "key_dates": [
+      {
+       "date": "2026-10-28",
+       "label": "US Federal Reserve decision (27-28 October)",
+       "lead_days": 3
+      }
+     ],
+     "review_by": "2026-12-31"
+    },
+    "public": {
+     "watch": [
+      {
+       "name": "US Federal Reserve",
+       "type": "organisation",
+       "other_forms": [
+        "Fed"
+       ]
+      },
+      {
+       "name": "US inflation",
+       "type": "topic"
+      },
+      {
+       "name": "Emerging-market currencies",
+       "type": "topic"
+      }
+     ],
+     "in_one_sentence": "US rate moves that strengthen the dollar and put pressure on the rupee and on dollar funding costs.",
+     "tell_me_if": [
+      "The Fed raises, holds or signals a change in rates, or US inflation surprises",
+      "Asian emerging-market currencies fall sharply together against the dollar",
+      "The Central Bank of Sri Lanka changes its policy rate or steps into the currency market"
+     ],
+     "ignore": [
+      "Fed speakers repeating previous positions"
+     ],
+     "example_headlines": {
+      "match": [
+       {
+        "headline": "US consumer prices rise 3.7 percent in September, above forecasts",
+        "line": 1
+       },
+       {
+        "headline": "Asian currencies slide as rate-hike bets mount",
+        "line": 2
+       },
+       {
+        "headline": "Central Bank of Sri Lanka sells dollars to slow the rupee's fall",
+        "line": 3
+       }
+      ],
+      "not_match": [
+       "Fed announces schedule for next year's meetings"
+      ]
+     },
+     "places": [
+      "US",
+      "LK"
+     ],
+     "languages": [
+      "en"
+     ],
+     "sources": {
+      "mode": "any_reputable",
+      "check_first": []
+     }
+    },
+    "private": {
+     "exposure": [
+      {
+       "id": "product:fc-savings",
+       "how_it_reaches_us": "Dollar funding costs."
+      },
+      {
+       "id": "product:term-deposits",
+       "how_it_reaches_us": "Rupee deposit rates follow if the Central Bank responds."
+      },
+      {
+       "id": "regulator:central-bank-of-sri-lanka",
+       "how_it_reaches_us": "Its policy rate and currency moves."
+      }
+     ],
+     "serious": [
+      "Fed raises rates by 50 basis points or more"
+     ],
+     "notes": "US prices rose 3.7% in the year to September, above forecasts; the Fed meets on 27 and 28 October. Asian currencies are sliding."
+    },
+    "alert_level": 5
+   },
+   {
+    "about": {
+     "name": "Northeast monsoon floods and cyclones",
+     "owner": "Risk management",
+     "also_notify": [],
+     "check_frequency": 360,
+     "kind": "events",
+     "key_dates": [],
+     "review_by": "2026-12-31"
+    },
+    "public": {
+     "watch": [
+      {
+       "name": "Northeast monsoon",
+       "type": "topic"
+      },
+      {
+       "name": "Eastern Province Sri Lanka",
+       "type": "region"
+      },
+      {
+       "name": "Northern Province Sri Lanka",
+       "type": "region"
+      },
+      {
+       "name": "Cyclone",
+       "type": "topic"
+      }
+     ],
+     "in_one_sentence": "Floods, cyclones or landslides in Sri Lanka's north and east that hit customers, branches or crops.",
+     "tell_me_if": [
+      "Flood warnings or cyclone alerts are issued for the north, east or south-east of Sri Lanka",
+      "A cyclone approaches or crosses the Sri Lankan coast",
+      "The government declares a disaster area, relief package or loan moratorium",
+      "Roads, power, telecoms or banks' branches are closed by floods"
+     ],
+     "ignore": [
+      "Rain forecasts without warnings"
+     ],
+     "example_headlines": {
+      "match": [
+       {
+        "headline": "Cyclone warning issued for Sri Lanka's eastern coast as depression forms",
+        "line": 2
+       },
+       {
+        "headline": "Floods displace thousands in Eastern Province",
+        "line": 1
+       },
+       {
+        "headline": "Government announces flood relief for farmers",
+        "line": 3
+       }
+      ],
+      "not_match": [
+       "Monsoon forecast for next year published"
+      ]
+     },
+     "places": [
+      "LK-4",
+      "LK-5",
+      "LK-7"
+     ],
+     "languages": [
+      "en"
+     ],
+     "sources": {
+      "mode": "any_reputable",
+      "check_first": [
+       "Disaster Management Centre Sri Lanka",
+       "Department of Meteorology Sri Lanka"
+      ]
+     }
+    },
+    "private": {
+     "exposure": [
+      {
+       "id": "segment:farmers",
+       "how_it_reaches_us": "Harvest and income."
+      },
+      {
+       "id": "product:pawning",
+       "how_it_reaches_us": "Farm families pawn gold after a lost harvest; repayments slip."
+      },
+      {
+       "id": "product:personal-loans",
+       "how_it_reaches_us": "Repayments slip in flood-hit districts."
+      }
+     ],
+     "serious": [
+      "Cyclone landfall near a branch cluster",
+      "Disaster declared in a district with a large loan book"
+     ],
+     "notes": "October to December is the northeast monsoon and cyclone season in the Bay of Bengal."
+    },
+    "alert_level": 6
+   },
+   {
+    "about": {
+     "name": "Rival banks and trust in the banking system",
+     "owner": "Strategy and risk",
+     "also_notify": [],
+     "check_frequency": 360,
+     "kind": "trend",
+     "key_dates": [],
+     "review_by": "2026-12-31"
+    },
+    "public": {
+     "watch": [
+      {
+       "name": "Commercial Bank of Ceylon",
+       "type": "organisation",
+       "other_forms": [
+        "ComBank"
+       ]
+      },
+      {
+       "name": "Hatton National Bank",
+       "type": "organisation",
+       "other_forms": [
+        "HNB"
+       ]
+      },
+      {
+       "name": "Sampath Bank",
+       "type": "organisation"
+      },
+      {
+       "name": "Bank of Ceylon",
+       "type": "organisation",
+       "other_forms": [
+        "BOC"
+       ]
+      },
+      {
+       "name": "People's Bank",
+       "type": "organisation"
+      },
+      {
+       "name": "Sri Lankan banking sector",
+       "type": "sector"
+      }
+     ],
+     "in_one_sentence": "News about rival banks, ratings, rates or deposit behaviour that could change where customers put money.",
+     "tell_me_if": [
+      "A rival cuts or raises deposit or lending rates, or launches a product that competes with ours",
+      "A bank is downgraded, fined, hit by an outage, cyber incident or run on deposits",
+      "A merger, takeover or licence change involving a Sri Lankan bank is announced",
+      "Rating agencies change their view of the Sri Lankan banking sector"
+     ],
+     "ignore": [
+      "Routine branch openings and charity events"
+     ],
+     "example_headlines": {
+      "match": [
+       {
+        "headline": "Hatton National Bank launches higher-rate migrant savings account",
+        "line": 1
+       },
+       {
+        "headline": "Rating agency downgrades Sri Lankan bank",
+        "line": 2
+       },
+       {
+        "headline": "Bank customers queue after online outage",
+        "line": 2
+       }
+      ],
+      "not_match": [
+       "Bank sponsors cricket tournament"
+      ]
+     },
+     "places": [
+      "LK"
+     ],
+     "languages": [
+      "en"
+     ],
+     "sources": {
+      "mode": "any_reputable",
+      "check_first": []
+     }
+    },
+    "private": {
+     "exposure": [
+      {
+       "id": "rival:commercial-bank-of-ceylon",
+       "how_it_reaches_us": "Closest rival."
+      },
+      {
+       "id": "rival:hatton-national-bank",
+       "how_it_reaches_us": "Closest rival."
+      },
+      {
+       "id": "rival:sampath-bank",
+       "how_it_reaches_us": "Closest rival."
+      },
+      {
+       "id": "product:migrant-savings",
+       "how_it_reaches_us": "Rivals chase the same families."
+      }
+     ],
+     "serious": [
+      "Run on a bank's deposits or an outage lasting more than a day"
+     ],
+     "notes": "A trust event at a rival can move deposits to or from us."
+    },
+    "alert_level": 4
+   },
+   {
+    "about": {
+     "name": "Sanctions and correspondent access",
+     "owner": "Compliance",
+     "also_notify": [],
+     "check_frequency": 1440,
+     "kind": "events",
+     "key_dates": [],
+     "review_by": "2026-12-31"
+    },
+    "public": {
+     "watch": [
+      {
+       "name": "OFAC sanctions",
+       "type": "regulation",
+       "other_forms": [
+        "US Treasury sanctions"
+       ]
+      },
+      {
+       "name": "Correspondent banking",
+       "type": "topic"
+      },
+      {
+       "name": "FATF grey list",
+       "type": "topic"
+      },
+      {
+       "name": "Standard Chartered Bank",
+       "type": "organisation"
+      },
+      {
+       "name": "Citibank N.A.",
+       "type": "organisation"
+      }
+     ],
+     "in_one_sentence": "New sanctions, or banks cutting correspondent ties, that could block dollar clearing or make payments harder.",
+     "tell_me_if": [
+      "OFAC, the EU or the UK adds sanctions that affect Gulf, Russian or Iranian payments",
+      "A major correspondent bank exits or tightens services for South Asian banks",
+      "FATF or a regulator changes its list or guidance in a way that affects Sri Lankan banks"
+     ],
+     "ignore": [
+      "Sanctions on individuals with no link to payments or trade"
+     ],
+     "example_headlines": {
+      "match": [
+       {
+        "headline": "US adds Iran oil-trade networks to sanctions list",
+        "line": 1
+       },
+       {
+        "headline": "Global bank cuts correspondent services in South Asia",
+        "line": 2
+       }
+      ],
+      "not_match": [
+       "Sanctions hearing scheduled in the Senate"
+      ]
+     },
+     "places": [
+      "US",
+      "GB",
+      "RU",
+      "IR",
+      "LK"
+     ],
+     "languages": [
+      "en"
+     ],
+     "sources": {
+      "mode": "any_reputable",
+      "check_first": []
+     }
+    },
+    "private": {
+     "exposure": [
+      {
+       "id": "counterparty:correspondent-bank-usd-clearing",
+       "how_it_reaches_us": "Dollar and sterling clearing."
+      },
+      {
+       "id": "regulator:us-treasury-sanctions-ofac",
+       "how_it_reaches_us": "Applies through dollar payments."
+      },
+      {
+       "id": "regulator:financial-action-task-force",
+       "how_it_reaches_us": "Standards that decide counterparties' risk views."
+      }
+     ],
+     "serious": [
+      "A correspondent bank gives notice that it will stop clearing for us"
+     ],
+     "notes": "Dollar clearing is critical for import letters of credit and remittances."
+    },
+    "alert_level": 6
+   }
+  ],
+  "scenarios": [
+   {
+    "title": "Reality check: the week of 12 October 2026",
+    "headlines": [
+     {
+      "id": "c-rc-1",
+      "title": "Container ship and bulk carrier sink near the Strait of Hormuz after projectile strikes",
+      "day": 1,
+      "time": "09:00"
+     },
+     {
+      "id": "c-rc-2",
+      "title": "Shipping through the Strait of Hormuz falls to two transits in a day, from about 85 before the crisis",
+      "day": 1,
+      "time": "14:00"
+     },
+     {
+      "id": "c-rc-3",
+      "title": "Brent crude trades above $105 as Iran steps up attacks on Hormuz tankers",
+      "day": 2,
+      "time": "10:00"
+     },
+     {
+      "id": "c-rc-4",
+      "title": "US weighs easing sanctions on shadow-fleet tankers to cut freight costs",
+      "day": 2,
+      "time": "16:00"
+     },
+     {
+      "id": "c-rc-5",
+      "title": "Ukraine strikes Russia's Ryazan refinery, ending a pause in attacks on energy sites",
+      "day": 3,
+      "time": "09:30"
+     },
+     {
+      "id": "c-rc-6",
+      "title": "Russia extends its diesel export ban for producers through 31 October",
+      "day": 3,
+      "time": "15:00"
+     },
+     {
+      "id": "c-rc-7",
+      "title": "US consumer prices rise 3.7 percent on the year in September, above forecasts",
+      "day": 4,
+      "time": "12:00"
+     },
+     {
+      "id": "c-rc-8",
+      "title": "Asian currencies slide as hotter US inflation lifts rate-hike bets",
+      "day": 4,
+      "time": "17:00"
+     },
+     {
+      "id": "c-rc-9",
+      "title": "Sri Lankan rupee closes near 331 to the dollar as fuel import costs stay high",
+      "day": 5,
+      "time": "09:00"
+     },
+     {
+      "id": "c-rc-10",
+      "title": "World Bank says Sri Lanka's inflation reached 8 percent in August on energy and food prices",
+      "day": 5,
+      "time": "11:00"
+     }
+    ],
+    "prices": {
+     "direction": "none",
+     "size_pct": 0,
+     "ramp_days": 5
+    }
+   },
+   {
+    "title": "What if Hormuz closes completely",
+    "headlines": [
+     {
+      "id": "c-hz-1",
+      "title": "Iran announces closure of the Strait of Hormuz to all commercial shipping",
+      "day": 1,
+      "time": "08:00"
+     },
+     {
+      "id": "c-hz-2",
+      "title": "Brent crude jumps above $130 as tanker traffic stops",
+      "day": 1,
+      "time": "11:30"
+     },
+     {
+      "id": "c-hz-3",
+      "title": "Ceylon Petroleum Corporation warns of fuel shortages and orders rationing at stations",
+      "day": 2,
+      "time": "09:00"
+     },
+     {
+      "id": "c-hz-4",
+      "title": "Colombo port reports Gulf-bound and Gulf-origin cargo stranded",
+      "day": 2,
+      "time": "15:00"
+     },
+     {
+      "id": "c-hz-5",
+      "title": "Central Bank of Sri Lanka calls an emergency meeting as the rupee slides",
+      "day": 3,
+      "time": "10:00"
+     },
+     {
+      "id": "c-hz-6",
+      "title": "Sri Lanka's foreign ministry advises workers in Gulf states to stay indoors",
+      "day": 4,
+      "time": "09:00"
+     },
+     {
+      "id": "c-hz-7",
+      "title": "Exchange houses in Dubai report delays sending money to South Asia",
+      "day": 5,
+      "time": "12:00"
+     },
+     {
+      "id": "c-hz-8",
+      "title": "Government announces import controls on non-essential goods to save dollars",
+      "day": 7,
+      "time": "10:00"
+     }
+    ],
+    "prices": {
+     "direction": "weaker",
+     "size_pct": 10,
+     "ramp_days": 7
+    }
+   },
+   {
+    "title": "What if a Gulf ceasefire reopens Hormuz",
+    "headlines": [
+     {
+      "id": "c-cf-1",
+      "title": "Iran and the United States announce a ceasefire and a phased lifting of the blockade",
+      "day": 1,
+      "time": "09:00"
+     },
+     {
+      "id": "c-cf-2",
+      "title": "Navies begin escorting tankers through the Strait of Hormuz",
+      "day": 1,
+      "time": "13:00"
+     },
+     {
+      "id": "c-cf-3",
+      "title": "Brent crude falls 12 percent to $92 as shipping resumes",
+      "day": 2,
+      "time": "10:00"
+     },
+     {
+      "id": "c-cf-4",
+      "title": "War-risk insurers cut premiums for Gulf voyages",
+      "day": 4,
+      "time": "11:00"
+     },
+     {
+      "id": "c-cf-5",
+      "title": "Central Bank of Sri Lanka says rupee pressure is easing",
+      "day": 6,
+      "time": "09:00"
+     }
+    ],
+    "prices": {
+     "direction": "stronger",
+     "size_pct": 4,
+     "ramp_days": 6
+    }
+   },
+   {
+    "title": "What if a cyclone and floods hit the northeast",
+    "headlines": [
+     {
+      "id": "c-cy-1",
+      "title": "Depression in the Bay of Bengal strengthens into a cyclone heading for Sri Lanka's northeast coast",
+      "day": 1,
+      "time": "08:00"
+     },
+     {
+      "id": "c-cy-2",
+      "title": "Heavy rain floods Batticaloa and Ampara districts in Eastern Province",
+      "day": 2,
+      "time": "09:00"
+     },
+     {
+      "id": "c-cy-3",
+      "title": "Government declares flood disaster zones and closes schools in the east",
+      "day": 2,
+      "time": "15:00"
+     },
+     {
+      "id": "c-cy-4",
+      "title": "Cyclone makes landfall near Trincomalee and cuts power across the Eastern Province",
+      "day": 3,
+      "time": "10:30"
+     },
+     {
+      "id": "c-cy-5",
+      "title": "Farmers report paddy and vegetable losses across the northeast",
+      "day": 4,
+      "time": "09:00"
+     },
+     {
+      "id": "c-cy-6",
+      "title": "Government announces relief package and loan moratorium for flood-hit farmers",
+      "day": 6,
+      "time": "12:00"
+     }
+    ],
+    "prices": {
+     "direction": "weaker",
+     "size_pct": 1.5,
+     "ramp_days": 5
+    }
+   },
+   {
+    "title": "What if the Fed hikes and emerging markets sell off",
+    "headlines": [
+     {
+      "id": "c-fed-1",
+      "title": "US Federal Reserve raises rates by a quarter point and signals more",
+      "day": 1,
+      "time": "19:00"
+     },
+     {
+      "id": "c-fed-2",
+      "title": "Asian emerging-market currencies fall to record lows against the dollar",
+      "day": 2,
+      "time": "09:00"
+     },
+     {
+      "id": "c-fed-3",
+      "title": "Central Bank of Sri Lanka sells dollars as the rupee slides",
+      "day": 2,
+      "time": "14:00"
+     },
+     {
+      "id": "c-fed-4",
+      "title": "Foreign investors sell Sri Lankan government bonds",
+      "day": 3,
+      "time": "10:00"
+     },
+     {
+      "id": "c-fed-5",
+      "title": "Rating agency warns of pressure on Sri Lanka's external position",
+      "day": 5,
+      "time": "11:00"
+     }
+    ],
+    "prices": {
+     "direction": "weaker",
+     "size_pct": 6,
+     "ramp_days": 4
+    }
+   }
+  ]
+ },
+ "insurer": {
+  "monitors": [
+   {
+    "about": {
+     "name": "Hormuz and marine war risk",
+     "owner": "Marine Underwriting",
+     "also_notify": [],
+     "check_frequency": 60,
+     "kind": "events",
+     "key_dates": [],
+     "review_by": "2026-12-31"
+    },
+    "public": {
+     "watch": [
+      {
+       "name": "Strait of Hormuz",
+       "type": "place"
+      },
+      {
+       "name": "Marine war-risk insurance",
+       "type": "topic",
+       "other_forms": [
+        "war risk cover"
+       ]
+      },
+      {
+       "name": "Joint War Committee listed areas",
+       "type": "regulation",
+       "other_forms": [
+        "JWC"
+       ]
+      },
+      {
+       "name": "Iran",
+       "type": "place"
+      },
+      {
+       "name": "Persian Gulf",
+       "type": "region"
+      }
+     ],
+     "in_one_sentence": "Attacks on shipping, or changes to war-risk cover and prices, that affect cargo and hulls we insure or reinsure.",
+     "tell_me_if": [
+      "Merchant ships are attacked, sunk or detained in or near the Strait of Hormuz or the Gulf of Oman",
+      "Underwriters or reinsurers withdraw, exclude or sharply reprice war-risk cover for Gulf voyages",
+      "The Joint War Committee adds or removes listed areas",
+      "A large marine loss is reported that involves cargo, a hull or a crew from Indonesia or Southeast Asia",
+      "A ceasefire, escort scheme or reopening changes the outlook for Gulf shipping"
+     ],
+     "ignore": [
+      "General oil price forecasts",
+      "Naval exercises with no incident"
+     ],
+     "example_headlines": {
+      "match": [
+       {
+        "headline": "Container ship sinks near Strait of Hormuz after projectile strike",
+        "line": 1
+       },
+       {
+        "headline": "Underwriters raise war-risk premiums for Gulf voyages again",
+        "line": 2
+       },
+       {
+        "headline": "Joint War Committee widens listed areas around the Gulf",
+        "line": 3
+       }
+      ],
+      "not_match": [
+       "Insurers report strong first-half profits"
+      ]
+     },
+     "places": [
+      "chk:hormuz",
+      "sea:persian-gulf",
+      "IR",
+      "ID"
+     ],
+     "languages": [
+      "en"
+     ],
+     "sources": {
+      "mode": "any_reputable",
+      "check_first": [
+       "Reuters",
+       "Lloyd's List",
+       "Insurance Insider"
+      ]
+     }
+    },
+    "private": {
+     "exposure": [
+      {
+       "id": "risk:hormuz",
+       "how_it_reaches_us": "The risk this monitor was built from."
+      },
+      {
+       "id": "product:marine-cargo",
+       "how_it_reaches_us": "War-risk extensions are excluded or priced case by case."
+      },
+      {
+       "id": "product:marine-hull",
+       "how_it_reaches_us": "Hulls trading to the Gulf."
+      },
+      {
+       "id": "segment:traders-shippers",
+       "how_it_reaches_us": "Cargo owners and forwarders."
+      },
+      {
+       "id": "counterparty:swiss-re",
+       "how_it_reaches_us": "Marine treaty leader."
+      },
+      {
+       "id": "risk:reinsurance-renewal",
+       "how_it_reaches_us": "Renewal terms for Middle East exposure."
+      }
+     ],
+     "serious": [
+      "A hull or cargo we insure is lost or stranded in the Gulf",
+      "A treaty reinsurer announces a Middle East exclusion"
+     ],
+     "notes": "Additional war-risk premiums in the Gulf rose from about 1-3% of hull value to 7.5-10% by late July. Our marine policies exclude or price war risk case by case; the question is whether any exposure sits outside that."
+    },
+    "alert_level": 7
+   },
+   {
+    "about": {
+     "name": "MSCI downgrade, rupiah and the investment portfolio",
+     "owner": "Investments and Finance",
+     "also_notify": [],
+     "check_frequency": 60,
+     "kind": "events",
+     "key_dates": [
+      {
+       "date": "2027-04-30",
+       "label": "MSCI consultation on Indonesia closes for feedback",
+       "lead_days": 7
+      },
+      {
+       "date": "2027-06-30",
+       "label": "MSCI decision on Indonesia due by the end of June",
+       "lead_days": 7
+      }
+     ],
+     "review_by": "2027-01-31"
+    },
+    "public": {
+     "watch": [
+      {
+       "name": "MSCI Indonesia index review",
+       "type": "topic",
+       "other_forms": [
+        "MSCI consultation"
+       ]
+      },
+      {
+       "name": "Indonesia Stock Exchange",
+       "type": "organisation",
+       "other_forms": [
+        "IDX",
+        "IHSG"
+       ]
+      },
+      {
+       "name": "Indonesian rupiah",
+       "type": "topic"
+      },
+      {
+       "name": "Bank Indonesia",
+       "type": "organisation",
+       "other_forms": [
+        "BI"
+       ]
+      },
+      {
+       "name": "Otoritas Jasa Keuangan",
+       "type": "regulation",
+       "other_forms": [
+        "OJK"
+       ]
+      }
+     ],
+     "in_one_sentence": "News on MSCI's review of Indonesia, falls in Indonesian shares or the rupiah, and official measures in reply, which move our portfolio and capital.",
+     "tell_me_if": [
+      "MSCI, the exchange or OJK say something new about the consultation to move Indonesia to standalone status",
+      "The Indonesian share index falls more than 5% in a day, or trading is halted",
+      "The rupiah moves more than 1.5% in a day or breaks a record low",
+      "Bank Indonesia or OJK announce intervention, a rate change, or temporary rules for investors or insurers"
+     ],
+     "ignore": [
+      "Company earnings that do not mention the index or the market as a whole"
+     ],
+     "example_headlines": {
+      "match": [
+       {
+        "headline": "MSCI weighs downgrading Indonesia to standalone market status",
+        "line": 1
+       },
+       {
+        "headline": "Indonesian stocks plunge as foreign investors sell",
+        "line": 2
+       },
+       {
+        "headline": "Rupiah hits record low as Bank Indonesia steps in",
+        "line": 3
+       },
+       {
+        "headline": "OJK announces temporary measures for market volatility",
+        "line": 4
+       }
+      ],
+      "not_match": [
+       "Indonesia hosts investment conference"
+      ]
+     },
+     "places": [
+      "ID"
+     ],
+     "languages": [
+      "en"
+     ],
+     "sources": {
+      "mode": "any_reputable",
+      "check_first": [
+       "Jakarta Post",
+       "Bisnis Indonesia",
+       "Reuters"
+      ]
+     }
+    },
+    "private": {
+     "exposure": [
+      {
+       "id": "risk:msci-portfolio",
+       "how_it_reaches_us": "The risk this monitor was built from."
+      },
+      {
+       "id": "risk:rupiah-parts",
+       "how_it_reaches_us": "A weaker rupiah also raises claims and reinsurance costs."
+      },
+      {
+       "id": "regulator:ojk",
+       "how_it_reaches_us": "May set temporary rules for insurers' valuation and capital."
+      },
+      {
+       "id": "regulator:bi",
+       "how_it_reaches_us": "Rupiah and rate policy."
+      }
+     ],
+     "serious": [
+      "Share index falls more than 10% in a week",
+      "OJK relaxes or tightens solvency rules for insurers"
+     ],
+     "notes": "MSCI opened a consultation on moving Indonesia from emerging to standalone status because of opaque shareholding and suspected coordinated trading; the proposal sent the index sharply lower and the rupiah near 18,000. Feedback is open to 30 April 2027 and a decision is due by the end of June 2027."
+    },
+    "alert_level": 7
+   },
+   {
+    "about": {
+     "name": "OJK and insurance rules",
+     "owner": "Compliance",
+     "also_notify": [],
+     "check_frequency": 360,
+     "kind": "trend",
+     "key_dates": [],
+     "review_by": "2026-12-31"
+    },
+    "public": {
+     "watch": [
+      {
+       "name": "Otoritas Jasa Keuangan",
+       "type": "regulation",
+       "other_forms": [
+        "OJK",
+        "Financial Services Authority Indonesia"
+       ]
+      },
+      {
+       "name": "Indonesian insurance regulation",
+       "type": "topic"
+      },
+      {
+       "name": "Insurance capital requirements",
+       "type": "topic"
+      },
+      {
+       "name": "Policyholder protection programme",
+       "type": "topic"
+      }
+     ],
+     "in_one_sentence": "New or changed OJK rules, sanctions or supervisory actions that change capital, reinsurance, product or reporting duties for insurers.",
+     "tell_me_if": [
+      "OJK issues, drafts or delays a regulation on insurers' capital, solvency, reinsurance, investments or product rules",
+      "OJK sanctions, restricts or revokes the licence of an insurer",
+      "OJK changes rules for health or motor insurance (pricing, co-payment, claims handling)",
+      "Rules for sharia (takaful) units or for the policyholder protection programme change"
+     ],
+     "ignore": [
+      "Ceremonial events and speeches with no new rule"
+     ],
+     "example_headlines": {
+      "match": [
+       {
+        "headline": "OJK raises minimum capital requirement for general insurers",
+        "line": 1
+       },
+       {
+        "headline": "OJK suspends business of an insurer over capital shortfall",
+        "line": 2
+       },
+       {
+        "headline": "OJK issues new rule on health insurance co-payment",
+        "line": 3
+       }
+      ],
+      "not_match": [
+       "OJK holds financial literacy campaign"
+      ]
+     },
+     "places": [
+      "ID"
+     ],
+     "languages": [
+      "en"
+     ],
+     "sources": {
+      "mode": "any_reputable",
+      "check_first": [
+       "OJK",
+       "Bisnis Indonesia"
+      ]
+     }
+    },
+    "private": {
+     "exposure": [
+      {
+       "id": "regulator:ojk",
+       "how_it_reaches_us": "Home supervisor."
+      },
+      {
+       "id": "regulator:lps",
+       "how_it_reaches_us": "Policyholder protection."
+      },
+      {
+       "id": "product:group-health",
+       "how_it_reaches_us": "Health rules affect pricing and claims."
+      },
+      {
+       "id": "product:syariah-motor",
+       "how_it_reaches_us": "The sharia unit's rules."
+      }
+     ],
+     "serious": [
+      "OJK announces a mandatory capital increase or a ban on a product we sell"
+     ],
+     "notes": "OJK supervises insurers and has been raising capital and governance expectations."
+    },
+    "alert_level": 5
+   },
+   {
+    "about": {
+     "name": "Reinsurance market and 1 January renewals",
+     "owner": "Reinsurance",
+     "also_notify": [],
+     "check_frequency": 360,
+     "kind": "trend",
+     "key_dates": [
+      {
+       "date": "2027-01-01",
+       "label": "Reinsurance treaties renew on 1 January",
+       "lead_days": 7
+      }
+     ],
+     "review_by": "2026-12-31"
+    },
+    "public": {
+     "watch": [
+      {
+       "name": "Swiss Re",
+       "type": "organisation"
+      },
+      {
+       "name": "Munich Re",
+       "type": "organisation"
+      },
+      {
+       "name": "Hannover Re",
+       "type": "organisation"
+      },
+      {
+       "name": "Indonesia Re",
+       "type": "organisation",
+       "other_forms": [
+        "Reasuransi Indonesia Utama"
+       ]
+      },
+      {
+       "name": "Reinsurance renewals",
+       "type": "topic",
+       "other_forms": [
+        "1 January renewals"
+       ]
+      }
+     ],
+     "in_one_sentence": "News on reinsurers' appetite, prices and capital, especially for Middle East and Asian catastrophe exposure, ahead of the 1 January renewals.",
+     "tell_me_if": [
+      "A treaty reinsurer announces price rises, exclusions or reduced capacity for Middle East, marine or Asian property risks",
+      "A reinsurer is downgraded, makes a large loss, or changes its Indonesia strategy",
+      "Early renewal pricing guides or broker reports show a move of more than 5% in treaty rates"
+     ],
+     "ignore": [
+      "Reinsurers' annual reports with no new decision"
+     ],
+     "example_headlines": {
+      "match": [
+       {
+        "headline": "Reinsurers tighten terms for Middle East marine risks ahead of renewals",
+        "line": 1
+       },
+       {
+        "headline": "Rating agency cuts outlook on reinsurer",
+        "line": 2
+       },
+       {
+        "headline": "Broker report: Asia property catastrophe rates up 8%",
+        "line": 3
+       }
+      ],
+      "not_match": [
+       "Reinsurance conference programme published"
+      ]
+     },
+     "places": [
+      "CH",
+      "DE",
+      "SG",
+      "ID"
+     ],
+     "languages": [
+      "en"
+     ],
+     "sources": {
+      "mode": "any_reputable",
+      "check_first": [
+       "Reinsurance News",
+       "Insurance Insider",
+       "Artemis"
+      ]
+     }
+    },
+    "private": {
+     "exposure": [
+      {
+       "id": "counterparty:swiss-re",
+       "how_it_reaches_us": "Property and marine treaty leader."
+      },
+      {
+       "id": "counterparty:munich-re",
+       "how_it_reaches_us": "Property catastrophe and health treaties."
+      },
+      {
+       "id": "counterparty:hannover-re",
+       "how_it_reaches_us": "Treaty participant."
+      },
+      {
+       "id": "counterparty:indonesia-re",
+       "how_it_reaches_us": "First cessions."
+      },
+      {
+       "id": "risk:reinsurance-renewal",
+       "how_it_reaches_us": "The risk this monitor was built from."
+      }
+     ],
+     "serious": [
+      "A lead reinsurer withdraws from a treaty",
+      "Treaty rates for marine or property up more than 15%"
+     ],
+     "notes": "Reinsurance is renewed on 1 January; terms for Middle East exposure are the focus this year."
+    },
+    "alert_level": 5
+   },
+   {
+    "about": {
+     "name": "Earthquakes, floods and haze in Indonesia",
+     "owner": "Underwriting and Claims",
+     "also_notify": [],
+     "check_frequency": 60,
+     "kind": "events",
+     "key_dates": [],
+     "review_by": "2026-12-31"
+    },
+    "public": {
+     "watch": [
+      {
+       "name": "Earthquake in Indonesia",
+       "type": "topic"
+      },
+      {
+       "name": "Volcanic eruption in Indonesia",
+       "type": "topic"
+      },
+      {
+       "name": "Jakarta floods",
+       "type": "topic"
+      },
+      {
+       "name": "Forest-fire haze",
+       "type": "topic",
+       "other_forms": [
+        "kabut asap"
+       ]
+      }
+     ],
+     "in_one_sentence": "Natural disasters in Indonesia that could produce claims or health and crop losses.",
+     "tell_me_if": [
+      "An earthquake of magnitude 5.5 or more strikes Java, Sumatra, Sulawesi or near a major city, or a tsunami warning is issued",
+      "A volcano erupts, closes airports or forces evacuations",
+      "Floods hit Jakarta, Surabaya, Medan or an industrial estate, or the BMKG warns of extreme weather",
+      "Haze from Sumatra or Kalimantan fires reaches hazardous levels or closes airports"
+     ],
+     "ignore": [
+      "Minor tremors with no damage",
+      "Seasonal forecasts with no warning"
+     ],
+     "example_headlines": {
+      "match": [
+       {
+        "headline": "Magnitude 6.1 earthquake strikes West Java, buildings damaged",
+        "line": 1
+       },
+       {
+        "headline": "Floods inundate Jakarta suburbs and industrial estates",
+        "line": 3
+       },
+       {
+        "headline": "Haze closes airports in Riau",
+        "line": 4
+       }
+      ],
+      "not_match": [
+       "Disaster preparedness workshop held"
+      ]
+     },
+     "places": [
+      "ID",
+      "ID-JK",
+      "ID-JB",
+      "ID-RI",
+      "ID-KT",
+      "ID-SU"
+     ],
+     "languages": [
+      "en"
+     ],
+     "sources": {
+      "mode": "any_reputable",
+      "check_first": [
+       "BMKG",
+       "BNPB",
+       "Jakarta Post"
+      ]
+     }
+    },
+    "private": {
+     "exposure": [
+      {
+       "id": "risk:quakes",
+       "how_it_reaches_us": "Property and engineering carry earthquake extensions."
+      },
+      {
+       "id": "risk:jakarta-floods",
+       "how_it_reaches_us": "Car and property flood claims."
+      },
+      {
+       "id": "risk:haze",
+       "how_it_reaches_us": "Health and crop claims."
+      },
+      {
+       "id": "product:commercial-property",
+       "how_it_reaches_us": "Largest property book."
+      },
+      {
+       "id": "product:private-motor",
+       "how_it_reaches_us": "Flood claims on cars."
+      }
+     ],
+     "serious": [
+      "An earthquake or flood in a city where we hold large concentrations of risk"
+     ],
+     "notes": "Most property catastrophe cover is reinsured, but claims handling and retentions are ours."
+    },
+    "alert_level": 7
+   },
+   {
+    "about": {
+     "name": "Oil, fuel prices and Indonesia's subsidies",
+     "owner": "Strategy and Finance",
+     "also_notify": [],
+     "check_frequency": 360,
+     "kind": "trend",
+     "key_dates": [],
+     "review_by": "2026-12-31"
+    },
+    "public": {
+     "watch": [
+      {
+       "name": "Brent crude",
+       "type": "topic"
+      },
+      {
+       "name": "Indonesia fuel subsidy",
+       "type": "topic",
+       "other_forms": [
+        "Pertalite subsidy"
+       ]
+      },
+      {
+       "name": "Pertamina",
+       "type": "organisation"
+      },
+      {
+       "name": "Russian refinery strikes",
+       "type": "topic"
+      }
+     ],
+     "in_one_sentence": "Oil and fuel moves, and changes to Indonesia's fuel prices or subsidies, that change what drivers and fleets spend and how many claims follow.",
+     "tell_me_if": [
+      "The government changes fuel prices or the subsidy scheme, or the subsidy budget is revised",
+      "Brent moves more than 5% in a day on Gulf, Russian or sanctions news",
+      "Ukrainian strikes on Russian refineries, or Russian export bans, lift diesel prices in Asia"
+     ],
+     "ignore": [
+      "Fuel price forecasts with no new decision"
+     ],
+     "example_headlines": {
+      "match": [
+       {
+        "headline": "Indonesia raises subsidised fuel prices as oil stays above $100",
+        "line": 1
+       },
+       {
+        "headline": "Brent jumps 5% as Iran steps up attacks on Hormuz tankers",
+        "line": 2
+       },
+       {
+        "headline": "Ukraine strikes Russia's Ryazan refinery",
+        "line": 3
+       }
+      ],
+      "not_match": [
+       "Pertamina opens new filling stations"
+      ]
+     },
+     "places": [
+      "ID",
+      "RU",
+      "IR"
+     ],
+     "languages": [
+      "en"
+     ],
+     "sources": {
+      "mode": "any_reputable",
+      "check_first": []
+     }
+    },
+    "private": {
+     "exposure": [
+      {
+       "id": "product:private-motor",
+       "how_it_reaches_us": "Fuel costs change driving and claims frequency."
+      },
+      {
+       "id": "product:commercial-motor",
+       "how_it_reaches_us": "Fleets feel diesel prices first."
+      },
+      {
+       "id": "risk:rupiah-parts",
+       "how_it_reaches_us": "Oil lifts the dollar bill and weakens the rupiah."
+      }
+     ],
+     "serious": [
+      "A fuel price rise of more than 15% in one step"
+     ],
+     "notes": "Fuel prices, the rupiah and oil all move together in this environment; the user suggested Russian refinery strikes as a test case."
+    },
+    "alert_level": 4
+   },
+   {
+    "about": {
+     "name": "Rival insurers and trust in the industry",
+     "owner": "Strategy and Risk",
+     "also_notify": [],
+     "check_frequency": 360,
+     "kind": "trend",
+     "key_dates": [],
+     "review_by": "2026-12-31"
+    },
+    "public": {
+     "watch": [
+      {
+       "name": "Allianz Utama Indonesia",
+       "type": "organisation"
+      },
+      {
+       "name": "Asuransi Astra Buana",
+       "type": "organisation"
+      },
+      {
+       "name": "Asuransi Jasa Indonesia",
+       "type": "organisation",
+       "other_forms": [
+        "Jasindo"
+       ]
+      },
+      {
+       "name": "Tugu Pratama Indonesia",
+       "type": "organisation"
+      },
+      {
+       "name": "Indonesian insurance industry",
+       "type": "sector"
+      }
+     ],
+     "in_one_sentence": "Price cuts, new products, failures or scandals at rival insurers that could move business or damage trust in the industry.",
+     "tell_me_if": [
+      "A rival cuts premiums, launches a product or signs a large bancassurance or dealer deal",
+      "A rival insurer fails to pay claims, is sanctioned, is downgraded, or is in a merger or sale",
+      "A claims-payment scandal or cyber incident hits an Indonesian insurer"
+     ],
+     "ignore": [
+      "Rivals' sponsorship and awards news"
+     ],
+     "example_headlines": {
+      "match": [
+       {
+        "headline": "Insurer fined for delayed claim payments",
+        "line": 2
+       },
+       {
+        "headline": "Rival launches cheaper comprehensive motor cover",
+        "line": 1
+       },
+       {
+        "headline": "State insurer announces restructuring",
+        "line": 2
+       }
+      ],
+      "not_match": [
+       "Insurer wins customer service award"
+      ]
+     },
+     "places": [
+      "ID"
+     ],
+     "languages": [
+      "en"
+     ],
+     "sources": {
+      "mode": "any_reputable",
+      "check_first": []
+     }
+    },
+    "private": {
+     "exposure": [
+      {
+       "id": "rival:allianz-utama",
+       "how_it_reaches_us": "Large foreign-owned rival."
+      },
+      {
+       "id": "rival:astra-buana",
+       "how_it_reaches_us": "Strong in motor through dealers."
+      },
+      {
+       "id": "rival:jasindo",
+       "how_it_reaches_us": "State-owned."
+      },
+      {
+       "id": "counterparty:dealer-partners",
+       "how_it_reaches_us": "Dealers can switch partners."
+      }
+     ],
+     "serious": [
+      "An insurer with more than 3% market share stops paying claims"
+     ],
+     "notes": "Trust events in Indonesian insurance have a history of affecting all insurers."
+    },
+    "alert_level": 4
+   },
+   {
+    "about": {
+     "name": "Hajj, Umrah and Saudi travel",
+     "owner": "Travel Insurance",
+     "also_notify": [],
+     "check_frequency": 1440,
+     "kind": "events",
+     "key_dates": [],
+     "review_by": "2026-12-31"
+    },
+    "public": {
+     "watch": [
+      {
+       "name": "Umrah",
+       "type": "topic"
+      },
+      {
+       "name": "Hajj",
+       "type": "topic"
+      },
+      {
+       "name": "Saudi Arabia",
+       "type": "place"
+      },
+      {
+       "name": "Indonesian pilgrims",
+       "type": "topic"
+      }
+     ],
+     "in_one_sentence": "Events in Saudi Arabia or on pilgrim routes that could cause claims on pilgrim or migrant-worker cover.",
+     "tell_me_if": [
+      "Saudi Arabia suspends, restricts or reopens Umrah or Hajj visas or flights from Indonesia",
+      "Attacks, security incidents or disease outbreaks affect Jeddah, Mecca, Medina or Saudi airports",
+      "Indonesian airlines or the government cancel pilgrim flights or evacuate citizens",
+      "Large health or crowd incidents are reported among Indonesian pilgrims"
+     ],
+     "ignore": [
+      "Hajj quota announcements with no change for Indonesia"
+     ],
+     "example_headlines": {
+      "match": [
+       {
+        "headline": "Saudi Arabia suspends Umrah visas amid Gulf tension",
+        "line": 1
+       },
+       {
+        "headline": "Missile intercepted near Jeddah, flights delayed",
+        "line": 2
+       },
+       {
+        "headline": "Indonesian pilgrims stranded after flight cancellations",
+        "line": 3
+       }
+      ],
+      "not_match": [
+       "Hajj fees announced for next year"
+      ]
+     },
+     "places": [
+      "SA",
+      "ID"
+     ],
+     "languages": [
+      "en"
+     ],
+     "sources": {
+      "mode": "any_reputable",
+      "check_first": []
+     }
+    },
+    "private": {
+     "exposure": [
+      {
+       "id": "risk:gulf",
+       "how_it_reaches_us": "Gulf conflict and pilgrims."
+      },
+      {
+       "id": "product:pilgrim-travel",
+       "how_it_reaches_us": "Cancellations and evacuation claims."
+      },
+      {
+       "id": "product:migrant-worker-cover",
+       "how_it_reaches_us": "Workers in Saudi Arabia."
+      },
+      {
+       "id": "segment:pilgrims-and-travellers",
+       "how_it_reaches_us": "Customers."
+      }
+     ],
+     "serious": [
+      "Pilgrim flights suspended for more than a week"
+     ],
+     "notes": "Pilgrim cover includes cancellation and medical evacuation."
+    },
+    "alert_level": 5
+   }
+  ],
+  "scenarios": [
+   {
+    "title": "Reality check: the week of 12 October 2026",
+    "headlines": [
+     {
+      "id": "c-rc-1",
+      "title": "Container ship and bulk carrier sink near the Strait of Hormuz after projectile strikes",
+      "day": 1,
+      "time": "09:00"
+     },
+     {
+      "id": "c-rc-2",
+      "title": "Shipping through the Strait of Hormuz falls to two transits in a day, from about 85 before the crisis",
+      "day": 1,
+      "time": "14:00"
+     },
+     {
+      "id": "c-rc-3",
+      "title": "Brent crude trades above $105 as Iran steps up attacks on Hormuz tankers",
+      "day": 2,
+      "time": "10:00"
+     },
+     {
+      "id": "c-rc-4",
+      "title": "Ukraine strikes Russia's Ryazan refinery, ending a pause in attacks on energy sites",
+      "day": 3,
+      "time": "09:30"
+     },
+     {
+      "id": "c-rc-5",
+      "title": "MSCI opens a consultation on moving Indonesia from emerging to standalone market status",
+      "day": 3,
+      "time": "15:00"
+     },
+     {
+      "id": "c-rc-6",
+      "title": "Indonesian stocks plunge as foreign investors sell on the MSCI proposal",
+      "day": 3,
+      "time": "16:30"
+     },
+     {
+      "id": "c-rc-7",
+      "title": "Bank Indonesia pledges to keep intervening in currency and bond markets as the rupiah nears 18,000",
+      "day": 4,
+      "time": "10:00"
+     },
+     {
+      "id": "c-rc-8",
+      "title": "US consumer prices rise 3.7 percent on the year in September, above forecasts",
+      "day": 4,
+      "time": "12:00"
+     },
+     {
+      "id": "c-rc-9",
+      "title": "Asian currencies slide as hotter US inflation lifts rate-hike bets; Philippine peso hits a record low",
+      "day": 4,
+      "time": "17:00"
+     },
+     {
+      "id": "c-rc-10",
+      "title": "Rupiah weakens to 18,060 per dollar, its lowest level since August",
+      "day": 5,
+      "time": "09:00"
+     }
+    ],
+    "prices": {
+     "direction": "none",
+     "size_pct": 0,
+     "ramp_days": 5
+    }
+   },
+   {
+    "title": "What if MSCI goes ahead and the rupiah breaks 19,000",
+    "headlines": [
+     {
+      "id": "c-ms-1",
+      "title": "Foreign funds dump Indonesian shares for a fifth day; the index falls to a seven-year low",
+      "day": 1,
+      "time": "09:00"
+     },
+     {
+      "id": "c-ms-2",
+      "title": "Bank Indonesia raises its policy rate by 50 basis points to defend the rupiah",
+      "day": 2,
+      "time": "10:00"
+     },
+     {
+      "id": "c-ms-3",
+      "title": "Rupiah breaks 19,000 per dollar for the first time",
+      "day": 2,
+      "time": "15:00"
+     },
+     {
+      "id": "c-ms-4",
+      "title": "OJK says it is considering temporary valuation relief for insurers and funds",
+      "day": 3,
+      "time": "09:30"
+     },
+     {
+      "id": "c-ms-5",
+      "title": "Rating agency puts Indonesian insurers' investment portfolios on watch",
+      "day": 4,
+      "time": "11:00"
+     },
+     {
+      "id": "c-ms-6",
+      "title": "Government unveils measures to calm markets and reassure foreign investors",
+      "day": 6,
+      "time": "10:00"
+     }
+    ],
+    "prices": {
+     "direction": "weaker",
+     "size_pct": 6,
+     "ramp_days": 6
+    }
+   },
+   {
+    "title": "What if a magnitude 7 earthquake hits West Java",
+    "headlines": [
+     {
+      "id": "c-eq-1",
+      "title": "Magnitude 7.0 earthquake strikes off West Java, felt strongly in Jakarta",
+      "day": 1,
+      "time": "02:15"
+     },
+     {
+      "id": "c-eq-2",
+      "title": "Buildings collapse in Sukabumi and Cianjur; hundreds feared dead",
+      "day": 1,
+      "time": "05:00"
+     },
+     {
+      "id": "c-eq-3",
+      "title": "Power and telecoms cut across Greater Jakarta; factories in industrial estates halt production",
+      "day": 1,
+      "time": "10:30"
+     },
+     {
+      "id": "c-eq-4",
+      "title": "OJK asks insurers to report claim estimates and to speed up payments",
+      "day": 2,
+      "time": "09:00"
+     },
+     {
+      "id": "c-eq-5",
+      "title": "Reinsurers say they are assessing losses and expect a market loss in the hundreds of millions of dollars",
+      "day": 3,
+      "time": "11:00"
+     },
+     {
+      "id": "c-eq-6",
+      "title": "Government declares a national disaster response for West Java",
+      "day": 5,
+      "time": "10:00"
+     }
+    ],
+    "prices": {
+     "direction": "weaker",
+     "size_pct": 2,
+     "ramp_days": 4
+    }
+   },
+   {
+    "title": "What if Hormuz closes and war cover is pulled",
+    "headlines": [
+     {
+      "id": "c-hz-1",
+      "title": "Iran announces closure of the Strait of Hormuz to commercial shipping",
+      "day": 1,
+      "time": "08:00"
+     },
+     {
+      "id": "c-hz-2",
+      "title": "Underwriters cancel war-risk cover for all Gulf voyages with 48 hours' notice",
+      "day": 1,
+      "time": "12:00"
+     },
+     {
+      "id": "c-hz-3",
+      "title": "Brent crude jumps above $130 as tanker traffic stops",
+      "day": 2,
+      "time": "10:00"
+     },
+     {
+      "id": "c-hz-4",
+      "title": "Indonesian importers report cargoes stranded at Gulf ports",
+      "day": 2,
+      "time": "15:00"
+     },
+     {
+      "id": "c-hz-5",
+      "title": "Reinsurers say they will exclude Middle East war risk from treaties at the 1 January renewals",
+      "day": 3,
+      "time": "09:00"
+     },
+     {
+      "id": "c-hz-6",
+      "title": "Rupiah slides as the oil import bill rises",
+      "day": 5,
+      "time": "11:00"
+     }
+    ],
+    "prices": {
+     "direction": "weaker",
+     "size_pct": 4,
+     "ramp_days": 5
+    }
+   },
+   {
+    "title": "What if early rainy-season floods hit Jakarta",
+    "headlines": [
+     {
+      "id": "c-fl-1",
+      "title": "BMKG warns of extreme rain across Greater Jakarta over the next three days",
+      "day": 1,
+      "time": "06:00"
+     },
+     {
+      "id": "c-fl-2",
+      "title": "Floods inundate suburbs and toll roads; thousands of cars submerged",
+      "day": 2,
+      "time": "05:30"
+     },
+     {
+      "id": "c-fl-3",
+      "title": "Industrial estates in Bekasi and Tangerang halt production",
+      "day": 2,
+      "time": "14:00"
+     },
+     {
+      "id": "c-fl-4",
+      "title": "Insurers report a surge in motor flood claims and long queues at repair garages",
+      "day": 3,
+      "time": "10:00"
+     },
+     {
+      "id": "c-fl-5",
+      "title": "Government announces flood relief and pumping operations as more rain is forecast",
+      "day": 5,
+      "time": "09:30"
+     }
+    ],
+    "prices": {
+     "direction": "weaker",
+     "size_pct": 0.5,
+     "ramp_days": 3
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,124 @@
+{
+  "spec": {
+    "about": {
+      "name": "Reinsurance market and 1 January renewals",
+      "owner": "Reinsurance",
+      "also_notify": [],
+      "check_frequency": 360,
+      "kind": "trend",
+      "key_dates": [
+        {
+          "date": "2027-01-01",
+          "label": "Reinsurance treaties renew on 1 January",
+          "lead_days": 7
+        }
+      ],
+      "review_by": "2026-12-31"
+    },
+    "public": {
+      "watch": [
+        {
+          "name": "Swiss Re",
+          "type": "organisation"
+        },
+        {
+          "name": "Munich Re",
+          "type": "organisation"
+        },
+        {
+          "name": "Hannover Re",
+          "type": "organisation"
+        },
+        {
+          "name": "Indonesia Re",
+          "type": "organisation",
+          "other_forms": [
+            "Reasuransi Indonesia Utama"
+          ]
+        },
+        {
+          "name": "Reinsurance renewals",
+          "type": "topic",
+          "other_forms": [
+            "1 January renewals"
+          ]
+        }
+      ],
+      "in_one_sentence": "News on reinsurers' appetite, prices and capital, especially for Middle East and Asian catastrophe exposure, ahead of the 1 January renewals.",
+      "tell_me_if": [
+        "A treaty reinsurer announces price rises, exclusions or reduced capacity for Middle East, marine or Asian property risks",
+        "A reinsurer is downgraded, makes a large loss, or changes its Indonesia strategy",
+        "Early renewal pricing guides or broker reports show a move of more than 5% in treaty rates"
+      ],
+      "ignore": [
+        "Reinsurers' annual reports with no new decision"
+      ],
+      "example_headlines": {
+        "match": [
+          {
+            "headline": "Reinsurers tighten terms for Middle East marine risks ahead of renewals",
+            "line": 1
+          },
+          {
+            "headline": "Rating agency cuts outlook on reinsurer",
+            "line": 2
+          },
+          {
+            "headline": "Broker report: Asia property catastrophe rates up 8%",
+            "line": 3
+          }
+        ],
+        "not_match": [
+          "Reinsurance conference programme published"
+        ]
+      },
+      "places": [
+        "CH",
+        "DE",
+        "SG",
+        "ID"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": {
+        "mode": "any_reputable",
+        "check_first": [
+          "Reinsurance News",
+          "Insurance Insider",
+          "Artemis"
+        ]
+      }
+    },
+    "private": {
+      "exposure": [
+        {
+          "id": "counterparty:swiss-re",
+          "how_it_reaches_us": "Property and marine treaty leader."
+        },
+        {
+          "id": "counterparty:munich-re",
+          "how_it_reaches_us": "Property catastrophe and health treaties."
+        },
+        {
+          "id": "counterparty:hannover-re",
+          "how_it_reaches_us": "Treaty participant."
+        },
+        {
+          "id": "counterparty:indonesia-re",
+          "how_it_reaches_us": "First cessions."
+        },
+        {
+          "id": "risk:reinsurance-renewal",
+          "how_it_reaches_us": "The risk this monitor was built from."
+        }
+      ],
+      "serious": [
+        "A lead reinsurer withdraws from a treaty",
+        "Treaty rates for marine or property up more than 15%"
+      ],
+      "notes": "Reinsurance is renewed on 1 January; terms for Middle East exposure are the focus this year."
+    },
+    "alert_level": 5
+  }
+}

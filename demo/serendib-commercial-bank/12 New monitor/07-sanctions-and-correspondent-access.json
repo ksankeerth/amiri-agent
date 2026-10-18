@@ -1,0 +1,99 @@
+{
+  "spec": {
+    "about": {
+      "name": "Sanctions and correspondent access",
+      "owner": "Compliance",
+      "also_notify": [],
+      "check_frequency": 1440,
+      "kind": "events",
+      "key_dates": [],
+      "review_by": "2026-12-31"
+    },
+    "public": {
+      "watch": [
+        {
+          "name": "OFAC sanctions",
+          "type": "regulation",
+          "other_forms": [
+            "US Treasury sanctions"
+          ]
+        },
+        {
+          "name": "Correspondent banking",
+          "type": "topic"
+        },
+        {
+          "name": "FATF grey list",
+          "type": "topic"
+        },
+        {
+          "name": "Standard Chartered Bank",
+          "type": "organisation"
+        },
+        {
+          "name": "Citibank N.A.",
+          "type": "organisation"
+        }
+      ],
+      "in_one_sentence": "New sanctions, or banks cutting correspondent ties, that could block dollar clearing or make payments harder.",
+      "tell_me_if": [
+        "OFAC, the EU or the UK adds sanctions that affect Gulf, Russian or Iranian payments",
+        "A major correspondent bank exits or tightens services for South Asian banks",
+        "FATF or a regulator changes its list or guidance in a way that affects Sri Lankan banks"
+      ],
+      "ignore": [
+        "Sanctions on individuals with no link to payments or trade"
+      ],
+      "example_headlines": {
+        "match": [
+          {
+            "headline": "US adds Iran oil-trade networks to sanctions list",
+            "line": 1
+          },
+          {
+            "headline": "Global bank cuts correspondent services in South Asia",
+            "line": 2
+          }
+        ],
+        "not_match": [
+          "Sanctions hearing scheduled in the Senate"
+        ]
+      },
+      "places": [
+        "US",
+        "GB",
+        "RU",
+        "IR",
+        "LK"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": {
+        "mode": "any_reputable",
+        "check_first": []
+      }
+    },
+    "private": {
+      "exposure": [
+        {
+          "id": "counterparty:correspondent-bank-usd-clearing",
+          "how_it_reaches_us": "Dollar and sterling clearing."
+        },
+        {
+          "id": "regulator:us-treasury-sanctions-ofac",
+          "how_it_reaches_us": "Applies through dollar payments."
+        },
+        {
+          "id": "regulator:financial-action-task-force",
+          "how_it_reaches_us": "Standards that decide counterparties' risk views."
+        }
+      ],
+      "serious": [
+        "A correspondent bank gives notice that it will stop clearing for us"
+      ],
+      "notes": "Dollar clearing is critical for import letters of credit and remittances."
+    },
+    "alert_level": 6
+  }
+}

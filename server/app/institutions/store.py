@@ -97,7 +97,8 @@ SPECS: dict[str, Spec] = {
                       "amount": (d.get("value") or {}).get("amount"), "currency": (d.get("value") or {}).get("currency"),
                       "year": (d.get("value") or {}).get("year"),
                       "source_kind": d["source"]["kind"], "dataset": d["source"].get("dataset"),
-                      "dataset_year": d["source"].get("dataset_year"), "sample": d["source"].get("sample", False),
+                      "dataset_year": d["source"].get("dataset_year"), "source_url": d["source"].get("url"),
+                      "sample": d["source"].get("sample", False),
                       "original_amount": d["source"].get("original_amount"), "edited_by": d["source"].get("edited_by"),
                       "edited_at": d["source"].get("edited_at"), "status": d["status"], "note": d.get("note")},
         lambda r: {"kind": r["kind"], "local": r["local_place"], "counterpart": r["counterpart_place"],
@@ -105,7 +106,7 @@ SPECS: dict[str, Spec] = {
                    "value": None if r["amount"] is None else
                    {"amount": _num(r["amount"]), "currency": r["currency"], "year": r["year"]},
                    "source": {"kind": r["source_kind"], "dataset": r["dataset"], "dataset_year": r["dataset_year"],
-                              "sample": r["sample"], "original_amount": _num(r["original_amount"]),
+                              "url": r["source_url"], "sample": r["sample"], "original_amount": _num(r["original_amount"]),
                               "edited_by": r["edited_by"], "edited_at": r["edited_at"]},
                    "status": r["status"], "note": r["note"]},
         [Link("core.flow_segments", ("segment_id",), ("segments",))]),

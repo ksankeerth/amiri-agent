@@ -1,0 +1,108 @@
+{
+  "spec": {
+    "about": {
+      "name": "Hormuz and Gulf shipping",
+      "owner": "Treasury",
+      "also_notify": [],
+      "check_frequency": 60,
+      "kind": "events",
+      "key_dates": [],
+      "review_by": "2026-12-31"
+    },
+    "public": {
+      "watch": [
+        {
+          "name": "Strait of Hormuz",
+          "type": "place"
+        },
+        {
+          "name": "Persian Gulf",
+          "type": "region"
+        },
+        {
+          "name": "Iran",
+          "type": "place"
+        },
+        {
+          "name": "US blockade of Iranian ports",
+          "type": "topic"
+        },
+        {
+          "name": "Gulf shipping war-risk insurance",
+          "type": "topic"
+        }
+      ],
+      "in_one_sentence": "Attacks on, or the closing or reopening of, Gulf shipping that change what Sri Lanka pays for fuel, or whether cargo arrives.",
+      "tell_me_if": [
+        "Ships are attacked, sunk or stopped in or near the Strait of Hormuz or the Gulf of Oman",
+        "Brent or Dubai crude moves more than 5% in a day on Gulf news",
+        "A ceasefire, deal or naval escort scheme reopens Hormuz, or the blockade of Iranian ports changes",
+        "Colombo or other South Asian ports report diverted, delayed or stranded cargo from the Gulf",
+        "War-risk insurance for Gulf voyages is withdrawn or its price jumps"
+      ],
+      "ignore": [
+        "Analyst forecasts of oil prices with no new event",
+        "Nuclear-talks headlines with no effect on shipping"
+      ],
+      "example_headlines": {
+        "match": [
+          {
+            "headline": "Container ship sinks near Strait of Hormuz after projectile strike",
+            "line": 1
+          },
+          {
+            "headline": "Brent jumps 5% as Iran steps up attacks on Hormuz tankers",
+            "line": 2
+          },
+          {
+            "headline": "Navies agree escort scheme to reopen Strait of Hormuz",
+            "line": 3
+          }
+        ],
+        "not_match": [
+          "Iran and US negotiators meet again with no announcement",
+          "Oil analysts raise year-end price forecast"
+        ]
+      },
+      "places": [
+        "chk:hormuz",
+        "sea:persian-gulf",
+        "IR",
+        "LK"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": {
+        "mode": "any_reputable",
+        "check_first": [
+          "Reuters",
+          "Lloyd's List",
+          "Economy Next"
+        ]
+      }
+    },
+    "private": {
+      "exposure": [
+        {
+          "id": "flow:crude-ae",
+          "how_it_reaches_us": "Crude passes Hormuz; a stop raises the import bill."
+        },
+        {
+          "id": "product:trade-finance",
+          "how_it_reaches_us": "Fuel and goods letters of credit grow or stall."
+        },
+        {
+          "id": "segment:exporters-smes",
+          "how_it_reaches_us": "Importers face higher costs and delays."
+        }
+      ],
+      "serious": [
+        "Colombo-bound fuel cargoes stopped or diverted",
+        "Sri Lanka announces fuel rationing or an emergency purchase"
+      ],
+      "notes": "Hormuz transits fell to a fraction of normal after attacks since March 2026. Treasury cares about the dollar bill and the rupee; trade finance about delays on import LCs."
+    },
+    "alert_level": 7
+  }
+}

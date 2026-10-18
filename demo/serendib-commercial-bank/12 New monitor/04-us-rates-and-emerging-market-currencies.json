@@ -1,0 +1,98 @@
+{
+  "spec": {
+    "about": {
+      "name": "US rates and emerging-market currencies",
+      "owner": "Treasury",
+      "also_notify": [],
+      "check_frequency": 360,
+      "kind": "trend",
+      "key_dates": [
+        {
+          "date": "2026-10-28",
+          "label": "US Federal Reserve decision (27-28 October)",
+          "lead_days": 3
+        }
+      ],
+      "review_by": "2026-12-31"
+    },
+    "public": {
+      "watch": [
+        {
+          "name": "US Federal Reserve",
+          "type": "organisation",
+          "other_forms": [
+            "Fed"
+          ]
+        },
+        {
+          "name": "US inflation",
+          "type": "topic"
+        },
+        {
+          "name": "Emerging-market currencies",
+          "type": "topic"
+        }
+      ],
+      "in_one_sentence": "US rate moves that strengthen the dollar and put pressure on the rupee and on dollar funding costs.",
+      "tell_me_if": [
+        "The Fed raises, holds or signals a change in rates, or US inflation surprises",
+        "Asian emerging-market currencies fall sharply together against the dollar",
+        "The Central Bank of Sri Lanka changes its policy rate or steps into the currency market"
+      ],
+      "ignore": [
+        "Fed speakers repeating previous positions"
+      ],
+      "example_headlines": {
+        "match": [
+          {
+            "headline": "US consumer prices rise 3.7 percent in September, above forecasts",
+            "line": 1
+          },
+          {
+            "headline": "Asian currencies slide as rate-hike bets mount",
+            "line": 2
+          },
+          {
+            "headline": "Central Bank of Sri Lanka sells dollars to slow the rupee's fall",
+            "line": 3
+          }
+        ],
+        "not_match": [
+          "Fed announces schedule for next year's meetings"
+        ]
+      },
+      "places": [
+        "US",
+        "LK"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": {
+        "mode": "any_reputable",
+        "check_first": []
+      }
+    },
+    "private": {
+      "exposure": [
+        {
+          "id": "product:fc-savings",
+          "how_it_reaches_us": "Dollar funding costs."
+        },
+        {
+          "id": "product:term-deposits",
+          "how_it_reaches_us": "Rupee deposit rates follow if the Central Bank responds."
+        },
+        {
+          "id": "regulator:central-bank-of-sri-lanka",
+          "how_it_reaches_us": "Its policy rate and currency moves."
+        }
+      ],
+      "serious": [
+        "Fed raises rates by 50 basis points or more"
+      ],
+      "notes": "US prices rose 3.7% in the year to September, above forecasts; the Fed meets on 27 and 28 October. Asian currencies are sliding."
+    },
+    "alert_level": 5
+  }
+}

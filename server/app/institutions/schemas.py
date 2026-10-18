@@ -252,6 +252,7 @@ class FlowSource(Model):
     kind: Literal["dataset", "user", "assistant"] = "user"
     dataset: str | None = Field(None, max_length=160)
     dataset_year: int | None = Field(None, ge=1990, le=2100)
+    url: str | None = Field(None, max_length=300, description="Where the figure can be checked.")
     sample: bool = False
     original_amount: float | None = Field(None, ge=0, description="The dataset's figure, kept when a user corrects it.")
     edited_by: str | None = Field(None, max_length=120)

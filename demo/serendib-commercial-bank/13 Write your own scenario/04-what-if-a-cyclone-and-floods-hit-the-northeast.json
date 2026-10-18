@@ -1,0 +1,46 @@
+{
+  "title": "What if a cyclone and floods hit the northeast",
+  "headlines": [
+    {
+      "id": "c-cy-1",
+      "title": "Depression in the Bay of Bengal strengthens into a cyclone heading for Sri Lanka's northeast coast",
+      "day": 1,
+      "time": "08:00"
+    },
+    {
+      "id": "c-cy-2",
+      "title": "Heavy rain floods Batticaloa and Ampara districts in Eastern Province",
+      "day": 2,
+      "time": "09:00"
+    },
+    {
+      "id": "c-cy-3",
+      "title": "Government declares flood disaster zones and closes schools in the east",
+      "day": 2,
+      "time": "15:00"
+    },
+    {
+      "id": "c-cy-4",
+      "title": "Cyclone makes landfall near Trincomalee and cuts power across the Eastern Province",
+      "day": 3,
+      "time": "10:30"
+    },
+    {
+      "id": "c-cy-5",
+      "title": "Farmers report paddy and vegetable losses across the northeast",
+      "day": 4,
+      "time": "09:00"
+    },
+    {
+      "id": "c-cy-6",
+      "title": "Government announces relief package and loan moratorium for flood-hit farmers",
+      "day": 6,
+      "time": "12:00"
+    }
+  ],
+  "prices": {
+    "direction": "weaker",
+    "size_pct": 1.5,
+    "ramp_days": 5
+  }
+}

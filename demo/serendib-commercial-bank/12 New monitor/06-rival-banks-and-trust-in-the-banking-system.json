@@ -1,0 +1,114 @@
+{
+  "spec": {
+    "about": {
+      "name": "Rival banks and trust in the banking system",
+      "owner": "Strategy and risk",
+      "also_notify": [],
+      "check_frequency": 360,
+      "kind": "trend",
+      "key_dates": [],
+      "review_by": "2026-12-31"
+    },
+    "public": {
+      "watch": [
+        {
+          "name": "Commercial Bank of Ceylon",
+          "type": "organisation",
+          "other_forms": [
+            "ComBank"
+          ]
+        },
+        {
+          "name": "Hatton National Bank",
+          "type": "organisation",
+          "other_forms": [
+            "HNB"
+          ]
+        },
+        {
+          "name": "Sampath Bank",
+          "type": "organisation"
+        },
+        {
+          "name": "Bank of Ceylon",
+          "type": "organisation",
+          "other_forms": [
+            "BOC"
+          ]
+        },
+        {
+          "name": "People's Bank",
+          "type": "organisation"
+        },
+        {
+          "name": "Sri Lankan banking sector",
+          "type": "sector"
+        }
+      ],
+      "in_one_sentence": "News about rival banks, ratings, rates or deposit behaviour that could change where customers put money.",
+      "tell_me_if": [
+        "A rival cuts or raises deposit or lending rates, or launches a product that competes with ours",
+        "A bank is downgraded, fined, hit by an outage, cyber incident or run on deposits",
+        "A merger, takeover or licence change involving a Sri Lankan bank is announced",
+        "Rating agencies change their view of the Sri Lankan banking sector"
+      ],
+      "ignore": [
+        "Routine branch openings and charity events"
+      ],
+      "example_headlines": {
+        "match": [
+          {
+            "headline": "Hatton National Bank launches higher-rate migrant savings account",
+            "line": 1
+          },
+          {
+            "headline": "Rating agency downgrades Sri Lankan bank",
+            "line": 2
+          },
+          {
+            "headline": "Bank customers queue after online outage",
+            "line": 2
+          }
+        ],
+        "not_match": [
+          "Bank sponsors cricket tournament"
+        ]
+      },
+      "places": [
+        "LK"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": {
+        "mode": "any_reputable",
+        "check_first": []
+      }
+    },
+    "private": {
+      "exposure": [
+        {
+          "id": "rival:commercial-bank-of-ceylon",
+          "how_it_reaches_us": "Closest rival."
+        },
+        {
+          "id": "rival:hatton-national-bank",
+          "how_it_reaches_us": "Closest rival."
+        },
+        {
+          "id": "rival:sampath-bank",
+          "how_it_reaches_us": "Closest rival."
+        },
+        {
+          "id": "product:migrant-savings",
+          "how_it_reaches_us": "Rivals chase the same families."
+        }
+      ],
+      "serious": [
+        "Run on a bank's deposits or an outage lasting more than a day"
+      ],
+      "notes": "A trust event at a rival can move deposits to or from us."
+    },
+    "alert_level": 4
+  }
+}

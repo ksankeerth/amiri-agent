@@ -3,8 +3,11 @@
     uv run amiri serve            # the API on SERVER_PORT (default 8000)
     uv run amiri migrate          # apply database migrations
     uv run amiri tick             # run one tick (what Cloud Scheduler does every 15 min)
-    uv run amiri seed-series      # watch the demo series (USD/LKR, AED/LKR, USD/INR, XAU/USD)
-    uv run amiri seed-institution # the demo bank's profile (Serendib Commercial Bank, sample data)
+    uv run amiri seed-series      # watch a demo's series (--institution bank: USD/LKR, AED/LKR, gold, Brent;
+                                  #   insurer: USD/IDR, MSCI Indonesia, Brent, EUR/USD)
+    uv run amiri seed-institution # a demo's profile (--institution bank: Serendib Commercial Bank, Sri Lanka;
+                                  #   insurer: Samudra Raya General Insurance, Indonesia), both invented
+    uv run amiri demo-export      # write the repository's demo/ folder from the demo profiles
     uv run amiri spec-sync        # refresh the Metrics Spec snapshot from its source file (metrics-spec-v1.0.yaml)
     uv run amiri spec-pdf         # write the spec's PDF from its print page (needs web/dist and the dev dependencies)
     uv run amiri ref-load         # load reference data into the ref tables now (also done at start-up)
@@ -26,17 +29,6 @@ import sys
 from pathlib import Path
 
 from app import db, settings
-
-DEMO_SERIES = [  # themes as code would set them; a new series gets them by code
-    {"symbol": "USD/LKR", "name": "USD/LKR", "places": ["LK"],
-     "theme": {"theme": "fx", "direction_up": "weaker", "direction_down": "stronger", "currency": "LKR"}},
-    {"symbol": "AED/LKR", "name": "AED/LKR", "places": ["LK", "AE"],
-     "theme": {"theme": "fx", "direction_up": "weaker", "direction_down": "stronger", "currency": "LKR"}},
-    {"symbol": "USD/INR", "name": "USD/INR", "places": ["IN"],
-     "theme": {"theme": "fx", "direction_up": "weaker", "direction_down": "stronger", "currency": "INR"}},
-    {"symbol": "XAU/USD", "name": "Gold (XAU/USD)", "places": ["LK"],
-     "theme": {"theme": "commodities", "direction_up": "up", "direction_down": "down", "item": "gold"}},
-]
 
 
 async def _migrate() -> None:
@@ -73,11 +65,12 @@ async def _tick() -> None:
     print(json.dumps(await _with_app(run_tick), indent=2, default=str))
 
 
-async def _seed() -> None:
+async def _seed(kind: str) -> None:
+    from app import demo
     from app.problems import Problem
 
     async def go(app):
-        for s in DEMO_SERIES:
+        for s in demo.SERIES[kind]:
             try:
                 out = await app.state.series.create(s)
                 print(f"added {out['series_id']}: {out['state']} ({out['state_reason']})")
@@ -87,16 +80,18 @@ async def _seed() -> None:
     await _with_app(go)
 
 
-async def _seed_institution() -> None:
+async def _seed_institution(kind: str) -> None:
+    from app import demo
     from app.institutions.schemas import InstitutionCreate
     from app.problems import Problem
 
-    doc = json.loads((settings.PROJECT / "app" / "seeds" / "serendib_bank.json").read_text())
+    doc = demo.profile(kind)
+    body = {k: v for k, v in doc["institution"].items() if k != "institution_id"}
 
     async def go(app):
         try:
-            out = await app.state.institutions.create(InstitutionCreate(**doc["institution"]), "seed", "import",
-                                                      doc["sections"])
+            out = await app.state.institutions.create(InstitutionCreate(**body, institution_id=settings.raw("INSTITUTION_ID")),
+                                                      "seed", "import", doc["sections"])
             print(f"added {out['institution_id']}: {out['counts']}")
         except Problem as e:
             print(f"{e.code}: {e.detail}", json.dumps(e.extra.get("errors", []), indent=1)[:2000])
@@ -118,7 +113,7 @@ def _openapi() -> None:
 def main() -> None:
     p = argparse.ArgumentParser(prog="amiri", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("command", choices=["serve", "migrate", "tick", "seed-series", "seed-institution", "spec-sync", "spec-pdf", "ref-load",
+    p.add_argument("command", choices=["serve", "migrate", "tick", "seed-series", "seed-institution", "demo-export", "spec-sync", "spec-pdf", "ref-load",
                                        "coverage",
                                        "fake-agent", "agent-contract", "agent-check", "scenarios", "env-example", "openapi",
                                        "radar-fake", "radar-contract", "radar-check"])
@@ -127,6 +122,8 @@ def main() -> None:
     p.add_argument("--only", default="", help="scenarios: comma-separated ids (S01,S07)")
     p.add_argument("--out", default="", help="agent-check, scenarios: also write the results as JSON here")
     p.add_argument("--port", type=int, default=8003, help="fake-agent: port")
+    p.add_argument("--institution", choices=["bank", "insurer"], default="bank",
+                   help="seed-series, seed-institution: which demo")
     p.add_argument("--profile", default="", help="coverage: a profile file ({institution, sections}, as for import)")
     a = p.parse_args()
     if a.command == "serve":
@@ -138,9 +135,13 @@ def main() -> None:
     elif a.command == "tick":
         asyncio.run(_tick())
     elif a.command == "seed-series":
-        asyncio.run(_seed())
+        asyncio.run(_seed(a.institution))
     elif a.command == "seed-institution":
-        asyncio.run(_seed_institution())
+        asyncio.run(_seed_institution(a.institution))
+    elif a.command == "demo-export":
+        from app import demo_export
+
+        print(demo_export.write(demo_export.REPO / "demo"))
     elif a.command == "fake-agent":
         import uvicorn
 
