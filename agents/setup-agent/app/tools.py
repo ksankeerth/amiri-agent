@@ -139,7 +139,17 @@ async def get_suggestions(section: str, tool_context: ToolContext) -> dict:
     r = await b.s.api.get(f"/api/v1/institutions/{seg(b.iid)}/suggestions/{section}")
     if not r.ok:
         return _err(f"suggestions couldn't be read ({r.status})")
-    return {"status": "ok", "section": section, "items": r.body["items"]}
+    items = r.body["items"]
+    out = {"status": "ok", "section": section, "items": items}
+    # The guides say both; the model skipped them about half the time (remittance corridors dropped, a
+    # missing home regulator not mentioned), so the reminder comes with the result it is reacting to.
+    if section == "flows" and not items:
+        out["note"] = ("No published figures. Flows the user described (e.g. remittances sent home to a country) "
+                       "are still proposed, without a value; never drop them for lack of a figure.")
+    if section == "regulators" and not any(i["item"].get("relation") == "home" for i in items):
+        out["note"] = ("The rule table has no regulator for the home country. Say so plainly and ask the user to "
+                       "name theirs; don't add one they haven't named.")
+    return out
 
 
 async def search_places(query: str, countries_only: bool, tool_context: ToolContext) -> dict:
@@ -450,7 +460,7 @@ def conclude(summary: str, tool_context: ToolContext) -> dict:
     changing). Not after propose: applying the proposal concludes the track.
 
     Args:
-        summary: one line on what was settled.
+        summary: one line on what was settled. Never a change ("added …"): only an applied proposal saves anything.
 
     Returns:
         status.
@@ -458,6 +468,11 @@ def conclude(summary: str, tool_context: ToolContext) -> dict:
     b = box(tool_context)
     if b.proposed:
         return _blocked("a proposal is waiting: applying it concludes the track")
+    # seen: a footprint card left unapplied, then "Added Seoul and Gyeonggi" as the track ended with nothing saved
+    waiting = [p["summary"] for p in b.s.state.get("pending") or [] if p.get("track") == b.track]
+    if waiting:
+        return _blocked(f"“{waiting[-1]}” is still waiting for the user's Apply: nothing of it is saved. Don't say it "
+                        "was added; ask the user to apply that card, or propose again if it's out of date")
     if b.track == "institution" and not b.iid:
         return _blocked("there is no institution yet (nothing was applied): the institution track can't end; "
                         "tell the user what's needed to create it")

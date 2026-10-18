@@ -36,7 +36,13 @@ GUIDES: dict[str, Guide] = {
 - Flows: start from get_suggestions("flows"): published figures for the footprint, each with a
   figure_id. Propose those items as they are. A flow the user describes without a figure has no value:
   leave value out unless the user typed the amount and year.
-- Watch-places: places that matter without being in the footprint (a port, a strait), from search_places.""",
+- Watch-places: places that matter without being in the footprint (a port, a strait), from search_places.
+- Footprint is only where the institution itself operates (branches, subsidiaries, agents, offices). Countries
+  that money is sent to or received from, or goods shipped to or from, are NOT footprint: they are the
+  `counterpart` of a flow (e.g. expat customers sending money home: kind remittances_out, local = the
+  footprint place, counterpart = their country).
+- One message often names both (branches somewhere, and money sent or goods shipped elsewhere): propose the
+  footprint places and the flows together in one proposal.""",
         [*T.READS, *ASK, *PROPOSE]),
     "customers_products": Guide(
         "segments (customer groups) and products (and which groups use which product)",
@@ -49,8 +55,11 @@ GUIDES: dict[str, Guide] = {
   must come from the taxonomy for this institution's type (a bank has no insurance categories, an insurer
   no savings accounts: if the user asks for one, explain and ask whether it's a separate institution).
 - Link every product to the groups that use it (a product's `segments`: segment ids) in the same proposal;
-  if you can't tell which groups use a product, ask. If the proposal comes back with warnings (a product
-  with no customer group), say so.""",
+  if you can't tell which groups use a product, ask. A group created in the same proposal must carry its own
+  `id` in its create operation (a short lowercase slug of its label, e.g. "expat-workers"), and the products
+  must use exactly those ids; an existing group's id comes from get_section("segments"). spec_mapping values
+  only from get_reference segment-dimensions. If the proposal comes back with warnings (a product with no
+  customer group), say so.""",
         [*T.READS, *ASK, *PROPOSE]),
     "rules": Guide(
         "regulators, and the institution's clearing_currencies (the currencies it settles in abroad)",

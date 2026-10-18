@@ -48,6 +48,7 @@ class FakeServer:
         self.requests: list[httpx.Request] = []
         self.proposal_answers: list[tuple[int, dict]] = []  # (status, body) for POST /proposals, in order
         self.decided: list[dict] = []  # GET /proposals: proposals and how they were decided
+        self.suggestions: dict[str, list] = {"flows": [{"added": False, "item": FLOW}]}
 
     def handler(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
@@ -57,8 +58,8 @@ class FakeServer:
         if p.endswith("/readiness"):
             return httpx.Response(200, json={"ready": False, "checks": [
                 {"id": "flows", "level": "recommended", "ok": False, "message": "No flows yet", "section": "flows"}]})
-        if p.endswith("/suggestions/flows"):
-            return httpx.Response(200, json={"items": [{"added": False, "item": FLOW}]})
+        if "/suggestions/" in p:
+            return httpx.Response(200, json={"items": self.suggestions.get(p.rsplit("/", 1)[1], [])})
         if p == "/api/v1/proposals" and request.method == "GET":  # what was decided (track_loop._decided)
             return httpx.Response(200, json=self.decided)
         if p == "/api/v1/reference/countries":
@@ -311,3 +312,27 @@ async def test_a_short_yes_after_a_question_stays_in_the_track_that_asked(world)
     from app.engine import is_short_reply
     assert is_short_reply("Yes please.") and is_short_reply("no") and is_short_reply("Both, thanks")
     assert not is_short_reply("Yesterday we opened a branch in Kerala") and not is_short_reply("We also lend to farmers")
+
+
+async def test_a_track_cant_end_while_its_proposal_waits_for_apply(world):
+    client, server, llm = world
+    server.decided = [{"proposal_id": "prop-9", "status": "pending", "track": "footprint_flows",
+                       "summary": "Add Seoul and Gyeonggi", "decided_at": None}]
+    llm.script = [[("conclude", {"summary": "Added Seoul and Gyeonggi"})], "The card above still needs your Apply."]
+    sid = await start(client)
+    evs = await turn(client, sid, track="footprint_flows", text="Yes, add Seoul and Gyeonggi as branches.")
+    assert "track_concluded" not in [e for e, _ in evs]
+    reply = llm.requests[1].contents[-1].parts[0].function_response.response
+    assert reply["status"] == "blocked" and "“Add Seoul and Gyeonggi” is still waiting" in reply["message"]
+    assert "NOT saved until applied): Add Seoul and Gyeonggi" in system_text(llm.requests[0])
+
+
+async def test_empty_flow_figures_and_a_missing_home_regulator_come_with_a_reminder(world):
+    client, server, llm = world
+    server.suggestions = {"flows": [], "regulators": [
+        {"added": False, "item": {"regulator_id": "global-fatf", "name": "FATF", "relation": "standard"}}]}
+    llm.script = [[("get_suggestions", {"section": "flows"}), ("get_suggestions", {"section": "regulators"})], "ok"]
+    sid = await start(client)
+    await turn(client, sid, text="Our expats send money home to Indonesia.")
+    flows, regs = (p.function_response.response for p in llm.requests[1].contents[-1].parts)
+    assert "never drop them" in flows["note"] and "no regulator for the home country" in regs["note"]

@@ -136,3 +136,25 @@ async def test_no_credentials_is_said_plainly(client, monkeypatch):
     sid = await start(client, "bank-1")
     evs = await turn(client, sid, "bank-1", text="hi", requested_track="risks")
     assert next(d for e, d in evs if e == "error")["code"] == "models_unavailable"
+
+
+async def test_an_explicit_move_switches_without_the_model_agreeing(client, scripted):
+    sid = await start(client, "bank-1")
+    scripted.script = [RouterChoice(track="rivals_partners", clearly_elsewhere=False, reason="stays")]
+    evs = await turn(client, sid, "bank-1", text="Yes, please proceed to risks and propose them.",
+                     current_track="rivals_partners")
+    assert real(evs)[0] == ("track", {"track": "risks", "reason": "asked to move there"})
+    scripted.script = [RouterChoice(track="rivals_partners", clearly_elsewhere=False, reason="stays")]
+    evs = await turn(client, sid, "bank-1", text="Our expats send money home to Indonesia.",
+                     current_track="rivals_partners")
+    assert "track" not in kinds(evs)
+
+
+
+async def test_naming_a_tracks_job_moves_there(client, scripted):
+    sid = await start(client, "bank-1")
+    for text, want in [("Please verify the full profile now.", "verification"),
+                       ("Please re-run the risk check now.", "risks")]:
+        scripted.script = [RouterChoice(track="rivals_partners", clearly_elsewhere=False, reason="stays")]
+        evs = await turn(client, sid, "bank-1", text=text, current_track="rivals_partners")
+        assert real(evs)[0] == ("track", {"track": want, "reason": "asked to move there"})
