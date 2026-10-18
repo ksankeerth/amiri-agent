@@ -28,7 +28,7 @@ from app.assistant.tracks import RULES_INSTITUTION_FIELDS, TRACKS
 from app.assistant.tracks import view as tracks_view
 from app.clock import Clock
 from app.institutions.schemas import InstitutionCreate, Operation
-from app.institutions.service import Institutions
+from app.institutions.service import Institutions, region_errors
 from app.monitors.service import Monitors
 from app.problems import Problem
 
@@ -574,6 +574,11 @@ class AssistantService:
                               errors=[{"field": ".".join(str(x) for x in er["loc"]), "code": "invalid", "message": er["msg"]}
                                       for er in e.errors()]) from e
             fields = body.model_dump(mode="json", exclude_none=True)
+            # the same region rule Apply enforces, so the agent hears it now rather than showing a card that can't apply
+            if outside := region_errors(fields):
+                raise Problem(422, "outside_region", "The home country or base currency is outside the region this "
+                                                     "prototype supports; say so to the user instead of proposing it.",
+                              errors=outside)
             errors += numbers.check("institution", fields, typed)
             if errors:
                 raise Problem(422, "validation_error", "Numbers in the proposal aren't backed.", errors=errors)
@@ -706,8 +711,13 @@ class AssistantService:
                 result = {"profile_version": res["profile_version"], "changes": res["changes"],
                           "profile_changed_since": res["profile_version"] - 1 != p["base_profile_version"]}
         except Problem as e:
-            # the profile changed since the proposal and it no longer fits
+            # the profile changed since the proposal and it no longer fits, or a rule refused it: record it in the chat
+            # too, so the person and the agent both see it failed (and the agent never says it was saved)
             await self._set(pid, "failed", user, now, {"code": e.code, "detail": e.detail, **e.extra})
+            async with self.pool.connection() as conn:
+                await self._store(conn, p["thread_id"], None, p["track"], "system", "applied",
+                                  {"proposal_id": pid, "status": "failed", "summary": p["summary"],
+                                   "code": e.code, "detail": e.detail})
             raise
         await self._set(pid, "confirmed", user, now, result)
         async with self.pool.connection() as conn:
