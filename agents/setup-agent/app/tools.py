@@ -458,6 +458,9 @@ def conclude(summary: str, tool_context: ToolContext) -> dict:
     b = box(tool_context)
     if b.proposed:
         return _blocked("a proposal is waiting: applying it concludes the track")
+    if b.track == "institution" and not b.iid:
+        return _blocked("there is no institution yet (nothing was applied): the institution track can't end; "
+                        "tell the user what's needed to create it")
     if b.concluded:
         return {"status": "ok"}
     b.events.append(TrackConcludedEv(track=b.track, summary=summary.strip()[:400] or TRACKS[b.track].label))
