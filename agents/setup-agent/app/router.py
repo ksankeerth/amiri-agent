@@ -143,6 +143,10 @@ async def route(*, text: str | None, is_answer: bool, requested: str | None, cur
                 has_institution: bool) -> Route:
     if requested:
         return Route(requested, requested != current, "picked by the user")
+    # before the answer rule: "Yes, let's move on to customers" and "Please verify the profile" read as a yes to
+    # the agent's question and stayed put (T01)
+    if has_institution and (moved := explicit_move(text or "")):
+        return Route(moved, moved != current, "asked to move there")
     if is_answer:
         return Route(current or "institution", current is None, "answers the agent's question")
     choice, calls = await _router(text or "", current, has_institution)
@@ -157,9 +161,6 @@ async def route(*, text: str | None, is_answer: bool, requested: str | None, cur
         return Route(stay, stay != current, "router unavailable: stays in the current track", model_calls=calls)
     if choice.track == "offtopic":
         return Route(current or "question", False, choice.reason, notes, offtopic=True, model_calls=calls)
-    if moved := explicit_move(text or ""):
-        notes = [n for n in notes if n["track"] != moved]
-        return Route(moved, moved != current, "asked to move there", notes, model_calls=calls)
     track = choice.track if (current is None or choice.track == current or choice.clearly_elsewhere) else current
     notes = [n for n in notes if n["track"] != track]
     return Route(track, track != current, choice.reason, notes, model_calls=calls)

@@ -158,3 +158,14 @@ async def test_naming_a_tracks_job_moves_there(client, scripted):
         scripted.script = [RouterChoice(track="rivals_partners", clearly_elsewhere=False, reason="stays")]
         evs = await turn(client, sid, "bank-1", text=text, current_track="rivals_partners")
         assert real(evs)[0] == ("track", {"track": want, "reason": "asked to move there"})
+
+
+async def test_a_move_wins_over_reading_a_yes_as_the_answer():
+    from app import router
+
+    for text, want in [("Yes, let's move on to customers and products.", "customers_products"),
+                       ("Please verify the profile.", "verification")]:
+        r = await router.route(text=text, is_answer=True, requested=None, current="footprint_flows", has_institution=True)
+        assert (r.track, r.model_calls) == (want, 0)
+    r = await router.route(text="Yes please.", is_answer=True, requested=None, current="rules", has_institution=True)
+    assert r.track == "rules"
