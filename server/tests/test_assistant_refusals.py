@@ -27,6 +27,16 @@ async def test_a_home_outside_the_region_is_refused_when_proposed(client):
     assert r.status_code == 201, r.text
 
 
+async def test_a_subtype_outside_its_type_is_refused_when_proposed(client):
+    tid = await thread(client)
+    r = await propose(client, thread_id=tid, track="institution", kind="create_institution",
+                      summary="Create Hangang General", institution={**UK, "subtype": "non-life", "home_country": "KR",
+                                                                    "base_currency": "KRW", "time_zone": "Asia/Seoul"})
+    assert r.status_code == 422 and r.json()["code"] == "validation_error"
+    assert r.json()["errors"][0]["field"] == "subtype" and "general" in r.json()["errors"][0]["message"]
+    assert not (await client.get("/api/v1/proposals", params={"thread_id": tid})).json()
+
+
 async def test_a_failed_apply_is_recorded_in_the_chat(client):
     tid = await thread(client)
     p = (await propose(client, thread_id=tid, track="institution", kind="create_institution",

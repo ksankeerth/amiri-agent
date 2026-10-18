@@ -375,3 +375,112 @@ async def test_the_model_hears_what_the_card_actually_holds(world):
     await turn(client, sid, track="rules", text="Add the regulators.")
     reply = llm.requests[1].contents[-1].parts[0].function_response.response
     assert "The card holds exactly: create regulators global-un." in reply["message"]
+
+
+async def test_a_hazard_the_finder_didnt_suggest_is_refused(world):
+    client, server, llm = world
+    server.suggestions = {"risk-exposures": []}
+    exp = {"kind": "climate", "title": "Japan earthquakes", "places": ["JP"], "hazard_id": "jp-earthquake"}
+    llm.script = [[("propose", {"summary": "Add Japan earthquakes", "operations": [
+        {"op": "create", "section": "risk-exposures", "data": exp}], "institution": None, "monitors": None,
+        "evidence": None})], "The risk finder has nothing for your places."]
+    sid = await start(client)
+    await turn(client, sid, track="risks", text="Propose our risks.")
+    reply = llm.requests[1].contents[-1].parts[0].function_response.response
+    assert reply["status"] == "error" and reply["message"].startswith("jp-earthquake: not suggested by the risk finder")
+    assert server.posted() == []
+
+
+async def test_facts_noted_for_other_tracks_are_offered_next(world, monkeypatch):
+    from app import router
+    from app.router import RouterChoice, RouterNote
+
+    async def fake(message, current, has_institution):
+        return RouterChoice(track="customers_products", clearly_elsewhere=True, reason="products", notes=[
+            RouterNote(track="footprint_flows", text="Operate in Seoul and Gyeonggi")]), 1
+    monkeypatch.setattr(router, "_router", fake)
+    client, _server, llm = world
+    llm.script = ["Which groups buy motor cover?"]
+    sid = await start(client)
+    await turn(client, sid, track="customers_products", requested_track=None,
+               text="We write motor cover in Seoul and Gyeonggi.")
+    assert "“Operate in Seoul and Gyeonggi” → Footprint and flows" in system_text(llm.requests[0])
+
+
+async def test_a_card_waiting_in_another_track_is_pointed_out_once(world):
+    client, server, llm = world
+    server.decided = [{"proposal_id": "prop-9", "status": "pending", "track": "footprint_flows",
+                       "summary": "Add Seoul and Gyeonggi", "decided_at": None}]
+    llm.script = ["Which groups buy motor cover?", "Noted."]
+    sid = await start(client)
+    evs = await turn(client, sid, track="customers_products", text="We sell motor cover.")
+    msg = next(d["text"] for e, d in evs if e == "message")
+    assert msg.endswith("Still waiting for your Apply, so nothing of it is saved yet: “Add Seoul and Gyeonggi”.")
+    evs = await turn(client, sid, track="customers_products", text="To households.")
+    assert "Still waiting" not in next(d["text"] for e, d in evs if e == "message")
+
+
+async def test_a_name_is_asked_in_text_not_as_options(world):
+    client, _server, llm = world
+    llm.script = [[("ask_user", {"question": "What is your broker's name?", "options": ["Aon", "Marsh"],
+                                 "multi": False})], "What is your broker called?"]
+    sid = await start(client)
+    evs = await turn(client, sid, track="rivals_partners", text="Add a broker partner.")
+    reply = llm.requests[1].contents[-1].parts[0].function_response.response
+    assert reply["status"] == "error" and "a name isn't a choice" in reply["message"]
+    assert "question" not in [e for e, _ in evs]
+
+
+async def test_a_custom_risk_must_be_in_the_users_words(world):
+    client, _server, llm = world
+    made_up = {"kind": "climate", "title": "Monsoon flooding in Seoul and Gyeonggi", "places": ["KR-11"]}
+    theirs = {"kind": "climate", "title": "Typhoons hitting Busan", "places": ["KR-26"]}
+    llm.script = [[("propose", {"summary": "x", "operations": [{"op": "create", "section": "risk-exposures",
+                                                                 "data": made_up}],
+                                "institution": None, "monitors": None, "evidence": None})], "ok",
+                  [("propose", {"summary": "x", "operations": [{"op": "create", "section": "risk-exposures",
+                                                                 "data": theirs}],
+                                "institution": None, "monitors": None, "evidence": None})], "Here it is."]
+    sid = await start(client)
+    await turn(client, sid, track="risks", text="Propose the key risks for our cover in Seoul and Gyeonggi.")
+    assert "isn't in the user's words" in llm.requests[1].contents[-1].parts[0].function_response.response["message"]
+    evs = await turn(client, sid, track="risks", text="We worry about typhoons hitting Busan.")
+    assert ("proposal", {"proposal_id": "prop-1"}) in evs
+
+
+async def test_a_superseded_card_is_not_pointed_out(world):
+    client, server, llm = world
+    server.decided = [  # newest first, as the server lists them
+        {"proposal_id": "p2", "status": "pending", "track": "footprint_flows", "kind": "profile",
+         "summary": "Add Seoul and Gyeonggi", "decided_at": None},
+        {"proposal_id": "p1", "status": "pending", "track": "footprint_flows", "kind": "profile",
+         "summary": "Add Seoul", "decided_at": None},
+        {"proposal_id": "p0", "status": "pending", "track": "institution", "kind": "create_institution",
+         "summary": "Create Hangang (non-life)", "decided_at": None}]
+    llm.script = ["Noted."]
+    sid = await start(client)
+    evs = await turn(client, sid, track="customers_products", text="We sell motor cover.")
+    msg = next(d["text"] for e, d in evs if e == "message")
+    assert msg.endswith("nothing of it is saved yet: “Add Seoul and Gyeonggi”.")
+
+
+async def test_products_created_with_groups_must_be_linked(world):
+    client, server, llm = world
+    ops = [{"op": "create", "section": "segments", "data": {"id": "homeowners", "label": "Homeowners"}},
+           {"op": "create", "section": "products", "data": {"name": "Home", "category": "property"}}]
+    llm.script = [[("propose", {"summary": "x", "operations": ops, "institution": None, "monitors": None,
+                                "evidence": None})], "Which groups buy home cover?"]
+    sid = await start(client)
+    await turn(client, sid, track="customers_products", text="Homeowners buy home cover.")
+    reply = llm.requests[1].contents[-1].parts[0].function_response.response
+    assert reply["status"] == "error" and reply["message"].startswith("Home: no customer group")
+    assert server.posted() == []
+
+
+async def test_the_risks_track_cant_browse_the_worldwide_hazard_library(world):
+    client, _server, llm = world
+    llm.script = [[("get_reference", {"name": "hazards"})], "The risk finder has nothing for your places."]
+    sid = await start(client)
+    await turn(client, sid, track="risks", text="Propose our main risks.")
+    reply = llm.requests[1].contents[-1].parts[0].function_response.response
+    assert reply["status"] == "blocked" and "the hazard library is worldwide" in reply["message"]

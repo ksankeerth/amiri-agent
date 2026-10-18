@@ -63,7 +63,9 @@ Rules:
   Amiri Agent for this institution is "offtopic".
 - Facts in the message that belong to other tracks go in notes (track id and the fact), so later tracks
   can use them. Don't put facts for the chosen track in notes. Currencies it settles or clears in, regulators
-  and sanctions are rules, not footprint_flows (flows are money and goods sent to or from places).
+  and sanctions are rules, not footprint_flows (flows are money and goods sent to or from places). Where a
+  rival, partner, regulator or hazard is based is part of that item, not footprint (footprint is only where
+  this institution itself operates).
 - {setup}
 
 Message: {message}
@@ -172,4 +174,6 @@ async def route(*, text: str | None, is_answer: bool, requested: str | None, cur
         return Route(current or "question", False, choice.reason, notes, offtopic=True, model_calls=calls)
     track = choice.track if (current is None or choice.track == current or choice.clearly_elsewhere) else current
     notes = [n for n in notes if n["track"] != track]
+    if track in ("rivals_partners", "risks"):  # a place said there is the rival's, partner's or hazard's, not
+        notes = [n for n in notes if n["track"] != "footprint_flows"]  # footprint ("Example Re is in Germany", T02)
     return Route(track, track != current, choice.reason, notes, model_calls=calls)

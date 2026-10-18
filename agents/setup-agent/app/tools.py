@@ -9,6 +9,7 @@ in a turn, then tells the user. Code fixes what the model must not choose: the t
 proposal's kind, the thread and the person.
 """
 
+import re
 import uuid
 from dataclasses import dataclass, field
 from typing import Any
@@ -25,6 +26,7 @@ from app.tracks import TRACKS
 SUGGESTION_SECTIONS = ("products", "segments", "regulators", "flows", "risk-exposures", "rivals")
 BOOKKEEPING = ("version", "created_at", "updated_at", "updated_by")
 MAX_OPTIONS = 8
+GENERIC_RISK_WORDS = {"risk", "risks", "exposure", "exposures", "hazard", "hazards", "with", "from", "their", "into"}
 
 
 @dataclass
@@ -147,8 +149,9 @@ async def get_suggestions(section: str, tool_context: ToolContext) -> dict:
         out["note"] = ("No published figures. Flows the user described (e.g. remittances sent home to a country) "
                        "are still proposed, without a value; never drop them for lack of a figure.")
     if section == "regulators" and not any(i["item"].get("relation") == "home" for i in items):
-        out["note"] = ("The rule table has no regulator for the home country. Say so plainly and ask the user to "
-                       "name theirs; don't add one they haven't named.")
+        out["note"] = ("The rule table has no regulator for the home country. Propose the other items here as usual "
+                       "(global standards, sanctions), and say plainly that the home regulator isn't in the table: "
+                       "ask the user to name theirs; don't add one they haven't named.")
     return out
 
 
@@ -233,6 +236,10 @@ async def get_reference(name: str, tool_context: ToolContext) -> dict:
     names = ("product-taxonomy", "segment-dimensions", "institution-types", "currencies", "time-zones", "hazards", "routes")
     if name not in names:
         return _err(f"one of: {', '.join(names)}")
+    # seen: Japan, US and China hazards from the worldwide library offered as choices to a Korea-only insurer (T02)
+    if name == "hazards" and b.track == "risks":
+        return _blocked("the hazard library is worldwide; only get_suggestions('risk-exposures') meets this profile. "
+                        "If it has nothing, say so and ask which risks the user has in mind, without offering any")
     params = {"institution_type": b.institution_type} if name == "product-taxonomy" else {}
     r = await b.s.api.get(f"/api/v1/reference/{name}", **params)
     if not r.ok:
@@ -384,6 +391,9 @@ def ask_user(question: str, options: list[str], multi: bool, tool_context: ToolC
     b = box(tool_context)
     if b.asked:
         return _blocked("one question per turn: wait for the answer")
+    # seen twice: "What is your broker's name?" with Aon, Marsh, … as options, names the user never gave (T02)
+    if re.search(r"\bnames?\b|\bcalled\b", question, re.I):
+        return _err("a name isn't a choice: ask for it in your reply text, without ask_user and without suggesting names")
     opts = [o.strip()[:120] for o in options if o and o.strip()][:MAX_OPTIONS]
     if not opts or not question.strip():
         return _err("a question needs text and at least one option")
@@ -440,6 +450,36 @@ async def propose(summary: str, operations: list[dict[str, Any]] | None, institu
         return _err("propose the clearing currencies on their own first: the sanctions regimes that follow them only "
                     "appear in get_suggestions('regulators') once they are applied. Then ask whether to add the "
                     "regulators and those sanctions next")
+    # seen: the risk finder had nothing for a Korea-only insurer, and the model picked a Japan hazard from the library
+    # (T02). A library hazard goes in only when the finder suggests it for this profile.
+    # seen twice (T01, T02): groups and products created on one card with no product linked to a group, so the
+    # investigation can't tell who a product reaches. With the groups right there, every product names its groups.
+    groups = [o for o in ops if o.get("section") == "segments" and o.get("op") == "create"]
+    unlinked = [(o.get("data") or {}).get("name") or (o.get("data") or {}).get("id") for o in ops
+                if o.get("section") == "products" and o.get("op") == "create" and not (o.get("data") or {}).get("segments")]
+    if groups and unlinked:
+        return _err(f"{', '.join(map(str, unlinked))}: no customer group. Set each product's segments to the ids of "
+                    "the groups on this card that use it (the user's words usually make it clear); if you can't tell, "
+                    "ask which groups use which product before proposing")
+    # seen: "Monsoon flooding in Seoul and Gyeonggi" made up and marked source user (T02): a custom exposure (no
+    # hazard_id) must be in the user's own words
+    said = " ".join([b.turn.text or "", *(n.get("text", "") for n in b.turn.track_notes)]).lower()
+    for o in ops:
+        d = o.get("data") or {}
+        if o.get("section") == "risk-exposures" and o.get("op") == "create" and not d.get("hazard_id"):
+            words = set(re.findall(r"[a-z]{4,}", str(d.get("title", "")).lower())) - GENERIC_RISK_WORDS
+            # more than half the title's words from the user (place names alone don't make it theirs)
+            if words and sum(w[:5] in said for w in words) * 2 <= len(words):
+                return _err(f"“{d.get('title')}” isn't in the user's words. A risk without a hazard_id must be one "
+                            "the user named, titled in their words; otherwise ask which risks they have in mind")
+    hazards = {(o.get("data") or {}).get("hazard_id") for o in ops if o.get("section") == "risk-exposures"} - {None}
+    if hazards and b.iid:
+        r = await b.s.api.get(f"/api/v1/institutions/{seg(b.iid)}/suggestions/risk-exposures")
+        found = {(i.get("item") or {}).get("hazard_id") for i in (r.body.get("items", []) if r.ok else [])}
+        if r.ok and (far := hazards - found):
+            return _err(f"{', '.join(sorted(far))}: not suggested by the risk finder, so it doesn't touch this "
+                        "institution's places, customers, flows or routes. Don't propose it; say the finder has "
+                        "nothing for that, and offer a custom exposure (no hazard_id) only if the user names one")
     unused = [n for n, v in (("operations", operations), ("institution", institution), ("monitors", monitors))
               if v and n not in body]
     if unused:

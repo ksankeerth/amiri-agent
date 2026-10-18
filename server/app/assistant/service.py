@@ -28,7 +28,7 @@ from app.assistant.tracks import RULES_INSTITUTION_FIELDS, TRACKS
 from app.assistant.tracks import view as tracks_view
 from app.clock import Clock
 from app.institutions.schemas import InstitutionCreate, Operation
-from app.institutions.service import Institutions, region_errors
+from app.institutions.service import Institutions, create_errors, region_errors
 from app.monitors.service import Monitors
 from app.problems import Problem
 
@@ -579,6 +579,10 @@ class AssistantService:
                 raise Problem(422, "outside_region", "The home country or base currency is outside the region this "
                                                      "prototype supports; say so to the user instead of proposing it.",
                               errors=outside)
+            # and the rest of what Apply checks (seen: subtype "non-life" proposed, refused only on Apply, then
+            # proposed again because the agent never heard why at proposal time)
+            if bad := create_errors(fields):
+                raise Problem(422, "validation_error", "The institution's fields are invalid.", errors=bad)
             errors += numbers.check("institution", fields, typed)
             if errors:
                 raise Problem(422, "validation_error", "Numbers in the proposal aren't backed.", errors=errors)

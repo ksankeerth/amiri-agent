@@ -68,6 +68,16 @@ def item_view(section: str, item_id: str, it: Item) -> dict:
 
 
 
+def create_errors(fields: dict) -> list[dict]:
+    """What creating an institution refuses beyond its schema: a subtype outside its type's list, personal data,
+    a home outside the region. Also run when the assistant proposes one, so a card that can't apply isn't shown."""
+    out = []
+    if fields.get("subtype") and fields["subtype"] not in SUBTYPES[fields["institution_type"]]:
+        out.append({"section": "institution", "field": "subtype", "code": "invalid",
+                    "message": f"a {fields['institution_type']} is one of {', '.join(SUBTYPES[fields['institution_type']])}"})
+    return out + privacy.errors(fields, "institution") + region_errors(fields)
+
+
 def region_errors(fields: dict) -> list[dict]:
     """The prototype is tested in one region (SUPPORTED_REGION): the home country and base currency must be in it."""
     r = reference.region()
@@ -129,12 +139,8 @@ class Institutions:
                      sections: dict[str, list[dict]] | None = None, proposal_id: str | None = None) -> dict:
         """Creates an institution with its home footprint entry, then (import) its sections."""
         fields = body.model_dump(mode="json", exclude={"institution_id"})
-        if fields.get("subtype") and fields["subtype"] not in SUBTYPES[fields["institution_type"]]:
-            raise _err([{"section": "institution", "field": "subtype", "code": "invalid",
-                         "message": f"a {fields['institution_type']} is one of {', '.join(SUBTYPES[fields['institution_type']])}"}])
-        pd = privacy.errors(fields, "institution") + region_errors(fields)
-        if pd:
-            raise _err(pd)
+        if errs := create_errors(fields):
+            raise _err(errs)
         defaults = {"islamic": False, "clearing_currencies": [], "fiscal_year_start_month": 1}
         fields = {**defaults, **{k: v for k, v in fields.items() if v is not None}}
         iid = body.institution_id or (settings.raw("INSTITUTION_ID") if settings.flag("SINGLE_INSTITUTION") else "") \
