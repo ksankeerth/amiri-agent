@@ -85,7 +85,8 @@ def instruction(b: TurnBox, ctx: dict | None, readiness: dict | None, earlier: l
     nxt = next_in_setup(b.track)
     after = ("After a proposal, say what it does and that nothing changes until they apply it; then, if something "
              "the user asked for in this track is still to come, ask whether to do it next (name it)"
-             + (f"; otherwise say that the next step is {TRACKS[nxt].label.lower()}." if nxt else "."))
+             + (f"; otherwise say that the next step is {TRACKS[nxt].label.lower()} (that track, even if the readiness "
+                f"list shows other open items)." if nxt else "."))
     parts = [
         f"You are the setup agent of Amiri Agent, which watches the world for {_who(ctx)} and traces events to its "
         f"products and customers. You are in the {t.label} track of the setup chat.",

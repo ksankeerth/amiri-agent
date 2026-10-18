@@ -3,7 +3,7 @@
 // (coordinates from the gazetteer, or a country's centre from its shape).
 import { geoCentroid, geoCircle, geoNaturalEarth1, geoPath } from "d3-geo";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { feature } from "topojson-client";
 import type { PlaceInfo, Profile } from "../../api/institutions";
 import { ref, type Hazard, type Route } from "../../api/reference";
@@ -11,6 +11,8 @@ import { usdText, useLoad } from "./fields";
 import { FLOW_WORDS } from "./forms";
 
 type World = FeatureCollection<Geometry, { name: string }>;
+const MIN_SPAN = 30;  // degrees: the smallest area the map zooms to (about Borneo with its neighbours)
+const ZOOM_MIN = 0.5, ZOOM_MAX = 16, ZOOM_STEP = 1.6;
 let worldP: Promise<World> | null = null;
 function loadWorld(): Promise<World> {
   worldP ??= import("world-atlas/countries-50m.json").then(m => {
@@ -75,6 +77,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
     const add = (c: string | null | undefined) => { const p = c ? at(c) : null; if (p) pts.push(p); };
     S.footprint.forEach(f => add(f.code));
     events.forEach(e => e.places.forEach(add));
+    riskHazards.forEach(h => h.centre && pts.push([h.centre[1], h.centre[0]]));  // the risk zones are in view too
     if (view === "world") {
       S.flows.forEach(f => add(f.counterpart)); S["watch-places"].forEach(x => add(x.code));
       S.rivals.forEach(r => r.places.forEach(add)); usedRoutes.forEach(r => r.points.forEach(([la, lo]) => pts.push([lo, la])));
@@ -82,10 +85,13 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
     if (!pts.length) add(home);
     const proj = geoNaturalEarth1();
     if (pts.length) {
-      // pad a small area (one country, one point) so the fit stays finite and readable
+      // pad a small area (one country, one point) to at least MIN_SPAN degrees, so the neighbours show
+      // and the place is recognisable (Brunei alone filled the map)
       const lons = pts.map(p => p[0]), lats = pts.map(p => p[1]);
-      const [cx, cy] = [(Math.min(...lons) + Math.max(...lons)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2];
-      const pad = Math.max(0, 6 - (Math.max(...lons) - Math.min(...lons)), 6 - (Math.max(...lats) - Math.min(...lats))) / 2;
+      const pad = Math.max(0, MIN_SPAN - (Math.max(...lons) - Math.min(...lons)), MIN_SPAN - (Math.max(...lats) - Math.min(...lats))) / 2;
+      // keep the padded box inside ±180°/±90°: past the antimeridian it wraps, and New Zealand got the whole world
+      const [cx, cy] = [Math.min(179 - pad, Math.max(-179 + pad, (Math.min(...lons) + Math.max(...lons)) / 2)),
+        Math.min(89 - pad, Math.max(-89 + pad, (Math.min(...lats) + Math.max(...lats)) / 2))];
       if (pad > 0) pts.push([cx - pad - 1, cy - pad - 1], [cx + pad + 1, cy + pad + 1]);
       const fc = { type: "Feature", geometry: { type: "MultiPoint", coordinates: pts }, properties: {} } as Feature;
       const m = compact ? 56 : 30;  // the compact map (Overview) keeps the home country clear of the edges
@@ -95,8 +101,43 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
     return proj;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [world, w, height, view, profile.institution.profile_version, routes.length, events.length, compact]);
-  const path = geoPath(projection);
-  const xy = (c: [number, number] | null) => (c ? projection(c) : null);
+  // The person's pan and zoom on top of the fit: k scales about the view's centre, x/y move it (screen pixels).
+  // Applied to the projection, not as an SVG transform, so pins, labels and line widths keep their size.
+  const [zoom, setZoom] = useState({ k: 1, x: 0, y: 0 });
+  useEffect(() => setZoom({ k: 1, x: 0, y: 0 }), [projection]);  // a new fit starts from the whole picture
+  const view0 = [w / 2, height / 2];
+  const zoomed = useMemo(() => {
+    const [tx, ty] = projection.translate();
+    return geoNaturalEarth1().center(projection.center()).scale(projection.scale() * zoom.k)
+      .translate([tx * zoom.k + (1 - zoom.k) * view0[0] + zoom.x, ty * zoom.k + (1 - zoom.k) * view0[1] + zoom.y]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projection, zoom, w, height]);
+  /** Zoom to k, keeping the screen point q (default: the view's centre) where it is. */
+  const zoomTo = (k: number, q: number[] = view0) => setZoom(z => {
+    const k2 = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, k));
+    const p0 = [0, 1].map(i => (q[i] - (1 - z.k) * view0[i] - (i ? z.y : z.x)) / z.k);
+    const [x, y] = [0, 1].map(i => q[i] - k2 * p0[i] - (1 - k2) * view0[i]);
+    return { k: k2, x, y };
+  });
+  const svgRef = useRef<SVGSVGElement>(null);
+  const drag = useRef<{ x: number; y: number } | null>(null);
+  useEffect(() => {  // pinch on a trackpad, or ctrl/⌘ + scroll; a plain scroll still scrolls the page
+    const el = svgRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      zoomTo(zoomRef.current.k * Math.exp(-e.deltaY * 0.01), [e.clientX - r.left, e.clientY - r.top]);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [w, height]);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  const path = geoPath(zoomed);
+  const xy = (c: [number, number] | null) => (c ? zoomed(c) : null);
   const show = (e: React.MouseEvent, text: string) => { const r = box!.getBoundingClientRect(); setTip({ x: e.clientX - r.left, y: e.clientY - r.top, text }); };
   const pin = (key: string, code: string, color: string, label: string, r = 5, ring = false) => {
     const p = xy(at(code));
@@ -116,7 +157,18 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
         <span className="spacer" />
         {LAYERS.map(([k, label]) => <button key={k} type="button" className={`chip click ${on.has(k) ? "sel" : ""}`} onClick={() => toggle(k)}>{label}</button>)}
       </div>
-      <svg width="100%" height={height} viewBox={`0 0 ${w} ${height}`} style={{ background: "var(--map-ocean)", borderRadius: 12, display: "block" }} role="img" aria-label="Map of the institution profile">
+      <div style={{ position: "relative" }}>
+      <svg ref={svgRef} width="100%" height={height} viewBox={`0 0 ${w} ${height}`} role="img" aria-label="Map of the institution profile"
+        style={{ background: "var(--map-ocean)", borderRadius: 12, display: "block", cursor: drag.current ? "grabbing" : "grab", touchAction: "none" }}
+        onPointerDown={e => { drag.current = { x: e.clientX, y: e.clientY }; }}
+        onPointerMove={e => {
+          const d = drag.current;
+          if (!d || !e.buttons) { drag.current = null; return; }
+          const [dx, dy] = [e.clientX - d.x, e.clientY - d.y];
+          drag.current = { x: e.clientX, y: e.clientY };
+          setZoom(z => ({ ...z, x: z.x + dx, y: z.y + dy }));
+        }}
+        onPointerUp={() => { drag.current = null; }} onPointerLeave={() => { drag.current = null; }}>
         {world && <g>{world.features.map(f => {
           const iso = Object.values(P).find(p => p.numeric && String(Number(p.numeric)) === String(Number(f.id)))?.code;
           const isHome = on.has("footprint") && iso === home;
@@ -166,6 +218,13 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
             <circle r={6.5} fill={color} stroke="var(--surface)" strokeWidth={2} /></g>;
         }))}
       </svg>
+      <div className="mapzoom">
+        <button type="button" aria-label="Zoom in" title="Zoom in" onClick={() => zoomTo(zoom.k * ZOOM_STEP)} disabled={zoom.k >= ZOOM_MAX}>+</button>
+        <button type="button" aria-label="Zoom out" title="Zoom out" onClick={() => zoomTo(zoom.k / ZOOM_STEP)} disabled={zoom.k <= ZOOM_MIN}>−</button>
+        <button type="button" title="Back to the whole picture" onClick={() => setZoom({ k: 1, x: 0, y: 0 })}
+          disabled={zoom.k === 1 && !zoom.x && !zoom.y}>Reset</button>
+      </div>
+      </div>
       {tip && <div className="maptip" style={{ left: Math.min(tip.x + 12, w - 250), top: tip.y + 12 }}>{tip.text}</div>}
       {compact ? <div className="row wrap small muted" style={{ gap: 14, marginTop: 8 }}>
         <span><span className="statusdot" style={{ background: "var(--critical)" }} /> bad for you</span>

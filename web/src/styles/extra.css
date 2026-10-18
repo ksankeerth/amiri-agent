@@ -734,3 +734,11 @@ a.evrow:hover .row-l, a.lrow:hover .row-l { text-decoration:underline !important
   animation:orbglow 2.4s ease-in-out infinite; }
 @keyframes orbbreath { 0%, 100% { transform:scale(.92); } 50% { transform:scale(1.06); } }
 @keyframes orbglow { 0%, 100% { opacity:.35; } 50% { opacity:1; } }
+
+/* Profile map: zoom buttons in the map's bottom-right corner */
+.mapzoom { position:absolute; right:10px; bottom:10px; display:flex; gap:4px; z-index:4; }
+.mapzoom button { min-width:30px; height:30px; padding:0 8px; border-radius:8px; border:1px solid var(--hairline-2);
+  background:var(--surface); color:var(--ink-2); font-size:15px; font-weight:600; line-height:1; cursor:pointer; box-shadow:var(--e-pop); }
+.mapzoom button:last-child { font-size:12px; }
+.mapzoom button:hover:not(:disabled) { color:var(--ink); }
+.mapzoom button:disabled { opacity:.45; cursor:default; }
