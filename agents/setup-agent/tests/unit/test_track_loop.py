@@ -16,6 +16,7 @@ from google.genai import types
 from pydantic import Field
 
 from app import engine, router, track_loop, turn_api
+from app.router import RouterChoice
 from app.sessions import SessionStore
 
 CTX = {"institution_id": "bank-1", "name": "Test Bank", "institution_type": "bank", "country": "LK", "currency": "LKR",
@@ -275,3 +276,38 @@ async def test_an_empty_turn_gets_one_more_try(world):
     msgs = [d["text"] for e, d in evs if e == "message"]
     assert msgs == ["Which regulator shall I add first: RBNZ or APRA?"]
     assert "ended without a reply" in llm.requests[-1].contents[-1].parts[0].text
+
+
+async def test_a_claimed_proposal_that_wasnt_made_never_reaches_the_user(world):
+    client, _server, llm = world
+    claim = "I have proposed adding New Zealand earthquakes. Please review and apply the proposal."
+    # it claims, is told it didn't propose, and then proposes for real
+    llm.script = [claim, [("propose", {"summary": "Add earthquakes", "operations": [
+        {"op": "create", "section": "flows", "data": FLOW}], "institution": None, "monitors": None, "evidence": None})],
+        "Here it is: nothing changes until you apply it."]
+    sid = await start(client)
+    evs = await turn(client, sid, track="footprint_flows", text="Add earthquakes and droughts.")
+    assert ("proposal", {"proposal_id": "prop-1"}) in evs
+    assert claim not in [d["text"] for e, d in evs if e == "message"]
+    assert "didn't call propose" in llm.requests[1].contents[-1].parts[0].text
+    # it claims twice: the user is told plainly that nothing was proposed
+    llm.script = [claim, claim]
+    sid = await start(client)
+    evs = await turn(client, sid, track="footprint_flows", text="Add earthquakes and droughts.")
+    assert "proposal" not in [e for e, _ in evs]
+    assert [d["text"] for e, d in evs if e == "message"] == [track_loop.NO_PROPOSAL]
+
+
+async def test_a_short_yes_after_a_question_stays_in_the_track_that_asked(world):
+    client, _server, llm = world
+    route = router._router
+    llm.script = ["Shall I add all four regulators?", "Done: here's the proposal."]
+    sid = await start(client)
+    await turn(client, sid, track="rules", text="Which regulators apply to us?")
+    route.script = [RouterChoice(track="institution", reason="mentions the bank", clearly_elsewhere=True)]
+    evs = await turn(client, sid, track=None, current_track="rules", text="Yes please.")
+    assert "track" not in [e for e, _ in evs]  # stayed in rules
+    assert "Yes please." not in [m for m, _, _ in route.calls]  # the router wasn't even asked
+    from app.engine import is_short_reply
+    assert is_short_reply("Yes please.") and is_short_reply("no") and is_short_reply("Both, thanks")
+    assert not is_short_reply("Yesterday we opened a branch in Kerala") and not is_short_reply("We also lend to farmers")

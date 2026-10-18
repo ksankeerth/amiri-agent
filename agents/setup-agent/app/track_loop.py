@@ -9,6 +9,7 @@ model's closing text becomes the message.
 """
 
 import json
+import re
 from collections.abc import AsyncIterator, Callable
 from datetime import UTC, datetime, timedelta
 
@@ -62,7 +63,11 @@ RULES = """Rules:
   or phone numbers.
 - If the user wants something another track does, say which and carry on; the chat moves when they ask.
 - Never end a turn with nothing to say. If you can't do what was asked (no data for it, not this track's job),
-  say so in one plain sentence and ask for what you need to carry on."""
+  say so in one plain sentence and ask for what you need to carry on.
+- Only the propose tool makes a proposal. Never write that you proposed or prepared something unless you called
+  propose in this turn; the user only sees a card when you do.
+- Cover everything the message asks for in this track in one proposal. If part of it can't be done here or now,
+  say which part and why; facts for other tracks, say they'll be handled there."""
 
 
 def _who(ctx: dict | None) -> str:
@@ -76,9 +81,9 @@ def instruction(b: TurnBox, ctx: dict | None, readiness: dict | None, earlier: l
                 region: str | None = None, decided: list[str] | None = None) -> str:
     t, g = TRACKS[b.track], GUIDES[b.track]
     nxt = next_in_setup(b.track)
-    after = (f"After a proposal, say what it does and that nothing changes until they apply it; then that the "
-             f"next step is {TRACKS[nxt].label.lower()}." if nxt else
-             "After a proposal, say what it does and that nothing changes until they apply it.")
+    after = ("After a proposal, say what it does and that nothing changes until they apply it; then, if something "
+             "the user asked for in this track is still to come, ask whether to do it next (name it)"
+             + (f"; otherwise say that the next step is {TRACKS[nxt].label.lower()}." if nxt else "."))
     parts = [
         f"You are the setup agent of Amiri Agent, which watches the world for {_who(ctx)} and traces events to its "
         f"products and customers. You are in the {t.label} track of the setup chat.",
@@ -177,8 +182,16 @@ async def _fresh(s: Session, iid: str | None) -> tuple[dict | None, dict | None]
     return (c.body if c.ok else None), (r.body if r.ok else None)
 
 
-NUDGE = ("(Your last step ended without a reply. Answer the user now: make a proposal, ask one question with ask_user, "
-         "or say in one or two sentences what you can't do and what you need.)")
+NUDGE = ("(Your last step ended without a reply. Answer the user now. If they asked for changes, call the propose tool "
+         "with them: writing that you proposed something is not proposing. Otherwise ask one question with ask_user, or "
+         "say in one or two sentences what you can't do and what you need.)")
+PHANTOM_NUDGE = ("(You wrote that you proposed something, but you didn't call propose, so the user sees no card. Call "
+                 "propose now with those items, or say plainly that nothing has been proposed yet and why.)")
+NO_PROPOSAL = "I haven't made a proposal for that yet. Shall I put one together now?"
+# a reply that says a proposal was made: "I have proposed …", "I've prepared a proposal", "please review and apply"
+CLAIMS_PROPOSAL = re.compile(r"\b(i(?: have|'ve| ha?ve)? (?:proposed|prepared (?:a|the) proposal|drafted (?:a|the) proposal|"
+                             r"put together (?:a|the) proposal)|please (?:review|apply) (?:it|the proposal)|"
+                             r"(?:review|apply) the proposal)", re.I)
 
 
 async def respond(s: Session, turn: TurnIn, route: Route, usage: Usage) -> AsyncIterator[BaseModel]:
@@ -219,12 +232,21 @@ async def respond(s: Session, turn: TurnIn, route: Route, usage: Usage) -> Async
     def empty() -> bool:
         return not any(t.strip() for t in texts) and not (b.asked or b.proposed or b.concluded)
 
+    def phantom() -> bool:
+        return not b.proposed and any(CLAIMS_PROPOSAL.search(t) for t in texts)
+
     try:
         async for ev in run(user_message(s, turn)):
             yield ev
         if empty():  # the model stopped without a word (seen after a tool call it couldn't finish): one more go
             async for ev in run(NUDGE):
                 yield ev
+        if phantom():  # it says it proposed but didn't: one more go, then never let the claim through
+            texts.clear()
+            async for ev in run(PHANTOM_NUDGE):
+                yield ev
+            if phantom():
+                texts[:] = [NO_PROPOSAL]
     except LlmCallsLimitExceededError:
         yield ErrorEv(code="step_limit", message="I took too many steps on that. Could you say it again, more simply?")
     finally:
@@ -232,6 +254,7 @@ async def respond(s: Session, turn: TurnIn, route: Route, usage: Usage) -> Async
     while b.events:
         yield b.events.pop(0)
     text = "\n\n".join(t.strip() for t in texts if t.strip())
+    s.state["asked"] = bool(b.asked or text.rstrip().endswith("?"))
     if text:
         yield MessageEv(text=text[:8000])
     elif not (b.asked or b.proposed or b.concluded):
