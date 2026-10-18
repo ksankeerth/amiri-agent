@@ -1,0 +1,29 @@
+{
+  "items": [
+    {
+      "id": "central-bank-of-sri-lanka",
+      "regulator_id": "lk-cbsl",
+      "relation": "home"
+    },
+    {
+      "id": "financial-intelligence-unit-sri-lanka",
+      "regulator_id": "lk-fiu",
+      "relation": "home"
+    },
+    {
+      "id": "us-treasury-sanctions-ofac",
+      "regulator_id": "sanctions-ofac",
+      "relation": "reach"
+    },
+    {
+      "id": "basel-committee-standards",
+      "regulator_id": "global-basel",
+      "relation": "standard"
+    },
+    {
+      "id": "financial-action-task-force",
+      "regulator_id": "global-fatf",
+      "relation": "standard"
+    }
+  ]
+}

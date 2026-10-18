@@ -1,0 +1,18 @@
+{
+  "institution": {
+    "institution_id": "serendib-bank",
+    "name": "Serendib Commercial Bank",
+    "institution_type": "bank",
+    "subtype": "commercial",
+    "home_country": "LK",
+    "base_currency": "LKR",
+    "time_zone": "Asia/Colombo",
+    "clearing_currencies": [
+      "USD",
+      "EUR"
+    ],
+    "governance_body": "Board Risk Committee",
+    "size_band": "mid",
+    "summary": "Mid-size commercial bank in Sri Lanka: retail deposits and pawning, SME and corporate lending, trade finance, cards and inward remittances from Gulf migrant workers; 172 branches across Sri Lanka."
+  }
+}

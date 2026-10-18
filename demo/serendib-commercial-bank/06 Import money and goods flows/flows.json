@@ -1,0 +1,126 @@
+{
+  "items": [
+    {
+      "id": "remit-kw",
+      "kind": "remittances_in",
+      "local": "LK",
+      "counterpart": "KW",
+      "figure_id": "remittances-in-lk-kw-2025",
+      "value": {
+        "amount": 893000000,
+        "currency": "USD",
+        "year": 2025
+      },
+      "source": {
+        "kind": "dataset",
+        "dataset": "Sri Lanka Bureau of Foreign Employment, remittances from Kuwait (as reported)",
+        "dataset_year": 2025,
+        "url": "https://adaderana.lk/news/cmqk5lh6y00023b6pmetfwbvo",
+        "sample": false
+      },
+      "segments": [
+        "migrant-families"
+      ],
+      "note": "Kuwait is the largest source: about 30% of Sri Lankans working abroad go there."
+    },
+    {
+      "id": "remit-qa",
+      "kind": "remittances_in",
+      "local": "LK",
+      "counterpart": "QA",
+      "source": {
+        "kind": "user"
+      },
+      "segments": [
+        "migrant-families"
+      ],
+      "note": "No official full-year figure by country is published; the Central Bank of Sri Lanka publishes quarterly figures by country. All corridors together: US$ 8.07 billion in 2025."
+    },
+    {
+      "id": "remit-ae",
+      "kind": "remittances_in",
+      "local": "LK",
+      "counterpart": "AE",
+      "source": {
+        "kind": "user"
+      },
+      "segments": [
+        "migrant-families"
+      ],
+      "note": "No official full-year figure by country is published; the Central Bank of Sri Lanka publishes quarterly figures by country. All corridors together: US$ 8.07 billion in 2025."
+    },
+    {
+      "id": "remit-sa",
+      "kind": "remittances_in",
+      "local": "LK",
+      "counterpart": "SA",
+      "source": {
+        "kind": "user"
+      },
+      "segments": [
+        "migrant-families"
+      ],
+      "note": "No official full-year figure by country is published; the Central Bank of Sri Lanka publishes quarterly figures by country. All corridors together: US$ 8.07 billion in 2025."
+    },
+    {
+      "id": "garments-us",
+      "kind": "exports",
+      "local": "LK",
+      "counterpart": "US",
+      "goods": "Garments",
+      "figure_id": "exports-lk-us-garments-2025",
+      "route_id": "colombo-suez-europe",
+      "value": {
+        "amount": 1960000000,
+        "currency": "USD",
+        "year": 2025
+      },
+      "source": {
+        "kind": "dataset",
+        "dataset": "Sri Lanka Export Development Board, apparel exports by market (as reported)",
+        "dataset_year": 2025,
+        "url": "https://www.dailymirror.lk/print/breaking-news/Sri-Lanka-exports-top-US-17-2bn-in-2025/108-331344",
+        "sample": false
+      },
+      "segments": [
+        "exporters-smes"
+      ]
+    },
+    {
+      "id": "garments-gb",
+      "kind": "exports",
+      "local": "LK",
+      "counterpart": "GB",
+      "goods": "Garments",
+      "figure_id": "exports-lk-gb-garments-2025",
+      "route_id": "colombo-suez-europe",
+      "value": {
+        "amount": 688500000,
+        "currency": "USD",
+        "year": 2025
+      },
+      "source": {
+        "kind": "dataset",
+        "dataset": "Sri Lanka Export Development Board, apparel exports by market (as reported)",
+        "dataset_year": 2025,
+        "url": "https://www.dailymirror.lk/print/breaking-news/Sri-Lanka-exports-top-US-17-2bn-in-2025/108-331344",
+        "sample": false
+      },
+      "segments": [
+        "exporters-smes"
+      ]
+    },
+    {
+      "id": "crude-ae",
+      "kind": "imports",
+      "local": "LK",
+      "counterpart": "AE",
+      "goods": "Crude oil",
+      "route_id": "colombo-hormuz-gulf",
+      "source": {
+        "kind": "user"
+      },
+      "note": "The Sapugaskanda refinery has run on Murban crude from the UAE; no current official figure by supplier."
+    }
+  ]
+}

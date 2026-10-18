@@ -1,0 +1,64 @@
+{
+  "items": [
+    {
+      "id": "gulf",
+      "hazard_id": "gulf-security",
+      "title": "Gulf tension meets remittances",
+      "source": "finder",
+      "touches": {
+        "segments": [
+          "migrant-families"
+        ],
+        "products": [
+          "migrant-savings",
+          "inward-remittances"
+        ],
+        "flows": [
+          "remit-kw",
+          "remit-qa",
+          "remit-ae",
+          "remit-sa"
+        ]
+      }
+    },
+    {
+      "id": "sw-monsoon",
+      "hazard_id": "lk-sw-monsoon-floods",
+      "title": "Monsoon floods meet Colombo customers",
+      "source": "finder",
+      "touches": {
+        "segments": [
+          "exporters-smes",
+          "salaried"
+        ],
+        "products": [
+          "sme-loans",
+          "personal-loans"
+        ]
+      }
+    },
+    {
+      "id": "red-sea",
+      "hazard_id": "red-sea-attacks",
+      "title": "Red Sea attacks meet exporters",
+      "source": "finder",
+      "touches": {
+        "segments": [
+          "exporters-smes"
+        ],
+        "products": [
+          "trade-finance"
+        ],
+        "flows": [
+          "garments-us"
+        ],
+        "routes": [
+          "colombo-suez-europe"
+        ],
+        "watch_places": [
+          "bab-el-mandeb"
+        ]
+      }
+    }
+  ]
+}

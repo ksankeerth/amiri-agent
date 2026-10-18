@@ -1,0 +1,46 @@
+{
+  "title": "What if Hormuz closes and war cover is pulled",
+  "headlines": [
+    {
+      "id": "c-hz-1",
+      "title": "Iran announces closure of the Strait of Hormuz to commercial shipping",
+      "day": 1,
+      "time": "08:00"
+    },
+    {
+      "id": "c-hz-2",
+      "title": "Underwriters cancel war-risk cover for all Gulf voyages with 48 hours' notice",
+      "day": 1,
+      "time": "12:00"
+    },
+    {
+      "id": "c-hz-3",
+      "title": "Brent crude jumps above $130 as tanker traffic stops",
+      "day": 2,
+      "time": "10:00"
+    },
+    {
+      "id": "c-hz-4",
+      "title": "Indonesian importers report cargoes stranded at Gulf ports",
+      "day": 2,
+      "time": "15:00"
+    },
+    {
+      "id": "c-hz-5",
+      "title": "Reinsurers say they will exclude Middle East war risk from treaties at the 1 January renewals",
+      "day": 3,
+      "time": "09:00"
+    },
+    {
+      "id": "c-hz-6",
+      "title": "Rupiah slides as the oil import bill rises",
+      "day": 5,
+      "time": "11:00"
+    }
+  ],
+  "prices": {
+    "direction": "weaker",
+    "size_pct": 4,
+    "ramp_days": 5
+  }
+}

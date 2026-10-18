@@ -144,7 +144,7 @@ async def test_bulk_delete_needs_a_second_confirm(client):
     await session(client, "serendib-bank")
     tid = (await thread(client, "serendib-bank"))["thread_id"]
     p = (await propose(client, thread_id=tid, track="rivals_partners", summary="Remove three rivals", operations=[
-        {"op": "delete", "section": "rivals", "id": r} for r in ("kandy-merchant-bank", "malabar-cooperative-bank", "coromandel-finance")])).json()
+        {"op": "delete", "section": "rivals", "id": r} for r in ("commercial-bank-of-ceylon", "hatton-national-bank", "sampath-bank")])).json()
     assert p["deletes"] == 3
     r = await client.post(f"/api/v1/proposals/{p['proposal_id']}:confirm", headers=ME)
     assert r.status_code == 409 and r.json()["code"] == "confirm_deletes_required" and r.json()["deletes"] == 3
@@ -203,4 +203,4 @@ async def test_radar_scope_reasons(client):
     assert any(r.startswith("place to watch") for r in why["KW"])
     assert any(r.startswith("flow: remittances in") for r in why["SA"])
     assert any(r.startswith("risk: Gulf") for r in why["SA"])
-    assert why["IN-KL"][0].startswith("footprint")
+    assert why["LK"][0].startswith("footprint")

@@ -5,7 +5,6 @@ Who made a change: X-Amiri-Actor (an email; IAP later) and X-Amiri-Source
 (form | assistant | setup | import | system), recorded in the history.
 """
 
-import json
 from datetime import datetime
 from typing import Annotated, Any, Literal
 
@@ -448,14 +447,14 @@ async def rule_table_entry(regulator_id: str):
             "relation": r.get("relation") or ("standard" if r.get("country") is None else "home")}
 
 
-@ref_router.get("/demo-profile", summary="The demo bank's whole profile (sample data), in the import format")
-async def demo_profile():
+@ref_router.get("/demo-profile", summary="A demo institution's whole profile (invented), in the import format")
+async def demo_profile(kind: Literal["bank", "insurer"] = "bank"):
     from fastapi.responses import JSONResponse
 
-    from app import settings as _settings
+    from app import demo
 
-    doc = json.loads((_settings.PROJECT / "app" / "seeds" / "serendib_bank.json").read_text())
-    return JSONResponse(doc, headers={"Content-Disposition": 'attachment; filename="amiri-demo-profile.json"'})
+    name = demo.DEMOS[kind]["slug"]
+    return JSONResponse(demo.profile(kind), headers={"Content-Disposition": f'attachment; filename="{name}.json"'})
 
 
 @ref_router.get("/currencies", summary="ISO 4217 currencies (scope=home: those a base currency may be, SUPPORTED_REGION)")

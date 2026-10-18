@@ -1,0 +1,46 @@
+{
+  "title": "What if a magnitude 7 earthquake hits West Java",
+  "headlines": [
+    {
+      "id": "c-eq-1",
+      "title": "Magnitude 7.0 earthquake strikes off West Java, felt strongly in Jakarta",
+      "day": 1,
+      "time": "02:15"
+    },
+    {
+      "id": "c-eq-2",
+      "title": "Buildings collapse in Sukabumi and Cianjur; hundreds feared dead",
+      "day": 1,
+      "time": "05:00"
+    },
+    {
+      "id": "c-eq-3",
+      "title": "Power and telecoms cut across Greater Jakarta; factories in industrial estates halt production",
+      "day": 1,
+      "time": "10:30"
+    },
+    {
+      "id": "c-eq-4",
+      "title": "OJK asks insurers to report claim estimates and to speed up payments",
+      "day": 2,
+      "time": "09:00"
+    },
+    {
+      "id": "c-eq-5",
+      "title": "Reinsurers say they are assessing losses and expect a market loss in the hundreds of millions of dollars",
+      "day": 3,
+      "time": "11:00"
+    },
+    {
+      "id": "c-eq-6",
+      "title": "Government declares a national disaster response for West Java",
+      "day": 5,
+      "time": "10:00"
+    }
+  ],
+  "prices": {
+    "direction": "weaker",
+    "size_pct": 2,
+    "ramp_days": 4
+  }
+}

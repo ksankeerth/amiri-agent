@@ -1,0 +1,58 @@
+{
+  "series": [
+    {
+      "symbol": "USD/IDR",
+      "name": "Rupiah vs dollar",
+      "places": [
+        "ID"
+      ],
+      "theme": {
+        "theme": "fx",
+        "direction_up": "weaker",
+        "direction_down": "stronger",
+        "currency": "IDR"
+      }
+    },
+    {
+      "symbol": "EIDO",
+      "name": "MSCI Indonesia fund (shares in the investment book)",
+      "places": [
+        "ID"
+      ],
+      "theme": {
+        "theme": "markets",
+        "direction_up": "equity_up",
+        "direction_down": "equity_down"
+      }
+    },
+    {
+      "symbol": "BNO",
+      "name": "Brent oil fund (marine and fuel costs)",
+      "places": [
+        "ID",
+        "SA",
+        "IR"
+      ],
+      "theme": {
+        "theme": "commodities",
+        "direction_up": "up",
+        "direction_down": "down",
+        "item": "oil"
+      }
+    },
+    {
+      "symbol": "EUR/USD",
+      "name": "Euro vs dollar (reinsurance in euros)",
+      "places": [
+        "DE",
+        "CH"
+      ],
+      "theme": {
+        "theme": "fx",
+        "direction_up": "stronger",
+        "direction_down": "weaker",
+        "currency": "EUR"
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "items": [
+    {
+      "id": "lk",
+      "code": "LK",
+      "role": "home",
+      "scope": "all",
+      "branch_count": 172
+    }
+  ]
+}

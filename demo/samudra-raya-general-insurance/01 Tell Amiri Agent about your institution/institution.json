@@ -1,0 +1,22 @@
+{
+  "institution": {
+    "name": "Samudra Raya General Insurance",
+    "legal_name": "PT Samudra Raya General Insurance Tbk",
+    "short_name": "Samudra Raya",
+    "institution_type": "insurer",
+    "subtype": "general",
+    "islamic": true,
+    "home_country": "ID",
+    "base_currency": "IDR",
+    "time_zone": "Asia/Jakarta",
+    "clearing_currencies": [
+      "USD",
+      "SGD",
+      "EUR"
+    ],
+    "governance_body": "Risk Management Committee",
+    "size_band": "mid",
+    "fiscal_year_start_month": 1,
+    "summary": "Mid-size Indonesian general insurer: motor, property and engineering, marine cargo and hull, group health and personal accident, with a sharia (takaful-style) unit; sells through agents, brokers, motor dealers and banks, and buys reinsurance in Jakarta, Singapore and Europe."
+  }
+}

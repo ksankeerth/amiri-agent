@@ -1,0 +1,193 @@
+{
+  "items": [
+    {
+      "id": "quakes",
+      "hazard_id": "id-earthquake-volcano",
+      "source": "finder",
+      "touches": {
+        "segments": [
+          "sme-property",
+          "industrial-corporates",
+          "vehicle-owners"
+        ],
+        "products": [
+          "commercial-property",
+          "engineering",
+          "home-cover",
+          "private-motor"
+        ]
+      },
+      "note": "Property and engineering carry earthquake extensions; most of it is reinsured."
+    },
+    {
+      "id": "haze",
+      "hazard_id": "id-haze",
+      "source": "finder",
+      "touches": {
+        "segments": [
+          "farmers-and-plantations",
+          "group-health-employers"
+        ],
+        "products": [
+          "crop-indemnity",
+          "group-health",
+          "individual-health"
+        ]
+      },
+      "note": "August to October: Sumatra and Kalimantan fires affect health claims and plantations."
+    },
+    {
+      "id": "jakarta-floods",
+      "hazard_id": "id-jakarta-floods",
+      "source": "finder",
+      "touches": {
+        "segments": [
+          "vehicle-owners",
+          "sme-property"
+        ],
+        "products": [
+          "private-motor",
+          "home-cover",
+          "commercial-property",
+          "two-wheelers"
+        ]
+      },
+      "note": "The rainy season starts in the coming weeks; flood claims for cars peak between December and February."
+    },
+    {
+      "id": "hormuz",
+      "hazard_id": "hormuz-disruption",
+      "source": "finder",
+      "touches": {
+        "segments": [
+          "traders-shippers"
+        ],
+        "products": [
+          "marine-cargo",
+          "marine-hull"
+        ],
+        "watch_places": [
+          "hormuz"
+        ]
+      },
+      "note": "Marine war-risk cover for Gulf voyages was withdrawn or repriced after March 2026."
+    },
+    {
+      "id": "gulf",
+      "hazard_id": "gulf-security",
+      "source": "finder",
+      "title": "Gulf conflict reaches pilgrims and workers",
+      "touches": {
+        "segments": [
+          "pilgrims-and-travellers",
+          "migrant-worker-families"
+        ],
+        "products": [
+          "pilgrim-travel",
+          "migrant-worker-cover",
+          "personal-accident"
+        ],
+        "flows": [
+          "remit-id-sa"
+        ],
+        "watch_places": [
+          "saudi-arabia"
+        ]
+      }
+    },
+    {
+      "id": "taiwan",
+      "hazard_id": "taiwan-strait-tension",
+      "source": "finder",
+      "touches": {
+        "segments": [
+          "traders-shippers"
+        ],
+        "products": [
+          "marine-cargo",
+          "marine-hull"
+        ],
+        "watch_places": [
+          "taiwan-strait"
+        ]
+      }
+    },
+    {
+      "id": "china-slowdown",
+      "hazard_id": "china-property-slowdown",
+      "source": "finder",
+      "touches": {
+        "segments": [
+          "traders-shippers",
+          "industrial-corporates"
+        ],
+        "products": [
+          "marine-cargo",
+          "marine-hull",
+          "engineering"
+        ],
+        "flows": [
+          "export-coal-cn"
+        ],
+        "watch_places": [
+          "china"
+        ]
+      }
+    },
+    {
+      "id": "rupiah-parts",
+      "title": "Rupiah at 18,000 raises claims and reinsurance costs",
+      "kind": "market",
+      "source": "user",
+      "places": [
+        "ID"
+      ],
+      "touches": {
+        "segments": [
+          "vehicle-owners"
+        ],
+        "products": [
+          "private-motor",
+          "commercial-motor",
+          "syariah-motor",
+          "marine-hull",
+          "engineering"
+        ]
+      },
+      "note": "Imported spare parts and dollar-priced reinsurance both cost more when the rupiah falls."
+    },
+    {
+      "id": "msci-portfolio",
+      "title": "MSCI downgrade and equity selloff hit the investment portfolio",
+      "kind": "market",
+      "source": "user",
+      "places": [
+        "ID"
+      ],
+      "touches": {},
+      "note": "Insurers hold shares, bonds and funds against their reserves. A move of Indonesia to standalone status would pressure the share price and capital."
+    },
+    {
+      "id": "reinsurance-renewal",
+      "title": "1 January reinsurance renewal: dearer cover for Middle East exposure",
+      "kind": "economic",
+      "source": "user",
+      "places": [
+        "ID"
+      ],
+      "touches": {
+        "products": [
+          "marine-cargo",
+          "marine-hull",
+          "commercial-property",
+          "engineering"
+        ],
+        "segments": [
+          "traders-shippers",
+          "industrial-corporates"
+        ]
+      },
+      "note": "Reinsurers are focusing on Middle East exposure at the coming renewals."
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "items": [
+    {
+      "id": "commercial-bank-of-ceylon",
+      "name": "Commercial Bank of Ceylon",
+      "type": "bank",
+      "places": [
+        "LK"
+      ],
+      "categories": [
+        "savings",
+        "business_loan",
+        "cards",
+        "remittances"
+      ],
+      "overlap": "high",
+      "aliases": [
+        "ComBank"
+      ]
+    },
+    {
+      "id": "hatton-national-bank",
+      "name": "Hatton National Bank",
+      "type": "bank",
+      "places": [
+        "LK"
+      ],
+      "categories": [
+        "savings",
+        "business_loan",
+        "gold_loan",
+        "remittances"
+      ],
+      "overlap": "high",
+      "aliases": [
+        "HNB"
+      ]
+    },
+    {
+      "id": "sampath-bank",
+      "name": "Sampath Bank",
+      "type": "bank",
+      "places": [
+        "LK"
+      ],
+      "categories": [
+        "savings",
+        "business_loan",
+        "cards"
+      ],
+      "overlap": "medium"
+    },
+    {
+      "id": "seylan-bank",
+      "name": "Seylan Bank",
+      "type": "bank",
+      "places": [
+        "LK"
+      ],
+      "categories": [
+        "savings",
+        "gold_loan",
+        "vehicle_finance"
+      ],
+      "overlap": "medium"
+    },
+    {
+      "id": "coastal-remit",
+      "name": "Coastal Remit",
+      "type": "wallet",
+      "places": [
+        "AE",
+        "SA",
+        "LK"
+      ],
+      "categories": [
+        "remittances"
+      ],
+      "overlap": "high",
+      "aliases": [
+        "CoastalRemit"
+      ],
+      "note": "An invented remittance app, used in the demo's scenarios."
+    }
+  ]
+}

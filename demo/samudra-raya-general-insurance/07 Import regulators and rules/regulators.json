@@ -1,0 +1,59 @@
+{
+  "items": [
+    {
+      "id": "ojk",
+      "regulator_id": "id-ojk",
+      "relation": "home",
+      "note": "Supervises insurers as well as banks."
+    },
+    {
+      "id": "bi",
+      "regulator_id": "id-bi",
+      "relation": "home",
+      "note": "Rupiah and rate decisions."
+    },
+    {
+      "id": "ppatk",
+      "regulator_id": "id-ppatk",
+      "relation": "home"
+    },
+    {
+      "id": "lps",
+      "regulator_id": "id-lps",
+      "relation": "home",
+      "note": "Deposit and policyholder protection scheme."
+    },
+    {
+      "id": "ofac",
+      "regulator_id": "sanctions-ofac",
+      "relation": "reach",
+      "note": "Applies through dollar premiums and reinsurance claims."
+    },
+    {
+      "id": "eu-sanctions",
+      "regulator_id": "sanctions-eu",
+      "relation": "reach"
+    },
+    {
+      "id": "iais",
+      "regulator_id": "global-iais",
+      "relation": "standard"
+    },
+    {
+      "id": "ifsb",
+      "regulator_id": "global-ifsb",
+      "relation": "standard",
+      "note": "For the sharia unit."
+    },
+    {
+      "id": "fatf",
+      "regulator_id": "global-fatf",
+      "relation": "standard"
+    },
+    {
+      "id": "un-sanctions",
+      "regulator_id": "global-un",
+      "relation": "standard"
+    }
+  ]
+}

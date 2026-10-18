@@ -1,0 +1,365 @@
+{
+  "items": [
+    {
+      "id": "private-motor",
+      "name": "Private motor comprehensive",
+      "category": "motor",
+      "product_type": "private_motor",
+      "segments": [
+        "vehicle-owners"
+      ],
+      "owner": "Motor",
+      "currencies": [
+        "IDR"
+      ],
+      "book_size": {
+        "amount": 1350000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      },
+      "attributes": {
+        "cover": "comprehensive",
+        "retention_pct": 10,
+        "third_party_cover": true
+      },
+      "note": "Claims cost depends on spare-parts prices, many of them imported."
+    },
+    {
+      "id": "commercial-motor",
+      "name": "Commercial vehicles",
+      "category": "motor",
+      "product_type": "commercial_motor",
+      "segments": [
+        "sme-property",
+        "traders-shippers"
+      ],
+      "owner": "Motor",
+      "currencies": [
+        "IDR"
+      ],
+      "book_size": {
+        "amount": 400000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      },
+      "attributes": {
+        "fleet_policies": true
+      }
+    },
+    {
+      "id": "two-wheelers",
+      "name": "Motorcycle cover",
+      "category": "motor",
+      "product_type": "two_three_wheeler",
+      "segments": [
+        "vehicle-owners"
+      ],
+      "owner": "Motor",
+      "currencies": [
+        "IDR"
+      ],
+      "book_size": {
+        "amount": 120000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      }
+    },
+    {
+      "id": "syariah-motor",
+      "name": "Syariah motor",
+      "category": "motor",
+      "product_type": "private_motor",
+      "segments": [
+        "vehicle-owners"
+      ],
+      "islamic": true,
+      "owner": "Syariah unit",
+      "currencies": [
+        "IDR"
+      ],
+      "book_size": {
+        "amount": 90000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      },
+      "note": "Run on takaful principles with a separate fund."
+    },
+    {
+      "id": "home-cover",
+      "name": "Homeowners",
+      "category": "property",
+      "product_type": "home",
+      "segments": [
+        "vehicle-owners"
+      ],
+      "owner": "Property",
+      "currencies": [
+        "IDR"
+      ],
+      "book_size": {
+        "amount": 180000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      },
+      "attributes": {
+        "natural_perils_included": true
+      },
+      "note": "Flood and earthquake extensions are sold with most policies."
+    },
+    {
+      "id": "commercial-property",
+      "name": "Commercial property and fire",
+      "category": "property",
+      "product_type": "commercial_property",
+      "segments": [
+        "sme-property",
+        "industrial-corporates"
+      ],
+      "owner": "Property",
+      "currencies": [
+        "IDR",
+        "USD"
+      ],
+      "book_size": {
+        "amount": 780000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      },
+      "attributes": {
+        "sum_insured_band": "high",
+        "earthquake_extension": true
+      }
+    },
+    {
+      "id": "engineering",
+      "name": "Engineering and construction",
+      "category": "property",
+      "product_type": "engineering",
+      "segments": [
+        "industrial-corporates"
+      ],
+      "owner": "Property",
+      "currencies": [
+        "IDR",
+        "USD"
+      ],
+      "book_size": {
+        "amount": 420000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      },
+      "attributes": {
+        "sum_insured_band": "high"
+      }
+    },
+    {
+      "id": "marine-cargo",
+      "name": "Marine cargo",
+      "category": "marine",
+      "product_type": "marine_cargo",
+      "segments": [
+        "traders-shippers"
+      ],
+      "owner": "Marine",
+      "currencies": [
+        "IDR",
+        "USD"
+      ],
+      "book_size": {
+        "amount": 460000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      },
+      "attributes": {
+        "voyage_days_max": 45,
+        "war_risk": false,
+        "open_covers": true
+      },
+      "note": "War-risk extensions for Gulf voyages are excluded or priced case by case."
+    },
+    {
+      "id": "marine-hull",
+      "name": "Marine hull",
+      "category": "marine",
+      "product_type": "marine_hull",
+      "segments": [
+        "traders-shippers"
+      ],
+      "owner": "Marine",
+      "currencies": [
+        "USD",
+        "IDR"
+      ],
+      "book_size": {
+        "amount": 210000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      },
+      "attributes": {
+        "war_risk": false
+      }
+    },
+    {
+      "id": "general-liability",
+      "name": "General liability",
+      "category": "liability",
+      "product_type": "general_liability",
+      "segments": [
+        "sme-property",
+        "industrial-corporates"
+      ],
+      "owner": "Liability",
+      "currencies": [
+        "IDR"
+      ],
+      "book_size": {
+        "amount": 150000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      }
+    },
+    {
+      "id": "group-health",
+      "name": "Group health",
+      "category": "health",
+      "product_type": "group_health",
+      "segments": [
+        "group-health-employers"
+      ],
+      "owner": "Health",
+      "currencies": [
+        "IDR"
+      ],
+      "book_size": {
+        "amount": 620000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      },
+      "attributes": {
+        "settlement_mode": "cashless",
+        "medical_inflation_pct": 12.5
+      }
+    },
+    {
+      "id": "individual-health",
+      "name": "Individual health",
+      "category": "health",
+      "product_type": "individual_health",
+      "segments": [
+        "vehicle-owners"
+      ],
+      "owner": "Health",
+      "currencies": [
+        "IDR"
+      ],
+      "book_size": {
+        "amount": 110000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      }
+    },
+    {
+      "id": "personal-accident",
+      "name": "Personal accident",
+      "category": "health",
+      "product_type": "personal_accident",
+      "segments": [
+        "group-health-employers",
+        "migrant-worker-families"
+      ],
+      "owner": "Health",
+      "currencies": [
+        "IDR"
+      ],
+      "book_size": {
+        "amount": 90000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      }
+    },
+    {
+      "id": "pilgrim-travel",
+      "name": "Umrah and Hajj travel cover",
+      "category": "travel",
+      "product_type": "pilgrimage",
+      "segments": [
+        "pilgrims-and-travellers"
+      ],
+      "owner": "Travel",
+      "currencies": [
+        "IDR",
+        "SAR"
+      ],
+      "book_size": {
+        "amount": 70000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      },
+      "attributes": {
+        "destination": "SA",
+        "medical_evacuation": true
+      }
+    },
+    {
+      "id": "travel-annual",
+      "name": "Annual multi-trip travel",
+      "category": "travel",
+      "product_type": "annual_multi_trip",
+      "segments": [
+        "pilgrims-and-travellers"
+      ],
+      "owner": "Travel",
+      "currencies": [
+        "IDR"
+      ],
+      "book_size": {
+        "amount": 30000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      }
+    },
+    {
+      "id": "migrant-worker-cover",
+      "name": "Migrant worker protection",
+      "category": "travel",
+      "product_type": "migrant_worker",
+      "segments": [
+        "migrant-worker-families"
+      ],
+      "owner": "Travel",
+      "currencies": [
+        "IDR",
+        "MYR"
+      ],
+      "book_size": {
+        "amount": 50000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      },
+      "attributes": {
+        "destinations": "MY,SA,HK,TW"
+      }
+    },
+    {
+      "id": "crop-indemnity",
+      "name": "Rice crop insurance",
+      "category": "agriculture",
+      "product_type": "crop_indemnity",
+      "segments": [
+        "farmers-and-plantations"
+      ],
+      "owner": "Agriculture",
+      "currencies": [
+        "IDR"
+      ],
+      "book_size": {
+        "amount": 40000000000.0,
+        "currency": "IDR",
+        "as_of": "2026-09-30"
+      },
+      "attributes": {
+        "scheme": "public_subsidised"
+      }
+    }
+  ]
+}

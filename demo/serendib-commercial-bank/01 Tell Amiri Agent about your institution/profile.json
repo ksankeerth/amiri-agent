@@ -1,0 +1,600 @@
+{
+  "_about": "The demo bank (invented), in Sri Lanka only. Load it from the Reset dialog, the empty first screen, or demo/ in the repository (uv run amiri demo-export writes demo/ from this file). Every amount is from a named, published source (each flow's source.url); a flow with no official figure has no amount and says so in its note.",
+  "institution": {
+    "institution_id": "serendib-bank",
+    "name": "Serendib Commercial Bank",
+    "institution_type": "bank",
+    "subtype": "commercial",
+    "home_country": "LK",
+    "base_currency": "LKR",
+    "time_zone": "Asia/Colombo",
+    "clearing_currencies": [
+      "USD",
+      "EUR"
+    ],
+    "governance_body": "Board Risk Committee",
+    "size_band": "mid",
+    "summary": "Mid-size commercial bank in Sri Lanka: retail deposits and pawning, SME and corporate lending, trade finance, cards and inward remittances from Gulf migrant workers; 172 branches across Sri Lanka."
+  },
+  "sections": {
+    "footprint": [
+      {
+        "id": "lk",
+        "code": "LK",
+        "role": "home",
+        "scope": "all",
+        "branch_count": 172
+      }
+    ],
+    "watch-places": [
+      {
+        "id": "saudi-arabia",
+        "name": "Saudi Arabia",
+        "code": "SA",
+        "kind": "country",
+        "reason": "Remittances from migrant workers"
+      },
+      {
+        "id": "united-arab-emirates",
+        "name": "United Arab Emirates",
+        "code": "AE",
+        "kind": "country",
+        "reason": "Remittances; fuel imports"
+      },
+      {
+        "id": "qatar",
+        "name": "Qatar",
+        "code": "QA",
+        "kind": "country",
+        "reason": "Remittances"
+      },
+      {
+        "id": "kuwait",
+        "name": "Kuwait",
+        "code": "KW",
+        "kind": "country",
+        "reason": "Remittances"
+      },
+      {
+        "id": "hormuz",
+        "name": "Strait of Hormuz",
+        "code": "chk:hormuz",
+        "kind": "chokepoint",
+        "reason": "Fuel imports"
+      },
+      {
+        "id": "bab-el-mandeb",
+        "name": "Bab-el-Mandeb",
+        "code": "chk:bab-el-mandeb",
+        "kind": "chokepoint",
+        "reason": "Exports to Europe and the US"
+      }
+    ],
+    "segments": [
+      {
+        "id": "migrant-families",
+        "label": "Migrant-worker families",
+        "kind": "individual",
+        "note": "Households with a member working abroad, mostly in the Gulf.",
+        "places": [
+          "city:jaffna",
+          "LK-61",
+          "LK-12"
+        ],
+        "income_sources": [
+          "remittances"
+        ],
+        "spec_mapping": [
+          {
+            "dimension": "segment",
+            "value": "remittance_linked"
+          }
+        ],
+        "template_id": "bank-migrant-worker-families"
+      },
+      {
+        "id": "exporters-smes",
+        "label": "Exporters, importers and SMEs",
+        "kind": "business",
+        "note": "Garment, food and trading firms; many import on LCs.",
+        "places": [
+          "LK-11",
+          "LK-12",
+          "LK-13"
+        ],
+        "income_sources": [
+          "business_income"
+        ],
+        "spec_mapping": [
+          {
+            "dimension": "size_band",
+            "value": "sme"
+          }
+        ],
+        "template_id": "bank-small-and-medium-businesses"
+      },
+      {
+        "id": "farmers",
+        "label": "Farmers and estate workers",
+        "kind": "individual",
+        "note": "Tea estates, paddy and vegetables.",
+        "places": [
+          "LK-21",
+          "LK-71",
+          "LK-81"
+        ],
+        "income_sources": [
+          "farm_income"
+        ],
+        "spec_mapping": [
+          {
+            "dimension": "sector",
+            "value": "A"
+          }
+        ],
+        "template_id": "bank-farmers"
+      },
+      {
+        "id": "salaried",
+        "label": "Salaried (IT, services, government)",
+        "kind": "individual",
+        "note": "Employees of IT and service firms and the state.",
+        "places": [
+          "LK-11",
+          "LK-12",
+          "LK-21"
+        ],
+        "income_sources": [
+          "salary"
+        ],
+        "spec_mapping": [
+          {
+            "dimension": "segment",
+            "value": "salaried"
+          }
+        ],
+        "template_id": "bank-salaried-employees"
+      }
+    ],
+    "products": [
+      {
+        "id": "migrant-savings",
+        "name": "Migrant Family Savings",
+        "category": "savings",
+        "product_type": "savings_account",
+        "segments": [
+          "migrant-families"
+        ],
+        "owner": "Retail banking",
+        "currencies": [
+          "LKR"
+        ],
+        "book_size": {
+          "amount": 64000000000,
+          "currency": "LKR"
+        }
+      },
+      {
+        "id": "fc-savings",
+        "name": "FC Savings (NRFC/PFCA)",
+        "category": "savings",
+        "product_type": "fc_deposit",
+        "segments": [
+          "migrant-families"
+        ],
+        "owner": "Treasury",
+        "currencies": [
+          "USD",
+          "EUR"
+        ],
+        "book_size": {
+          "amount": 38000000000,
+          "currency": "LKR"
+        }
+      },
+      {
+        "id": "term-deposits",
+        "name": "Term Deposits",
+        "category": "savings",
+        "product_type": "term_deposit",
+        "segments": [
+          "salaried",
+          "migrant-families"
+        ],
+        "owner": "Treasury",
+        "book_size": {
+          "amount": 310000000000,
+          "currency": "LKR"
+        }
+      },
+      {
+        "id": "pawning",
+        "name": "Pawning",
+        "category": "gold_loan",
+        "product_type": "gold_loan",
+        "segments": [
+          "farmers",
+          "migrant-families"
+        ],
+        "owner": "Pawning",
+        "book_size": {
+          "amount": 58000000000,
+          "currency": "LKR"
+        }
+      },
+      {
+        "id": "personal-loans",
+        "name": "Personal Loans",
+        "category": "retail_loan",
+        "product_type": "personal_loan",
+        "segments": [
+          "salaried"
+        ],
+        "owner": "Retail credit",
+        "book_size": {
+          "amount": 120000000000,
+          "currency": "LKR"
+        }
+      },
+      {
+        "id": "vehicle-leasing",
+        "name": "Vehicle Leasing",
+        "category": "vehicle_finance",
+        "product_type": "vehicle_lease",
+        "segments": [
+          "salaried",
+          "exporters-smes"
+        ],
+        "owner": "Retail credit"
+      },
+      {
+        "id": "credit-cards",
+        "name": "Credit Cards",
+        "category": "cards",
+        "product_type": "credit_card",
+        "segments": [
+          "salaried"
+        ],
+        "owner": "Cards"
+      },
+      {
+        "id": "sme-loans",
+        "name": "SME Loans",
+        "category": "business_loan",
+        "product_type": "working_capital",
+        "segments": [
+          "exporters-smes"
+        ],
+        "owner": "Business credit"
+      },
+      {
+        "id": "trade-finance",
+        "name": "Trade Finance",
+        "category": "trade_finance",
+        "product_type": "import_lc",
+        "segments": [
+          "exporters-smes"
+        ],
+        "owner": "Business credit"
+      },
+      {
+        "id": "inward-remittances",
+        "name": "Inward Remittances",
+        "category": "remittances",
+        "product_type": "inward_remittance",
+        "segments": [
+          "migrant-families"
+        ],
+        "owner": "Retail banking"
+      }
+    ],
+    "flows": [
+      {
+        "id": "remit-kw",
+        "kind": "remittances_in",
+        "local": "LK",
+        "counterpart": "KW",
+        "figure_id": "remittances-in-lk-kw-2025",
+        "value": {
+          "amount": 893000000,
+          "currency": "USD",
+          "year": 2025
+        },
+        "source": {
+          "kind": "dataset",
+          "dataset": "Sri Lanka Bureau of Foreign Employment, remittances from Kuwait (as reported)",
+          "dataset_year": 2025,
+          "url": "https://adaderana.lk/news/cmqk5lh6y00023b6pmetfwbvo",
+          "sample": false
+        },
+        "segments": [
+          "migrant-families"
+        ],
+        "note": "Kuwait is the largest source: about 30% of Sri Lankans working abroad go there."
+      },
+      {
+        "id": "remit-qa",
+        "kind": "remittances_in",
+        "local": "LK",
+        "counterpart": "QA",
+        "source": {
+          "kind": "user"
+        },
+        "segments": [
+          "migrant-families"
+        ],
+        "note": "No official full-year figure by country is published; the Central Bank of Sri Lanka publishes quarterly figures by country. All corridors together: US$ 8.07 billion in 2025."
+      },
+      {
+        "id": "remit-ae",
+        "kind": "remittances_in",
+        "local": "LK",
+        "counterpart": "AE",
+        "source": {
+          "kind": "user"
+        },
+        "segments": [
+          "migrant-families"
+        ],
+        "note": "No official full-year figure by country is published; the Central Bank of Sri Lanka publishes quarterly figures by country. All corridors together: US$ 8.07 billion in 2025."
+      },
+      {
+        "id": "remit-sa",
+        "kind": "remittances_in",
+        "local": "LK",
+        "counterpart": "SA",
+        "source": {
+          "kind": "user"
+        },
+        "segments": [
+          "migrant-families"
+        ],
+        "note": "No official full-year figure by country is published; the Central Bank of Sri Lanka publishes quarterly figures by country. All corridors together: US$ 8.07 billion in 2025."
+      },
+      {
+        "id": "garments-us",
+        "kind": "exports",
+        "local": "LK",
+        "counterpart": "US",
+        "goods": "Garments",
+        "figure_id": "exports-lk-us-garments-2025",
+        "route_id": "colombo-suez-europe",
+        "value": {
+          "amount": 1960000000,
+          "currency": "USD",
+          "year": 2025
+        },
+        "source": {
+          "kind": "dataset",
+          "dataset": "Sri Lanka Export Development Board, apparel exports by market (as reported)",
+          "dataset_year": 2025,
+          "url": "https://www.dailymirror.lk/print/breaking-news/Sri-Lanka-exports-top-US-17-2bn-in-2025/108-331344",
+          "sample": false
+        },
+        "segments": [
+          "exporters-smes"
+        ]
+      },
+      {
+        "id": "garments-gb",
+        "kind": "exports",
+        "local": "LK",
+        "counterpart": "GB",
+        "goods": "Garments",
+        "figure_id": "exports-lk-gb-garments-2025",
+        "route_id": "colombo-suez-europe",
+        "value": {
+          "amount": 688500000,
+          "currency": "USD",
+          "year": 2025
+        },
+        "source": {
+          "kind": "dataset",
+          "dataset": "Sri Lanka Export Development Board, apparel exports by market (as reported)",
+          "dataset_year": 2025,
+          "url": "https://www.dailymirror.lk/print/breaking-news/Sri-Lanka-exports-top-US-17-2bn-in-2025/108-331344",
+          "sample": false
+        },
+        "segments": [
+          "exporters-smes"
+        ]
+      },
+      {
+        "id": "crude-ae",
+        "kind": "imports",
+        "local": "LK",
+        "counterpart": "AE",
+        "goods": "Crude oil",
+        "route_id": "colombo-hormuz-gulf",
+        "source": {
+          "kind": "user"
+        },
+        "note": "The Sapugaskanda refinery has run on Murban crude from the UAE; no current official figure by supplier."
+      }
+    ],
+    "regulators": [
+      {
+        "id": "central-bank-of-sri-lanka",
+        "regulator_id": "lk-cbsl",
+        "relation": "home"
+      },
+      {
+        "id": "financial-intelligence-unit-sri-lanka",
+        "regulator_id": "lk-fiu",
+        "relation": "home"
+      },
+      {
+        "id": "us-treasury-sanctions-ofac",
+        "regulator_id": "sanctions-ofac",
+        "relation": "reach"
+      },
+      {
+        "id": "basel-committee-standards",
+        "regulator_id": "global-basel",
+        "relation": "standard"
+      },
+      {
+        "id": "financial-action-task-force",
+        "regulator_id": "global-fatf",
+        "relation": "standard"
+      }
+    ],
+    "rivals": [
+      {
+        "id": "commercial-bank-of-ceylon",
+        "name": "Commercial Bank of Ceylon",
+        "type": "bank",
+        "places": [
+          "LK"
+        ],
+        "categories": [
+          "savings",
+          "business_loan",
+          "cards",
+          "remittances"
+        ],
+        "overlap": "high",
+        "aliases": [
+          "ComBank"
+        ]
+      },
+      {
+        "id": "hatton-national-bank",
+        "name": "Hatton National Bank",
+        "type": "bank",
+        "places": [
+          "LK"
+        ],
+        "categories": [
+          "savings",
+          "business_loan",
+          "gold_loan",
+          "remittances"
+        ],
+        "overlap": "high",
+        "aliases": [
+          "HNB"
+        ]
+      },
+      {
+        "id": "sampath-bank",
+        "name": "Sampath Bank",
+        "type": "bank",
+        "places": [
+          "LK"
+        ],
+        "categories": [
+          "savings",
+          "business_loan",
+          "cards"
+        ],
+        "overlap": "medium"
+      },
+      {
+        "id": "seylan-bank",
+        "name": "Seylan Bank",
+        "type": "bank",
+        "places": [
+          "LK"
+        ],
+        "categories": [
+          "savings",
+          "gold_loan",
+          "vehicle_finance"
+        ],
+        "overlap": "medium"
+      },
+      {
+        "id": "coastal-remit",
+        "name": "Coastal Remit",
+        "type": "wallet",
+        "places": [
+          "AE",
+          "SA",
+          "LK"
+        ],
+        "categories": [
+          "remittances"
+        ],
+        "overlap": "high",
+        "aliases": [
+          "CoastalRemit"
+        ],
+        "note": "An invented remittance app, used in the demo's scenarios."
+      }
+    ],
+    "counterparties": [
+      {
+        "id": "correspondent-bank-usd-clearing",
+        "name": "Correspondent bank (USD clearing)",
+        "kind": "correspondent_bank",
+        "places": [
+          "US"
+        ],
+        "importance": "critical"
+      }
+    ],
+    "risk-exposures": [
+      {
+        "id": "gulf",
+        "hazard_id": "gulf-security",
+        "title": "Gulf tension meets remittances",
+        "source": "finder",
+        "touches": {
+          "segments": [
+            "migrant-families"
+          ],
+          "products": [
+            "migrant-savings",
+            "inward-remittances"
+          ],
+          "flows": [
+            "remit-kw",
+            "remit-qa",
+            "remit-ae",
+            "remit-sa"
+          ]
+        }
+      },
+      {
+        "id": "sw-monsoon",
+        "hazard_id": "lk-sw-monsoon-floods",
+        "title": "Monsoon floods meet Colombo customers",
+        "source": "finder",
+        "touches": {
+          "segments": [
+            "exporters-smes",
+            "salaried"
+          ],
+          "products": [
+            "sme-loans",
+            "personal-loans"
+          ]
+        }
+      },
+      {
+        "id": "red-sea",
+        "hazard_id": "red-sea-attacks",
+        "title": "Red Sea attacks meet exporters",
+        "source": "finder",
+        "touches": {
+          "segments": [
+            "exporters-smes"
+          ],
+          "products": [
+            "trade-finance"
+          ],
+          "flows": [
+            "garments-us"
+          ],
+          "routes": [
+            "colombo-suez-europe"
+          ],
+          "watch_places": [
+            "bab-el-mandeb"
+          ]
+        }
+      }
+    ]
+  }
+}

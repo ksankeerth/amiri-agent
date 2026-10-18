@@ -11,7 +11,7 @@ import type { SeriesState } from "../api/series";
 import { Spark } from "../components/charts";
 import { StateBadge } from "../components/series";
 import { Icon } from "../components/Icon";
-import { Banner, CountUp, PageSkeleton, useNow, useRole } from "../components/ui";
+import { Banner, CountUp, DEMOS, PageSkeleton, useNow, useRole } from "../components/ui";
 import { ago, dayTime, pct, placeName, placeOrder, plural, price, TIME_ZONE, ZONE_LABEL } from "../format";
 import { setAsideReason, themeLabel } from "../plain";
 import { ProfileMap } from "./institution/ProfileMap";
@@ -53,11 +53,36 @@ function FirstRun({ o }: { o: Overview }) {
         <div key={s.title} className={`card ov-step ${s.done ? "done" : ""}`}>
           <span className="n">{s.done ? "✓" : n + 1}</span><h2>{s.title}</h2>
           <p className="small muted" style={{ margin: 0, flex: 1 }}>{s.body}</p><div className="row">{s.action}</div></div>))}</div>
-      <div className="card mt16"><div className="bd row wrap" style={{ gap: 16 }}>
+      {!i ? <DemoCard /> : <div className="card mt16"><div className="bd row wrap" style={{ gap: 16 }}>
         <div className="col" style={{ gap: 4, flex: 1, minWidth: 260 }}><h2 style={{ margin: 0 }}>See it work first</h2>
           <span className="small muted">Run a sharp currency fall on your institution in the Scenario Studio: headlines arrive, prices move, and Amiri Agent's monitors and investigation respond. Nothing touches live data.</span></div>
-        <Link className="btn" to="/studio"><Icon name="studio" />Open the Scenario Studio</Link></div></div>
+        <Link className="btn" to="/studio"><Icon name="studio" />Open the Scenario Studio</Link></div></div>}
     </div>
+  );
+}
+
+/** No institution yet: load one of the two invented demos in one click (the server refuses once an institution exists). */
+function DemoCard() {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const load = async (kind: string) => {
+    setBusy(kind); setErr(null);
+    try {
+      const r = await fetch("/api/v1/prototype:demo", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind }) });
+      if (!r.ok) { const p = await r.json().catch(() => ({})); throw new Error(p.detail ?? `HTTP ${r.status}`); }
+      window.location.assign("/home");  // every page loads again, with the demo
+    } catch (e) { setErr(String((e as Error).message ?? e)); setBusy(null); }
+  };
+  return (
+    <div className="card mt16"><div className="bd col" style={{ gap: 12 }}>
+      <div className="col" style={{ gap: 4 }}><h2 style={{ margin: 0 }}>Start with a demo</h2>
+        <span className="small muted">Load an invented institution with its whole profile, ready to use, and try everything on it. The data is public in the repository's demo folder.</span></div>
+      <div className="row wrap" style={{ gap: 8 }}>{DEMOS.map(d => (
+        <button key={d.kind} className="btn" type="button" disabled={!!busy} onClick={() => load(d.kind)}>
+          <Icon name={d.kind === "bank" ? "bank" : "health"} />{busy === d.kind ? "Loading…" : `${d.label}: ${d.name}`}</button>))}</div>
+      <span className="small muted">{DEMOS.map(d => `${d.name} is ${d.what.charAt(0).toLowerCase()}${d.what.slice(1)}`).join("; ")}.</span>
+      {err && <div className="errtext" role="alert">{err}</div>}
+    </div></div>
   );
 }
 

@@ -101,7 +101,7 @@ def id_insurer(spec_public: dict, name: str) -> dict:
     r = copy.deepcopy(examples.REQUEST)
     r["recent_urls"] = []
     r["institution"] = {
-        "name": "Nusantara General Insurance",
+        "name": "Samudra Raya General Insurance",
         "institution_type": "insurer",
         "country": "ID",
         "country_name": "Indonesia",

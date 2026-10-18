@@ -8,7 +8,7 @@ import type { Installation } from "../../App";
 import { Icon } from "../../components/Icon";
 import { WithChat } from "../../components/SetupChat";
 import { PageHeader, StatusPill } from "../../components/blocks";
-import { Banner, MenuButton, Modal, PageHead, ResetModal, useToast, PageSkeleton } from "../../components/ui";
+import { Banner, DEMOS, MenuButton, Modal, PageHead, ResetModal, useToast, PageSkeleton } from "../../components/ui";
 import { dayTime, plural } from "../../format";
 import { PlaceName, useLoad } from "./fields";
 import { InstitutionFields, InstitutionModal, LABELS, splitErrors, useHiddenErrors, type Ctx } from "./forms";
@@ -93,7 +93,7 @@ export function CreateInstitution({ onCreated }: { onCreated: (id: string) => vo
       {general.concat(hidden).length > 0 && <div className="rawerr" role="alert">{general.concat(hidden).join(" · ")}</div>}
       <div className="row wrap"><label className="btn"><Icon name="plus" />Import a whole profile (creates everything)
         <input type="file" accept="application/json" className="sr" onChange={e => e.target.files?.[0] && importFile(e.target.files[0])} /></label>
-        <a className="small" href="/api/v1/reference/demo-profile" download>Download the demo bank's profile</a>
+        <span className="small muted">Download a demo's profile: {DEMOS.map((d, n) => <Fragment key={d.kind}>{n ? ", " : ""}<a href={`/api/v1/reference/demo-profile?kind=${d.kind}`} download>{d.label.toLowerCase()}</a></Fragment>)}</span>
         <span className="spacer" /><button className="btn btn--primary" type="button" disabled={busy} onClick={create}>Create and continue</button></div>
     </div></div>
   );

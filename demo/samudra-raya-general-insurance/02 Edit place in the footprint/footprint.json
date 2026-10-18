@@ -1,0 +1,11 @@
+{
+  "items": [
+    {
+      "id": "id",
+      "code": "ID",
+      "role": "home",
+      "scope": "all",
+      "branch_count": 42
+    }
+  ]
+}

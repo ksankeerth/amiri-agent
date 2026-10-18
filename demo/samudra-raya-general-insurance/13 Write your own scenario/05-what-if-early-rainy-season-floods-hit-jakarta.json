@@ -1,0 +1,40 @@
+{
+  "title": "What if early rainy-season floods hit Jakarta",
+  "headlines": [
+    {
+      "id": "c-fl-1",
+      "title": "BMKG warns of extreme rain across Greater Jakarta over the next three days",
+      "day": 1,
+      "time": "06:00"
+    },
+    {
+      "id": "c-fl-2",
+      "title": "Floods inundate suburbs and toll roads; thousands of cars submerged",
+      "day": 2,
+      "time": "05:30"
+    },
+    {
+      "id": "c-fl-3",
+      "title": "Industrial estates in Bekasi and Tangerang halt production",
+      "day": 2,
+      "time": "14:00"
+    },
+    {
+      "id": "c-fl-4",
+      "title": "Insurers report a surge in motor flood claims and long queues at repair garages",
+      "day": 3,
+      "time": "10:00"
+    },
+    {
+      "id": "c-fl-5",
+      "title": "Government announces flood relief and pumping operations as more rain is forecast",
+      "day": 5,
+      "time": "09:30"
+    }
+  ],
+  "prices": {
+    "direction": "weaker",
+    "size_pct": 0.5,
+    "ramp_days": 3
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "title": "Reality check: the week of 12 October 2026",
+  "headlines": [
+    {
+      "id": "c-rc-1",
+      "title": "Container ship and bulk carrier sink near the Strait of Hormuz after projectile strikes",
+      "day": 1,
+      "time": "09:00"
+    },
+    {
+      "id": "c-rc-2",
+      "title": "Shipping through the Strait of Hormuz falls to two transits in a day, from about 85 before the crisis",
+      "day": 1,
+      "time": "14:00"
+    },
+    {
+      "id": "c-rc-3",
+      "title": "Brent crude trades above $105 as Iran steps up attacks on Hormuz tankers",
+      "day": 2,
+      "time": "10:00"
+    },
+    {
+      "id": "c-rc-4",
+      "title": "Ukraine strikes Russia's Ryazan refinery, ending a pause in attacks on energy sites",
+      "day": 3,
+      "time": "09:30"
+    },
+    {
+      "id": "c-rc-5",
+      "title": "MSCI opens a consultation on moving Indonesia from emerging to standalone market status",
+      "day": 3,
+      "time": "15:00"
+    },
+    {
+      "id": "c-rc-6",
+      "title": "Indonesian stocks plunge as foreign investors sell on the MSCI proposal",
+      "day": 3,
+      "time": "16:30"
+    },
+    {
+      "id": "c-rc-7",
+      "title": "Bank Indonesia pledges to keep intervening in currency and bond markets as the rupiah nears 18,000",
+      "day": 4,
+      "time": "10:00"
+    },
+    {
+      "id": "c-rc-8",
+      "title": "US consumer prices rise 3.7 percent on the year in September, above forecasts",
+      "day": 4,
+      "time": "12:00"
+    },
+    {
+      "id": "c-rc-9",
+      "title": "Asian currencies slide as hotter US inflation lifts rate-hike bets; Philippine peso hits a record low",
+      "day": 4,
+      "time": "17:00"
+    },
+    {
+      "id": "c-rc-10",
+      "title": "Rupiah weakens to 18,060 per dollar, its lowest level since August",
+      "day": 5,
+      "time": "09:00"
+    }
+  ],
+  "prices": {
+    "direction": "none",
+    "size_pct": 0,
+    "ramp_days": 5
+  }
+}

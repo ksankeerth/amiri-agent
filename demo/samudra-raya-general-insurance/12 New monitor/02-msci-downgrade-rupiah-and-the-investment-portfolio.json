@@ -1,0 +1,134 @@
+{
+  "spec": {
+    "about": {
+      "name": "MSCI downgrade, rupiah and the investment portfolio",
+      "owner": "Investments and Finance",
+      "also_notify": [],
+      "check_frequency": 60,
+      "kind": "events",
+      "key_dates": [
+        {
+          "date": "2027-04-30",
+          "label": "MSCI consultation on Indonesia closes for feedback",
+          "lead_days": 7
+        },
+        {
+          "date": "2027-06-30",
+          "label": "MSCI decision on Indonesia due by the end of June",
+          "lead_days": 7
+        }
+      ],
+      "review_by": "2027-01-31"
+    },
+    "public": {
+      "watch": [
+        {
+          "name": "MSCI Indonesia index review",
+          "type": "topic",
+          "other_forms": [
+            "MSCI consultation"
+          ]
+        },
+        {
+          "name": "Indonesia Stock Exchange",
+          "type": "organisation",
+          "other_forms": [
+            "IDX",
+            "IHSG"
+          ]
+        },
+        {
+          "name": "Indonesian rupiah",
+          "type": "topic"
+        },
+        {
+          "name": "Bank Indonesia",
+          "type": "organisation",
+          "other_forms": [
+            "BI"
+          ]
+        },
+        {
+          "name": "Otoritas Jasa Keuangan",
+          "type": "regulation",
+          "other_forms": [
+            "OJK"
+          ]
+        }
+      ],
+      "in_one_sentence": "News on MSCI's review of Indonesia, falls in Indonesian shares or the rupiah, and official measures in reply, which move our portfolio and capital.",
+      "tell_me_if": [
+        "MSCI, the exchange or OJK say something new about the consultation to move Indonesia to standalone status",
+        "The Indonesian share index falls more than 5% in a day, or trading is halted",
+        "The rupiah moves more than 1.5% in a day or breaks a record low",
+        "Bank Indonesia or OJK announce intervention, a rate change, or temporary rules for investors or insurers"
+      ],
+      "ignore": [
+        "Company earnings that do not mention the index or the market as a whole"
+      ],
+      "example_headlines": {
+        "match": [
+          {
+            "headline": "MSCI weighs downgrading Indonesia to standalone market status",
+            "line": 1
+          },
+          {
+            "headline": "Indonesian stocks plunge as foreign investors sell",
+            "line": 2
+          },
+          {
+            "headline": "Rupiah hits record low as Bank Indonesia steps in",
+            "line": 3
+          },
+          {
+            "headline": "OJK announces temporary measures for market volatility",
+            "line": 4
+          }
+        ],
+        "not_match": [
+          "Indonesia hosts investment conference"
+        ]
+      },
+      "places": [
+        "ID"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": {
+        "mode": "any_reputable",
+        "check_first": [
+          "Jakarta Post",
+          "Bisnis Indonesia",
+          "Reuters"
+        ]
+      }
+    },
+    "private": {
+      "exposure": [
+        {
+          "id": "risk:msci-portfolio",
+          "how_it_reaches_us": "The risk this monitor was built from."
+        },
+        {
+          "id": "risk:rupiah-parts",
+          "how_it_reaches_us": "A weaker rupiah also raises claims and reinsurance costs."
+        },
+        {
+          "id": "regulator:ojk",
+          "how_it_reaches_us": "May set temporary rules for insurers' valuation and capital."
+        },
+        {
+          "id": "regulator:bi",
+          "how_it_reaches_us": "Rupiah and rate policy."
+        }
+      ],
+      "serious": [
+        "Share index falls more than 10% in a week",
+        "OJK relaxes or tightens solvency rules for insurers"
+      ],
+      "notes": "MSCI opened a consultation on moving Indonesia from emerging to standalone status because of opaque shareholding and suspected coordinated trading; the proposal sent the index sharply lower and the rupiah near 18,000. Feedback is open to 30 April 2027 and a decision is due by the end of June 2027."
+    },
+    "alert_level": 7
+  }
+}

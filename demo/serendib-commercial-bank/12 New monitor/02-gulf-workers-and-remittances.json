@@ -1,0 +1,122 @@
+{
+  "spec": {
+    "about": {
+      "name": "Gulf workers and remittances",
+      "owner": "Retail banking",
+      "also_notify": [],
+      "check_frequency": 360,
+      "kind": "events",
+      "key_dates": [],
+      "review_by": "2026-12-31"
+    },
+    "public": {
+      "watch": [
+        {
+          "name": "Sri Lankan migrant workers",
+          "type": "topic"
+        },
+        {
+          "name": "Saudi Arabia",
+          "type": "place"
+        },
+        {
+          "name": "United Arab Emirates",
+          "type": "place"
+        },
+        {
+          "name": "Kuwait",
+          "type": "place"
+        },
+        {
+          "name": "Qatar",
+          "type": "place"
+        },
+        {
+          "name": "Gulf exchange houses",
+          "type": "sector"
+        }
+      ],
+      "in_one_sentence": "Events in the Gulf that threaten Sri Lankan workers' jobs, safety or the channels that carry their money home.",
+      "tell_me_if": [
+        "Gulf states lay off foreign workers, freeze visas or order evacuations that affect Sri Lankans",
+        "Missile, drone or shipping attacks hit Gulf cities, ports or airports where Sri Lankan workers live",
+        "An exchange house or bank in the Gulf suspends transfers to Sri Lanka, or payment rails are cut",
+        "Sri Lanka's central bank or government reports a notable change in monthly remittances"
+      ],
+      "ignore": [
+        "Routine labour-market statistics with no Sri Lanka angle",
+        "Sports or entertainment news from the Gulf"
+      ],
+      "example_headlines": {
+        "match": [
+          {
+            "headline": "Saudi Arabia limits visas for foreign workers",
+            "line": 1
+          },
+          {
+            "headline": "Sri Lankan embassy in Kuwait advises citizens after drone strike",
+            "line": 2
+          },
+          {
+            "headline": "Workers' remittances to Sri Lanka rise 19.8% in the first eight months",
+            "line": 4
+          }
+        ],
+        "not_match": [
+          "Dubai opens new shopping festival",
+          "Qatar hosts regional football tournament"
+        ]
+      },
+      "places": [
+        "SA",
+        "AE",
+        "KW",
+        "QA",
+        "BH",
+        "OM",
+        "LK"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": {
+        "mode": "any_reputable",
+        "check_first": []
+      }
+    },
+    "private": {
+      "exposure": [
+        {
+          "id": "risk:gulf",
+          "how_it_reaches_us": "The risk this monitor was built from."
+        },
+        {
+          "id": "segment:migrant-families",
+          "how_it_reaches_us": "Their income is the remittance."
+        },
+        {
+          "id": "product:migrant-savings",
+          "how_it_reaches_us": "Deposits follow monthly transfers."
+        },
+        {
+          "id": "product:inward-remittances",
+          "how_it_reaches_us": "Volume depends on workers' pay and channels."
+        },
+        {
+          "id": "flow:remit-sa",
+          "how_it_reaches_us": "Largest source."
+        },
+        {
+          "id": "flow:remit-ae",
+          "how_it_reaches_us": "Second largest and the exchange-house hub."
+        }
+      ],
+      "serious": [
+        "Several thousand Sri Lankan workers evacuated or laid off in one country",
+        "A large exchange-house partner stops sending to Sri Lanka"
+      ],
+      "notes": "Remittances have been strong in 2026 (up about 20% on the year to August), which is cushioning higher import costs. A Gulf shock would hit that cushion first."
+    },
+    "alert_level": 6
+  }
+}

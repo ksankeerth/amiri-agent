@@ -1,5 +1,5 @@
 {
-  "institution": {"institution_id": "id-insurer", "name": "Nusantara General Insurance", "institution_type": "insurer",
+  "institution": {"institution_id": "id-insurer", "name": "Samudra Raya General Insurance", "institution_type": "insurer",
                   "home_country": "ID", "base_currency": "IDR", "time_zone": "Asia/Jakarta"},
   "sections": {
     "products": [

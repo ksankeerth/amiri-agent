@@ -8,7 +8,7 @@ import re
 from typing import Any
 
 # Fields that legitimately hold such patterns (who edited, links, dataset names).
-EXEMPT = {"website", "edited_by", "edited_at", "dataset", "created_by", "updated_by", "rule_ref", "regulator_id",
+EXEMPT = {"website", "url", "edited_by", "edited_at", "dataset", "created_by", "updated_by", "rule_ref", "regulator_id",
           "hazard_id", "figure_id", "route_id", "template_id", "source_id", "catalog_product_id", "code", "lei"}
 
 PATTERNS: list[tuple[str, re.Pattern[str]]] = [

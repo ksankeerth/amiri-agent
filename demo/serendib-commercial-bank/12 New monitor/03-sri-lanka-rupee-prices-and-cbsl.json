@@ -1,0 +1,109 @@
+{
+  "spec": {
+    "about": {
+      "name": "Sri Lanka rupee, prices and CBSL",
+      "owner": "Treasury",
+      "also_notify": [],
+      "check_frequency": 360,
+      "kind": "trend",
+      "key_dates": [],
+      "review_by": "2026-12-31"
+    },
+    "public": {
+      "watch": [
+        {
+          "name": "Central Bank of Sri Lanka",
+          "type": "organisation",
+          "other_forms": [
+            "CBSL"
+          ]
+        },
+        {
+          "name": "Sri Lankan rupee",
+          "type": "topic"
+        },
+        {
+          "name": "Sri Lanka inflation",
+          "type": "topic"
+        },
+        {
+          "name": "Ceylon Petroleum Corporation",
+          "type": "organisation",
+          "other_forms": [
+            "CPC"
+          ]
+        },
+        {
+          "name": "IMF programme for Sri Lanka",
+          "type": "topic"
+        }
+      ],
+      "in_one_sentence": "Changes in Sri Lanka's policy rate, rupee, inflation, fuel prices or IMF programme that move what the bank earns, pays or must report.",
+      "tell_me_if": [
+        "CBSL changes its policy rate, reserve requirement or issues a new direction to banks",
+        "The rupee moves more than 2% against the dollar in a week",
+        "Ceylon Petroleum Corporation or the government revises fuel or electricity prices",
+        "Inflation, reserves or the external position are reported to have changed direction",
+        "The IMF announces a review result, delay or conditions for Sri Lanka"
+      ],
+      "ignore": [
+        "Opinion pieces about the economy with no new data"
+      ],
+      "example_headlines": {
+        "match": [
+          {
+            "headline": "Central Bank raises policy rate by 100 basis points to 8.75 percent",
+            "line": 1
+          },
+          {
+            "headline": "Rupee weakens past 335 to the dollar",
+            "line": 2
+          },
+          {
+            "headline": "Ceylon Petroleum Corporation raises petrol and diesel prices",
+            "line": 3
+          },
+          {
+            "headline": "IMF staff reach agreement on next review for Sri Lanka",
+            "line": 5
+          }
+        ],
+        "not_match": [
+          "Cricket board announces new coach"
+        ]
+      },
+      "places": [
+        "LK"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": {
+        "mode": "any_reputable",
+        "check_first": [
+          "Central Bank of Sri Lanka",
+          "Economy Next",
+          "Daily FT"
+        ]
+      }
+    },
+    "private": {
+      "exposure": [
+        {
+          "id": "product:term-deposits",
+          "how_it_reaches_us": "Deposit rates follow the policy rate."
+        },
+        {
+          "id": "regulator:central-bank-of-sri-lanka",
+          "how_it_reaches_us": "Sets rates and rules."
+        }
+      ],
+      "serious": [
+        "CBSL announces a moratorium or relief direction to banks",
+        "Sudden large fall in reserves"
+      ],
+      "notes": "Inflation reached 8% in August, the policy rate was raised to 8.75% in May, and the rupee has moved both ways this year (about 331 to the dollar on 15 October)."
+    },
+    "alert_level": 5
+  }
+}

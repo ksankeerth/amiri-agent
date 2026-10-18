@@ -1,0 +1,58 @@
+{
+  "title": "What if Hormuz closes completely",
+  "headlines": [
+    {
+      "id": "c-hz-1",
+      "title": "Iran announces closure of the Strait of Hormuz to all commercial shipping",
+      "day": 1,
+      "time": "08:00"
+    },
+    {
+      "id": "c-hz-2",
+      "title": "Brent crude jumps above $130 as tanker traffic stops",
+      "day": 1,
+      "time": "11:30"
+    },
+    {
+      "id": "c-hz-3",
+      "title": "Ceylon Petroleum Corporation warns of fuel shortages and orders rationing at stations",
+      "day": 2,
+      "time": "09:00"
+    },
+    {
+      "id": "c-hz-4",
+      "title": "Colombo port reports Gulf-bound and Gulf-origin cargo stranded",
+      "day": 2,
+      "time": "15:00"
+    },
+    {
+      "id": "c-hz-5",
+      "title": "Central Bank of Sri Lanka calls an emergency meeting as the rupee slides",
+      "day": 3,
+      "time": "10:00"
+    },
+    {
+      "id": "c-hz-6",
+      "title": "Sri Lanka's foreign ministry advises workers in Gulf states to stay indoors",
+      "day": 4,
+      "time": "09:00"
+    },
+    {
+      "id": "c-hz-7",
+      "title": "Exchange houses in Dubai report delays sending money to South Asia",
+      "day": 5,
+      "time": "12:00"
+    },
+    {
+      "id": "c-hz-8",
+      "title": "Government announces import controls on non-essential goods to save dollars",
+      "day": 7,
+      "time": "10:00"
+    }
+  ],
+  "prices": {
+    "direction": "weaker",
+    "size_pct": 10,
+    "ramp_days": 7
+  }
+}

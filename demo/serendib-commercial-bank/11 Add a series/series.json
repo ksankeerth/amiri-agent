@@ -1,0 +1,60 @@
+{
+  "series": [
+    {
+      "symbol": "USD/LKR",
+      "name": "Rupee vs dollar",
+      "places": [
+        "LK"
+      ],
+      "theme": {
+        "theme": "fx",
+        "direction_up": "weaker",
+        "direction_down": "stronger",
+        "currency": "LKR"
+      }
+    },
+    {
+      "symbol": "AED/LKR",
+      "name": "Rupee vs UAE dirham (the Gulf remittance corridor)",
+      "places": [
+        "LK",
+        "AE"
+      ],
+      "theme": {
+        "theme": "fx",
+        "direction_up": "weaker",
+        "direction_down": "stronger",
+        "currency": "LKR"
+      }
+    },
+    {
+      "symbol": "XAU/USD",
+      "name": "Gold price (pawning)",
+      "places": [
+        "LK"
+      ],
+      "theme": {
+        "theme": "commodities",
+        "direction_up": "up",
+        "direction_down": "down",
+        "item": "gold"
+      }
+    },
+    {
+      "symbol": "BNO",
+      "name": "Brent oil fund (fuel imports)",
+      "places": [
+        "LK",
+        "SA",
+        "AE",
+        "IR"
+      ],
+      "theme": {
+        "theme": "commodities",
+        "direction_up": "up",
+        "direction_down": "down",
+        "item": "oil"
+      }
+    }
+  ]
+}

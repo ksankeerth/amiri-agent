@@ -1,0 +1,134 @@
+{
+  "items": [
+    {
+      "id": "migrant-savings",
+      "name": "Migrant Family Savings",
+      "category": "savings",
+      "product_type": "savings_account",
+      "segments": [
+        "migrant-families"
+      ],
+      "owner": "Retail banking",
+      "currencies": [
+        "LKR"
+      ],
+      "book_size": {
+        "amount": 64000000000,
+        "currency": "LKR"
+      }
+    },
+    {
+      "id": "fc-savings",
+      "name": "FC Savings (NRFC/PFCA)",
+      "category": "savings",
+      "product_type": "fc_deposit",
+      "segments": [
+        "migrant-families"
+      ],
+      "owner": "Treasury",
+      "currencies": [
+        "USD",
+        "EUR"
+      ],
+      "book_size": {
+        "amount": 38000000000,
+        "currency": "LKR"
+      }
+    },
+    {
+      "id": "term-deposits",
+      "name": "Term Deposits",
+      "category": "savings",
+      "product_type": "term_deposit",
+      "segments": [
+        "salaried",
+        "migrant-families"
+      ],
+      "owner": "Treasury",
+      "book_size": {
+        "amount": 310000000000,
+        "currency": "LKR"
+      }
+    },
+    {
+      "id": "pawning",
+      "name": "Pawning",
+      "category": "gold_loan",
+      "product_type": "gold_loan",
+      "segments": [
+        "farmers",
+        "migrant-families"
+      ],
+      "owner": "Pawning",
+      "book_size": {
+        "amount": 58000000000,
+        "currency": "LKR"
+      }
+    },
+    {
+      "id": "personal-loans",
+      "name": "Personal Loans",
+      "category": "retail_loan",
+      "product_type": "personal_loan",
+      "segments": [
+        "salaried"
+      ],
+      "owner": "Retail credit",
+      "book_size": {
+        "amount": 120000000000,
+        "currency": "LKR"
+      }
+    },
+    {
+      "id": "vehicle-leasing",
+      "name": "Vehicle Leasing",
+      "category": "vehicle_finance",
+      "product_type": "vehicle_lease",
+      "segments": [
+        "salaried",
+        "exporters-smes"
+      ],
+      "owner": "Retail credit"
+    },
+    {
+      "id": "credit-cards",
+      "name": "Credit Cards",
+      "category": "cards",
+      "product_type": "credit_card",
+      "segments": [
+        "salaried"
+      ],
+      "owner": "Cards"
+    },
+    {
+      "id": "sme-loans",
+      "name": "SME Loans",
+      "category": "business_loan",
+      "product_type": "working_capital",
+      "segments": [
+        "exporters-smes"
+      ],
+      "owner": "Business credit"
+    },
+    {
+      "id": "trade-finance",
+      "name": "Trade Finance",
+      "category": "trade_finance",
+      "product_type": "import_lc",
+      "segments": [
+        "exporters-smes"
+      ],
+      "owner": "Business credit"
+    },
+    {
+      "id": "inward-remittances",
+      "name": "Inward Remittances",
+      "category": "remittances",
+      "product_type": "inward_remittance",
+      "segments": [
+        "migrant-families"
+      ],
+      "owner": "Retail banking"
+    }
+  ]
+}

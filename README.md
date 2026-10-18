@@ -4,7 +4,8 @@ An early-warning assistant for banks and insurers. It watches the news and the m
 institution, traces each event to the products it could move, and tells the team that owns them,
 before the numbers show it.
 
-> **A prototype.** It runs against an invented demo bank (Serendib Commercial Bank) with sample data.
+> **A prototype.** It runs against two invented demo institutions, a bank in Sri Lanka and an insurer in Indonesia
+> (see [`demo/`](demo)).
 > It isn't a production system and nothing it says is financial advice.
 
 ## What it does
@@ -47,6 +48,7 @@ and a model never produces a number a person reads.
 | [`server/contracts/`](server/contracts) | OpenAPI contracts of the setup, Radar and investigation agents |
 | `compose.yaml`, `infra/local/` | Local Postgres, and an optional ticker that stands in for Cloud Scheduler |
 | [`infra/`](infra) | Google Cloud: Terraform, Cloud Build, and the scripts (secrets, images, the on/off switch) |
+| [`demo/`](demo) | The two demo institutions as JSON files, in folders named after the app's dialogs, with how to load them |
 
 Each agent is its own small service with its own README and tests, and talks to the server only over
 the contracts. The Radar agent (news from GDELT) is developed separately and not in this repository yet.
@@ -64,8 +66,8 @@ docker compose up -d postgres
 cd server
 cp .env.example .env              # set TWELVEDATA_API_KEY
 uv sync
-uv run amiri seed-series          # USD/LKR, AED/LKR, USD/INR and gold
-uv run amiri seed-institution     # the demo bank
+uv run amiri seed-series          # the demo bank's series: USD/LKR, AED/LKR, gold, Brent
+uv run amiri seed-institution     # the demo bank (--institution insurer: the demo insurer)
 uv run amiri serve                # http://localhost:8000  (API docs at /docs)
 
 cd ../web

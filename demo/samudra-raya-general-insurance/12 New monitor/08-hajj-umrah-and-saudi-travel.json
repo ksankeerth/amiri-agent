@@ -1,0 +1,98 @@
+{
+  "spec": {
+    "about": {
+      "name": "Hajj, Umrah and Saudi travel",
+      "owner": "Travel Insurance",
+      "also_notify": [],
+      "check_frequency": 1440,
+      "kind": "events",
+      "key_dates": [],
+      "review_by": "2026-12-31"
+    },
+    "public": {
+      "watch": [
+        {
+          "name": "Umrah",
+          "type": "topic"
+        },
+        {
+          "name": "Hajj",
+          "type": "topic"
+        },
+        {
+          "name": "Saudi Arabia",
+          "type": "place"
+        },
+        {
+          "name": "Indonesian pilgrims",
+          "type": "topic"
+        }
+      ],
+      "in_one_sentence": "Events in Saudi Arabia or on pilgrim routes that could cause claims on pilgrim or migrant-worker cover.",
+      "tell_me_if": [
+        "Saudi Arabia suspends, restricts or reopens Umrah or Hajj visas or flights from Indonesia",
+        "Attacks, security incidents or disease outbreaks affect Jeddah, Mecca, Medina or Saudi airports",
+        "Indonesian airlines or the government cancel pilgrim flights or evacuate citizens",
+        "Large health or crowd incidents are reported among Indonesian pilgrims"
+      ],
+      "ignore": [
+        "Hajj quota announcements with no change for Indonesia"
+      ],
+      "example_headlines": {
+        "match": [
+          {
+            "headline": "Saudi Arabia suspends Umrah visas amid Gulf tension",
+            "line": 1
+          },
+          {
+            "headline": "Missile intercepted near Jeddah, flights delayed",
+            "line": 2
+          },
+          {
+            "headline": "Indonesian pilgrims stranded after flight cancellations",
+            "line": 3
+          }
+        ],
+        "not_match": [
+          "Hajj fees announced for next year"
+        ]
+      },
+      "places": [
+        "SA",
+        "ID"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": {
+        "mode": "any_reputable",
+        "check_first": []
+      }
+    },
+    "private": {
+      "exposure": [
+        {
+          "id": "risk:gulf",
+          "how_it_reaches_us": "Gulf conflict and pilgrims."
+        },
+        {
+          "id": "product:pilgrim-travel",
+          "how_it_reaches_us": "Cancellations and evacuation claims."
+        },
+        {
+          "id": "product:migrant-worker-cover",
+          "how_it_reaches_us": "Workers in Saudi Arabia."
+        },
+        {
+          "id": "segment:pilgrims-and-travellers",
+          "how_it_reaches_us": "Customers."
+        }
+      ],
+      "serious": [
+        "Pilgrim flights suspended for more than a week"
+      ],
+      "notes": "Pilgrim cover includes cancellation and medical evacuation."
+    },
+    "alert_level": 5
+  }
+}
