@@ -169,3 +169,16 @@ async def test_a_move_wins_over_reading_a_yes_as_the_answer():
         assert (r.track, r.model_calls) == (want, 0)
     r = await router.route(text="Yes please.", is_answer=True, requested=None, current="rules", has_institution=True)
     assert r.track == "rules"
+
+
+async def test_settlement_and_regulator_notes_go_to_rules(client, scripted):
+    from app.router import RouterNote
+
+    sid = await start(client, "bank-1")
+    scripted.script = [RouterChoice(track="rules", clearly_elsewhere=True, reason="currencies", notes=[
+        RouterNote(track="footprint_flows", text="settle in USD and AUD"),
+        RouterNote(track="footprint_flows", text="remittances to Fiji")])]
+    evs = await turn(client, sid, "bank-1", text="We settle in USD and AUD; remittances go to Fiji.",
+                     current_track="footprint_flows")
+    notes = next(d["notes"] for e, d in evs if e == "track_notes")
+    assert notes == [{"track": "footprint_flows", "text": "remittances to Fiji"}]  # the rules note was the chosen track's

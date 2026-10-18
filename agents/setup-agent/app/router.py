@@ -62,7 +62,8 @@ Rules:
 - A question that changes nothing and fits no track is "question"; anything unrelated to setting up
   Amiri Agent for this institution is "offtopic".
 - Facts in the message that belong to other tracks go in notes (track id and the fact), so later tracks
-  can use them. Don't put facts for the chosen track in notes.
+  can use them. Don't put facts for the chosen track in notes. Currencies it settles or clears in, regulators
+  and sanctions are rules, not footprint_flows (flows are money and goods sent to or from places).
 - {setup}
 
 Message: {message}
@@ -84,6 +85,14 @@ MOVE = re.compile(r"\b(?:move on|move|go|proceed|switch|skip|jump|continue|on)(?
 PHRASES = [("risks", re.compile(r"\brisk (?:check|finder|suggestions)\b", re.I)),
            ("verification", re.compile(r"\b(?:verify|check) (?:the |our )?(?:full |whole )?(?:profile|setup)\b|"
                                        r"\brun (?:the )?verification\b", re.I))]
+
+
+# seen: "we settle in USD and AUD" and "USD/AUD clearing" filed as footprint_flows notes (money flows) while in rules
+RULES_TOPIC = re.compile(r"\b(?:settle|settles|settlement|clearing|regulators?|sanctions?)\b", re.I)
+
+
+def note_track(n: RouterNote) -> str:
+    return "rules" if RULES_TOPIC.search(n.text) else n.track
 
 
 def explicit_move(text: str) -> str | None:
@@ -150,7 +159,7 @@ async def route(*, text: str | None, is_answer: bool, requested: str | None, cur
     if is_answer:
         return Route(current or "institution", current is None, "answers the agent's question")
     choice, calls = await _router(text or "", current, has_institution)
-    notes = [{"track": n.track, "text": n.text[:500]} for n in (choice.notes if choice else [])
+    notes = [{"track": note_track(n), "text": n.text[:500]} for n in (choice.notes if choice else [])
              if n.track in TRACK_IDS and n.text.strip()]
     if not has_institution:
         notes = [n for n in notes if n["track"] != "institution"]
