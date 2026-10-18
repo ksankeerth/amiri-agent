@@ -158,7 +158,7 @@ sequenceDiagram
     Note over AG: works in the background:<br/>Gemini, Google Search, BigQuery
     SRV->>AG: GET /…/{run_id} on the next tick (or when a page asks)
     AG-->>SRV: done: structured result
-    SRV->>DB: store findings, events, alerts; code does every count
+    SRV->>DB: store findings, events, alerts (code does every count)
 ```
 
 | Agent | Contract | Start | Poll |
