@@ -1,0 +1,104 @@
+{
+  "spec": {
+    "about": {
+      "name": "OJK and insurance rules",
+      "owner": "Compliance",
+      "also_notify": [],
+      "check_frequency": 360,
+      "kind": "trend",
+      "key_dates": [],
+      "review_by": "2026-12-31"
+    },
+    "public": {
+      "watch": [
+        {
+          "name": "Otoritas Jasa Keuangan",
+          "type": "regulation",
+          "other_forms": [
+            "OJK",
+            "Financial Services Authority Indonesia"
+          ]
+        },
+        {
+          "name": "Indonesian insurance regulation",
+          "type": "topic"
+        },
+        {
+          "name": "Insurance capital requirements",
+          "type": "topic"
+        },
+        {
+          "name": "Policyholder protection programme",
+          "type": "topic"
+        }
+      ],
+      "in_one_sentence": "New or changed OJK rules, sanctions or supervisory actions that change capital, reinsurance, product or reporting duties for insurers.",
+      "tell_me_if": [
+        "OJK issues, drafts or delays a regulation on insurers' capital, solvency, reinsurance, investments or product rules",
+        "OJK sanctions, restricts or revokes the licence of an insurer",
+        "OJK changes rules for health or motor insurance (pricing, co-payment, claims handling)",
+        "Rules for sharia (takaful) units or for the policyholder protection programme change"
+      ],
+      "ignore": [
+        "Ceremonial events and speeches with no new rule"
+      ],
+      "example_headlines": {
+        "match": [
+          {
+            "headline": "OJK raises minimum capital requirement for general insurers",
+            "line": 1
+          },
+          {
+            "headline": "OJK suspends business of an insurer over capital shortfall",
+            "line": 2
+          },
+          {
+            "headline": "OJK issues new rule on health insurance co-payment",
+            "line": 3
+          }
+        ],
+        "not_match": [
+          "OJK holds financial literacy campaign"
+        ]
+      },
+      "places": [
+        "ID"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": {
+        "mode": "any_reputable",
+        "check_first": [
+          "OJK",
+          "Bisnis Indonesia"
+        ]
+      }
+    },
+    "private": {
+      "exposure": [
+        {
+          "id": "regulator:ojk",
+          "how_it_reaches_us": "Home supervisor."
+        },
+        {
+          "id": "regulator:lps",
+          "how_it_reaches_us": "Policyholder protection."
+        },
+        {
+          "id": "product:group-health",
+          "how_it_reaches_us": "Health rules affect pricing and claims."
+        },
+        {
+          "id": "product:syariah-motor",
+          "how_it_reaches_us": "The sharia unit's rules."
+        }
+      ],
+      "serious": [
+        "OJK announces a mandatory capital increase or a ban on a product we sell"
+      ],
+      "notes": "OJK supervises insurers and has been raising capital and governance expectations."
+    },
+    "alert_level": 5
+  }
+}

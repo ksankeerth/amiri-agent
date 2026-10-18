@@ -1,0 +1,13 @@
+{
+  "items": [
+    {
+      "id": "correspondent-bank-usd-clearing",
+      "name": "Correspondent bank (USD clearing)",
+      "kind": "correspondent_bank",
+      "places": [
+        "US"
+      ],
+      "importance": "critical"
+    }
+  ]
+}

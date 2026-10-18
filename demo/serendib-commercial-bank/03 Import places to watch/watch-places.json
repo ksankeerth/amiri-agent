@@ -1,0 +1,46 @@
+{
+  "items": [
+    {
+      "id": "saudi-arabia",
+      "name": "Saudi Arabia",
+      "code": "SA",
+      "kind": "country",
+      "reason": "Remittances from migrant workers"
+    },
+    {
+      "id": "united-arab-emirates",
+      "name": "United Arab Emirates",
+      "code": "AE",
+      "kind": "country",
+      "reason": "Remittances; fuel imports"
+    },
+    {
+      "id": "qatar",
+      "name": "Qatar",
+      "code": "QA",
+      "kind": "country",
+      "reason": "Remittances"
+    },
+    {
+      "id": "kuwait",
+      "name": "Kuwait",
+      "code": "KW",
+      "kind": "country",
+      "reason": "Remittances"
+    },
+    {
+      "id": "hormuz",
+      "name": "Strait of Hormuz",
+      "code": "chk:hormuz",
+      "kind": "chokepoint",
+      "reason": "Fuel imports"
+    },
+    {
+      "id": "bab-el-mandeb",
+      "name": "Bab-el-Mandeb",
+      "code": "chk:bab-el-mandeb",
+      "kind": "chokepoint",
+      "reason": "Exports to Europe and the US"
+    }
+  ]
+}

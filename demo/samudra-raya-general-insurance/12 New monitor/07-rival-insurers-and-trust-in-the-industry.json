@@ -1,0 +1,103 @@
+{
+  "spec": {
+    "about": {
+      "name": "Rival insurers and trust in the industry",
+      "owner": "Strategy and Risk",
+      "also_notify": [],
+      "check_frequency": 360,
+      "kind": "trend",
+      "key_dates": [],
+      "review_by": "2026-12-31"
+    },
+    "public": {
+      "watch": [
+        {
+          "name": "Allianz Utama Indonesia",
+          "type": "organisation"
+        },
+        {
+          "name": "Asuransi Astra Buana",
+          "type": "organisation"
+        },
+        {
+          "name": "Asuransi Jasa Indonesia",
+          "type": "organisation",
+          "other_forms": [
+            "Jasindo"
+          ]
+        },
+        {
+          "name": "Tugu Pratama Indonesia",
+          "type": "organisation"
+        },
+        {
+          "name": "Indonesian insurance industry",
+          "type": "sector"
+        }
+      ],
+      "in_one_sentence": "Price cuts, new products, failures or scandals at rival insurers that could move business or damage trust in the industry.",
+      "tell_me_if": [
+        "A rival cuts premiums, launches a product or signs a large bancassurance or dealer deal",
+        "A rival insurer fails to pay claims, is sanctioned, is downgraded, or is in a merger or sale",
+        "A claims-payment scandal or cyber incident hits an Indonesian insurer"
+      ],
+      "ignore": [
+        "Rivals' sponsorship and awards news"
+      ],
+      "example_headlines": {
+        "match": [
+          {
+            "headline": "Insurer fined for delayed claim payments",
+            "line": 2
+          },
+          {
+            "headline": "Rival launches cheaper comprehensive motor cover",
+            "line": 1
+          },
+          {
+            "headline": "State insurer announces restructuring",
+            "line": 2
+          }
+        ],
+        "not_match": [
+          "Insurer wins customer service award"
+        ]
+      },
+      "places": [
+        "ID"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": {
+        "mode": "any_reputable",
+        "check_first": []
+      }
+    },
+    "private": {
+      "exposure": [
+        {
+          "id": "rival:allianz-utama",
+          "how_it_reaches_us": "Large foreign-owned rival."
+        },
+        {
+          "id": "rival:astra-buana",
+          "how_it_reaches_us": "Strong in motor through dealers."
+        },
+        {
+          "id": "rival:jasindo",
+          "how_it_reaches_us": "State-owned."
+        },
+        {
+          "id": "counterparty:dealer-partners",
+          "how_it_reaches_us": "Dealers can switch partners."
+        }
+      ],
+      "serious": [
+        "An insurer with more than 3% market share stops paying claims"
+      ],
+      "notes": "Trust events in Indonesian insurance have a history of affecting all insurers."
+    },
+    "alert_level": 4
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "spec": {
+    "about": {
+      "name": "Northeast monsoon floods and cyclones",
+      "owner": "Risk management",
+      "also_notify": [],
+      "check_frequency": 360,
+      "kind": "events",
+      "key_dates": [],
+      "review_by": "2026-12-31"
+    },
+    "public": {
+      "watch": [
+        {
+          "name": "Northeast monsoon",
+          "type": "topic"
+        },
+        {
+          "name": "Eastern Province Sri Lanka",
+          "type": "region"
+        },
+        {
+          "name": "Northern Province Sri Lanka",
+          "type": "region"
+        },
+        {
+          "name": "Cyclone",
+          "type": "topic"
+        }
+      ],
+      "in_one_sentence": "Floods, cyclones or landslides in Sri Lanka's north and east that hit customers, branches or crops.",
+      "tell_me_if": [
+        "Flood warnings or cyclone alerts are issued for the north, east or south-east of Sri Lanka",
+        "A cyclone approaches or crosses the Sri Lankan coast",
+        "The government declares a disaster area, relief package or loan moratorium",
+        "Roads, power, telecoms or banks' branches are closed by floods"
+      ],
+      "ignore": [
+        "Rain forecasts without warnings"
+      ],
+      "example_headlines": {
+        "match": [
+          {
+            "headline": "Cyclone warning issued for Sri Lanka's eastern coast as depression forms",
+            "line": 2
+          },
+          {
+            "headline": "Floods displace thousands in Eastern Province",
+            "line": 1
+          },
+          {
+            "headline": "Government announces flood relief for farmers",
+            "line": 3
+          }
+        ],
+        "not_match": [
+          "Monsoon forecast for next year published"
+        ]
+      },
+      "places": [
+        "LK-4",
+        "LK-5",
+        "LK-7"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": {
+        "mode": "any_reputable",
+        "check_first": [
+          "Disaster Management Centre Sri Lanka",
+          "Department of Meteorology Sri Lanka"
+        ]
+      }
+    },
+    "private": {
+      "exposure": [
+        {
+          "id": "segment:farmers",
+          "how_it_reaches_us": "Harvest and income."
+        },
+        {
+          "id": "product:pawning",
+          "how_it_reaches_us": "Farm families pawn gold after a lost harvest; repayments slip."
+        },
+        {
+          "id": "product:personal-loans",
+          "how_it_reaches_us": "Repayments slip in flood-hit districts."
+        }
+      ],
+      "serious": [
+        "Cyclone landfall near a branch cluster",
+        "Disaster declared in a district with a large loan book"
+      ],
+      "notes": "October to December is the northeast monsoon and cyclone season in the Bay of Bengal."
+    },
+    "alert_level": 6
+  }
+}

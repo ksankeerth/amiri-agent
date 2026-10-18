@@ -1,0 +1,81 @@
+{
+  "items": [
+    {
+      "id": "indonesia-re",
+      "name": "Indonesia Re",
+      "kind": "reinsurer",
+      "places": [
+        "ID"
+      ],
+      "importance": "critical",
+      "aliases": [
+        "Reasuransi Indonesia Utama",
+        "IndonesiaRe"
+      ],
+      "note": "Domestic reinsurer; takes the first cessions."
+    },
+    {
+      "id": "swiss-re",
+      "name": "Swiss Re",
+      "kind": "reinsurer",
+      "places": [
+        "CH",
+        "SG"
+      ],
+      "importance": "critical",
+      "note": "Property and marine treaty leader."
+    },
+    {
+      "id": "munich-re",
+      "name": "Munich Re",
+      "kind": "reinsurer",
+      "places": [
+        "DE",
+        "SG"
+      ],
+      "importance": "critical",
+      "note": "Property catastrophe and health treaties."
+    },
+    {
+      "id": "hannover-re",
+      "name": "Hannover Re",
+      "kind": "reinsurer",
+      "places": [
+        "DE",
+        "SG"
+      ],
+      "importance": "important"
+    },
+    {
+      "id": "aon",
+      "name": "Aon",
+      "kind": "distribution_partner",
+      "places": [
+        "SG",
+        "ID"
+      ],
+      "importance": "important",
+      "note": "Broker for large corporate risks and reinsurance placement."
+    },
+    {
+      "id": "dealer-partners",
+      "name": "Motor dealer and leasing partners",
+      "kind": "distribution_partner",
+      "places": [
+        "ID"
+      ],
+      "importance": "critical",
+      "note": "Sell most new-car policies at the point of sale."
+    },
+    {
+      "id": "claims-garages",
+      "name": "Authorised repair garage network",
+      "kind": "outsourcer",
+      "places": [
+        "ID"
+      ],
+      "importance": "important",
+      "note": "Repairs and spare-parts costs set the average motor claim."
+    }
+  ]
+}

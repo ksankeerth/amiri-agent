@@ -1,0 +1,88 @@
+{
+  "items": [
+    {
+      "id": "remit-id-my",
+      "kind": "remittances_in",
+      "local": "ID",
+      "counterpart": "MY",
+      "source": {
+        "kind": "user",
+        "url": "https://www.cnbcindonesia.com/research/20250221102759-128-612484/fenomena-kaburajadulu-ri-untung-duit-kiriman-tki-tembus-rp-255-t"
+      },
+      "segments": [
+        "migrant-worker-families"
+      ],
+      "note": "Malaysia is the largest source: Bank Indonesia reported US$ 1.18 billion in Q3 2024 alone (as reported by CNBC Indonesia)."
+    },
+    {
+      "id": "remit-id-sa",
+      "kind": "remittances_in",
+      "local": "ID",
+      "counterpart": "SA",
+      "source": {
+        "kind": "user"
+      },
+      "segments": [
+        "migrant-worker-families",
+        "pilgrims-and-travellers"
+      ],
+      "note": "No official full-year figure by country found; Bank Indonesia publishes quarterly remittance data."
+    },
+    {
+      "id": "remit-id-hk",
+      "kind": "remittances_in",
+      "local": "ID",
+      "counterpart": "HK",
+      "source": {
+        "kind": "user"
+      },
+      "segments": [
+        "migrant-worker-families"
+      ],
+      "note": "No official full-year figure by country found; Bank Indonesia publishes quarterly remittance data."
+    },
+    {
+      "id": "remit-id-tw",
+      "kind": "remittances_in",
+      "local": "ID",
+      "counterpart": "TW",
+      "source": {
+        "kind": "user"
+      },
+      "segments": [
+        "migrant-worker-families"
+      ],
+      "note": "No official full-year figure by country found; Bank Indonesia publishes quarterly remittance data."
+    },
+    {
+      "id": "export-coal-cn",
+      "kind": "exports",
+      "local": "ID",
+      "counterpart": "CN",
+      "goods": "Coal",
+      "source": {
+        "kind": "user"
+      },
+      "segments": [
+        "traders-shippers",
+        "industrial-corporates"
+      ],
+      "note": "China is a main buyer of Indonesian coal (all coal exports: about US$ 30.5 billion in 2024, BPS as reported); no official figure for China alone found."
+    },
+    {
+      "id": "export-palm-in",
+      "kind": "exports",
+      "local": "ID",
+      "counterpart": "IN",
+      "goods": "Palm oil",
+      "source": {
+        "kind": "user"
+      },
+      "segments": [
+        "traders-shippers",
+        "farmers-and-plantations"
+      ],
+      "note": "India is a main buyer of Indonesian palm oil; no official 2024 figure for India alone found."
+    }
+  ]
+}

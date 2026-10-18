@@ -1,0 +1,114 @@
+{
+  "spec": {
+    "about": {
+      "name": "Earthquakes, floods and haze in Indonesia",
+      "owner": "Underwriting and Claims",
+      "also_notify": [],
+      "check_frequency": 60,
+      "kind": "events",
+      "key_dates": [],
+      "review_by": "2026-12-31"
+    },
+    "public": {
+      "watch": [
+        {
+          "name": "Earthquake in Indonesia",
+          "type": "topic"
+        },
+        {
+          "name": "Volcanic eruption in Indonesia",
+          "type": "topic"
+        },
+        {
+          "name": "Jakarta floods",
+          "type": "topic"
+        },
+        {
+          "name": "Forest-fire haze",
+          "type": "topic",
+          "other_forms": [
+            "kabut asap"
+          ]
+        }
+      ],
+      "in_one_sentence": "Natural disasters in Indonesia that could produce claims or health and crop losses.",
+      "tell_me_if": [
+        "An earthquake of magnitude 5.5 or more strikes Java, Sumatra, Sulawesi or near a major city, or a tsunami warning is issued",
+        "A volcano erupts, closes airports or forces evacuations",
+        "Floods hit Jakarta, Surabaya, Medan or an industrial estate, or the BMKG warns of extreme weather",
+        "Haze from Sumatra or Kalimantan fires reaches hazardous levels or closes airports"
+      ],
+      "ignore": [
+        "Minor tremors with no damage",
+        "Seasonal forecasts with no warning"
+      ],
+      "example_headlines": {
+        "match": [
+          {
+            "headline": "Magnitude 6.1 earthquake strikes West Java, buildings damaged",
+            "line": 1
+          },
+          {
+            "headline": "Floods inundate Jakarta suburbs and industrial estates",
+            "line": 3
+          },
+          {
+            "headline": "Haze closes airports in Riau",
+            "line": 4
+          }
+        ],
+        "not_match": [
+          "Disaster preparedness workshop held"
+        ]
+      },
+      "places": [
+        "ID",
+        "ID-JK",
+        "ID-JB",
+        "ID-RI",
+        "ID-KT",
+        "ID-SU"
+      ],
+      "languages": [
+        "en"
+      ],
+      "sources": {
+        "mode": "any_reputable",
+        "check_first": [
+          "BMKG",
+          "BNPB",
+          "Jakarta Post"
+        ]
+      }
+    },
+    "private": {
+      "exposure": [
+        {
+          "id": "risk:quakes",
+          "how_it_reaches_us": "Property and engineering carry earthquake extensions."
+        },
+        {
+          "id": "risk:jakarta-floods",
+          "how_it_reaches_us": "Car and property flood claims."
+        },
+        {
+          "id": "risk:haze",
+          "how_it_reaches_us": "Health and crop claims."
+        },
+        {
+          "id": "product:commercial-property",
+          "how_it_reaches_us": "Largest property book."
+        },
+        {
+          "id": "product:private-motor",
+          "how_it_reaches_us": "Flood claims on cars."
+        }
+      ],
+      "serious": [
+        "An earthquake or flood in a city where we hold large concentrations of risk"
+      ],
+      "notes": "Most property catastrophe cover is reinsured, but claims handling and retentions are ours."
+    },
+    "alert_level": 7
+  }
+}
