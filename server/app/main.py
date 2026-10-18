@@ -41,13 +41,19 @@ from app.validation import api as validation_api
 from app.validation.service import Validation
 
 DESCRIPTION = """\
-Amiri Agent server API. This version covers **market series**: the prices and rates Amiri Agent
-watches by itself (Twelve Data, hourly), and the moves it flags as findings; and the
-**institution profile** (bank or insurer): identity, footprint, customer groups,
-products, flows, regulators, rivals, counterparties and known risks, with suggestions,
-readiness, history and the agents' context.
-No model is involved. Errors are RFC 9457 problem details. Roles are applied in the
-web app, not here (prototype).
+Amiri Agent server API: the platform core behind the web app. Code only, no model: it enumerates,
+scores, schedules and stores, and every number a person reads comes from here.
+
+- **Institution profile** (bank or insurer): footprint, customer groups, products, money flows,
+  regulators, rivals, counterparties and risks, with suggestions, readiness and history.
+- **Watch:** market series (Twelve Data), monitors (checked by the monitor agent) and Radar (world news).
+- **Findings and investigations:** findings are grouped into events and traced to products by the
+  investigation agent; **alerts** go to each owning team; **validation** checks the expected effects
+  against the institution's own figures (the Metrics Spec API).
+- **Scenario Studio**, the **setup agent** chat, the **Metrics Spec**, reference data and the prototype's
+  sample institutions.
+
+Errors are RFC 9457 problem details. Roles are applied in the web app, not here (prototype).
 """
 
 
