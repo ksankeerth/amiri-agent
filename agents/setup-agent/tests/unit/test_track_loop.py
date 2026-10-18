@@ -484,3 +484,19 @@ async def test_the_risks_track_cant_browse_the_worldwide_hazard_library(world):
     await turn(client, sid, track="risks", text="Propose our main risks.")
     reply = llm.requests[1].contents[-1].parts[0].function_response.response
     assert reply["status"] == "blocked" and "the hazard library is worldwide" in reply["message"]
+
+
+async def test_options_never_carry_percentages_the_user_didnt_give(world):
+    client, _server, llm = world
+    made_up = ["Farmers: 30%, Salaried: 70%", "Farmers: 50%, Salaried: 50%"]
+    llm.script = [[("ask_user", {"question": "What share is each group?", "options": made_up, "multi": False})],
+                  "What share of your customers is each group?",
+                  [("ask_user", {"question": "Which split is right?", "options": ["Farmers 40%", "Farmers 60%"],
+                                 "multi": False})]]
+    sid = await start(client)
+    evs = await turn(client, sid, track="customers_products", text="Just estimate our customer shares.")
+    reply = llm.requests[1].contents[-1].parts[0].function_response.response
+    assert reply["status"] == "error" and reply["message"].startswith("30%, 70%, 50%, 50%: percentages the user didn't")
+    assert "question" not in [e for e, _ in evs]
+    evs = await turn(client, sid, track="customers_products", text="Farmers are 40% or maybe 60%.")
+    assert "question" in [e for e, _ in evs]  # the user's own figures are fine
