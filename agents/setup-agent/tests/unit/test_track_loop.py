@@ -375,3 +375,33 @@ async def test_the_model_hears_what_the_card_actually_holds(world):
     await turn(client, sid, track="rules", text="Add the regulators.")
     reply = llm.requests[1].contents[-1].parts[0].function_response.response
     assert "The card holds exactly: create regulators global-un." in reply["message"]
+
+
+async def test_a_hazard_the_finder_didnt_suggest_is_refused(world):
+    client, server, llm = world
+    server.suggestions = {"risk-exposures": []}
+    exp = {"kind": "climate", "title": "Japan earthquakes", "places": ["JP"], "hazard_id": "jp-earthquake"}
+    llm.script = [[("propose", {"summary": "Add Japan earthquakes", "operations": [
+        {"op": "create", "section": "risk-exposures", "data": exp}], "institution": None, "monitors": None,
+        "evidence": None})], "The risk finder has nothing for your places."]
+    sid = await start(client)
+    await turn(client, sid, track="risks", text="Propose our risks.")
+    reply = llm.requests[1].contents[-1].parts[0].function_response.response
+    assert reply["status"] == "error" and reply["message"].startswith("jp-earthquake: not suggested by the risk finder")
+    assert server.posted() == []
+
+
+async def test_facts_noted_for_other_tracks_are_offered_next(world, monkeypatch):
+    from app import router
+    from app.router import RouterChoice, RouterNote
+
+    async def fake(message, current, has_institution):
+        return RouterChoice(track="customers_products", clearly_elsewhere=True, reason="products", notes=[
+            RouterNote(track="footprint_flows", text="Operate in Seoul and Gyeonggi")]), 1
+    monkeypatch.setattr(router, "_router", fake)
+    client, _server, llm = world
+    llm.script = ["Which groups buy motor cover?"]
+    sid = await start(client)
+    await turn(client, sid, track="customers_products", requested_track=None,
+               text="We write motor cover in Seoul and Gyeonggi.")
+    assert "“Operate in Seoul and Gyeonggi” → Footprint and flows" in system_text(llm.requests[0])

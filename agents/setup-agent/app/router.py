@@ -63,7 +63,9 @@ Rules:
   Amiri Agent for this institution is "offtopic".
 - Facts in the message that belong to other tracks go in notes (track id and the fact), so later tracks
   can use them. Don't put facts for the chosen track in notes. Currencies it settles or clears in, regulators
-  and sanctions are rules, not footprint_flows (flows are money and goods sent to or from places).
+  and sanctions are rules, not footprint_flows (flows are money and goods sent to or from places). Where a
+  rival, partner, regulator or hazard is based is part of that item, not footprint (footprint is only where
+  this institution itself operates).
 - {setup}
 
 Message: {message}

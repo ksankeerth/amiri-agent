@@ -147,8 +147,9 @@ async def get_suggestions(section: str, tool_context: ToolContext) -> dict:
         out["note"] = ("No published figures. Flows the user described (e.g. remittances sent home to a country) "
                        "are still proposed, without a value; never drop them for lack of a figure.")
     if section == "regulators" and not any(i["item"].get("relation") == "home" for i in items):
-        out["note"] = ("The rule table has no regulator for the home country. Say so plainly and ask the user to "
-                       "name theirs; don't add one they haven't named.")
+        out["note"] = ("The rule table has no regulator for the home country. Propose the other items here as usual "
+                       "(global standards, sanctions), and say plainly that the home regulator isn't in the table: "
+                       "ask the user to name theirs; don't add one they haven't named.")
     return out
 
 
@@ -440,6 +441,16 @@ async def propose(summary: str, operations: list[dict[str, Any]] | None, institu
         return _err("propose the clearing currencies on their own first: the sanctions regimes that follow them only "
                     "appear in get_suggestions('regulators') once they are applied. Then ask whether to add the "
                     "regulators and those sanctions next")
+    # seen: the risk finder had nothing for a Korea-only insurer, and the model picked a Japan hazard from the library
+    # (T02). A library hazard goes in only when the finder suggests it for this profile.
+    hazards = {(o.get("data") or {}).get("hazard_id") for o in ops if o.get("section") == "risk-exposures"} - {None}
+    if hazards and b.iid:
+        r = await b.s.api.get(f"/api/v1/institutions/{seg(b.iid)}/suggestions/risk-exposures")
+        found = {(i.get("item") or {}).get("hazard_id") for i in (r.body.get("items", []) if r.ok else [])}
+        if r.ok and (far := hazards - found):
+            return _err(f"{', '.join(sorted(far))}: not suggested by the risk finder, so it doesn't touch this "
+                        "institution's places, customers, flows or routes. Don't propose it; say the finder has "
+                        "nothing for that, and offer a custom exposure (no hazard_id) only if the user names one")
     unused = [n for n, v in (("operations", operations), ("institution", institution), ("monitors", monitors))
               if v and n not in body]
     if unused:
