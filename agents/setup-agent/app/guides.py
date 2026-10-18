@@ -40,20 +40,33 @@ GUIDES: dict[str, Guide] = {
         [*T.READS, *ASK, *PROPOSE]),
     "customers_products": Guide(
         "segments (customer groups) and products (and which groups use which product)",
-        """- Customer groups: start from get_suggestions("segments") (templates for this institution type); map
-  each to the Metrics Spec (spec_mapping, get_reference segment-dimensions) when the user's words fit.
+        """- Customer groups: keep the user's own names for them. Look at get_suggestions("segments") (templates for
+  this institution type), but use a template only when its description means what the user said; never one
+  that reverses a direction (people who send remittances abroad are not a group that receives them; expats
+  working here earn salaries). Set income_sources and the Metrics Spec mapping (spec_mapping,
+  get_reference segment-dimensions) only from what the user said or from a template that truly matches.
 - Products: get_suggestions("products") or get_reference product-taxonomy; the category and product type
   must come from the taxonomy for this institution's type (a bank has no insurance categories, an insurer
   no savings accounts: if the user asks for one, explain and ask whether it's a separate institution).
-- Link products to the groups that use them (a product's `segments`: segment ids).""",
+- Link every product to the groups that use it (a product's `segments`: segment ids) in the same proposal;
+  if you can't tell which groups use a product, ask. If the proposal comes back with warnings (a product
+  with no customer group), say so.""",
         [*T.READS, *ASK, *PROPOSE]),
     "rules": Guide(
         "regulators, and the institution's clearing_currencies (the currencies it settles in abroad)",
         """- Regulators come from the rule table: get_suggestions("regulators") (home, host countries, the
-  sanctions that follow its clearing currencies, global standards). Propose those items as they are;
-  a regulator that isn't in the table needs the user's own words for its name.
-- Clearing currencies change with {op: update, section: institution, data: {clearing_currencies: [...]}};
-  that is the only institution field this track may change.""",
+  sanctions that follow its clearing currencies, global standards). Propose those items as they are.
+- The sanctions regimes (OFAC for USD, …) follow the SAVED clearing currencies. If the user names clearing
+  currencies that aren't saved yet, propose the currencies on their own first ({op: update, section:
+  institution, data: {clearing_currencies: [...]}}; the only institution field this track may change), and end
+  that reply with a question naming what comes next, e.g. "Once these are applied, shall I add APRA and ASIC,
+  with the sanctions regimes for USD?". When they are applied, get_suggestions("regulators") again and propose
+  the regulators, sanctions included. Never say the next step is another track while regulators the user
+  asked for are still to come.
+- A regulator that isn't in the table: only with the user's own words for its name, and then basis: user.
+  Never mark one you thought of yourself as basis: user; ask the user to confirm it first.
+- If the table has no regulator for the home country or a host country, say so plainly and ask the user to
+  name theirs.""",
         [*T.READS, *ASK, *PROPOSE]),
     "rivals_partners": Guide(
         "rivals (competitors) and counterparties (firms it depends on: correspondent banks, reinsurers, payment networks)",
