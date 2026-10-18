@@ -9,6 +9,7 @@ in a turn, then tells the user. Code fixes what the model must not choose: the t
 proposal's kind, the thread and the person.
 """
 
+import re
 import uuid
 from dataclasses import dataclass, field
 from typing import Any
@@ -25,6 +26,7 @@ from app.tracks import TRACKS
 SUGGESTION_SECTIONS = ("products", "segments", "regulators", "flows", "risk-exposures", "rivals")
 BOOKKEEPING = ("version", "created_at", "updated_at", "updated_by")
 MAX_OPTIONS = 8
+GENERIC_RISK_WORDS = {"risk", "risks", "exposure", "exposures", "hazard", "hazards", "with", "from", "their", "into"}
 
 
 @dataclass
@@ -385,6 +387,9 @@ def ask_user(question: str, options: list[str], multi: bool, tool_context: ToolC
     b = box(tool_context)
     if b.asked:
         return _blocked("one question per turn: wait for the answer")
+    # seen twice: "What is your broker's name?" with Aon, Marsh, … as options, names the user never gave (T02)
+    if re.search(r"\bnames?\b|\bcalled\b", question, re.I):
+        return _err("a name isn't a choice: ask for it in your reply text, without ask_user and without suggesting names")
     opts = [o.strip()[:120] for o in options if o and o.strip()][:MAX_OPTIONS]
     if not opts or not question.strip():
         return _err("a question needs text and at least one option")
@@ -443,6 +448,17 @@ async def propose(summary: str, operations: list[dict[str, Any]] | None, institu
                     "regulators and those sanctions next")
     # seen: the risk finder had nothing for a Korea-only insurer, and the model picked a Japan hazard from the library
     # (T02). A library hazard goes in only when the finder suggests it for this profile.
+    # seen: "Monsoon flooding in Seoul and Gyeonggi" made up and marked source user (T02): a custom exposure (no
+    # hazard_id) must be in the user's own words
+    said = " ".join([b.turn.text or "", *(n.get("text", "") for n in b.turn.track_notes)]).lower()
+    for o in ops:
+        d = o.get("data") or {}
+        if o.get("section") == "risk-exposures" and o.get("op") == "create" and not d.get("hazard_id"):
+            words = set(re.findall(r"[a-z]{4,}", str(d.get("title", "")).lower())) - GENERIC_RISK_WORDS
+            # more than half the title's words from the user (place names alone don't make it theirs)
+            if words and sum(w[:5] in said for w in words) * 2 <= len(words):
+                return _err(f"“{d.get('title')}” isn't in the user's words. A risk without a hazard_id must be one "
+                            "the user named, titled in their words; otherwise ask which risks they have in mind")
     hazards = {(o.get("data") or {}).get("hazard_id") for o in ops if o.get("section") == "risk-exposures"} - {None}
     if hazards and b.iid:
         r = await b.s.api.get(f"/api/v1/institutions/{seg(b.iid)}/suggestions/risk-exposures")

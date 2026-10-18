@@ -170,7 +170,8 @@ async def _decided(s: Session, thread_id: str) -> list[str]:
     if not r.ok or not isinstance(r.body, list):
         return []
     # still waiting for Apply: nothing of these is saved, so a track can't end on them (tools.conclude)
-    s.state["pending"] = [{"id": p.get("proposal_id"), "track": p.get("track"), "summary": p.get("summary", "")}
+    s.state["pending"] = [{"id": p.get("proposal_id"), "track": p.get("track"), "kind": p.get("kind"),
+                           "summary": p.get("summary", "")}
                           for p in r.body
                           if p.get("status") == "pending"]
     seen: set = s.state.setdefault("decided_seen", set())
@@ -275,7 +276,12 @@ async def respond(s: Session, turn: TurnIn, route: Route, usage: Usage) -> Async
     # seen: a footprint card left unapplied while the chat moved on, never mentioned again, and verification
     # calling the footprint complete (T02). Each waiting card from another track is pointed out once, in code.
     reminded: set = s.state.setdefault("reminded", set())
-    waiting = [p for p in s.state.get("pending") or [] if p.get("track") != track and p.get("id") not in reminded]
+    # the newest card per track only (an older one was superseded), and no create card once the institution exists
+    newest = {}
+    for p in s.state.get("pending") or []:  # newest first
+        newest.setdefault(p.get("track"), p)
+    waiting = [p for p in newest.values() if p.get("track") != track and p.get("id") not in reminded
+               and not (p.get("kind") == "create_institution" and turn.institution_id)]
     if waiting:
         reminded.update(p["id"] for p in waiting)
         text += ("\n\n" if text else "") + "Still waiting for your Apply, so nothing of it is saved yet: " + \

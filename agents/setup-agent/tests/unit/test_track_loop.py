@@ -418,3 +418,47 @@ async def test_a_card_waiting_in_another_track_is_pointed_out_once(world):
     assert msg.endswith("Still waiting for your Apply, so nothing of it is saved yet: “Add Seoul and Gyeonggi”.")
     evs = await turn(client, sid, track="customers_products", text="To households.")
     assert "Still waiting" not in next(d["text"] for e, d in evs if e == "message")
+
+
+async def test_a_name_is_asked_in_text_not_as_options(world):
+    client, _server, llm = world
+    llm.script = [[("ask_user", {"question": "What is your broker's name?", "options": ["Aon", "Marsh"],
+                                 "multi": False})], "What is your broker called?"]
+    sid = await start(client)
+    evs = await turn(client, sid, track="rivals_partners", text="Add a broker partner.")
+    reply = llm.requests[1].contents[-1].parts[0].function_response.response
+    assert reply["status"] == "error" and "a name isn't a choice" in reply["message"]
+    assert "question" not in [e for e, _ in evs]
+
+
+async def test_a_custom_risk_must_be_in_the_users_words(world):
+    client, _server, llm = world
+    made_up = {"kind": "climate", "title": "Monsoon flooding in Seoul and Gyeonggi", "places": ["KR-11"]}
+    theirs = {"kind": "climate", "title": "Typhoons hitting Busan", "places": ["KR-26"]}
+    llm.script = [[("propose", {"summary": "x", "operations": [{"op": "create", "section": "risk-exposures",
+                                                                 "data": made_up}],
+                                "institution": None, "monitors": None, "evidence": None})], "ok",
+                  [("propose", {"summary": "x", "operations": [{"op": "create", "section": "risk-exposures",
+                                                                 "data": theirs}],
+                                "institution": None, "monitors": None, "evidence": None})], "Here it is."]
+    sid = await start(client)
+    await turn(client, sid, track="risks", text="Propose the key risks for our cover in Seoul and Gyeonggi.")
+    assert "isn't in the user's words" in llm.requests[1].contents[-1].parts[0].function_response.response["message"]
+    evs = await turn(client, sid, track="risks", text="We worry about typhoons hitting Busan.")
+    assert ("proposal", {"proposal_id": "prop-1"}) in evs
+
+
+async def test_a_superseded_card_is_not_pointed_out(world):
+    client, server, llm = world
+    server.decided = [  # newest first, as the server lists them
+        {"proposal_id": "p2", "status": "pending", "track": "footprint_flows", "kind": "profile",
+         "summary": "Add Seoul and Gyeonggi", "decided_at": None},
+        {"proposal_id": "p1", "status": "pending", "track": "footprint_flows", "kind": "profile",
+         "summary": "Add Seoul", "decided_at": None},
+        {"proposal_id": "p0", "status": "pending", "track": "institution", "kind": "create_institution",
+         "summary": "Create Hangang (non-life)", "decided_at": None}]
+    llm.script = ["Noted."]
+    sid = await start(client)
+    evs = await turn(client, sid, track="customers_products", text="We sell motor cover.")
+    msg = next(d["text"] for e, d in evs if e == "message")
+    assert msg.endswith("nothing of it is saved yet: “Add Seoul and Gyeonggi”.")
