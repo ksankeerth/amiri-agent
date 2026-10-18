@@ -395,6 +395,12 @@ def ask_user(question: str, options: list[str], multi: bool, tool_context: ToolC
     if re.search(r"\bnames?\b|\bcalled\b", question, re.I):
         return _err("a name isn't a choice: ask for it in your reply text, without ask_user and without suggesting names")
     opts = [o.strip()[:120] for o in options if o and o.strip()][:MAX_OPTIONS]
+    # seen: "just estimate the shares" answered with made-up splits ("Farmers: 25%, …") as one-click options (T31).
+    # A percentage in an option must be one the user typed.
+    said = b.turn.text or ""
+    if made_up := [p for o in opts for p in re.findall(r"\d+(?:\.\d+)?\s*%", o) if p.replace(" ", "") not in said.replace(" ", "")]:
+        return _err(f"{', '.join(made_up[:4])}: percentages the user didn't give. Never estimate shares or numbers "
+                    "for them; ask for their own figures in plain text")
     if not opts or not question.strip():
         return _err("a question needs text and at least one option")
     qid = f"q-{uuid.uuid4().hex[:8]}"
