@@ -1,31 +1,27 @@
 openapi: 3.1.0
 info:
   title: amiri-server
-  description: 'Amiri Agent server API. This version covers **market series**: the
-    prices and rates Amiri Agent
-
-    watches by itself (Twelve Data, hourly), and the moves it flags as findings; and
-    the
-
-    **institution profile** (bank or insurer): identity, footprint, customer groups,
-
-    products, flows, regulators, rivals, counterparties and known risks, with suggestions,
-
-    readiness, history and the agents'' context.
-
-    No model is involved. Errors are RFC 9457 problem details. Roles are applied in
-    the
-
-    web app, not here (prototype).
-
-    '
+  description: "Amiri Agent server API: the platform core behind the web app. Code\
+    \ only, no model: it enumerates,\nscores, schedules and stores, and every number\
+    \ a person reads comes from here.\n\n- **Institution profile** (bank or insurer):\
+    \ footprint, customer groups, products, money flows,\n  regulators, rivals, counterparties\
+    \ and risks, with suggestions, readiness and history.\n- **Watch:** market series\
+    \ (Twelve Data), monitors (checked by the monitor agent) and Radar (world news).\n\
+    - **Findings and investigations:** findings are grouped into events and traced\
+    \ to products by the\n  investigation agent; **alerts** go to each owning team;\
+    \ **validation** checks the expected effects\n  against the institution's own\
+    \ figures (the Metrics Spec API).\n- **Scenario Studio**, the **setup agent**\
+    \ chat, the **Metrics Spec**, reference data and the prototype's\n  sample institutions.\n\
+    \nErrors are RFC 9457 problem details. Roles are applied in the web app, not here\
+    \ (prototype).\n"
   version: 0.1.0
 paths:
   /api/v1/auth/config:
     get:
       tags:
-      - sign in
-      summary: How to sign in here (public)
+      - bot check
+      summary: Whether a bot check is on (and its site key), and whether the server
+        is asleep (public)
       operationId: config_api_v1_auth_config_get
       responses:
         '200':
@@ -36,8 +32,8 @@ paths:
   /api/v1/auth/me:
     get:
       tags:
-      - sign in
-      summary: Whether this browser is signed in (public)
+      - bot check
+      summary: Whether this browser has passed the bot check (public)
       operationId: me_api_v1_auth_me_get
       responses:
         '200':
@@ -48,8 +44,8 @@ paths:
   /api/v1/auth/prototype:
     post:
       tags:
-      - sign in
-      summary: 'Prototype sign-in: the reCAPTCHA check, then a session cookie'
+      - bot check
+      summary: 'The bot check: verify the reCAPTCHA token, then set the cookie'
       operationId: prototype_api_v1_auth_prototype_post
       requestBody:
         content:
@@ -72,8 +68,8 @@ paths:
   /api/v1/auth/logout:
     post:
       tags:
-      - sign in
-      summary: Sign out (clears the session cookie)
+      - bot check
+      summary: Forget the passed check (clears the cookie)
       operationId: logout_api_v1_auth_logout_post
       responses:
         '200':
@@ -1038,8 +1034,8 @@ paths:
     get:
       tags:
       - institution profile
-      summary: Code-made suggestions (products, segments, regulators, flows; the risk
-        finder), in create shape
+      summary: Code-made suggestions (products, segments, regulators, flows, rivals;
+        the risk finder), in create shape
       operationId: suggestions_api_v1_institutions__institution_id__suggestions__section__get
       parameters:
       - name: institution_id
@@ -1058,6 +1054,7 @@ paths:
           - regulators
           - flows
           - risk-exposures
+          - rivals
           type: string
           title: Section
       responses:
@@ -3403,7 +3400,7 @@ paths:
     get:
       tags:
       - reference data
-      summary: ISO 3166-1 countries
+      summary: 'ISO 3166-1 countries (scope=home: those a home country may be, SUPPORTED_REGION)'
       operationId: countries_api_v1_reference_countries_get
       parameters:
       - name: q
@@ -3414,6 +3411,16 @@ paths:
           - type: string
           - type: 'null'
           title: Q
+      - name: scope
+        in: query
+        required: false
+        schema:
+          enum:
+          - all
+          - home
+          type: string
+          default: all
+          title: Scope
       responses:
         '200':
           description: Successful Response
@@ -3552,18 +3559,89 @@ paths:
           content:
             application/json:
               schema: {}
-  /api/v1/reference/currencies:
+  /api/v1/reference/regulators/{regulator_id}:
     get:
       tags:
       - reference data
-      summary: ISO 4217 currencies
-      operationId: currencies_api_v1_reference_currencies_get
+      summary: One entry of the rule table, in the shape of a regulator item
+      operationId: rule_table_entry_api_v1_reference_regulators__regulator_id__get
+      parameters:
+      - name: regulator_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Regulator Id
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/reference/demo-profile:
+    get:
+      tags:
+      - reference data
+      summary: A demo institution's whole profile (invented), in the import format
+      operationId: demo_profile_api_v1_reference_demo_profile_get
+      parameters:
+      - name: kind
+        in: query
+        required: false
+        schema:
+          enum:
+          - bank
+          - insurer
+          type: string
+          default: bank
+          title: Kind
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/reference/currencies:
+    get:
+      tags:
+      - reference data
+      summary: 'ISO 4217 currencies (scope=home: those a base currency may be, SUPPORTED_REGION)'
+      operationId: currencies_api_v1_reference_currencies_get
+      parameters:
+      - name: scope
+        in: query
+        required: false
+        schema:
+          enum:
+          - all
+          - home
+          type: string
+          default: all
+          title: Scope
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/reference/time-zones:
     get:
       tags:
@@ -4436,7 +4514,8 @@ paths:
     get:
       tags:
       - for the agents
-      summary: What each product can be measured with (assumed from the Metrics Spec)
+      summary: 'What each product can be measured with: the connected catalog with
+        validation on, otherwise assumed from the Metrics Spec'
       operationId: coverage_api_v1_internal_coverage_get
       parameters:
       - name: institution_id
@@ -6015,6 +6094,370 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/prototype:demo:
+    post:
+      tags:
+      - prototype
+      summary: Load a demo institution on an empty platform (the first screen)
+      operationId: load_demo_api_v1_prototype_demo_post
+      parameters:
+      - name: X-Amiri-Actor
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Who is making the change (email).
+          title: X-Amiri-Actor
+        description: Who is making the change (email).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/mock-institutions:
+    get:
+      tags:
+      - sample institutions
+      summary: 'The sample bank and insurer: on or off, conditions, and what shapes
+        them'
+      operationId: list_samples_api_v1_mock_institutions_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/v1/mock-institutions/{kind}:
+    put:
+      tags:
+      - sample institutions
+      summary: Switch a sample on or off and set its conditions
+      operationId: put_sample_api_v1_mock_institutions__kind__put
+      parameters:
+      - name: kind
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Kind
+      - name: X-Amiri-Actor
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Who is making the change (email).
+          title: X-Amiri-Actor
+        description: Who is making the change (email).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SampleIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/data-connection:
+    get:
+      tags:
+      - data connection
+      summary: The institution's data connection, its approval and the latest check
+      operationId: get_connection_api_v1_data_connection_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+    put:
+      tags:
+      - data connection
+      summary: Set the connection (it needs checking and approving again)
+      operationId: put_connection_api_v1_data_connection_put
+      parameters:
+      - name: X-Amiri-Actor
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Who is making the change (email).
+          title: X-Amiri-Actor
+        description: Who is making the change (email).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectionIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/data-connection:check:
+    post:
+      tags:
+      - data connection
+      summary: Check the connection now; the report
+      operationId: check_api_v1_data_connection_check_post
+      parameters:
+      - name: X-Amiri-Actor
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Who is making the change (email).
+          title: X-Amiri-Actor
+        description: Who is making the change (email).
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/data-connection/checks:
+    get:
+      tags:
+      - data connection
+      summary: The latest checks, newest first
+      operationId: checks_api_v1_data_connection_checks_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/v1/data-connection/checks/{check_id}:
+    get:
+      tags:
+      - data connection
+      summary: One check's full report
+      operationId: report_api_v1_data_connection_checks__check_id__get
+      parameters:
+      - name: check_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Check Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/data-connection:approve:
+    post:
+      tags:
+      - data connection
+      summary: Approve the connection the latest check describes
+      operationId: approve_api_v1_data_connection_approve_post
+      parameters:
+      - name: X-Amiri-Actor
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Who is making the change (email).
+          title: X-Amiri-Actor
+        description: Who is making the change (email).
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/validation:
+    put:
+      tags:
+      - data connection
+      summary: Switch validation against the institution's data on or off
+      operationId: put_validation_api_v1_validation_put
+      parameters:
+      - name: X-Amiri-Actor
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Who is making the change (email).
+          title: X-Amiri-Actor
+        description: Who is making the change (email).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidationIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/validation/verdicts:
+    get:
+      tags:
+      - validation
+      summary: Validation tasks with their latest verdict and its history
+      operationId: verdicts_api_v1_validation_verdicts_get
+      parameters:
+      - name: event_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Event Id
+      - name: task_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Task Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/validation:run:
+    post:
+      tags:
+      - validation
+      summary: Judge due tasks now (the tick does this on its own)
+      operationId: run_api_v1_validation_run_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              anyOf:
+              - $ref: '#/components/schemas/RunIn'
+              - type: 'null'
+              title: Body
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/spec:
+    get:
+      tags:
+      - spec
+      summary: 'The Metrics Spec, for its pages: guide sections, categories and metrics,
+        dimensions, checks'
+      operationId: spec_pages_api_v1_spec_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /api/v1/spec/files/{name}:
+    get:
+      tags:
+      - spec
+      summary: A spec file to download, named with its version
+      operationId: spec_file_api_v1_spec_files__name__get
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Name
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /internal/tick:
     post:
       tags:
@@ -6307,6 +6750,53 @@ components:
       - section
       - fix
       title: Check
+    ConnectionIn:
+      properties:
+        source:
+          type: string
+          enum:
+          - sample
+          - url
+          title: Source
+        sample:
+          anyOf:
+          - type: string
+            enum:
+            - bank
+            - insurer
+          - type: 'null'
+          title: Sample
+        base_url:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Base Url
+        openapi_url:
+          anyOf:
+          - type: string
+            maxLength: 500
+          - type: 'null'
+          title: Openapi Url
+        auth_header:
+          anyOf:
+          - type: string
+            maxLength: 80
+            pattern: ^[A-Za-z0-9-]+$
+          - type: 'null'
+          title: Auth Header
+        auth_value:
+          anyOf:
+          - type: string
+            maxLength: 4000
+          - type: 'null'
+          title: Auth Value
+          description: Write only; never returned.
+      additionalProperties: false
+      type: object
+      required:
+      - source
+      title: ConnectionIn
     Counterparty:
       properties:
         name:
@@ -6664,6 +7154,19 @@ components:
       title: DataLink
       description: Where the product's numbers come from (a data connection and its
         catalog id).
+    DemoIn:
+      properties:
+        kind:
+          type: string
+          enum:
+          - bank
+          - insurer
+          title: Kind
+      additionalProperties: false
+      type: object
+      required:
+      - kind
+      title: DemoIn
     Detector:
       properties:
         z_threshold:
@@ -7365,6 +7868,13 @@ components:
             minimum: 1990.0
           - type: 'null'
           title: Dataset Year
+        url:
+          anyOf:
+          - type: string
+            maxLength: 300
+          - type: 'null'
+          title: Url
+          description: Where the figure can be checked.
         sample:
           type: boolean
           title: Sample
@@ -9662,13 +10172,6 @@ components:
           minLength: 10
           title: Token
           description: The reCAPTCHA response from the page's widget.
-        code:
-          anyOf:
-          - type: string
-            maxLength: 200
-          - type: 'null'
-          title: Code
-          description: The access code, when LOGIN_ACCESS_CODE is set.
       additionalProperties: false
       type: object
       required:
@@ -10302,6 +10805,8 @@ components:
           enum:
           - empty
           - demo
+          - demo-bank
+          - demo-insurer
           title: Then
           default: empty
       additionalProperties: false
@@ -11098,6 +11603,46 @@ components:
       - updated_by
       - name
       title: RivalView
+    RunIn:
+      properties:
+        task_ids:
+          anyOf:
+          - items:
+              type: string
+            type: array
+            maxItems: 50
+          - type: 'null'
+          title: Task Ids
+          description: 'These tasks, due or not; default: every due task.'
+        as_of:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: As Of
+          description: Judge as of this local date (default today); for replays and
+            tests.
+      additionalProperties: false
+      type: object
+      title: RunIn
+    SampleIn:
+      properties:
+        enabled:
+          type: boolean
+          title: Enabled
+        conditions:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          maxItems: 20
+          title: Conditions
+          default: []
+      additionalProperties: false
+      type: object
+      required:
+      - enabled
+      title: SampleIn
     ScenarioIn:
       properties:
         template_id:
@@ -11943,11 +12488,23 @@ components:
         connected:
           type: boolean
           title: Connected
+        starting:
+          type: boolean
+          title: Starting
+          default: false
         message:
           anyOf:
           - type: string
           - type: 'null'
           title: Message
+        keep_warm_seconds:
+          type: integer
+          title: Keep Warm Seconds
+          default: 0
+        keep_warm_idle_minutes:
+          type: integer
+          title: Keep Warm Idle Minutes
+          default: 0
       type: object
       required:
       - backend
@@ -12381,6 +12938,16 @@ components:
       - msg
       - type
       title: ValidationError
+    ValidationIn:
+      properties:
+        enabled:
+          type: boolean
+          title: Enabled
+      additionalProperties: false
+      type: object
+      required:
+      - enabled
+      title: ValidationIn
     WatchChip:
       properties:
         name:
