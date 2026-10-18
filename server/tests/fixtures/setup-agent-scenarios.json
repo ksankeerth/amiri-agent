@@ -1641,7 +1641,7 @@
    "title": "An Indonesian insurer sets up from scratch",
    "turns": [
     {
-     "user": "PT Nusantara Proteksi, a general insurer in Indonesia. Rupiah, Jakarta time.",
+     "user": "PT Samudra Proteksi, a general insurer in Indonesia. Rupiah, Jakarta time.",
      "expect": {
       "track": "institution",
       "proposal": {

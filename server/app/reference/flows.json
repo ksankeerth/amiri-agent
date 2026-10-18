@@ -1,5 +1,5 @@
 {
- "_about": "Money and goods flows by country pair, offered in setup with their source and year. SAMPLE FIGURES for the prototype: each row is marked sample: true and must be replaced from the named dataset (World Bank/KNOMAD bilateral remittances, UN Comtrade, central-bank tables) before production.",
+ "_about": "Money and goods flows by country pair, offered in setup with their source and year. Rows with a url are sourced; rows marked sample: true are SAMPLE FIGURES for the prototype, to be replaced from the named dataset before production, and the app labels them as samples.",
  "unit": "USD per year",
  "rows": [
   {
@@ -33,10 +33,10 @@
    "kind": "remittances_in",
    "to": "LK",
    "from": "KW",
-   "amount": 800000000,
-   "year": 2024,
-   "dataset": "Central Bank of Sri Lanka, workers' remittances by country",
-   "sample": true
+   "amount": 893000000,
+   "year": 2025,
+   "dataset": "Sri Lanka Bureau of Foreign Employment, remittances from Kuwait (as reported)",
+   "url": "https://adaderana.lk/news/cmqk5lh6y00023b6pmetfwbvo"
   },
   {
    "kind": "remittances_in",
@@ -114,21 +114,21 @@
    "kind": "exports",
    "to": "US",
    "from": "LK",
-   "amount": 1900000000,
-   "year": 2024,
+   "amount": 1960000000,
+   "year": 2025,
    "goods": "Garments",
-   "dataset": "UN Comtrade, trade by partner",
-   "sample": true
+   "dataset": "Sri Lanka Export Development Board, apparel exports by market (as reported)",
+   "url": "https://www.dailymirror.lk/print/breaking-news/Sri-Lanka-exports-top-US-17-2bn-in-2025/108-331344"
   },
   {
    "kind": "exports",
    "to": "GB",
    "from": "LK",
-   "amount": 700000000,
-   "year": 2024,
+   "amount": 688500000,
+   "year": 2025,
    "goods": "Garments",
-   "dataset": "UN Comtrade, trade by partner",
-   "sample": true
+   "dataset": "Sri Lanka Export Development Board, apparel exports by market (as reported)",
+   "url": "https://www.dailymirror.lk/print/breaking-news/Sri-Lanka-exports-top-US-17-2bn-in-2025/108-331344"
   },
   {
    "kind": "exports",

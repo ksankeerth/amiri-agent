@@ -472,7 +472,7 @@ async def test_health(client, env):
     d = (await client.get("/health/details")).json()
     # no profile for INSTITUTION_ID (bank-a) yet: findings can't be investigated
     assert d["status"] == "degraded" and d["checks"]["institution"] == {"status": "missing", "institution_id": "bank-a"}
-    assert d["checks"]["database"]["schema_version"] == "0024_validation"
+    assert d["checks"]["database"]["schema_version"] == "0025_flow_source_url"
     assert d["checks"]["investigation"]["status"] == "ok" and d["checks"]["investigation"]["validation"] is False
     r = await client.post("/api/v1/institutions", json={
         "institution_id": "bank-a", "name": "Bank A", "institution_type": "bank", "subtype": "commercial",

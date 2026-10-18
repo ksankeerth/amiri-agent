@@ -4,18 +4,21 @@ and validation switch describe the old institution), its check reports, and the 
 and conditions. Kept: market series and their prices (slow and costly to fetch again), the reference data, the
 Metrics Spec and the tick log. Off with PROTOTYPE_RESET=false.
 
-Two ways back: `empty` (the Overview's first run: set up an institution from scratch) or `demo` (the demo bank,
-Serendib Commercial Bank, imported and activated, nothing else: no monitors, events or scenarios yet).
+Three ways back: `empty` (the Overview's first run: set up an institution from scratch), `demo-bank` (the demo bank,
+Serendib Commercial Bank, Sri Lanka) or `demo-insurer` (the demo insurer, Samudra Raya General Insurance, Indonesia),
+imported and activated, nothing else: no monitors, events or scenarios yet. `demo` is the bank (older callers).
+
+POST /prototype:demo loads a demo on an empty platform (the first screen's buttons). It works only while no
+institution exists, so it never overwrites anything, and it doesn't need the reset to be switched on.
 """
 
-import json
 import logging
 from typing import Literal
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, ConfigDict
 
-from app import settings
+from app import demo, settings
 from app.institutions.api import Actor, who
 from app.institutions.schemas import InstitutionCreate
 from app.problems import Problem
@@ -31,7 +34,23 @@ SIGNALS = ("signals.findings", "signals.monitor_runs", "signals.radar_runs", "si
 class ResetIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     confirm: Literal["RESET"]
-    then: Literal["empty", "demo"] = "empty"
+    then: Literal["empty", "demo", "demo-bank", "demo-insurer"] = "empty"
+
+
+class DemoIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: demo.Kind
+
+
+async def _load_demo(request: Request, kind: demo.Kind, actor: Actor) -> dict:
+    """The demo institution imported and activated (one institution per platform: the installation's id)."""
+    doc = demo.profile(kind)
+    inst = request.app.state.institutions
+    body = {k: v for k, v in doc["institution"].items() if k != "institution_id"}
+    created = await inst.create(InstitutionCreate(**body, institution_id=settings.raw("INSTITUTION_ID")),
+                                who(actor, None)[0], "import", doc["sections"])
+    await inst.set_status(created["institution_id"], "activate", who(actor, None)[0])
+    return {"institution_id": created["institution_id"], "name": demo.DEMOS[kind]["name"], "kind": kind}
 
 
 @router.post("/prototype:reset", summary="Wipe the institution and all Amiri Agent made for it (prototype only)")
@@ -57,11 +76,15 @@ async def reset(request: Request, body: ResetIn, actor: Actor = None):
             await lock.execute("SELECT pg_advisory_unlock(%s)", (TICK_LOCK,))
     out = {"reset": True, "then": body.then, "kept": ["market series and prices", "reference data"]}
     log.info("prototype reset: %d tables emptied", len(tables))
-    if body.then == "demo":
-        doc = json.loads((settings.PROJECT / "app" / "seeds" / "serendib_bank.json").read_text())
-        inst = request.app.state.institutions
-        created = await inst.create(InstitutionCreate(**{**doc["institution"], "institution_id": settings.raw("INSTITUTION_ID")}),
-                                    who(actor, None)[0], "import", doc["sections"])
-        await inst.set_status(created["institution_id"], "activate", who(actor, None)[0])
-        out["institution_id"] = created["institution_id"]
+    if body.then != "empty":
+        out |= await _load_demo(request, "insurer" if body.then == "demo-insurer" else "bank", actor)
     return out
+
+
+@router.post("/prototype:demo", summary="Load a demo institution on an empty platform (the first screen)")
+async def load_demo(request: Request, body: DemoIn, actor: Actor = None):
+    if await request.app.state.institutions.list_institutions(None):
+        raise Problem(409, "not_empty", "An institution is already set up. To switch to a demo, reset the prototype "
+                                        "(Platform Admin, Settings).")
+    log.info("demo %s loaded on an empty platform by %s", body.kind, who(actor, None)[0])
+    return await _load_demo(request, body.kind, actor)

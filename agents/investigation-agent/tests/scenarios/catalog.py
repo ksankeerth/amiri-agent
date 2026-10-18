@@ -279,7 +279,7 @@ PH_PRODUCTS = [
     {"product_id": "bancassurance", "name": "Bancassurance", "category": "distribution", "product_type": "bancassurance"},
 ]  # fmt: skip
 ID_INSURER = {
-    "name": "Nusantara General Insurance", "institution_type": "insurer", "country": "ID",
+    "name": "Samudra Raya General Insurance", "institution_type": "insurer", "country": "ID",
     "country_name": "Indonesia", "currency": "IDR", "time_zone": "Asia/Jakarta",
     "summary": "An Indonesian general insurer: home and fire, private motor, rice crop cover, micro health and cargo.",
     "flows": [{"kind": "exports", "local": "ID", "counterpart": "CN"}, {"kind": "imports", "local": "ID", "counterpart": "SG"}],

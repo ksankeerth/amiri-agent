@@ -71,9 +71,8 @@ async def test_investigate_now_sends_the_profile_and_stores_the_event(client, en
     inst = req["institution"]
     assert (inst["country"], inst["country_name"], inst["currency"], inst["time_zone"]) == (
         "LK", "Sri Lanka", "LKR", "Asia/Colombo")
-    # where it books business: role and regions, so a story elsewhere in India isn't the footprint
-    assert {"country": "IN", "currency": "INR", "role": "branches",
-            "regions": ["IN-TN", "IN-KL", "IN-KA"]} in inst["footprint"]
+    # where it books business outside home: nowhere, the demo bank is in Sri Lanka only
+    assert inst["footprint"] == []
     assert any(fl["kind"] == "remittances_in" for fl in inst["flows"]) and inst["corridors"]
     assert {p["product_id"] for p in req["products"]} >= {"sme-loans", "trade-finance"}
     sent = req["findings"][0]

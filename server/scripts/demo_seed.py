@@ -1,10 +1,13 @@
 """Seeds a demo state through the server's own HTTP API (so it is the same path a person takes), against any running
 server: local with fake agents, or deployed with the real ones.
 
-    uv run python scripts/demo_seed.py --server http://localhost:8200
+    uv run python scripts/demo_seed.py --server http://localhost:8200                       # the demo bank
+    uv run python scripts/demo_seed.py --server http://localhost:8200 --institution insurer # the demo insurer
 
 What it does, in the order a person would:
-  1. the institution (Serendib Commercial Bank) imported and activated;
+  1. the institution (Serendib Commercial Bank, or Samudra Raya General Insurance) imported and activated; then
+     Verification: the sample reference API connected, checked and approved, with the condition its data shows
+     switched on (bank: remittances fall; insurer: floods, then relief) and validation on;
   2. monitors drafted from the profile, submitted by one Risk Manager and approved by another;
   3. a Scenario Studio scenario run live and recorded to the end, so Replay works with no agent and no quota;
   4. live monitor checks and an investigation (events and alerts for the owning teams);
@@ -23,9 +26,16 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-ME, OTHER = "dilan@serendib.lk", "nadeesha@serendib.lk"
-SEED = Path(__file__).resolve().parent.parent / "app" / "seeds" / "serendib_bank.json"
-MONITORS = [("risk-exposures", "gulf"), ("risk-exposures", "red-sea"), ("regulators", "central-bank-of-sri-lanka")]
+SEEDS = Path(__file__).resolve().parent.parent / "app" / "seeds"
+# per demo (app/demo.py): its profile, two people (one drafts, the other approves), the monitors drafted from its
+# profile, and the sample API condition that makes its data show an effect
+DEMOS = {
+    "bank": {"seed": "serendib_bank.json", "people": ("dilan@serendib.lk", "nadeesha@serendib.lk"), "condition": "remittances_fall",
+             "monitors": [("risk-exposures", "gulf"), ("risk-exposures", "red-sea"), ("regulators", "central-bank-of-sri-lanka")]},
+    "insurer": {"seed": "samudra_raya_general.json", "people": ("rina@samudra-raya.example", "budi@samudra-raya.example"),
+                "condition": "floods", "monitors": [("risk-exposures", "hormuz"), ("risk-exposures", "jakarta-floods"), ("regulators", "ojk")]},
+}
+ME, OTHER = DEMOS["bank"]["people"]
 problems: list[str] = []
 
 
@@ -66,16 +76,20 @@ def ok(status: int, what: str, out=None) -> bool:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--server", default="http://localhost:8200")
+    ap.add_argument("--institution", choices=list(DEMOS), default="bank", help="which demo (default: the bank)")
     ap.add_argument("--skip-studio", action="store_true", help="don't run and record the Studio scenario")
     ap.add_argument("--token", default="", help="a Google ID token of a service account in INTERNAL_CALLERS, for a server "
                     "with sign-in on (gcloud auth print-identity-token --impersonate-service-account=… --audiences=URL)")
     a = ap.parse_args()
+    global ME, OTHER
+    d = DEMOS[a.institution]
+    ME, OTHER = d["people"]
     api = Api(a.server, a.token)
 
     step("1. The institution")
     s, inst = api.call("GET", "/api/v1/installation")
     if not inst.get("profile"):
-        doc = json.loads(SEED.read_text())
+        doc = json.loads((SEEDS / d["seed"]).read_text())
         s, out = api.call("POST", "/api/v1/institutions:import", {"institution": doc["institution"], "sections": doc["sections"]})
         if ok(s, "import the profile", out):
             iid = out["institution_id"]
@@ -85,8 +99,21 @@ def main() -> int:
     else:
         print(f"   {inst['institution_id']} already has a profile; left as it is")
 
+    step("1b. Verification: the sample reference API")
+    s, out = api.call("PUT", f"/api/v1/mock-institutions/{a.institution}", {"enabled": True, "conditions": [{"id": d["condition"]}]})
+    if ok(s, "switch the sample on, with its condition", out):
+        s, out = api.call("PUT", "/api/v1/data-connection", {"source": "sample", "sample": a.institution})
+        if ok(s, "use it as the connection", out):
+            s, out = api.call("POST", "/api/v1/data-connection:check")
+            if ok(s, "check it", out):
+                s, out = api.call("POST", "/api/v1/data-connection:approve", actor=OTHER)
+                if ok(s, "approve it", out):
+                    s, out = api.call("PUT", "/api/v1/validation", {"enabled": True})
+                    if ok(s, "switch validation on", out):
+                        print(f"   the sample {a.institution}, condition {d['condition']}: validation {'on' if out.get('validation_enabled') else 'off (METRICS_VALIDATION on the server?)'}")
+
     step("2. Monitors, from the profile")
-    for section, item in MONITORS:
+    for section, item in d["monitors"]:
         s, m = api.call("POST", "/api/v1/monitors:draft", {"section": section, "item_id": item})  # saves a draft (or opens the one that exists)
         if not ok(s, f"draft from {item}", m):
             continue
@@ -162,7 +189,7 @@ def main() -> int:
     s, al = api.call("GET", "/api/v1/alerts?status=new")
     if s == 200 and al["items"]:
         first = al["items"][-1]
-        s, out = api.call("POST", f"/api/v1/alerts/{first['alert_id']}:ack", {"note": "Treasury desk is checking the forward book"})
+        s, out = api.call("POST", f"/api/v1/alerts/{first['alert_id']}:ack", {"note": "The team is checking the exposure"})
         if ok(s, "acknowledge", out):
             print(f"   {first['owner']}: {first['title']}")
     else:
