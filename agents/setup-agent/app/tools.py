@@ -448,6 +448,15 @@ async def propose(summary: str, operations: list[dict[str, Any]] | None, institu
                     "regulators and those sanctions next")
     # seen: the risk finder had nothing for a Korea-only insurer, and the model picked a Japan hazard from the library
     # (T02). A library hazard goes in only when the finder suggests it for this profile.
+    # seen twice (T01, T02): groups and products created on one card with no product linked to a group, so the
+    # investigation can't tell who a product reaches. With the groups right there, every product names its groups.
+    groups = [o for o in ops if o.get("section") == "segments" and o.get("op") == "create"]
+    unlinked = [(o.get("data") or {}).get("name") or (o.get("data") or {}).get("id") for o in ops
+                if o.get("section") == "products" and o.get("op") == "create" and not (o.get("data") or {}).get("segments")]
+    if groups and unlinked:
+        return _err(f"{', '.join(map(str, unlinked))}: no customer group. Set each product's segments to the ids of "
+                    "the groups on this card that use it (the user's words usually make it clear); if you can't tell, "
+                    "ask which groups use which product before proposing")
     # seen: "Monsoon flooding in Seoul and Gyeonggi" made up and marked source user (T02): a custom exposure (no
     # hazard_id) must be in the user's own words
     said = " ".join([b.turn.text or "", *(n.get("text", "") for n in b.turn.track_notes)]).lower()

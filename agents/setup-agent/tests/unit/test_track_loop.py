@@ -462,3 +462,16 @@ async def test_a_superseded_card_is_not_pointed_out(world):
     evs = await turn(client, sid, track="customers_products", text="We sell motor cover.")
     msg = next(d["text"] for e, d in evs if e == "message")
     assert msg.endswith("nothing of it is saved yet: “Add Seoul and Gyeonggi”.")
+
+
+async def test_products_created_with_groups_must_be_linked(world):
+    client, server, llm = world
+    ops = [{"op": "create", "section": "segments", "data": {"id": "homeowners", "label": "Homeowners"}},
+           {"op": "create", "section": "products", "data": {"name": "Home", "category": "property"}}]
+    llm.script = [[("propose", {"summary": "x", "operations": ops, "institution": None, "monitors": None,
+                                "evidence": None})], "Which groups buy home cover?"]
+    sid = await start(client)
+    await turn(client, sid, track="customers_products", text="Homeowners buy home cover.")
+    reply = llm.requests[1].contents[-1].parts[0].function_response.response
+    assert reply["status"] == "error" and reply["message"].startswith("Home: no customer group")
+    assert server.posted() == []
