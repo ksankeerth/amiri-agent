@@ -5,18 +5,19 @@ import { Link, useLocation } from "react-router-dom";
 import { ApiError } from "../../api/client";
 import { investigationApi, type EventRow, type FindingRow } from "../../api/investigation";
 import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
+import { FlowFilter } from "../../components/FlowFilter";
 import { Icon } from "../../components/Icon";
 import { Banner, Empty, errText, InlineSkeleton, isDown, LoadError, useNow, useToast } from "../../components/ui";
 import { ago, dayTime, until } from "../../format";
 import { count, eventTitle, FINDING_STATUS, longWhen, signalStrength, sourceInfo } from "../../plain";
 import "../../styles/daily.css";
+import "../../styles/polish-daily.css";
 import { InvestigateNowButton, useInvestigationStatus } from "../events/Events";
 import { DAYS, reasonText, useRecentFindings } from "./recent";
 
 // the list carries each finding's evidence when the source kept it (the article's link)
 type WithEvidence = FindingRow & { evidence?: { headlines?: { url?: string | null }[] } | null };
 type Show = "all" | "new" | "grouped" | "linked" | "set_aside";
-const SHOW: [Show, string][] = [["all", "All"], ["grouped", "Being investigated"], ["linked", "In an event"], ["set_aside", "No impact found"], ["new", "Waiting"]];
 
 function sourceLink(f: FindingRow): string | null {
   const r = f.source_ref ?? {};
@@ -56,7 +57,7 @@ export function FindingsPage() {
   };
   const nextBatch = status?.next_batch_at && status.connected ? (new Date(status.next_batch_at) <= now ? "very soon" : `in ${until(status.next_batch_at, now)}`) : null;
   return (
-    <div className="page">
+    <div className="page pd-find">
       <PageHeader title="Findings"
         status={items === null ? "" : <><b className="ink">{count(items.length, "finding")}</b> in the last {DAYS} days{n("grouped") ? `, ${n("grouped")} being investigated` : ""}</>}
         actions={<>
@@ -70,8 +71,9 @@ export function FindingsPage() {
         <Banner kind="info" icon="info" action={<InvestigateNowButton onDone={refresh} small />}>
           <b>{count(status.findings_waiting, "finding")} waiting</b> to be investigated{nextBatch ? `: the next batch goes ${nextBatch}` : ""}.
         </Banner>)}
-      <div className="filters"><span className="seg" role="group" aria-label="Which findings">{SHOW.map(([k, label]) => (
-        <button key={k} type="button" aria-pressed={show === k} onClick={() => setShow(k)}>{label} ({n(k)})</button>))}</span></div>
+      <div className="filters"><FlowFilter label="Which findings" value={show} onChange={setShow} all={{ key: "all", label: "All", count: n("all") }}
+        steps={[{ key: "new", label: "Waiting", count: n("new") }, { key: "grouped", label: "Being investigated", count: n("grouped") },
+          [{ key: "linked", label: "In an event", count: n("linked") }, { key: "set_aside", label: "No impact found", count: n("set_aside") }]]} /></div>
       <div className="card mt12">
         {items === null ? (err == null && <InlineSkeleton />) : !rows.length ? (
           <Empty icon="search" title={show === "all" ? `Nothing found in the last ${DAYS} days` : "None in this group"}
@@ -98,7 +100,7 @@ export function FindingsPage() {
                       {f.status === "linked" && f.outcome?.event_id && <>In the event <Link to={`/events/${f.outcome.event_id}`}>{ev ? eventTitle(ev) : "open the event"}</Link></>}
                       {f.status === "set_aside" && <>No impact found: {reasonText(f) || "no link to your products"}</>}
                     </span>
-                    {f.explanation && <span className="row-d muted">{f.explanation}</span>}
+                    {f.explanation && <span className="row-d fd-expl">{f.explanation}</span>}
                     {f.status === "grouped" && f.run_status === "running" && f.run_id && <span className="row wrap">
                       <button className="btn btn--sm" type="button" disabled={checking === f.finding_id} onClick={() => check(f)}>
                         <Icon name="refresh" className={checking === f.finding_id ? "spin" : undefined} />Check now</button>

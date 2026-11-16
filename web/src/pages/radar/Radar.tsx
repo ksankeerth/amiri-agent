@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { inst, type Profile } from "../../api/institutions";
 import { gb, radarApi, scheduleText, type RadarStatus, type RadarStory } from "../../api/radar";
+import { ChipFilter } from "../../components/FlowFilter";
 import { Icon } from "../../components/Icon";
 import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
 import { Banner, Empty, useNow, useRole, useToast, ListSkeleton, LoadError } from "../../components/ui";
@@ -171,7 +172,7 @@ export function RadarPage() {
       </div>}
 
       <div className="row wrap mt16" style={{ gap: 10 }}>
-        <span className="seg">{SHOW.map(([k, label]) => <button key={k} type="button" aria-pressed={show === k} onClick={() => setShow(k)}>{label}</button>)}</span>
+        <ChipFilter label="Which stories" value={show} onChange={setShow} options={SHOW.map(([key, label]) => ({ key, label }))} />
         {placesSeen.length > 1 && <select className="input" aria-label="Filter by place" style={{ width: 200 }} value={place} onChange={e => setPlace(e.target.value)}>
           <option value="">All places</option>{placesSeen.map(p => <option key={p} value={p}>{names[p] ?? p}</option>)}</select>}
       </div>

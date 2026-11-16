@@ -6,7 +6,9 @@ import { alertsApi, type AlertItem, type AlertSummary, type Effect } from "../ap
 import { investigationApi, type EventDetail } from "../api/investigation";
 import { HowItWorks, ImpactRow, PageHeader, StatTiles, StatusPill } from "../components/blocks";
 import "../styles/daily.css";
+import "../styles/polish-daily.css";
 import { CheckPill } from "../components/checks";
+import { ChipFilter, FlowFilter } from "../components/FlowFilter";
 import { Icon } from "../components/Icon";
 import { Empty, ListSkeleton, LoadError, useNow, useToast } from "../components/ui";
 import { ago, dayTime } from "../format";
@@ -16,7 +18,6 @@ import {
 } from "../plain";
 
 type Show = "new" | "acknowledged" | "resolved" | "all";
-const SHOW: [Show, string][] = [["new", "To review"], ["acknowledged", "Acknowledged"], ["resolved", "Resolved"], ["all", "All"]];
 const CHANGE: Record<string, string> = {
   raised: "Raised", escalated: "Level raised", acknowledged: "Acknowledged", resolved: "Resolved", reopened: "Reopened",
   confirmed: "Confirmed by your data", withdrawn: "Withdrawn", checked: "Checked against your data",
@@ -62,16 +63,16 @@ function AlertCard({ a, next, ev, primary, onChange }: {
     <article className={`card alc dl-alc ${a.status !== "new" ? "done" : ""}`} data-lv={a.level} aria-labelledby={`t-${a.alert_id}`}>
       <div className="dl-alc-hd">
         <StatusPill tone={LEVEL_TONE[a.level]} icon={a.level === "adverse" ? "bad" : "alert"}>{LEVEL_LABEL[a.level]}</StatusPill>
-        <h2 className="dl-alc-t" id={`t-${a.alert_id}`}><span className="dl-team">{a.owner}</span><span className="dl-dot" aria-hidden="true">·</span>
-          {lead ? lower(impactText(lead.metric_name, lead.direction)) : a.title}</h2>
-        <span className="spacer" />
         {a.status !== "new" && <StatusPill tone={statusTone}>{statusText}</StatusPill>}
-        <span className="alc-time" title={longWhen(changed(a))}>{ago(changed(a), now)}</span>
+        <span className="spacer" />
+        <span className="alc-time" title={longWhen(changed(a))}><Icon name="clock" />{ago(changed(a), now)}</span>
       </div>
+      <h2 className="dl-alc-t" id={`t-${a.alert_id}`}><span className="dl-team">{a.owner}</span><span className="dl-dot" aria-hidden="true">·</span>
+        <span className="dl-what">{lead ? lower(impactText(lead.metric_name, lead.direction)) : a.title}</span></h2>
       <ul className="dl-alc-meta" aria-label="In short">
         <li><Icon name="box" /><span>{listText(products, 2)}</span></li>
         {move && <li className="dl-move"><Icon name="data" /><span>Your data: <b>{move.move}</b> {move.against}</span></li>}
-        {a.effects.length > 1 && <li>{bad === a.effects.length ? `${count(a.effects.length, "impact")}, all bad for you` : `${bad} of ${a.effects.length} impacts bad for you`}</li>}
+        {a.effects.length > 1 && <li><Icon name="bad" /><span>{bad === a.effects.length ? `${count(a.effects.length, "impact")}, all bad for you` : `${bad} of ${a.effects.length} impacts bad for you`}</span></li>}
         {next && <li><Icon name="calendar" /><span>{checks.some(c => c.verdict !== "not_yet") ? "Next check" : "First check"} <b>{onDay(next)}</b> <span className="muted">({relDay(next)})</span></span></li>}
       </ul>
       {a.status === "acknowledged" && <div className="alc-note"><Icon name="check" /><span><b>{a.acknowledged_by}</b> is on it{a.acknowledged_at ? `, ${ago(a.acknowledged_at, now)}` : ""}{a.ack_note ? `: “${a.ack_note}”` : ""}</span></div>}
@@ -89,6 +90,7 @@ function AlertCard({ a, next, ev, primary, onChange }: {
           {a.status === "new" && <button className={`btn btn--sm${primary ? " btn--primary" : ""}`} type="button" title={ACTION_MEANS.ack} onClick={() => setAsking("ack")}><Icon name="check" />Acknowledge</button>}
           {a.status !== "resolved" && <button className="btn btn--sm btn--ghost" type="button" title={ACTION_MEANS.resolve} onClick={() => setAsking("resolve")}>Resolve</button>}
           {a.status !== "new" && <button className="btn btn--sm btn--ghost" type="button" title={ACTION_MEANS.reopen} disabled={busy} onClick={() => act("reopen")}>Reopen</button>}
+          <span className="pd-vr" aria-hidden="true" />
           <details className="tech dl-why"><summary>Why Amiri Agent expects this</summary>
             <div className="tech-bd col gap12">
               <p className="dl-ai"><span className="dl-ai-chip"><b aria-hidden="true">AI</b>Amiri Agent's assessment</span>
@@ -107,7 +109,7 @@ function AlertCard({ a, next, ev, primary, onChange }: {
             <div className="tech-bd"><ol className="alc-hist">{[...a.history].reverse().map((h, i) => (
               <li key={i}><b>{CHANGE[h.change] ?? h.change}</b><span>{dayTime(h.at)}{h.by && h.by !== "Amiri Agent" ? ` · ${h.by}` : ""}</span></li>))}</ol></div></details>
           <span className="spacer" />
-          <Link className="dl-ev" to={`/events/${a.event_id}`}><span className="muted">From</span> {title}{a.event_status === "closed" && <span className="muted"> (closed)</span>}<Icon name="arrow" /></Link>
+          <Link className="dl-ev" to={`/events/${a.event_id}`}><span className="muted">From the event</span> <b>{title}</b>{a.event_status === "closed" && <span className="muted"> (closed)</span>}<Icon name="arrow" /></Link>
         </div>
       )}
     </article>
@@ -123,13 +125,16 @@ export function AlertsPage() {
   const [err, setErr] = useState<unknown>(null);
   const load = useCallback(async () => {
     try {
-      const [s, xs] = await Promise.all([alertsApi.summary(), alertsApi.list({ status: show === "all" ? undefined : show, owner: team || undefined })]);
+      // every status at once, so the filter can show how many sit at each step
+      const [s, xs] = await Promise.all([alertsApi.summary(), alertsApi.list({ owner: team || undefined })]);
       setSum(s); setItems(xs); setErr(null);
     } catch (e) { setErr(e); }
-  }, [show, team]);
+  }, [team]);
   useEffect(() => { load(); const t = setInterval(load, 60_000); return () => clearInterval(t); }, [load]);
   // each alert's next check is on its event: one request per event on the page
-  const eventIds = useMemo(() => [...new Set((items ?? []).map(a => a.event_id))].sort().join(","), [items]);
+  const shown = useMemo(() => items && items.filter(a => show === "all" || a.status === show), [items, show]);
+  const nAt = (k: Show) => (items ?? []).filter(a => k === "all" || a.status === k).length;
+  const eventIds = useMemo(() => [...new Set((shown ?? []).map(a => a.event_id))].sort().join(","), [shown]);
   useEffect(() => {
     if (!eventIds) return;
     let live = true;
@@ -147,7 +152,7 @@ export function AlertsPage() {
     window.dispatchEvent(new Event("amiri:alerts")); };
 
   // one queue, the most serious first (the alert your own data confirms leads), then the latest
-  const queue = useMemo(() => [...(items ?? [])].sort((x, y) => alertOrder({ ...x, at: changed(x) }, { ...y, at: changed(y) })), [items]);
+  const queue = useMemo(() => [...(shown ?? [])].sort((x, y) => alertOrder({ ...x, at: changed(x) }, { ...y, at: changed(y) })), [shown]);
   const firstNew = queue.find(a => a.status === "new")?.alert_id;
   const s = sum;
   return (
@@ -168,16 +173,14 @@ export function AlertsPage() {
       ]} />}
 
       {(items !== null || err == null) && <div className="filters">
-        <span className="seg" role="group" aria-label="Which alerts">{SHOW.map(([k, label]) => <button key={k} type="button" aria-pressed={show === k} onClick={() => setShow(k)}>{label}{k === "new" && s?.to_review ? ` (${s.to_review})` : ""}</button>)}</span>
-        {s && s.all_teams.length > 1 && <div className="al-teams" role="group" aria-label="Team">
-          <button type="button" className={`chip click ${team === "" ? "sel" : ""}`} aria-pressed={team === ""} onClick={() => setTeam("")}>All teams</button>
-          {s.all_teams.map(t => { const n = s.teams.find(x => x.owner === t)?.to_review;
-            return <button key={t} type="button" className={`chip click ${team === t ? "sel" : ""}`} aria-pressed={team === t} onClick={() => setTeam(team === t ? "" : t)}>{t}{n ? ` (${n})` : ""}</button>; })}
-        </div>}
+        <FlowFilter label="Which alerts" value={show} onChange={setShow} all={{ key: "all", label: "All", count: items ? nAt("all") : undefined }}
+          steps={([["new", "To review"], ["acknowledged", "Acknowledged"], ["resolved", "Resolved"]] as const).map(([key, label]) => ({ key, label, count: items ? nAt(key) : undefined }))} />
+        {s && s.all_teams.length > 1 && <ChipFilter label="Team" value={team} onChange={t => setTeam(t)}
+          options={[{ key: "", label: "All teams" }, ...s.all_teams.map(t => ({ key: t, label: t, count: s.teams.find(x => x.owner === t)?.to_review }))]} />}
       </div>}
 
-      {items === null ? (err == null && <div className="mt12"><ListSkeleton rows={3} /></div>)
-        : !items.length ? <div className="card mt12"><Empty icon="check" title={show === "new" ? "All caught up" : "Nothing here"}
+      {shown === null ? (err == null && <div className="mt12"><ListSkeleton rows={3} /></div>)
+        : !shown.length ? <div className="card mt12"><Empty icon="check" title={show === "new" ? "All caught up" : "Nothing here"}
           actions={show === "new" ? <Link className="btn" to="/events"><Icon name="events" />See events</Link> : undefined}>
           {show === "new" ? "When an event could hit your products, the owning team's alert appears here." : "No alerts in this group."}</Empty></div>
         : <div className="col gap12 mt12">{queue.map(a => <AlertCard key={a.alert_id} a={a} next={nextCheck(a)} ev={events[a.event_id]} primary={a.alert_id === firstNew} onChange={update} />)}</div>}

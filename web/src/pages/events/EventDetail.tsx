@@ -10,6 +10,7 @@ import { Icon } from "../../components/Icon";
 import { Markdown } from "../../components/markdown";
 import { Empty, LoadError, PageSkeleton } from "../../components/ui";
 import "../../styles/daily.css";
+import "../../styles/polish-daily.css";
 import { dayTime } from "../../format";
 import {
   angleLabel, ALERT_STATUS, checkMove, count, dateRange, earliest, eventTitle, impactText, LEVEL_LABEL, LEVEL_TONE, listText, longWhen, metricWords, onDay,
@@ -76,7 +77,7 @@ export function EventDetailPage() {
   ];
 
   return (
-    <div className="page">
+    <div className="page pd-event">
       <PageHeader crumbs={<><Link to="/events">Events</Link><span aria-hidden="true">/</span><span>{title}</span></>}
         title={title}
         pills={<>{TONE_PILL[nBad && nGood ? "mixed" : nBad ? "bad" : nGood ? "good" : "neutral"]}{e.world !== "live" && <StatusPill tone="blue">Simulated</StatusPill>}
@@ -116,10 +117,14 @@ export function EventDetailPage() {
         </section>
       </div>
 
-      <Section title="Possible impacts" count={e.hypotheses.length} flush id="ev-impacts" action={e.hypotheses.length ? AI_CHIP : undefined}>
+      <section className="card sec pd-imp" aria-labelledby="ev-impacts">
+        <div className="sec-hd"><h2 id="ev-impacts">Possible impacts</h2><span className="sec-n">{e.hypotheses.length}</span>{e.hypotheses.length > 0 && AI_CHIP}</div>
+        <div className="sec-bd flush">
         {!e.hypotheses.length ? <p className="sec-line">None of your products is exposed to this event.</p> : <>
-        <p className="sec-line">Expectations, not facts yet: each is checked against your own figures as they're published.{allBad ? " All of them would be bad for you." : ""}</p>
+        <p className="sec-line">Expectations, not facts yet: each is checked against your own figures as they're published.{allBad ? <span className="pd-allbad"> All of them would be <b className="dl-crit">bad for you</b>.</span> : ""}</p>
         <div className={`irs${same ? "" : " with-status"}`}>
+          <div className="ir-row pd-ir-head" aria-hidden="true"><span>Product</span><span>What may happen</span><span>{allBad ? "How big, how soon" : "For you · how big, how soon"}</span>
+            <span>{same ? "" : "Your data so far"}</span><span /></div>
           {e.hypotheses.map(h => {
             const t = tasks.get(h.hypothesis_id), c = checkOf(h), m = t?.check ? checkMove(t.check.what) : null;
             return (
@@ -131,7 +136,8 @@ export function EventDetailPage() {
               </ImpactRow>);
           })}
         </div></>}
-      </Section>
+        </div>
+      </section>
 
       <div className="ev-grid2">
         <div className="col gap16">
