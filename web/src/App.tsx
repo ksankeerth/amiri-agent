@@ -215,6 +215,7 @@ function Frame({ inst }: { inst: Installation }) {
     return () => { clearInterval(t); window.removeEventListener("amiri:installation", load); };
   }, []);
   const live = pulse(ov, now, down);
+  const [why, setWhy] = useState(false);
   const [alerts, setAlerts] = useState<AlertSummary | null>(null);
   useEffect(() => {  // the menu badge: alerts to review
     const load = () => alertsApi.summary().then(setAlerts).catch(() => {});
@@ -234,9 +235,14 @@ function Frame({ inst }: { inst: Installation }) {
           <b>Amiri Agent</b>
           <span className="inst">{inst.name ?? (inst.unreachable ? "" : "No institution profile yet")}</span>
         </Link>
-        <span className={`worldpill${live ? ` is-${live.tone}` : ""}`} title={`${live ? `${live.word}: ${live.why} ` : ""}Times in ${ZONE_LABEL}.`}>
-          <span className="dot" aria-hidden="true" />{live && <b className="wword">{live.word}</b>}<span className="wtxt">{fullNow(now)} {ZONE_LABEL}</span>
-          {live && <span className="sr">. {live.why}</span>}</span>
+        {/* why it says Paused or Prices late: a click, a tap or keyboard focus shows it, not a hover-only tooltip */}
+        <span className="worldwrap">
+          <button type="button" className={`worldpill${live ? ` is-${live.tone}` : ""}`} aria-expanded={why} aria-describedby="world-why"
+            onClick={() => setWhy(o => !o)} onBlur={() => setWhy(false)} onKeyDown={e => e.key === "Escape" && setWhy(false)}>
+            <span className="dot" aria-hidden="true" />{live && <b className="wword">{live.word}</b>}<span className="wtxt">{fullNow(now)} {ZONE_LABEL}</span>
+          </button>
+          <span id="world-why" className={`world-why${why ? " open" : ""}`}>{live ? `${live.why} ` : ""}Times in {ZONE_LABEL}.</span>
+        </span>
         <span className="spacer" />
         <span className="seg" role="group" aria-label="View as">
           <button type="button" aria-pressed={role === "risk_manager"} onClick={() => setRole("risk_manager")}>Risk Manager</button>
