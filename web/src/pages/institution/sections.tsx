@@ -141,6 +141,8 @@ export function SectionList({ section, ctx, reload, suggest, extra, compact, ite
       {!items.length ? <div className="bd small muted">None yet.{suggest ? " Use Suggestions to start from the usual ones, or Add your own." : ""}</div> : (
         <div className="list" style={{ marginTop: 8 }}>{items.map(it => {
           const x = describe(section, it, ctx);
+          // icon buttons named for their row: "Delete rival Sampath Bank", not five identical "Delete"s
+          const what = `${LABELS[section].one} ${typeof x.title === "string" ? x.title : String((it as Record<string, unknown>)[LABELS[section].nameKey] ?? "")}`.trim();
           return (
             <div key={it.id} className="li">
               <div className="col" style={{ gap: 3, flex: 1, minWidth: 0 }}>
@@ -149,8 +151,8 @@ export function SectionList({ section, ctx, reload, suggest, extra, compact, ite
               </div>
               {!archived && <div className="row" style={{ gap: 4 }}>
                 {itemAction?.(it)}
-                <button className="btn btn--sm btn--ghost" type="button" onClick={() => setEditing(it)}><Icon name="edit" />Edit</button>
-                <button className="btn btn--sm btn--ghost" type="button" aria-label="Delete" onClick={() => setDeleting({ item: it })}><Icon name="trash" /></button>
+                <button className="btn btn--sm btn--ghost" type="button" aria-label={`Edit ${what}`} onClick={() => setEditing(it)}><Icon name="edit" />Edit</button>
+                <button className="btn btn--sm btn--ghost" type="button" aria-label={`Delete ${what}`} title={`Delete ${what}`} onClick={() => setDeleting({ item: it })}><Icon name="trash" /></button>
               </div>}
             </div>
           );
