@@ -1,0 +1,42 @@
+/* Daily pages (Alerts, Events, Event detail, Findings): Wave 2 "w2-daily". Builds on the tokens in app.css. */
+
+/* ---- Alerts: a compact card, the headline says who and what ---- */
+.dl-alc { gap: var(--s-2); padding: var(--s-4) var(--s-5) var(--s-3) var(--s-6); }
+.dl-alc-hd { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-2) var(--s-3); }
+.card .dl-alc-t { margin: 0; font-size: var(--fs-lg); font-weight: 600; line-height: 1.35; color: var(--ink); min-width: 0; }
+.dl-alc-t .dl-team { font-weight: 700; }
+.dl-dot { color: var(--ink-3); margin: 0 var(--s-2); font-weight: 400; }
+.dl-alc-meta { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-5);
+  font-size: var(--fs-md); color: var(--ink-2); }
+.dl-alc-meta li { display: inline-flex; align-items: center; gap: var(--s-2); }
+.dl-alc-meta li > svg { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
+.dl-alc-meta b { color: var(--ink); }
+.dl-alc[data-lv="adverse"] .dl-move b { color: var(--critical-ink); }
+.dl-alc-act { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); padding-top: var(--s-2); margin-top: var(--s-1);
+  border-top: 1px solid var(--hairline); }
+.dl-alc-act .input { flex: 1 1 260px; height: 32px; }
+.dl-alc-act .btn svg { width: 15px; height: 15px; }
+.dl-alc-act > details { flex: 0 1 auto; }
+.dl-alc-act > details[open] { order: 10; flex: 1 1 100%; }
+.dl-ev { display: inline-flex; align-items: center; gap: var(--s-1); font-size: var(--fs-sm); font-weight: 600; color: var(--ink); min-height: 24px; }
+.dl-ev .muted { font-weight: 400; }
+.dl-ev svg { width: 15px; height: 15px; }
+.dl-ev:hover { color: var(--accent-ink); }
+.dl-crit { color: var(--critical-ink); }
+
+/* ---- AI output is labelled as such (rule 7.2) ---- */
+.dl-ai { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-3); font-size: var(--fs-sm); }
+.dl-ai-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 4px; border-radius: var(--r-pill);
+  background: var(--info-soft); border: 1px solid var(--info-line); color: var(--info-ink); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; }
+.dl-ai-chip b { font-size: var(--fs-xs); letter-spacing: .04em; line-height: 1; padding: 3px 6px; border-radius: var(--r-pill);
+  background: var(--info-ink); color: var(--surface); }
+.sec-hd .dl-ai-chip { margin-left: var(--s-1); }
+.dl-sec-line { margin: 0; padding: var(--s-3) var(--s-5); font-size: var(--fs-sm); color: var(--ink-2); border-bottom: 1px solid var(--hairline); }
+
+/* ---- Findings: signal strength, the article link ---- */
+.dl-fd-t a { color: var(--ink); }
+.dl-fd-t a:hover { color: var(--accent-ink); }
+.dl-fd-t .src-ext { width: 13px; height: 13px; margin-left: 4px; vertical-align: -1px; color: var(--ink-3); }
+
+/* ---- Considered, no impact: the product, then the angle in words ---- */
+.dl-angle { font-weight: 400; color: var(--ink-3); margin-left: var(--s-2); }

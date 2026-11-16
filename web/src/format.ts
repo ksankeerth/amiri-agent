@@ -91,5 +91,12 @@ export function plainError(error: string | null | undefined): string {
   return "Something went wrong and nothing was read this time.";
 }
 
+/** An event's size as people say it: {9, "pct"} → "9%", {25, "bp"} → "25 bp", {1.094, "%"} → "1.09%". */
+export function moveSize(size: { value: number; unit: string } | null | undefined): string {
+  if (!size || !Number.isFinite(size.value)) return "";
+  const v = String(Math.round(Math.abs(size.value) * 100) / 100);
+  return size.unit === "pct" || size.unit === "%" ? `${v}%` : `${v} ${size.unit}`;
+}
+
 /** "1 alert", "2 alerts": a count that reads right, never "alert(s)". */
 export const plural = (n: number, one: string, many?: string) => `${n} ${n === 1 ? one : many ?? one + "s"}`;
