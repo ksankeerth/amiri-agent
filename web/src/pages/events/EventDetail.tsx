@@ -8,7 +8,7 @@ import { FactList, HowItWorks, ImpactMarker, ImpactRow, PageHeader, Places, Row,
 import { CheckPill, CheckSummary } from "../../components/checks";
 import { Icon } from "../../components/Icon";
 import { Markdown } from "../../components/markdown";
-import { Banner, Empty, PageSkeleton } from "../../components/ui";
+import { Empty, LoadError, PageSkeleton } from "../../components/ui";
 import "../../styles/daily.css";
 import { dayTime } from "../../format";
 import {
@@ -28,15 +28,16 @@ const TONE_PILL: Record<"bad" | "good" | "mixed" | "neutral", ReactNode> = {
 export function EventDetailPage() {
   const { id = "" } = useParams();
   const [e, setE] = useState<EventDetail | null>(null);
-  const [err, setErr] = useState<ApiError | string | null>(null);
+  const [err, setErr] = useState<unknown>(null);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
-  useEffect(() => { investigationApi.event(id).then(setE).catch(x => setErr(x instanceof ApiError ? x : String(x))); }, [id]);
+  const load = () => investigationApi.event(id).then(x => { setE(x); setErr(null); }).catch(setErr);
+  useEffect(() => { load(); }, [id]);  // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { alertsApi.list({ event_id: id }).then(setAlerts).catch(() => setAlerts([])); }, [id]);
   if (err instanceof ApiError && err.status === 404) return (
     <div className="page"><PageHeader title="Event not found" crumbs={<Link to="/events">Events</Link>} />
       <div className="card"><Empty icon="events" title="This event isn't here" actions={<Link className="btn" to="/events">See all events</Link>}>
         It may have been removed when the prototype was reset.</Empty></div></div>);
-  if (!e) return <div className="page">{err ? <Banner kind="crit" icon="warn">{err instanceof ApiError ? err.full : err}</Banner> : <PageSkeleton bare />}</div>;
+  if (!e) return <div className="page">{err != null ? <><PageHeader title="Event" crumbs={<Link to="/events">Events</Link>} /><LoadError error={err} onRetry={load} what="this event" /></> : <PageSkeleton bare />}</div>;
 
   const tasks = new Map(e.tasks.map(t => [t.hypothesis_id, t]));
   // the spec's metric name and whether the move is bad for you: from the alerts when they carry it, else from the task

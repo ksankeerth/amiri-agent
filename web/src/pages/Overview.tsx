@@ -2,7 +2,6 @@
 // the institution, what needs them, and whether Amiri Agent is working. One call; refreshed every minute.
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ApiError } from "../api/client";
 import { inst, type Profile } from "../api/institutions";
 import { overviewApi, type Attention, type Overview } from "../api/overview";
 import { scheduleText } from "../api/radar";
@@ -11,7 +10,7 @@ import type { SeriesState } from "../api/series";
 import { Spark } from "../components/charts";
 import { StateBadge } from "../components/series";
 import { Icon } from "../components/Icon";
-import { Banner, CountUp, DEMOS, PageSkeleton, useNow, useRole } from "../components/ui";
+import { Banner, CountUp, DEMOS, errText, isDown, LoadError, PageHead, PageSkeleton, useNow, useRole } from "../components/ui";
 import { ago, dayTime, pct, placeName, placeOrder, plural, price, TIME_ZONE, ZONE_LABEL } from "../format";
 import { eventTitle, setAsideReason, themeLabel } from "../plain";
 import { ProfileMap } from "./institution/ProfileMap";
@@ -101,16 +100,16 @@ export function OverviewPage() {
   const admin = role === "platform_admin";
   const [o, setO] = useState<Overview | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState<unknown>(null);
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const load = useCallback(async () => {
     try { const x = await overviewApi.get(admin); setO(x); setErr(null); setLoadedAt(new Date());
       if (x.institution && !x.first_run) inst.profile(x.institution.institution_id).then(setProfile).catch(() => {}); }
-    catch (e) { setErr(e instanceof ApiError ? e.full : String(e)); }
+    catch (e) { setErr(e); }
   }, [admin]);
   useEffect(() => { load(); const t = setInterval(load, REFRESH_MS); return () => clearInterval(t); }, [load]);
 
-  if (!o) return <div className="page">{err ? <Banner kind="crit" icon="warn">{err}</Banner> : <PageSkeleton bare />}</div>;
+  if (!o) return <div className="page">{err ? <><PageHead title="Overview" /><LoadError error={err} onRetry={load} /></> : <PageSkeleton bare />}</div>;
   if (o.first_run) return <FirstRun o={o} />;
   const i = o.institution!;
   const c = o.counts;
@@ -152,7 +151,7 @@ export function OverviewPage() {
           <span className="small muted">Updated {loadedAt ? ago(loadedAt.toISOString(), now) : ""}</span>
           <button className="btn btn--ghost btn--icon" type="button" aria-label="Refresh" onClick={load}><Icon name="refresh" /></button></>}
         help={<HowItWorks><p>The four numbers below follow the same steps for {i.name}: what Amiri Agent watches, what it found in the last day, what it traced to your products, and who must act.</p></HowItWorks>} />
-      {err && <Banner kind="warn" icon="warn">Couldn't refresh: {err}. Showing what was loaded {loadedAt ? ago(loadedAt.toISOString(), now) : ""}.</Banner>}
+      {err != null && <Banner kind="warn" icon="warn">Couldn't refresh: {isDown(err) ? "Amiri Agent didn't answer" : errText(err)}. Showing what was loaded {loadedAt ? ago(loadedAt.toISOString(), now) : ""}.</Banner>}
 
       <div className="ovx-kpis" role="group" aria-label="How Amiri Agent works: what it watches, what it found, what it traced to you, who must act">
         <Link to="/monitors" className="card ovx-kpi">

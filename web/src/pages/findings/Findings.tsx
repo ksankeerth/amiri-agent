@@ -6,7 +6,7 @@ import { ApiError } from "../../api/client";
 import { investigationApi, type EventRow, type FindingRow } from "../../api/investigation";
 import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
 import { Icon } from "../../components/Icon";
-import { Banner, Empty, InlineSkeleton, useNow, useToast } from "../../components/ui";
+import { Banner, Empty, errText, InlineSkeleton, isDown, LoadError, useNow, useToast } from "../../components/ui";
 import { ago, dayTime, until } from "../../format";
 import { count, eventTitle, FINDING_STATUS, longWhen, signalStrength, sourceInfo } from "../../plain";
 import "../../styles/daily.css";
@@ -64,7 +64,8 @@ export function FindingsPage() {
           <button className="btn" type="button" onClick={refresh}><Icon name="refresh" />Refresh</button>
         </>}
         help={<HowItWorks><p>A finding is something a monitor, a market series or Radar noticed. Each one goes to the investigation, which links it to an event or finds no impact on your products. Findings from tests aren't shown.</p></HowItWorks>} />
-      {err && <Banner kind="warn" icon="warn">Couldn't refresh: {err}</Banner>}
+      {err != null && (items === null ? <LoadError error={err} onRetry={refresh} what="the findings" />
+        : <Banner kind="warn" icon="warn">Couldn't refresh: {isDown(err) ? "Amiri Agent didn't answer" : errText(err)}. Showing what was loaded.</Banner>)}
       {status && status.findings_waiting > 0 && status.connected && (
         <Banner kind="info" icon="info" action={<InvestigateNowButton onDone={refresh} small />}>
           <b>{count(status.findings_waiting, "finding")} waiting</b> to be investigated{nextBatch ? `: the next batch goes ${nextBatch}` : ""}.
@@ -72,7 +73,7 @@ export function FindingsPage() {
       <div className="filters"><span className="seg" role="group" aria-label="Which findings">{SHOW.map(([k, label]) => (
         <button key={k} type="button" aria-pressed={show === k} onClick={() => setShow(k)}>{label} ({n(k)})</button>))}</span></div>
       <div className="card mt12">
-        {items === null ? <InlineSkeleton /> : !rows.length ? (
+        {items === null ? (err == null && <InlineSkeleton />) : !rows.length ? (
           <Empty icon="search" title={show === "all" ? `Nothing found in the last ${DAYS} days` : "None in this group"}
             actions={show === "all" ? <Link className="btn" to="/monitors"><Icon name="monitor" />See your monitors</Link> : undefined}>
             {show === "all" ? "When a monitor, a market series or Radar notices something, it appears here." : "Choose another group above."}</Empty>

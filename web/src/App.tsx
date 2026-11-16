@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { Icon } from "./components/Icon";
-import { Empty, PageHead, PageSkeleton, useNow, useRole, type Role } from "./components/ui";
+import { Empty, isDown, PageHead, PageSkeleton, useNow, useRole, type Role } from "./components/ui";
 import { api, ME } from "./api/client";
 import { ago, fullNow, setZone, ZONE_LABEL } from "./format";
 import { overviewApi, type Overview } from "./api/overview";
@@ -55,6 +55,7 @@ export interface Installation {
   institution_id: string; profile: boolean; name: string | null; short_name?: string | null; home_country?: string;
   country_name?: string | null; base_currency?: string; time_zone: string; notes: string[];
   prototype_reset?: boolean;  // the server allows the prototype reset (PROTOTYPE_RESET)
+  unreachable?: boolean;  // UI only: the server didn't answer, so whether a profile exists is unknown
 }
 
 // what this installation serves; reloaded when an institution is created (event "amiri:installation")
@@ -64,7 +65,7 @@ export const useInstallation = () => useContext(InstallationCtx);
 /** Pages that need the institution say so before it exists, with the way to set it up (not a spinner or an error). */
 function NeedsInstitution({ title, what, children }: { title: string; what: string; children: ReactNode }) {
   const inst = useInstallation();
-  if (!inst || inst.profile) return <>{children}</>;
+  if (!inst || inst.profile || inst.unreachable) return <>{children}</>;  // unreachable: the page shows the load error
   return (
     <div className="page">
       <PageHead title={title} />
@@ -94,7 +95,8 @@ function useTheme() {
 }
 
 /** The top bar's status, from what the Overview call already says: green only when updates run and prices are fresh. */
-function pulse(o: Overview | null, now: Date): { tone: "ok" | "warn" | "off"; word: string; why: string } | null {
+function pulse(o: Overview | null, now: Date, down: boolean): { tone: "ok" | "warn" | "off"; word: string; why: string } | null {
+  if (down) return { tone: "off", word: "No answer", why: "Amiri Agent didn't answer the last check. It tries again every minute." };
   if (!o) return null;
   if (o.first_run || !o.services) return { tone: "off", word: "Not watching yet", why: "Set up an institution and Amiri Agent starts watching for it." };
   const t = o.services.tick;
@@ -168,12 +170,16 @@ export function App() {
   return <Installed />;
 }
 
+const NAME_KEY = "amiri.institution-name";
+const lastName = () => { try { return localStorage.getItem(NAME_KEY); } catch { return null; } };
+
 function Installed() {
   const [inst, setInst] = useState<Installation | null>(null);
   useEffect(() => {
     const load = () => api<Installation>("/api/v1/installation")
-      .then(i => { setZone(i.time_zone); setInst(i); })
-      .catch(() => setInst(x => x ?? { institution_id: "", profile: false, name: null, time_zone: "UTC", notes: ["The Amiri Agent server didn't answer. Try again in a moment."] }));
+      .then(i => { setZone(i.time_zone); setInst(i); try { if (i.name) localStorage.setItem(NAME_KEY, i.name); } catch { /* private mode */ } })
+      // not "no profile yet": the pages show the server didn't answer, and the bar keeps the last known name
+      .catch(() => setInst(x => x ?? { institution_id: "", profile: false, name: lastName(), time_zone: "UTC", notes: [], unreachable: true }));
     load();
     window.addEventListener("amiri:installation", load);  // an institution was created (forms or chat)
     return () => window.removeEventListener("amiri:installation", load);
@@ -201,12 +207,14 @@ function Frame({ inst }: { inst: Installation }) {
     if (pathname.startsWith("/admin/") && role !== "platform_admin") setRole("platform_admin");
   }, [pathname]);  // eslint-disable-line react-hooks/exhaustive-deps
   const [ov, setOv] = useState<Overview | null>(null);
+  const [down, setDown] = useState(false);
   useEffect(() => {  // the Live pill: the same one call the Overview makes, once a minute
-    const load = () => overviewApi.get().then(setOv).catch(() => {});
+    const load = () => overviewApi.get().then(x => { setOv(x); setDown(false); }).catch(e => setDown(isDown(e)));
     load(); const t = setInterval(load, 60_000);
-    return () => clearInterval(t);
+    window.addEventListener("amiri:installation", load);  // "Try again" on a page checks again here too
+    return () => { clearInterval(t); window.removeEventListener("amiri:installation", load); };
   }, []);
-  const live = pulse(ov, now);
+  const live = pulse(ov, now, down);
   const [alerts, setAlerts] = useState<AlertSummary | null>(null);
   useEffect(() => {  // the menu badge: alerts to review
     const load = () => alertsApi.summary().then(setAlerts).catch(() => {});
@@ -224,7 +232,7 @@ function Frame({ inst }: { inst: Installation }) {
         <Link className="brand" to="/home" aria-label="Amiri Agent home">
           <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0F3D2E" /><path d="M9.2 25 15 7h2l5.8 18h-3.1L16 13.1 12.3 25z" fill="#F1F5EC" /><rect x="15.4" y="13.5" width="1.2" height="10" fill="#F05A28" /><rect x="14.2" y="16" width="3.6" height="5.2" fill="#F05A28" /></svg>
           <b>Amiri Agent</b>
-          <span className="inst">{inst.name ?? "No institution profile yet"}</span>
+          <span className="inst">{inst.name ?? (inst.unreachable ? "" : "No institution profile yet")}</span>
         </Link>
         <span className={`worldpill${live ? ` is-${live.tone}` : ""}`} title={`${live ? `${live.word}: ${live.why} ` : ""}Times in ${ZONE_LABEL}.`}>
           <span className="dot" aria-hidden="true" />{live && <b className="wword">{live.word}</b>}<span className="wtxt">{fullNow(now)} {ZONE_LABEL}</span>

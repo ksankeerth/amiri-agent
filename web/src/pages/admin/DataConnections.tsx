@@ -9,7 +9,7 @@ import { FillFromJson } from "../../components/FillFromJson";
 import type { Candidate } from "../../components/fillJson";
 import { Icon } from "../../components/Icon";
 import { PageHeader } from "../../components/blocks";
-import { Banner, Empty, ListSkeleton, PageHead, useToast } from "../../components/ui";
+import { Banner, Empty, ListSkeleton, LoadError, PageHead, useToast } from "../../components/ui";
 import { ago, dayTime, plural } from "../../format";
 
 const STATUS_BADGE: Record<CheckStatus, [string, string]> = {
@@ -34,7 +34,7 @@ export function DataConnectionsPage() {
   const [samples, setSamples] = useState<Sample[] | null>(null);
   const [report, setReport] = useState<Report | null>(null);
   const [history, setHistory] = useState<Awaited<ReturnType<typeof connectApi.checks>>>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [checking, setChecking] = useState(false);
 
   const load = useCallback(async () => {
@@ -43,7 +43,7 @@ export function DataConnectionsPage() {
       setConn(c); setSamples(s.items); setHistory(h);
       if (c.latest_check && (!report || report.check_id !== c.latest_check.check_id)) setReport(await connectApi.report(c.latest_check.check_id));
       setError(null);
-    } catch (e) { setError(errText(e)); }
+    } catch (e) { setError(e); }
   }, [report]);
   useEffect(() => { load(); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -62,7 +62,7 @@ export function DataConnectionsPage() {
     catch (e) { toast(errText(e)); }
   };
 
-  if (error && !conn) return <div className="page"><PageHead title="Data connections" /><Banner kind="crit" icon="warn">{error}</Banner></div>;
+  if (error != null && !conn) return <div className="page"><PageHead title="Data connections" /><LoadError error={error} onRetry={load} what="the data connection" /></div>;
   if (!conn || !samples) return <div className="page"><PageHead title="Data connections" /><div className="card"><ListSkeleton rows={4} /></div></div>;
   return (
     <div className="page">

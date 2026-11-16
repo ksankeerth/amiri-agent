@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ApiError } from "../api/client";
 import { seriesApi, type Series, type SeriesStatus } from "../api/series";
 import { Spark } from "../components/charts";
 import { Icon } from "../components/Icon";
 import { HowItWorks, PageHeader } from "../components/blocks";
 import { AddSeriesModal, FetchBadge, RefreshButton, seriesSentence, StateBadge, themeMeaning } from "../components/series";
-import { Banner, Empty, useNow, useRole, ListSkeleton } from "../components/ui";
+import { Banner, Empty, useNow, useRole, ListSkeleton, LoadError } from "../components/ui";
 import { ago, due, pct, price, when, zx, ZONE_LABEL } from "../format";
 import { count, ruleText } from "../plain";
 
@@ -88,13 +87,13 @@ function SeriesCard({ s, onChange }: { s: Series; onChange: (s: Series) => void 
 export function SeriesList() {
   const { role } = useRole();
   const [items, setItems] = useState<Series[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [adding, setAdding] = useState(false);
   const { status, reload: reloadStatus } = useSeriesStatus();
 
   const load = useCallback(async () => {
     try { setItems(await seriesApi.list()); setError(null); }
-    catch (e) { setError(e instanceof ApiError ? e.full : String(e)); }
+    catch (e) { setError(e); }
   }, []);
   useEffect(() => {
     load();
@@ -116,8 +115,8 @@ export function SeriesList() {
           : <span className="small muted">Platform Admins add and edit series.</span>}
         help={<PricesHelp status={status} />} />
       <div className="banners"><PrototypeBanner status={status} /></div>
-      {error && <Banner kind="crit" icon="warn">{error}</Banner>}
-      {items === null && !error && <ListSkeleton rows={2} />}
+      {error != null && <LoadError error={error} onRetry={load} what="the market series" />}
+      {items === null && error == null && <ListSkeleton rows={2} />}
       {items && items.length === 0 && (
         <div className="card"><Empty icon="series" title="No series yet"
           actions={isAdmin ? <button className="btn btn--primary" type="button" onClick={() => setAdding(true)}><Icon name="plus" />Add a series</button> : undefined}>

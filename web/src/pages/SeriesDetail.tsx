@@ -7,7 +7,7 @@ import { PriceChart, type Mark } from "../components/charts";
 import { spikeIndex } from "../components/chartMath";
 import { Icon } from "../components/Icon";
 import { EditSeriesModal, FetchBadge, RefreshButton, seriesSentence, StateBadge, themeMeaning } from "../components/series";
-import { Banner, Empty, Modal, useNow, useRole, useToast, PageSkeleton, InlineSkeleton } from "../components/ui";
+import { Banner, Empty, Modal, useNow, useRole, useToast, PageSkeleton, InlineSkeleton, LoadError } from "../components/ui";
 import { ago, day, dayTime, due, pct, price, when, zx, ZONE_LABEL } from "../format";
 import { FINDING_STATUS, ruleText, setAsideReason, themeLabel } from "../plain";
 import { InvestigateNowButton } from "./events/Events";
@@ -177,7 +177,7 @@ export function SeriesDetail() {
   const now = useNow(30_000);
   const [s, setS] = useState<Series | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState<unknown>(null);
   const [findings, setFindings] = useState<Finding[] | null>(null);
   const [calls, setCalls] = useState<ProviderCall[] | null>(null);
   const [editing, setEditing] = useState(false);
@@ -191,7 +191,7 @@ export function SeriesDetail() {
       setS(a); setFindings(f); setCalls(c); setErr(null);
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) setNotFound(true);
-      else setErr(e instanceof ApiError ? e.full : String(e));
+      else setErr(e);
     }
   }, [id]);
   useEffect(() => {
@@ -219,7 +219,7 @@ export function SeriesDetail() {
     <div className="page"><PageHeader title="Series not found" crumbs={<Link to="/series">Market series</Link>} />
       <div className="card"><Empty icon="series" title="This series isn't watched" actions={<Link className="btn" to="/series">See market series</Link>}>It may have been deleted.</Empty></div></div>
   );
-  if (!s) return <div className="page">{err ? <Banner kind="crit" icon="warn">{err}</Banner> : <PageSkeleton bare />}</div>;
+  if (!s) return <div className="page">{err != null ? <><PageHeader title="Market series" crumbs={<Link to="/series">Market series</Link>} /><LoadError error={err} onRetry={load} what="this series" /></> : <PageSkeleton bare />}</div>;
   const l = s.latest;
   const moved = l?.max_z !== null && l?.max_z !== undefined && Math.abs(l.max_z) >= s.detector.z_threshold;
   return (

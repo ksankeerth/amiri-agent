@@ -6,7 +6,7 @@ import { investigationApi, type EventDetail, type EventRow, type InvestigationSt
 import { HowItWorks, PageHeader, Places, StatTiles, TonePill } from "../../components/blocks";
 import { CheckBrief } from "../../components/checks";
 import { Icon } from "../../components/Icon";
-import { Banner, Empty, useNow, useRole, useToast, InlineSkeleton } from "../../components/ui";
+import { Banner, Empty, useNow, useRole, useToast, InlineSkeleton, LoadError } from "../../components/ui";
 import { ago, dayTime, until, plural } from "../../format";
 import { count, eventTitle, longWhen, sourceInfo, themeLabel } from "../../plain";
 import { DAYS, useRecentFindings } from "../findings/recent";
@@ -114,7 +114,7 @@ export function EventsPage() {
   const { status, reload: reloadStatus } = useInvestigationStatus();
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [runs, setRuns] = useState<Run[]>([]);
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState<unknown>(null);
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const recent = useRecentFindings();
   const [toReview, setToReview] = useState(0);
@@ -123,7 +123,7 @@ export function EventsPage() {
     try {
       const [e, r] = await Promise.all([investigationApi.events(), investigationApi.runs()]);
       setEvents(e); setRuns(r); setErr(null); setLoadedAt(new Date()); reloadStatus();
-    } catch (e) { setErr(e instanceof ApiError ? e.full : String(e)); }
+    } catch (e) { setErr(e); }
   }, [reloadStatus]);
   const refresh = () => { load(); recent.load(); };
   const inProgress = (recent.items ?? []).filter(f => f.status === "grouped");
@@ -150,7 +150,7 @@ export function EventsPage() {
         </>}
         help={<HowItWorks><p>An event is something that happened in the world, traced to the products it could hit. It stays open while news about it keeps coming, then closes.</p></HowItWorks>} />
       <div className="banners">
-        {err && <Banner kind="crit" icon="warn">{err}</Banner>}
+        {err != null && <LoadError error={err} onRetry={refresh} what="the events" />}
         {admin && status?.notes.map(n => <Banner key={n} kind={status.connected ? "info" : "warn"} icon="info">{n}</Banner>)}
         {!admin && status && !status.connected && <Banner kind="warn" icon="warn">New findings can't be investigated right now. Your Platform Admin has been told.</Banner>}
         {status && status.findings_waiting > 0 && (
@@ -176,7 +176,7 @@ export function EventsPage() {
         {(inProgress.length > 0 || noEvent.length > 0) && <Link className="small" to="/findings">See all findings</Link>}
       </div>
       <div className="card mt12">
-        {events === null ? <InlineSkeleton /> : !rows.length ? (
+        {events === null ? (err == null && <InlineSkeleton />) : !rows.length ? (
           <Empty icon="events" title={show === "open" ? "No open events" : "No events here"} actions={<Link className="btn" to="/studio"><Icon name="studio" />Try a what-if in the Scenario Studio</Link>}>
             When Amiri Agent traces news or a price move to your products, the event appears here.</Empty>
         ) : (

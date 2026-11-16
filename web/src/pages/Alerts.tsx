@@ -8,7 +8,7 @@ import { HowItWorks, ImpactRow, PageHeader, StatTiles, StatusPill } from "../com
 import "../styles/daily.css";
 import { CheckPill } from "../components/checks";
 import { Icon } from "../components/Icon";
-import { Banner, Empty, ListSkeleton, useNow, useToast } from "../components/ui";
+import { Empty, ListSkeleton, LoadError, useNow, useToast } from "../components/ui";
 import { ago, dayTime } from "../format";
 import {
   ACTION_MEANS, alertOrder, ALERT_STATUS, checkMove, count, earliest, eventTitle, impactText, LEVEL_LABEL, LEVEL_TONE, listText, longWhen, onDay, relDay, sizeTiming,
@@ -120,12 +120,12 @@ export function AlertsPage() {
   const [items, setItems] = useState<AlertItem[] | null>(null);
   const [sum, setSum] = useState<AlertSummary | null>(null);
   const [events, setEvents] = useState<Record<string, EventDetail>>({});
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState<unknown>(null);
   const load = useCallback(async () => {
     try {
       const [s, xs] = await Promise.all([alertsApi.summary(), alertsApi.list({ status: show === "all" ? undefined : show, owner: team || undefined })]);
       setSum(s); setItems(xs); setErr(null);
-    } catch (e) { setErr(e instanceof ApiError ? e.full : String(e)); }
+    } catch (e) { setErr(e); }
   }, [show, team]);
   useEffect(() => { load(); const t = setInterval(load, 60_000); return () => clearInterval(t); }, [load]);
   // each alert's next check is on its event: one request per event on the page
@@ -160,7 +160,7 @@ export function AlertsPage() {
           <div className="row wrap"><StatusPill tone="amber" icon="alert">Showing early signs</StatusPill><span>Your figures are starting to move the bad way.</span></div>
           <div className="row wrap"><StatusPill tone="red" icon="bad">Confirmed by your data</StatusPill><span>Your own figures show the impact.</span></div>
         </HowItWorks>} />
-      {err && <Banner kind="crit" icon="warn">{err}</Banner>}
+      {err != null && <LoadError error={err} onRetry={load} what="the alerts" />}
       {s && <StatTiles label="Alerts in short" items={[
         { value: s.to_review, label: "To review", sub: s.to_review ? "acknowledge each one" : "all caught up", tone: s.to_review ? "red" : "green", icon: "alert" },
         { value: s.teams.length, label: s.teams.length === 1 ? "Team with alerts waiting" : "Teams with alerts waiting", sub: s.teams.length ? listText(s.teams.map(t => t.owner)) : "none", tone: s.teams.length ? "amber" : "grey", icon: "users" },
@@ -176,7 +176,7 @@ export function AlertsPage() {
         </div>}
       </div>
 
-      {items === null ? <div className="mt12"><ListSkeleton rows={3} /></div>
+      {items === null ? (err == null && <div className="mt12"><ListSkeleton rows={3} /></div>)
         : !items.length ? <div className="card mt12"><Empty icon="check" title={show === "new" ? "All caught up" : "Nothing here"}
           actions={show === "new" ? <Link className="btn" to="/events"><Icon name="events" />See events</Link> : undefined}>
           {show === "new" ? "When an event could hit your products, the owning team's alert appears here." : "No alerts in this group."}</Empty></div>

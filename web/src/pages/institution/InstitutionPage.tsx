@@ -9,7 +9,7 @@ import { Icon } from "../../components/Icon";
 import { WithChat } from "../../components/SetupChat";
 import { changeWords, countOf, fieldWord, SECTION_ONE, valueText } from "../../components/setupFlow";
 import { PageHeader, StatusPill } from "../../components/blocks";
-import { Banner, DEMOS, InlineSkeleton, MenuButton, Modal, PageHead, ResetModal, useRole, useToast, PageSkeleton, StatusIcon } from "../../components/ui";
+import { Banner, DEMOS, InlineSkeleton, LoadError, MenuButton, Modal, PageHead, ResetModal, useRole, useToast, PageSkeleton, StatusIcon } from "../../components/ui";
 import { dayTime, plural } from "../../format";
 import { PlaceName, useLoad } from "./fields";
 import { InstitutionFields, InstitutionModal, LABELS, splitErrors, useHiddenErrors, type Ctx } from "./forms";
@@ -25,14 +25,14 @@ export function useInstitution() {
   const [list, setList] = useState<InstitutionSummary[] | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [readiness, setReadiness] = useState<Readiness | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [id, setId] = useState<string | null>(() => { try { return localStorage.getItem(KEY); } catch { return null; } });
   const loadList = useCallback(async () => {
     try {
       const l = await inst.list();
       setList(l);
       setId(cur => (cur && l.some(x => x.institution_id === cur) ? cur : l.find(x => x.status !== "archived")?.institution_id ?? l[0]?.institution_id ?? null));
-    } catch (e) { setError(e instanceof ApiError ? e.full : String(e)); }
+    } catch (e) { setError(e); }
   }, []);
   const reload = useCallback(async () => {
     if (!id) { setProfile(null); return; }
@@ -41,7 +41,7 @@ export function useInstitution() {
       setProfile(p); setReadiness(r); setError(null);
     } catch (e) {
       if (e instanceof ApiError && e.status === 404) { try { localStorage.removeItem(KEY); } catch { /* */ } loadList(); }
-      else setError(e instanceof ApiError ? e.full : String(e));
+      else setError(e);
     }
   }, [id, loadList]);
   useEffect(() => { loadList(); }, [loadList]);
@@ -286,7 +286,7 @@ export function InstitutionPage() {
   const { profile, readiness, ctx, list } = S;
 
   if (!TABS.some(([k]) => k === tab)) return <Navigate to="/institution" replace />;  // an unknown tab: the overview
-  if (S.error && !profile) return <div className="page"><PageHead title="Institution" /><Banner kind="crit" icon="warn">{S.error}</Banner></div>;
+  if (S.error != null && !profile) return <div className="page"><PageHead title="Institution" /><LoadError error={S.error} onRetry={S.reload} what="the institution" /></div>;
   if (list === null) return <PageSkeleton />;
   const follow = (t: { tab: string | null }) => { if (t.tab) nav(`/institution/${t.tab}`); };
   const applied = (p: { kind: string; result: Record<string, any> | null }) => {

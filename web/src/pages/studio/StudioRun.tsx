@@ -8,7 +8,7 @@ import { studioApi, type Simulation, type TimelineItem } from "../../api/studio"
 import { StatusPill, TonePill } from "../../components/blocks";
 import { PriceChart, type Mark } from "../../components/charts";
 import { Icon } from "../../components/Icon";
-import { Banner, CountUp, PageHead, useToast, PageSkeleton } from "../../components/ui";
+import { Banner, CountUp, LoadError, PageHead, useToast, PageSkeleton } from "../../components/ui";
 import { dayTime, plural } from "../../format";
 import { listText, themeLabel } from "../../plain";
 import "../../styles/showcase.css";
@@ -149,6 +149,7 @@ export function StudioRunPage() {
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [playing, setPlaying] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [loadErr, setLoadErr] = useState<unknown>(null);  // the first load: the page has nothing to show without it
   const [newFrom, setNewFrom] = useState(Infinity);  // rows from this seq on arrived with the last step: highlighted
   const busy = useRef(false);
   const seq = useRef(0);
@@ -171,7 +172,8 @@ export function StudioRunPage() {
       setTimeline(t => [...t, ...fresh]);
     }
   }, []);
-  useEffect(() => { seq.current = 0; seen.current = null; setTimeline([]); setNewFrom(Infinity); studioApi.get(id).then(take).catch(e => setErr(e instanceof ApiError ? e.full : String(e))); }, [id, take]);
+  const first = useCallback(() => studioApi.get(id).then(s => { take(s); setLoadErr(null); }).catch(setLoadErr), [id, take]);
+  useEffect(() => { seq.current = 0; seen.current = null; setTimeline([]); setNewFrom(Infinity); first(); }, [first]);
 
   const step = useCallback(async () => {
     if (!sim || busy.current || !["running", "waiting"].includes(sim.status)) return;
@@ -192,7 +194,7 @@ export function StudioRunPage() {
   useEffect(() => { if (sim && !["running", "waiting"].includes(sim.status)) setPlaying(false); }, [sim]);
   const closeMoment = useCallback(() => setMoment(null), []);
 
-  if (!sim) return <div className="page">{err ? <Banner kind="crit" icon="warn">{err}</Banner> : <PageSkeleton bare />}</div>;
+  if (!sim) return <div className="page">{loadErr != null ? <><PageHead title="Scenario run" crumbs={<Link to="/studio">Scenario Studio</Link>} /><LoadError error={loadErr} onRetry={first} what="this run" /></> : <PageSkeleton bare />}</div>;
   const active = ["running", "waiting"].includes(sim.status);
   const findings = timeline.filter(t => t.kind === "finding");
   const marks: Mark[] = findings.filter(f => f.data.source === "timeseries").map(f => ({ t: f.at, color: "var(--high)", label: f.data.title, tag: "Flagged move" }));

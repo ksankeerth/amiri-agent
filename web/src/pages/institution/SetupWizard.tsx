@@ -6,7 +6,7 @@ import { ApiError } from "../../api/client";
 import { inst } from "../../api/institutions";
 import { Icon } from "../../components/Icon";
 import { askSetupAgent, WithChat } from "../../components/SetupChat";
-import { Banner, PageHead, useToast, PageSkeleton, StatusIcon, type Status } from "../../components/ui";
+import { Banner, LoadError, PageHead, useToast, PageSkeleton, StatusIcon, type Status } from "../../components/ui";
 import "../../styles/setup.css";
 import { CurrenciesField, Field, PlacePicker } from "./fields";
 import { InstitutionModal } from "./forms";
@@ -67,6 +67,8 @@ export function SetupWizard() {
     if (p.kind === "create_institution" && p.result?.institution_id) { S.select(p.result.institution_id); S.reloadList(); }
     else S.reload();
   };
+  // a failed load is not "no institution yet": say the server didn't answer instead of offering to create one
+  if (S.error != null && !profile) return <div className="page"><PageHead title="Set up your institution" crumbs={<Link to="/institution">Institution</Link>} /><LoadError error={S.error} onRetry={S.reload} what="the institution" /></div>;
   if (S.list === null) return <PageSkeleton />;
   if (!S.list.length || !profile || !readiness) {
     return (

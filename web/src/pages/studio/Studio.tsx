@@ -7,7 +7,7 @@ import { FillFromJson } from "../../components/FillFromJson";
 import { scenariosOf } from "../../components/fillJson";
 import { Icon } from "../../components/Icon";
 import { HowItWorks, PageHeader, TonePill } from "../../components/blocks";
-import { Banner, Empty, Modal, PageHead, PageSkeleton, useToast } from "../../components/ui";
+import { Banner, Empty, LoadError, Modal, PageHead, PageSkeleton, useToast } from "../../components/ui";
 import { dayTime, plural } from "../../format";
 
 const TAG: Record<string, string> = { fx: "currency" };  // a template's tags in words
@@ -83,13 +83,12 @@ export function StudioPage() {
   const [templates, setTemplates] = useState<Template[] | null>(null);
   const [items, setItems] = useState<ScenarioRow[] | null>(null);
   const [current, setCurrent] = useState<Simulation | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState<unknown>(null);
   const [own, setOwn] = useState(false);
-  useEffect(() => {
-    Promise.all([studioApi.templates(), studioApi.scenarios(), studioApi.current()])
-      .then(([t, s, c]) => { setTemplates(t); setItems(s); setCurrent(c); })
-      .catch(e => setErr(e instanceof ApiError ? e.full : String(e)));
-  }, []);
+  const load = () => Promise.all([studioApi.templates(), studioApi.scenarios(), studioApi.current()])
+    .then(([t, s, c]) => { setTemplates(t); setItems(s); setCurrent(c); setErr(null); })
+    .catch(setErr);
+  useEffect(() => { load(); }, []);
   const create = async (t: Template) => {
     if (t.template_id === "blank") { setOwn(true); return; }
     try { const s = await studioApi.create(t.template_id); nav(`/studio/${s.scenario_id}`); }
@@ -102,7 +101,8 @@ export function StudioPage() {
     <div className="page">
       <PageHeader title="Scenario Studio" status="Try a what-if on your institution. Nothing touches your live data."
         help={<HowItWorks><p>A scenario plays out in a sandbox: headlines arrive and prices move, and Amiri Agent's monitors, market series and investigation respond as they would for real. You see the events it traces and the alerts each team would get.</p></HowItWorks>} />
-      <div className="banners">{err && <Banner kind="crit" icon="warn">{err}</Banner>}<CurrentBanner sim={current} /></div>
+      {err != null && templates === null ? <LoadError error={err} onRetry={load} what="the Scenario Studio" /> : <>
+      <div className="banners"><CurrentBanner sim={current} /></div>
       {ready && !current && <div className="card st-hero">
         <div className="col" style={{ gap: 4, flex: 1, minWidth: 260 }}>
           <span className="label">Watch it work</span>
@@ -142,7 +142,7 @@ export function StudioPage() {
               </span></td>
             </tr>))}</tbody>
         </table></div>)}
-      </div>
+      </div></>}
       {own && <NewOwnModal onClose={() => setOwn(false)} />}
     </div>
   );
@@ -245,15 +245,15 @@ export function ScenarioPage() {
   const start = useStart();
   const [s, setS] = useState<Scenario | null>(null);
   const [current, setCurrent] = useState<Simulation | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState<unknown>(null);
   const [asking, setAsking] = useState(false);
   const [naming, setNaming] = useState<string | null>(null);
   const fresh = new URLSearchParams(window.location.search).has("new");
   const load = useCallback(() => Promise.all([studioApi.scenario(id), studioApi.current()])
     .then(([x, c]) => { setS(x); setCurrent(c); setErr(null); })
-    .catch(e => setErr(e instanceof ApiError ? e.full : String(e))), [id]);
+    .catch(setErr), [id]);
   useEffect(() => { load(); }, [load]);
-  if (!s) return <div className="page">{err ? <Banner kind="crit" icon="warn">{err}</Banner> : <PageSkeleton bare />}</div>;
+  if (!s) return <div className="page">{err != null ? <><PageHead title="Scenario" crumbs={<Link to="/studio">Scenario Studio</Link>} /><LoadError error={err} onRetry={load} what="this scenario" /></> : <PageSkeleton bare />}</div>;
   const b = s.built;
   const own = b.template_id === "blank";
   const save = async (body: { intensity?: string; switched_off?: string[]; title?: string; custom?: Custom }) => {
@@ -278,7 +278,7 @@ export function ScenarioPage() {
           <button className="btn btn--sm" type="button" onClick={() => setAsking(false)}>Keep it</button></span>
           : <button className="btn btn--ghost" type="button" onClick={() => setAsking(true)}><Icon name="trash" />Delete</button>} />
       <div className="banners">
-        {err && <Banner kind="crit" icon="warn">{err}</Banner>}
+        {err != null && <LoadError error={err} onRetry={load} what="this scenario" />}
         <CurrentBanner sim={current} />
         <Banner kind="info">{own ? "Your headlines are marked simulated and never reach the live pages. Amiri Agent's monitor reads each one on its day; the investigation traces what it finds to your products."
           : "The headlines are written for this scenario and marked simulated; you can edit, add or remove them. Their figures come from the price path. Sizes are illustrative."}</Banner>

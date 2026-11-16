@@ -3,12 +3,11 @@
 // connector's report and the event page link straight to its definition. The PDF has its own layout (SpecPrint.tsx).
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { ApiError } from "../../api/client";
 import { specApi, type Spec, type SpecCategory, type SpecDimension, type SpecMetric } from "../../api/spec";
 import { Icon } from "../../components/Icon";
 import { Markdown, ScrollTable } from "../../components/markdown";
 import { FactList, PageHeader } from "../../components/blocks";
-import { Banner, PageSkeleton } from "../../components/ui";
+import { LoadError, PageHead, PageSkeleton } from "../../components/ui";
 import "../../styles/showcase.css";
 
 const words = (s: string) => s.replace(/_/g, " ");
@@ -153,17 +152,18 @@ function SpecBody({ s, q }: { s: Spec; q: string }) {
   );
 }
 
-export function useSpec(): [Spec | null, string | null] {
+export function useSpec(): [Spec | null, unknown, () => Promise<void>] {
   const [s, setS] = useState<Spec | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  useEffect(() => { specApi.get().then(setS).catch(e => setErr(e instanceof ApiError ? e.full : String(e))); }, []);
-  return [s, err];
+  const [err, setErr] = useState<unknown>(null);
+  const load = () => specApi.get().then(x => { setS(x); setErr(null); }).catch(setErr);
+  useEffect(() => { load(); }, []);
+  return [s, err, load];
 }
 
 const kb = (n: number | null) => (n == null ? "" : n > 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.round(n / 1e3)} KB`);
 
 export function SpecPage() {
-  const [s, err] = useSpec();
+  const [s, err, reload] = useSpec();
   const [query, setQuery] = useState("");
   const { hash } = useLocation();
   const q = query.trim().toLowerCase();
@@ -173,7 +173,7 @@ export function SpecPage() {
     el?.scrollIntoView({ block: "start" });
   }, [s, hash]);
   const found = useMemo(() => !s || !q ? [] : s.categories.flatMap(c => (c.metrics ?? []).filter(m => matches(m, q)).map(m => ({ c, m }))), [s, q]);
-  if (err) return <div className="page"><Banner kind="crit" icon="warn">{err}</Banner></div>;
+  if (err != null) return <div className="page"><PageHead title="Metrics Spec" /><LoadError error={err} onRetry={reload} what="the Metrics Spec" /></div>;
   if (!s) return <div className="page"><PageSkeleton bare /></div>;
   const nMetrics = s.categories.reduce((n, c) => n + (c.metrics?.length ?? 0), 0);
   return (

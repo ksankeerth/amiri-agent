@@ -7,7 +7,7 @@ import { inst, type Profile } from "../../api/institutions";
 import { gb, radarApi, scheduleText, type RadarStatus, type RadarStory } from "../../api/radar";
 import { Icon } from "../../components/Icon";
 import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
-import { Banner, Empty, useNow, useRole, useToast, ListSkeleton } from "../../components/ui";
+import { Banner, Empty, useNow, useRole, useToast, ListSkeleton, LoadError } from "../../components/ui";
 import { ago, dayTime, placeName, placeOrder, when } from "../../format";
 import type { Tone } from "../../plain";
 import { themeText } from "../events/Events";
@@ -84,7 +84,7 @@ export function RadarPage() {
   const [scope, setScope] = useState<{ places: string[]; why: Record<string, string[]>; themes: string[]; actors: string[] } | null>(null);
   const [show, setShow] = useState<Show>("all");
   const [place, setPlace] = useState("");
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState<unknown>(null);
   const [running, setRunning] = useState<string | null>(null);
   const [why, setWhy] = useState<string | null>(null);  // the watched place whose reason is open
   const [places, setPlaces] = useState(false);  // the watched places, folded to one line until asked
@@ -93,7 +93,7 @@ export function RadarPage() {
     try {
       const [st, ss] = await Promise.all([radarApi.status(), radarApi.stories({ status: show === "all" ? undefined : show, place: place || undefined })]);
       setStatus(st); setItems(ss); setErr(null);
-    } catch (e) { setErr(e instanceof ApiError ? e.full : String(e)); }
+    } catch (e) { setErr(e); }
   }, [show, place]);
   useEffect(() => { load(); const t = setInterval(load, 60_000); return () => clearInterval(t); }, [load]);
   useEffect(() => {
@@ -137,7 +137,7 @@ export function RadarPage() {
           <button className="btn btn--primary" type="button" disabled={!!cantRun} title={cantRun ?? undefined} onClick={runNow}>
             <Icon name={running ? "refresh" : "radar"} />{running ? "Checking…" : status?.connected ? `Check now · ${left} left today` : "Check now"}</button></>} />
       <div className="banners">
-        {err && <Banner kind="crit" icon="warn">{err}</Banner>}
+        {err != null && <LoadError error={err} onRetry={load} what="Radar" />}
         {status && left === 0 && status.connected && <Banner kind="info" icon="info">You've used today's {status.run_now.limit} checks; the next run is {nextRun}.</Banner>}
         {admin ? status?.notes.map(n => <Banner key={n} kind="warn" icon="warn">{n}</Banner>)
           : status && !status.connected && <Banner kind="warn" icon="warn"><b>Radar isn't running yet.</b> It reads the news for you once your Platform Admin connects it. Monitors and market series still work.</Banner>}
@@ -176,7 +176,7 @@ export function RadarPage() {
           <option value="">All places</option>{placesSeen.map(p => <option key={p} value={p}>{names[p] ?? p}</option>)}</select>}
       </div>
       <div className="col gap16 mt12">
-        {items === null ? <ListSkeleton rows={3} />
+        {items === null ? (err == null && <ListSkeleton rows={3} />)
           : !items.length ? <div className="card"><Empty icon="radar" title={show === "all" ? "No stories yet" : "Nothing here"}
             actions={show === "all" && !status?.connected ? <Link className="btn" to="/institution/agents">See what Radar will read</Link> : undefined}>
             {show === "all" ? (status?.connected ? "Radar hasn't found anything touching your footprint yet. Check now runs it at once." : admin ? "Connect the Radar agent (RADAR_URL) and it starts reading the news." : "Radar starts reading the news once your Platform Admin connects it.") : "No stories in this group."}</Empty></div>
