@@ -5,6 +5,7 @@ import { alertsApi } from "../../api/alerts";
 import { investigationApi, type EventDetail, type EventRow, type InvestigationStatus, type Run, type Theme } from "../../api/investigation";
 import { HowItWorks, PageHeader, Places, StatTiles, TonePill } from "../../components/blocks";
 import { CheckBrief } from "../../components/checks";
+import { FlowFilter } from "../../components/FlowFilter";
 import { Icon } from "../../components/Icon";
 import { Banner, Empty, useNow, useRole, useToast, InlineSkeleton, LoadError } from "../../components/ui";
 import { ago, dayTime, until, plural } from "../../format";
@@ -130,6 +131,7 @@ export function EventsPage() {
   const noEvent = (recent.items ?? []).filter(f => f.status === "set_aside");
   useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t); }, [load]);
   const nSim = (events ?? []).filter(e => e.world !== "live").length;
+  const shown = (events ?? []).filter(e => sim || e.world === "live");  // what the status filter counts
   const rows = useMemo(() => (events ?? []).filter(e => (show === "all" || e.status === show) && (sim || e.world === "live"))
     .sort((a, b) => sort === "impacts" ? b.hypotheses - a.hypotheses || (a.anchor < b.anchor ? 1 : -1) : (a.anchor < b.anchor ? 1 : -1)), [events, show, sim, sort]);
   const ev = useEventDetails(rows.map(e => e.event_id));
@@ -167,8 +169,8 @@ export function EventsPage() {
         { value: noEvent.length, label: "No impact found", sub: `last ${DAYS} days`, tone: "grey", icon: "check" },
       ]} />}
       <div className="filters">
-        <span className="seg" role="group" aria-label="Which events">{(["open", "closed", "all"] as const).map(x => (
-          <button key={x} type="button" aria-pressed={show === x} onClick={() => setShow(x)}>{x[0].toUpperCase() + x.slice(1)}</button>))}</span>
+        <FlowFilter label="Which events" value={show} onChange={setShow} all={{ key: "all", label: "All", count: shown.length }}
+          steps={[{ key: "open", label: "Open", count: shown.filter(e => e.status === "open").length }, { key: "closed", label: "Closed", count: shown.filter(e => e.status === "closed").length }]} />
         <label className="sortby small">Sort <select className="input" value={sort} onChange={e => setSort(e.target.value as Sort)}>
           <option value="newest">Newest first</option><option value="impacts">Most possible impacts</option></select></label>
         {nSim > 0 && <label className="check small"><input type="checkbox" checked={sim} onChange={e => setSim(e.target.checked)} /> Also show {plural(nSim, "simulated event")} (from tests; not real)</label>}

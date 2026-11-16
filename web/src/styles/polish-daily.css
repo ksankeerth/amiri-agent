@@ -1,0 +1,38 @@
+/* Team-feedback polish of the daily pages (Alerts, Events, Event detail, Findings): worker "polish-daily". */
+
+/* ---- FlowFilter: statuses that follow one another, as steps on a line with their counts ---- */
+.ff { display:inline-flex; flex-wrap:wrap; align-items:center; gap:4px; padding:4px; max-width:100%;
+  background:var(--surface); border:1px solid var(--hairline-2); border-radius:var(--r-pill); }
+.ff button { border:0; background:transparent; cursor:pointer; font:inherit; border-radius:var(--r-pill); white-space:nowrap;
+  display:inline-flex; align-items:center; transition:background var(--d-fast, 120ms), color var(--d-fast, 120ms); }
+.ff button:hover { background:var(--hover-bg); }
+.ff button:active { background:var(--press-bg); }
+.ff button[aria-pressed="true"] { background:var(--active-bg); color:var(--ink); font-weight:600; }
+.ff-all { height:36px; padding:0 8px 0 16px; gap:8px; font-size:var(--fs-md); font-weight:500; color:var(--ink-2); }
+.ff-c { display:inline-flex; align-items:center; justify-content:center; min-width:24px; height:22px; padding:0 8px; border-radius:var(--r-pill);
+  background:var(--sunken); color:var(--ink-2); font-size:var(--fs-xs); font-weight:700; font-variant-numeric:tabular-nums; }
+.ff-all[aria-pressed="true"] .ff-c, .ffc-o[aria-pressed="true"] .ff-c { background:var(--ink); color:var(--surface); }
+.ff-sep { width:1px; height:20px; background:var(--hairline-2); margin:0 4px; }
+.ff-flow { display:inline-flex; flex-wrap:wrap; align-items:center; row-gap:4px; }
+.ff-line { width:24px; height:2px; border-radius:2px; background:var(--hairline-2); flex:none; }
+.ff-step { height:36px; padding:0 16px 0 4px; gap:8px; font-size:var(--fs-md); font-weight:500; color:var(--ink-2); }
+.ff-n { width:28px; height:28px; border-radius:50%; flex:none; display:inline-flex; align-items:center; justify-content:center;
+  border:2px solid var(--line-strong); background:var(--surface); color:var(--ink); font-size:var(--fs-sm); font-weight:700; font-variant-numeric:tabular-nums; }
+.ff-n.zero { border-style:dashed; border-color:var(--hairline-2); color:var(--ink-3); }
+.ff-step[aria-pressed="true"] .ff-n { background:var(--ink); border-color:var(--ink); color:var(--surface); }
+.ff-alt { display:inline-flex; align-items:center; gap:2px; }
+.ff-or { font-size:var(--fs-xs); color:var(--ink-3); padding:0 4px; }
+.ff-step:not(:has(.ff-n)) { padding-left:16px; }
+
+/* ---- ChipFilter: options that are not a sequence (teams), on the same track without the line ---- */
+.ffc { display:inline-flex; flex-wrap:wrap; align-items:center; gap:4px; padding:4px; max-width:100%;
+  background:var(--surface); border:1px solid var(--hairline-2); border-radius:var(--r-pill); }
+.ffc-o { display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 16px; border-radius:var(--r-pill); cursor:pointer; white-space:nowrap;
+  border:0; background:transparent; color:var(--ink-2); font:inherit; font-size:var(--fs-md); font-weight:500;
+  transition:background var(--d-fast, 120ms), color var(--d-fast, 120ms); }
+.ffc-o:has(.ff-c) { padding-right:8px; }
+.ffc-o:hover { background:var(--hover-bg); }
+.ffc-o:active { background:var(--press-bg); }
+.ffc-o[aria-pressed="true"] { background:var(--active-bg); color:var(--ink); font-weight:600; padding-left:12px; }
+.ffc-o svg { width:15px; height:15px; flex:none; }
+.filters:has(.ff) { gap:12px 16px; margin:4px 0 8px; }

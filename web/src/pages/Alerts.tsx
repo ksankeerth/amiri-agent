@@ -7,6 +7,7 @@ import { investigationApi, type EventDetail } from "../api/investigation";
 import { HowItWorks, ImpactRow, PageHeader, StatTiles, StatusPill } from "../components/blocks";
 import "../styles/daily.css";
 import { CheckPill } from "../components/checks";
+import { ChipFilter, FlowFilter } from "../components/FlowFilter";
 import { Icon } from "../components/Icon";
 import { Empty, ListSkeleton, LoadError, useNow, useToast } from "../components/ui";
 import { ago, dayTime } from "../format";
@@ -16,7 +17,6 @@ import {
 } from "../plain";
 
 type Show = "new" | "acknowledged" | "resolved" | "all";
-const SHOW: [Show, string][] = [["new", "To review"], ["acknowledged", "Acknowledged"], ["resolved", "Resolved"], ["all", "All"]];
 const CHANGE: Record<string, string> = {
   raised: "Raised", escalated: "Level raised", acknowledged: "Acknowledged", resolved: "Resolved", reopened: "Reopened",
   confirmed: "Confirmed by your data", withdrawn: "Withdrawn", checked: "Checked against your data",
@@ -123,13 +123,16 @@ export function AlertsPage() {
   const [err, setErr] = useState<unknown>(null);
   const load = useCallback(async () => {
     try {
-      const [s, xs] = await Promise.all([alertsApi.summary(), alertsApi.list({ status: show === "all" ? undefined : show, owner: team || undefined })]);
+      // every status at once, so the filter can show how many sit at each step
+      const [s, xs] = await Promise.all([alertsApi.summary(), alertsApi.list({ owner: team || undefined })]);
       setSum(s); setItems(xs); setErr(null);
     } catch (e) { setErr(e); }
-  }, [show, team]);
+  }, [team]);
   useEffect(() => { load(); const t = setInterval(load, 60_000); return () => clearInterval(t); }, [load]);
   // each alert's next check is on its event: one request per event on the page
-  const eventIds = useMemo(() => [...new Set((items ?? []).map(a => a.event_id))].sort().join(","), [items]);
+  const shown = useMemo(() => items && items.filter(a => show === "all" || a.status === show), [items, show]);
+  const nAt = (k: Show) => (items ?? []).filter(a => k === "all" || a.status === k).length;
+  const eventIds = useMemo(() => [...new Set((shown ?? []).map(a => a.event_id))].sort().join(","), [shown]);
   useEffect(() => {
     if (!eventIds) return;
     let live = true;
@@ -147,7 +150,7 @@ export function AlertsPage() {
     window.dispatchEvent(new Event("amiri:alerts")); };
 
   // one queue, the most serious first (the alert your own data confirms leads), then the latest
-  const queue = useMemo(() => [...(items ?? [])].sort((x, y) => alertOrder({ ...x, at: changed(x) }, { ...y, at: changed(y) })), [items]);
+  const queue = useMemo(() => [...(shown ?? [])].sort((x, y) => alertOrder({ ...x, at: changed(x) }, { ...y, at: changed(y) })), [shown]);
   const firstNew = queue.find(a => a.status === "new")?.alert_id;
   const s = sum;
   return (
@@ -168,16 +171,14 @@ export function AlertsPage() {
       ]} />}
 
       {(items !== null || err == null) && <div className="filters">
-        <span className="seg" role="group" aria-label="Which alerts">{SHOW.map(([k, label]) => <button key={k} type="button" aria-pressed={show === k} onClick={() => setShow(k)}>{label}{k === "new" && s?.to_review ? ` (${s.to_review})` : ""}</button>)}</span>
-        {s && s.all_teams.length > 1 && <div className="al-teams" role="group" aria-label="Team">
-          <button type="button" className={`chip click ${team === "" ? "sel" : ""}`} aria-pressed={team === ""} onClick={() => setTeam("")}>All teams</button>
-          {s.all_teams.map(t => { const n = s.teams.find(x => x.owner === t)?.to_review;
-            return <button key={t} type="button" className={`chip click ${team === t ? "sel" : ""}`} aria-pressed={team === t} onClick={() => setTeam(team === t ? "" : t)}>{t}{n ? ` (${n})` : ""}</button>; })}
-        </div>}
+        <FlowFilter label="Which alerts" value={show} onChange={setShow} all={{ key: "all", label: "All", count: items ? nAt("all") : undefined }}
+          steps={([["new", "To review"], ["acknowledged", "Acknowledged"], ["resolved", "Resolved"]] as const).map(([key, label]) => ({ key, label, count: items ? nAt(key) : undefined }))} />
+        {s && s.all_teams.length > 1 && <ChipFilter label="Team" value={team} onChange={t => setTeam(t)}
+          options={[{ key: "", label: "All teams" }, ...s.all_teams.map(t => ({ key: t, label: t, count: s.teams.find(x => x.owner === t)?.to_review }))]} />}
       </div>}
 
-      {items === null ? (err == null && <div className="mt12"><ListSkeleton rows={3} /></div>)
-        : !items.length ? <div className="card mt12"><Empty icon="check" title={show === "new" ? "All caught up" : "Nothing here"}
+      {shown === null ? (err == null && <div className="mt12"><ListSkeleton rows={3} /></div>)
+        : !shown.length ? <div className="card mt12"><Empty icon="check" title={show === "new" ? "All caught up" : "Nothing here"}
           actions={show === "new" ? <Link className="btn" to="/events"><Icon name="events" />See events</Link> : undefined}>
           {show === "new" ? "When an event could hit your products, the owning team's alert appears here." : "No alerts in this group."}</Empty></div>
         : <div className="col gap12 mt12">{queue.map(a => <AlertCard key={a.alert_id} a={a} next={nextCheck(a)} ev={events[a.event_id]} primary={a.alert_id === firstNew} onChange={update} />)}</div>}

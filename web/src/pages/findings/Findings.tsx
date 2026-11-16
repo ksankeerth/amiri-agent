@@ -5,6 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import { ApiError } from "../../api/client";
 import { investigationApi, type EventRow, type FindingRow } from "../../api/investigation";
 import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
+import { FlowFilter } from "../../components/FlowFilter";
 import { Icon } from "../../components/Icon";
 import { Banner, Empty, errText, InlineSkeleton, isDown, LoadError, useNow, useToast } from "../../components/ui";
 import { ago, dayTime, until } from "../../format";
@@ -16,7 +17,6 @@ import { DAYS, reasonText, useRecentFindings } from "./recent";
 // the list carries each finding's evidence when the source kept it (the article's link)
 type WithEvidence = FindingRow & { evidence?: { headlines?: { url?: string | null }[] } | null };
 type Show = "all" | "new" | "grouped" | "linked" | "set_aside";
-const SHOW: [Show, string][] = [["all", "All"], ["grouped", "Being investigated"], ["linked", "In an event"], ["set_aside", "No impact found"], ["new", "Waiting"]];
 
 function sourceLink(f: FindingRow): string | null {
   const r = f.source_ref ?? {};
@@ -70,8 +70,9 @@ export function FindingsPage() {
         <Banner kind="info" icon="info" action={<InvestigateNowButton onDone={refresh} small />}>
           <b>{count(status.findings_waiting, "finding")} waiting</b> to be investigated{nextBatch ? `: the next batch goes ${nextBatch}` : ""}.
         </Banner>)}
-      <div className="filters"><span className="seg" role="group" aria-label="Which findings">{SHOW.map(([k, label]) => (
-        <button key={k} type="button" aria-pressed={show === k} onClick={() => setShow(k)}>{label} ({n(k)})</button>))}</span></div>
+      <div className="filters"><FlowFilter label="Which findings" value={show} onChange={setShow} all={{ key: "all", label: "All", count: n("all") }}
+        steps={[{ key: "new", label: "Waiting", count: n("new") }, { key: "grouped", label: "Being investigated", count: n("grouped") },
+          [{ key: "linked", label: "In an event", count: n("linked") }, { key: "set_aside", label: "No impact found", count: n("set_aside") }]]} /></div>
       <div className="card mt12">
         {items === null ? (err == null && <InlineSkeleton />) : !rows.length ? (
           <Empty icon="search" title={show === "all" ? `Nothing found in the last ${DAYS} days` : "None in this group"}
