@@ -248,8 +248,12 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
             {ev && <path className="flowpulse" d={inward} pathLength={100} fill="none" stroke={TONE_COLOR[ev.tone]} strokeWidth={width + 2.5} strokeLinecap="round" strokeDasharray="10 90" style={{ color: TONE_COLOR[ev.tone] }} />}
           </g>;
         })}
-        {reached.size > 0 && homeXY && <circle className="homeglow" cx={homeXY[0]} cy={homeXY[1]} r={16} fill="none"
-          stroke={TONE_COLOR[[...reached.values()].some(e => e.tone === "bad") ? "bad" : [...reached.values()][0].tone]} strokeWidth={2} />}
+        {/* the glow lands where the pulses arrive: each reached flow's own end in the bank's footprint (its home country, or a place in it) */}
+        {[...new Set(S.flows.filter(f => reached.has(f.id)).map(f => f.local))].map(code => {
+          const p = xy(at(code)), tones = S.flows.filter(f => f.local === code && reached.has(f.id)).map(f => reached.get(f.id)!.tone);
+          return p && <circle key={`glow${code}`} className="homeglow" cx={p[0]} cy={p[1]} r={16} fill="none" strokeWidth={2}
+            stroke={TONE_COLOR[tones.includes("bad") ? "bad" : tones.includes("mixed") ? "mixed" : tones[0]]} />;
+        })}
         {on.has("regulators") && homeXY && S.regulators.filter(r => r.relation === "reach").map((r, i) => {
           const far = xy(at(r.short === "OFAC" ? "US" : r.short === "EU" ? "BE" : r.short === "OFSI" ? "GB" : r.country));
           return far && <line key={`t${i}`} x1={homeXY[0]} y1={homeXY[1]} x2={far[0]} y2={far[1]} stroke="var(--ink-3)" strokeDasharray="2 3" />;
