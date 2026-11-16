@@ -19,7 +19,6 @@ import { ProfileMap } from "./institution/ProfileMap";
 const REFRESH_MS = 60_000;
 const LEVEL_ICON: Record<Attention["level"], string> = { crit: "warn", warn: "warn", info: "info" };
 const RANK = { bad: 0, mixed: 1, good: 2, neutral: 3 };  // what hurts first
-const KPI_TONE = { bad: "var(--critical)", good: "var(--accent)", mixed: "var(--high)", neutral: "var(--hairline-2)" };
 
 function greeting(now: Date): string {
   const h = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: TIME_ZONE }).format(now));
@@ -38,7 +37,7 @@ function FirstRun({ o }: { o: Overview }) {
   const i = o.institution;
   const steps = [
     { done: !!i, title: "Tell Amiri Agent about your institution", body: "Where you operate, who your customers are, your products, flows, regulators, rivals and risks. Talk to the setup agent, or use the forms.",
-      action: <Link className="btn btn--primary" to={i ? "/institution/setup" : "/institution/new"}><Icon name="chat" />{i ? "Continue setup" : "Start setup"}</Link> },
+      action: <Link className={`btn${i ? " btn--primary" : ""}`} to={i ? "/institution/setup" : "/institution/new"}><Icon name="chat" />{i ? "Continue setup" : "Start setup"}</Link> },
     { done: !!i && i.readiness.ready && i.status === "active", title: "Check it and go live",
       body: i ? (i.readiness.ready ? "Everything required is there. Activate the profile so the agents use it." : `${plural(i.readiness.missing_required, "required item")} still missing.`) : "Once the profile has what's required, activate it.",
       action: <Link className="btn" to="/institution/setup/review">Review</Link> },
@@ -46,14 +45,22 @@ function FirstRun({ o }: { o: Overview }) {
       action: <Link className="btn" to="/monitors">Monitors</Link> },
   ];
   return (
-    <div className="page">
-      <div className="ov-hello"><div><h1>Welcome to Amiri Agent</h1>
-        <div className="lede">Three steps, and Amiri Agent starts watching the world for {i ? <b>{i.name}</b> : "your institution"}.</div></div></div>
-      <div className="ov-steps">{steps.map((s, n) => (
-        <div key={s.title} className={`card ov-step ${s.done ? "done" : ""}`}>
-          <span className="n">{s.done ? "✓" : n + 1}</span><h2>{s.title}</h2>
-          <p className="small muted" style={{ margin: 0, flex: 1 }}>{s.body}</p><div className="row">{s.action}</div></div>))}</div>
-      {!i ? <DemoCard /> : <div className="card mt16"><div className="bd row wrap" style={{ gap: 16 }}>
+    <div className="page ovx">
+      <PageHeader title="Welcome to Amiri Agent"
+        status={i ? <>Three steps, and Amiri Agent starts watching the world for <b className="ink">{i.name}</b>.</>
+          : <>See it work on a sample institution in one click, or set up your own.</>} />
+      {!i && <DemoCard />}
+      {!i && <h2 className="ovx-or">Or set up your own institution</h2>}
+      <div className="ov-steps">{steps.map((st, n) => {
+        const locked = n > 0 && !steps[n - 1].done && !st.done;  // a step opens once the one before it is done
+        return (
+          <div key={st.title} className={`card ov-step ${st.done ? "done" : ""} ${locked ? "locked" : ""}`}>
+            <span className="n">{st.done ? <Icon name="check" /> : n + 1}<span className="sr">{st.done ? " (done)" : locked ? " (after the step before)" : ""}</span></span>
+            <h3>{st.title}</h3>
+            <p className="small muted" style={{ margin: 0, flex: 1 }}>{st.body}</p>
+            <div className="row">{locked ? <span className="small muted">After step {n}</span> : st.action}</div></div>);
+      })}</div>
+      {i && <div className="card mt16"><div className="bd row wrap" style={{ gap: 16 }}>
         <div className="col" style={{ gap: 4, flex: 1, minWidth: 260 }}><h2 style={{ margin: 0 }}>See it work first</h2>
           <span className="small muted">Run a sharp currency fall on your institution in the Scenario Studio: headlines arrive, prices move, and Amiri Agent's monitors and investigation respond. Nothing touches live data.</span></div>
         <Link className="btn" to="/studio"><Icon name="studio" />Open the Scenario Studio</Link></div></div>}
@@ -74,15 +81,16 @@ function DemoCard() {
     } catch (e) { setErr(String((e as Error).message ?? e)); setBusy(null); }
   };
   return (
-    <div className="card mt16"><div className="bd col" style={{ gap: 12 }}>
-      <div className="col" style={{ gap: 4 }}><h2 style={{ margin: 0 }}>Start with a demo</h2>
-        <span className="small muted">Load an invented institution with its whole profile, ready to use, and try everything on it. The data is public in the repository's demo folder.</span></div>
-      <div className="row wrap" style={{ gap: 8 }}>{DEMOS.map(d => (
-        <button key={d.kind} className="btn" type="button" disabled={!!busy} onClick={() => load(d.kind)}>
-          <Icon name={d.kind === "bank" ? "bank" : "health"} />{busy === d.kind ? "Loading…" : `${d.label}: ${d.name}`}</button>))}</div>
-      <span className="small muted">{DEMOS.map(d => `${d.name} is ${d.what.charAt(0).toLowerCase()}${d.what.slice(1)}`).join("; ")}.</span>
+    <section className="card ovx-demo" aria-labelledby="demo-h"><div className="bd">
+      <span className="label">Fastest way in</span>
+      <h2 id="demo-h">Start with a demo</h2>
+      <p>An invented institution with its whole profile, ready to try everything on. No real customer data.</p>
+      <div className="ovx-demo-btns">{DEMOS.map((d, n) => (
+        <button key={d.kind} className={`btn btn--lg${n === 0 ? " btn--primary" : ""}`} type="button" disabled={!!busy} onClick={() => load(d.kind)}>
+          <Icon name={d.kind === "bank" ? "bank" : "health"} />
+          <span className="ovx-demo-t"><b>{busy === d.kind ? "Loading…" : `Load the ${d.label.toLowerCase()}`}</b><span>{d.name}, {d.what.charAt(0).toLowerCase()}{d.what.slice(1)}</span></span></button>))}</div>
       {err && <div className="errtext" role="alert">{err}</div>}
-    </div></div>
+    </div></section>
   );
 }
 
@@ -106,53 +114,74 @@ export function OverviewPage() {
   if (o.first_run) return <FirstRun o={o} />;
   const i = o.institution!;
   const c = o.counts;
-  const worst = o.events.some(e => e.tone === "bad") ? "bad" : o.events.some(e => e.tone === "mixed") ? "mixed" : o.events.length ? "good" : "neutral";
-  const needs = o.attention.length + o.attention_more;
-  const topLevel = o.attention[0]?.level;
-  const f24 = c.findings_24h.timeseries + c.findings_24h.monitor + c.findings_24h.radar;
   const s = o.services;
   const names = { ...Object.fromEntries(Object.entries(o.map.places).map(([k, v]) => [k, v.name])), ...(profile?.place_names ?? {}) };
+  const f24 = c.findings_24h.timeseries + c.findings_24h.monitor + c.findings_24h.radar;
+  const sources = c.monitors_live + c.series_watched + (s.radar.connected ? 1 : 0);
+  const bad = o.events.filter(e => e.tone === "bad");
+  const alerts = c.alerts_to_review;
+  // one place per fact: the alerts are the headline, so they aren't a row again; late prices become one row, not one each
+  const late = o.attention.filter(a => a.kind === "series");
+  const rest: Attention[] = [
+    ...o.attention.filter(a => a.kind !== "alerts" && a.kind !== "series"),
+    ...(late.length ? [{ kind: "series", audience: "user", level: "warn", link: "/series", at: null,
+      title: late.length === 1 ? plainNote(late[0].title) : `${plural(late.length, "market price")} stopped updating`,
+      detail: late.length === 1 ? null : late.map(a => a.title.split(":")[0]).join(", ") } as Attention] : []),
+  ];
+  const more = rest.length + o.attention_more;
+
+  // The headline answers "does anything need my teams?" and the one button under it is the next step.
+  const head = alerts
+    ? { title: `${plural(alerts, "alert")} need${alerts === 1 ? "s" : ""} your teams`,
+        line: bad.length ? <>Most serious: <Link to={`/events/${bad[0].event_id}`}><b>{bad[0].title}</b></Link>, bad for you</> : <>Early warnings for products your teams own</>,
+        cta: <Link className="btn btn--primary btn--lg" to="/alerts">Review the alerts<Icon name="arrow" /></Link> }
+    : o.events.length
+      ? { title: "No alerts for your teams", line: <>Amiri Agent is following {plural(o.events.length, "open event")}; none needs a team yet</>,
+          cta: <Link className="btn btn--primary btn--lg" to="/events">See the open events<Icon name="arrow" /></Link> }
+      : { title: s.tick.ok ? "All clear" : "Nothing open right now",
+          line: s.tick.ok ? <>No alerts and no open events. Amiri Agent is watching {plural(sources, "source")}.</>
+            : <span className="ovx-warn"><Icon name="warn" />Updates aren't running, so no new news or prices arrive</span>,
+          cta: <Link className="btn btn--primary btn--lg" to="/studio"><Icon name="studio" />See how it responds: try a what-if</Link> };
 
   return (
-    <div className="page">
-      <PageHeader eyebrow={`${longDate(now)} · ${ZONE_LABEL}`} title={greeting(now)}
-        status={<>{o.events.length ? <><b className="ink">{plural(o.events.length, "open event")}</b></> : <>Nothing open right now</>}
-          {needs ? <> · <b className="ink">{plural(needs, "thing")} need{needs === 1 ? "s" : ""} you</b></> : <> · nothing needs you</>}</>}
+    <div className="page ovx">
+      <PageHeader eyebrow={`${greeting(now)} · ${longDate(now)} · ${ZONE_LABEL}`} title={head.title}
+        status={<>{head.line}{more > 0 && <> · <a href="#needs">{plural(more, "more thing")} below</a></>}</>}
+        cta={head.cta}
         actions={<>
           <span className="small muted">Updated {loadedAt ? ago(loadedAt.toISOString(), now) : ""}</span>
-          <button className="btn btn--ghost btn--icon" type="button" aria-label="Refresh" onClick={load}><Icon name="refresh" /></button>
-          <Link className="btn" to="/studio"><Icon name="studio" />Scenario Studio</Link></>}
-        help={<HowItWorks><p>The strip below follows the same steps for {i.name}: what Amiri Agent watches, what it found in the last day, what it traced to your products, and who must act.</p></HowItWorks>} />
+          <button className="btn btn--ghost btn--icon" type="button" aria-label="Refresh" onClick={load}><Icon name="refresh" /></button></>}
+        help={<HowItWorks><p>The four numbers below follow the same steps for {i.name}: what Amiri Agent watches, what it found in the last day, what it traced to your products, and who must act.</p></HowItWorks>} />
       {err && <Banner kind="warn" icon="warn">Couldn't refresh: {err}. Showing what was loaded {loadedAt ? ago(loadedAt.toISOString(), now) : ""}.</Banner>}
 
-      <div className="ov-strip pipe" role="group" aria-label="How Amiri Agent works: what it watches, what it found, what it means, who must act">
-        <Link to="/monitors" className="card ov-kpi" style={{ ["--kpi" as string]: c.monitors_live || c.series_watched ? "var(--accent)" : "var(--hairline-2)" }}>
-          <div className="step">1 · Watching</div>
-          <div className="v"><CountUp value={c.monitors_live + c.series_watched + (s.radar.connected ? 1 : 0)} /></div><div className="l">Sources</div>
-          <div className="s">{plural(c.monitors_live, "monitor")} · {plural(c.series_watched, "market price")}{s.radar.connected ? " · Radar" : ""}{c.monitors_waiting_approval ? <><br />{c.monitors_waiting_approval} waiting for approval</> : null}</div></Link>
-        <Link to="/findings" className="card ov-kpi" style={{ ["--kpi" as string]: f24 ? "var(--info)" : "var(--hairline-2)" }}>
-          <div className="step">2 · Found</div>
-          <div className="v"><CountUp value={f24} /></div><div className="l">Findings, last 24 h</div>
-          <div className="s">{c.findings_24h.monitor} from news · {c.findings_24h.timeseries} from prices{c.findings_24h.radar ? ` · ${c.findings_24h.radar} Radar` : ""}</div></Link>
-        <Link to="/events" className="card ov-kpi" style={{ ["--kpi" as string]: KPI_TONE[worst] }}>
-          <div className="step">3 · Traced to you</div>
-          <div className="v"><CountUp value={c.open_events} /></div><div className="l">Open events</div>
-          <div className="s">{c.open_events ? `${o.events.filter(e => e.tone === "bad").length} bad for you · ${plural(c.effects_to_watch, "possible impact")}` : "none open"}</div></Link>
-        <Link to="/alerts" className="card ov-kpi" style={{ ["--kpi" as string]: c.alerts_to_review ? "var(--critical)" : "var(--hairline-2)" }}>
-          <div className="step">4 · Who must act</div>
-          <div className="v"><CountUp value={c.alerts_to_review} /></div><div className="l">Alerts to review</div>
-          <div className="s">{c.alerts_to_review ? "for your teams to acknowledge" : "all caught up"}</div></Link>
-        <a href="#needs" className="card ov-kpi ov-need-card" style={{ ["--kpi" as string]: topLevel === "crit" ? "var(--critical)" : topLevel === "warn" ? "var(--high)" : topLevel ? "var(--info)" : "var(--accent)" }}>
-          <div className="step">Also</div><div className="v"><CountUp value={needs} /></div><div className="l">Need you</div><div className="s">{needs ? "most serious first, below" : "all clear"}</div></a>
+      <div className="ovx-kpis" role="group" aria-label="How Amiri Agent works: what it watches, what it found, what it traced to you, who must act">
+        <Link to="/monitors" className="card ovx-kpi">
+          <span className="step">1 · Watching</span>
+          <span className="v"><CountUp value={sources} /></span><span className="l">Sources</span>
+          <span className="s">{[plural(c.monitors_live, "monitor"), plural(c.series_watched, "market price"), s.radar.connected && "Radar"].filter(Boolean).join(" · ")}
+            {c.monitors_waiting_approval ? <><br />{c.monitors_waiting_approval} waiting for approval</> : null}</span></Link>
+        <Link to="/findings" className="card ovx-kpi">
+          <span className="step">2 · Found</span>
+          <span className="v"><CountUp value={f24} /></span><span className="l">Findings, last 24 h</span>
+          <span className="s">{f24 ? [c.findings_24h.monitor && `${c.findings_24h.monitor} from news`, c.findings_24h.timeseries && `${c.findings_24h.timeseries} from prices`,
+            c.findings_24h.radar && `${c.findings_24h.radar} from Radar`].filter(Boolean).join(" · ") : "nothing new today"}</span></Link>
+        <Link to="/events" className="card ovx-kpi">
+          <span className="step">3 · Traced to you</span>
+          <span className="v"><CountUp value={c.open_events} /></span><span className="l">Open events</span>
+          <span className="s">{c.open_events ? `${bad.length} bad for you · ${plural(c.effects_to_watch, "possible impact")}` : "none open"}</span></Link>
+        <Link to="/alerts" className={`card ovx-kpi${alerts ? " hot" : ""}`}>
+          <span className="step">4 · Who must act</span>
+          <span className="v">{alerts > 0 && <Icon name="warn" />}<CountUp value={alerts} /></span><span className="l">Alerts to review</span>
+          <span className="s">{alerts ? "for your teams to acknowledge" : "all caught up"}</span></Link>
       </div>
 
       <div className="ov-grid">
         <div className="col gap16">
-          <div className="card" id="needs"><div className="hd"><h2>Needs you</h2></div>
-            {!o.attention.length ? <div className="ov-need" data-lv="info" style={{ ["--lv" as string]: "var(--accent)" }}>
-              <span className="ico"><Icon name="check" /></span><div><div className="t">Nothing needs you right now</div>
+          <div className="card" id="needs"><div className="hd"><h2>{alerts ? "Also waiting for you" : "Needs you"}</h2></div>
+            {!rest.length ? <div className="ov-need" data-lv="info" style={{ ["--lv" as string]: "var(--accent)" }}>
+              <span className="ico"><Icon name="check" /></span><div><div className="t">{alerts ? "Nothing else needs you" : "Nothing needs you right now"}</div>
                 <div className="d">Approvals, failed checks, prices that stop updating and gaps in your profile appear here.</div></div></div>
-              : o.attention.map((a, n) => {
+              : rest.map((a, n) => {
                 const body = <><span className="ico"><Icon name={LEVEL_ICON[a.level]} /></span>
                   <div style={{ flex: 1, minWidth: 0 }}><div className="t">{plainNote(a.title)}</div>{a.detail && <div className="d">{a.detail}</div>}</div>
                   {a.link && <Icon name="chevron" className="row-go" />}</>;
@@ -165,8 +194,7 @@ export function OverviewPage() {
 
           <div className="card"><div className="hd"><h2>Open events</h2><span className="spacer" /><Link className="small" to="/events">All events</Link></div>
             {!o.events.length ? <div className="bd col" style={{ gap: 10 }}>
-              <span className="small muted">No open events. When Amiri Agent traces news or a price move to your products, it appears here.</span>
-              <div className="row wrap"><Link className="btn btn--sm" to="/studio"><Icon name="studio" />See how Amiri Agent responds: try a what-if</Link></div></div>
+              <span className="small muted">No open events. When Amiri Agent traces news or a price move to your products, it appears here.</span></div>
               : [...o.events].sort((x, y) => RANK[x.tone] - RANK[y.tone]).map(e => (
                 <Link key={e.event_id} to={`/events/${e.event_id}`} className="ov-event">
                   <div className="h"><span className="ttl">{e.title}</span><TonePill tone={e.tone} /></div>
@@ -215,7 +243,7 @@ export function OverviewPage() {
                   {admin && <b className="small" style={{ fontVariantNumeric: "tabular-nums" }} title="Radar score">{r.score}</b>}</Link>))}</div>}
           </div>
 
-          <div className="card"><div className="hd"><h2>Is Amiri Agent working?</h2></div>
+          <div className="card" id="system"><div className="hd"><h2>Is Amiri Agent working?</h2></div>
             <div className="ov-sys">
               <span><span className={`statusdot ${s.tick.ok ? "sd-ok" : "sd-down"}`} aria-hidden="true" />Updates: {s.tick.last_at ? <>{s.tick.ok ? "last ran" : "late; last ran"} {ago(s.tick.last_at, now)}</> : "haven't run yet"}</span>
               {([["Investigation", s.investigation.connected], ["News monitors", s.monitor.connected], ["Setup agent", s.assistant.connected], ["Radar", s.radar.connected]] as const).map(([n, up]) => (

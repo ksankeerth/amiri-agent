@@ -3,7 +3,9 @@ import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-route
 import { Icon } from "./components/Icon";
 import { Empty, PageHead, PageSkeleton, useNow, useRole, type Role } from "./components/ui";
 import { api, ME } from "./api/client";
-import { fullNow, setZone, ZONE_LABEL } from "./format";
+import { ago, fullNow, setZone, ZONE_LABEL } from "./format";
+import { overviewApi, type Overview } from "./api/overview";
+import "./styles/shell.css";
 import { InstitutionPage, NewInstitutionPage } from "./pages/institution/InstitutionPage";
 import { SetupWizard } from "./pages/institution/SetupWizard";
 import { EventDetailPage } from "./pages/events/EventDetail";
@@ -26,13 +28,13 @@ import { SpecPage } from "./pages/spec/Spec";
 import { SpecPrintPage } from "./pages/spec/SpecPrint";
 import { alertsApi, type AlertSummary } from "./api/alerts";
 
-// The menu follows the day: what needs me, what Amiri Agent watches, who I am, and the what-if tool.
+// The menu follows the day: what needs me, what Amiri Agent found, what it watches, who I am, and the what-if tool.
 const GROUPS: [string, string[]][] = [
   ["Today", ["/home", "/alerts"]],
-  ["What Amiri Agent watches", ["/findings", "/events", "/radar", "/monitors", "/series"]],
-  ["Your institution", ["/institution"]],
+  ["What it found", ["/events", "/findings"]],
+  ["What it watches", ["/radar", "/monitors", "/series"]],
+  ["Your institution", ["/institution", "/spec"]],
   ["Try it", ["/studio"]],
-  ["Reference", ["/spec"]],
 ];
 
 const NAV: Record<Role, [string, string, string][]> = {
@@ -82,13 +84,24 @@ function useTheme() {
   useEffect(() => {
     if (theme) document.documentElement.dataset.theme = theme; else delete document.documentElement.dataset.theme;
   }, [theme]);
+  const dark = theme ? theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
   const toggle = () => {
-    const dark = theme ? theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
     const next = dark ? "light" : "dark";
     setTheme(next);
     try { localStorage.setItem("amiri.theme", next); } catch { /* private mode */ }
   };
-  return toggle;
+  return { dark, toggle };
+}
+
+/** The top bar's status, from what the Overview call already says: green only when updates run and prices are fresh. */
+function pulse(o: Overview | null, now: Date): { tone: "ok" | "warn" | "off"; word: string; why: string } | null {
+  if (!o) return null;
+  if (o.first_run || !o.services) return { tone: "off", word: "Not watching yet", why: "Set up an institution and Amiri Agent starts watching for it." };
+  const t = o.services.tick;
+  if (!t.ok) return { tone: "off", word: "Paused", why: t.last_at ? `Updates are late: they last ran ${ago(t.last_at, now)}.` : "Updates haven't run yet, so no news or prices arrive." };
+  const late = (o.markets ?? []).filter(m => m.state === "stale");
+  if (late.length) return { tone: "warn", word: "Prices late", why: `Updates run, but ${late.map(m => m.name).join(", ")} ${late.length === 1 ? "hasn't" : "haven't"} updated${late[0].state_reason ? `: ${late[0].state_reason.replace(/^No new bar since (.+?) \(.*$/, "no new price since $1")}` : ""}.` };
+  return { tone: "ok", word: "Live", why: `Updates ran ${t.last_at ? ago(t.last_at, now) : "recently"}; prices are up to date.` };
 }
 
 /** Each page's heading becomes the tab title; after a navigation focus moves to the page and a screen reader
@@ -171,7 +184,7 @@ function Installed() {
 
 function Frame({ inst }: { inst: Installation }) {
   const { role, setRole } = useRole();
-  const toggleTheme = useTheme();
+  const { dark, toggle: toggleTheme } = useTheme();
   const now = useNow(30_000);
   const nav = NAV[role].filter(([, , to]) => BUILT.has(to));  // a page that isn't built isn't offered
   const said = useRouteA11y();
@@ -184,6 +197,16 @@ function Frame({ inst }: { inst: Installation }) {
     window.addEventListener("keydown", k);
     return () => window.removeEventListener("keydown", k);
   }, [menu]);
+  useEffect(() => {  // an admin page is the Platform Admin's: show its menu, so the page is selected in it
+    if (pathname.startsWith("/admin/") && role !== "platform_admin") setRole("platform_admin");
+  }, [pathname]);  // eslint-disable-line react-hooks/exhaustive-deps
+  const [ov, setOv] = useState<Overview | null>(null);
+  useEffect(() => {  // the Live pill: the same one call the Overview makes, once a minute
+    const load = () => overviewApi.get().then(setOv).catch(() => {});
+    load(); const t = setInterval(load, 60_000);
+    return () => clearInterval(t);
+  }, []);
+  const live = pulse(ov, now);
   const [alerts, setAlerts] = useState<AlertSummary | null>(null);
   useEffect(() => {  // the menu badge: alerts to review
     const load = () => alertsApi.summary().then(setAlerts).catch(() => {});
@@ -203,19 +226,21 @@ function Frame({ inst }: { inst: Installation }) {
           <b>Amiri Agent</b>
           <span className="inst">{inst.name ?? "No institution profile yet"}</span>
         </Link>
-        <span className="worldpill" title={`Live world · times in ${ZONE_LABEL}`}><span className="dot" /><span className="wtxt">Live · {fullNow(now)} {ZONE_LABEL}</span></span>
+        <span className={`worldpill${live ? ` is-${live.tone}` : ""}`} title={`${live ? `${live.word}: ${live.why} ` : ""}Times in ${ZONE_LABEL}.`}>
+          <span className="dot" aria-hidden="true" />{live && <b className="wword">{live.word}</b>}<span className="wtxt">{fullNow(now)} {ZONE_LABEL}</span>
+          {live && <span className="sr">. {live.why}</span>}</span>
         <span className="spacer" />
         <span className="seg" role="group" aria-label="View as">
           <button type="button" aria-pressed={role === "risk_manager"} onClick={() => setRole("risk_manager")}>Risk Manager</button>
           <button type="button" aria-pressed={role === "platform_admin"} onClick={() => setRole("platform_admin")}>Platform Admin</button>
         </span>
-        <button className="btn btn--ghost btn--icon themebtn" type="button" aria-label="Switch between light and dark" onClick={toggleTheme}><Icon name="moon" /></button>
+        <button className="btn btn--ghost btn--icon themebtn" type="button" aria-label={dark ? "Switch to light" : "Switch to dark"} onClick={toggleTheme}><Icon name={dark ? "sun" : "moon"} /></button>
       </header>
       {menu && <div className="scrim" onClick={() => setMenu(false)} />}
       <div className="body">
         <aside className="side" id="sidenav" aria-label="Menu" data-open={menu}>
           <nav className="nav" aria-label="Main">
-            {role === "platform_admin" && <div className="grp label">Platform</div>}
+            {role === "platform_admin" && <div className="grp label">Platform Admin</div>}
             {(role === "risk_manager" ? GROUPS : [["", nav.map(n => n[2])] as [string, string[]]]).map(([group, paths]) => {
               const items = nav.filter(n => paths.includes(n[2]));
               return items.length === 0 ? null : (
@@ -241,7 +266,7 @@ function Frame({ inst }: { inst: Installation }) {
               <button type="button" aria-pressed={role === "risk_manager"} onClick={() => setRole("risk_manager")}>Risk Manager</button>
               <button type="button" aria-pressed={role === "platform_admin"} onClick={() => setRole("platform_admin")}>Platform Admin</button>
             </span>
-            <button className="btn btn--sm" type="button" onClick={toggleTheme}><Icon name="moon" />Light or dark</button>
+            <button className="btn btn--sm" type="button" onClick={toggleTheme}><Icon name={dark ? "sun" : "moon"} />{dark ? "Light theme" : "Dark theme"}</button>
           </div>
         </aside>
         <main className="main" id="main" tabIndex={-1}>

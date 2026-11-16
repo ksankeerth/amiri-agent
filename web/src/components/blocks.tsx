@@ -10,8 +10,9 @@ import { ChatToggleCtx } from "./ui";
 
 /** A page's opening: a short title, one plain status line, the main action on the right, and a "How this works" link
  *  that opens the explanation in place (instead of a paragraph under every title). */
-export function PageHeader({ title, status, actions, crumbs, pills, help, helpLabel = "How this works", eyebrow }: {
+export function PageHeader({ title, status, actions, crumbs, pills, help, helpLabel = "How this works", eyebrow, cta }: {
   title: ReactNode; status?: ReactNode; actions?: ReactNode; crumbs?: ReactNode; pills?: ReactNode; help?: ReactNode; helpLabel?: string; eyebrow?: ReactNode;
+  cta?: ReactNode;  // the page's one main action, right under the headline where the eye already is
 }) {
   const chat = useContext(ChatToggleCtx);
   const [open, setOpen] = useState(false);
@@ -28,6 +29,7 @@ export function PageHeader({ title, status, actions, crumbs, pills, help, helpLa
             {help && <button type="button" className="ph-help" aria-expanded={open} aria-controls={panel} onClick={() => setOpen(o => !o)}>
               <Icon name="help" />{helpLabel}</button>}
           </div>}
+          {cta && <div className="ph-cta">{cta}</div>}
         </div>
         {(actions || (chat && !chat.open)) && <div className="ph-actions">{actions}
           {chat && !chat.open && <button className="btn" type="button" onClick={chat.toggle}><Icon name="chat" />Setup agent</button>}</div>}
