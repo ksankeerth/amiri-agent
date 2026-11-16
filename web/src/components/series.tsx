@@ -98,12 +98,13 @@ const same = (a: Theme, b: Theme) => a.theme === b.theme && a.direction_up === b
 const themeId = (t: Theme | null, symbol: string) => (t ? themePresets(symbol).find(x => x.theme && same(x.theme, t))?.id ?? "custom" : "");
 const themeFor = (id: string, symbol: string) => themePresets(symbol).find(t => t.id === id)?.theme ?? null;
 const parsePlaces = (s: string) => s.split(/[,\s]+/).map(x => x.trim().toUpperCase()).filter(Boolean);
+const METAL: Record<string, string> = { XAU: "gold", XAG: "silver", XPT: "platinum" };  // not currencies to Intl: "a stronger xau"
 const THEME_WORDS: Record<string, string> = { fx: "Exchange rate", commodities: "Commodity price", rates: "Interest rate" };
 /** What a move in this series means, in a sentence a banker would say. */
 export const themeMeaning = (t: Theme | null) => {
   if (!t) return "not set";
   const up = t.direction_up.replace(/_/g, " "), down = t.direction_down.replace(/_/g, " ");
-  if (t.currency) { const w = currencyWord(t.currency).toLowerCase(); return `A rise means a ${up} ${w}, a fall a ${down} one`; }
+  if (t.currency) { const w = (METAL[t.currency] ?? currencyWord(t.currency)).toLowerCase(); return `A rise means a ${up} ${w}, a fall a ${down} one`; }
   return `${THEME_WORDS[t.theme] ?? t.theme}${t.item ? ` (${t.item})` : ""}: a rise means ${up}, a fall means ${down}`;
 };
 export const themeLabel = (t: Theme | null) =>

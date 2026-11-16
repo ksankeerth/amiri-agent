@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { niceTicks } from "./chartMath";
 
 export function Spark({ values, color = "var(--accent)", w = 140, h = 40 }: { values: number[]; color?: string; w?: number; h?: number }) {
   if (values.length < 2) return <svg className="spark" style={{ width: w, height: h }} />;
@@ -17,7 +18,7 @@ export function Spark({ values, color = "var(--accent)", w = 140, h = 40 }: { va
 
 export interface Point { t: string; v: number }
 /** A flagged point: a dot and dashed line; `tag` is drawn next to it so it reads without hovering. */
-export interface Mark { t: string; color: string; label: string; tag?: string }
+export interface Mark { t: string; color: string; label: string; tag?: string; note?: boolean }  // note: marked but not a flagged move
 /** Something that happened at a time (a headline): a small tick on the time axis, label on hover. */
 export interface Pin { t: string; label: string }
 
@@ -29,8 +30,8 @@ export interface Pin { t: string; label: string }
 function chartSummary(points: Point[], marks: Mark[], fmtY: (v: number) => string, fmtTip: (t: string) => string): string {
   if (points.length < 2) return "Price chart: not enough prices yet.";
   const vs = points.map(p => p.v), lo = Math.min(...vs), hi = Math.max(...vs);
-  const first = points[0], last = points[points.length - 1];
-  return `Price chart from ${fmtTip(first.t)} to ${fmtTip(last.t)}: started at ${fmtY(first.v)}, ended at ${fmtY(last.v)}, lowest ${fmtY(lo)}, highest ${fmtY(hi)}.${marks.length ? ` ${marks.length} unusual ${marks.length === 1 ? "move" : "moves"} flagged.` : ""}`;
+  const first = points[0], last = points[points.length - 1], flags = marks.filter(m => !m.note).length;
+  return `Price chart from ${fmtTip(first.t)} to ${fmtTip(last.t)}: started at ${fmtY(first.v)}, ended at ${fmtY(last.v)}, lowest ${fmtY(lo)}, highest ${fmtY(hi)}.${flags ? ` ${flags} unusual ${flags === 1 ? "move" : "moves"} flagged.` : ""}`;
 }
 
 export function PriceChart({ points, marks = [], pins = [], height = 260, fmtX, fmtY, fmtTip }: {
@@ -59,7 +60,8 @@ export function PriceChart({ points, marks = [], pins = [], height = 260, fmtX, 
   const { lo, hi, n, X, Y } = geo;
   const d = points.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join("");
   const area = `${d}L${X(n - 1).toFixed(1)},${h - B}L${X(0).toFixed(1)},${h - B}Z`;
-  const ticks = [0, 0.5, 1].map(f => lo + (hi - lo) * f);
+  const { ticks, dec } = niceTicks(lo, hi);  // round values (330.5, 331.0), not the padded min/mid/max
+  const fmtTick = (v: number) => v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
   const xt = Array.from(new Set([0, Math.round(n * 0.25), Math.round(n * 0.5), Math.round(n * 0.75), n - 1]))
     .filter(i => i >= 0 && i < n);
   const idxOf = (t: string) => {
@@ -87,7 +89,7 @@ export function PriceChart({ points, marks = [], pins = [], height = 260, fmtX, 
         </defs>
         {ticks.map((v, i) => (
           <g className="ax" key={i}><line x1={L} x2={w - R} y1={Y(v)} y2={Y(v)} />
-            <text x={L - 8} y={Y(v) + 3.5} textAnchor="end">{fmtY(v)}</text></g>
+            <text x={L - 8} y={Y(v) + 3.5} textAnchor="end">{fmtTick(v)}</text></g>
         ))}
         {xt.map(i => (
           <g className="ax" key={i}><text x={X(i)} y={h - 8} textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"}>{fmtX(points[i].t)}</text></g>
