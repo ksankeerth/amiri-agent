@@ -62,7 +62,12 @@ export function PriceChart({ points, marks = [], pins = [], height = 260, fmtX, 
   const area = `${d}L${X(n - 1).toFixed(1)},${h - B}L${X(0).toFixed(1)},${h - B}Z`;
   const { ticks, dec } = niceTicks(lo, hi);  // round values (330.5, 331.0), not the padded min/mid/max
   const fmtTick = (v: number) => v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
-  const xt = Array.from(new Set([0, Math.round(n * 0.25), Math.round(n * 0.5), Math.round(n * 0.75), n - 1]))
+  // a middle tick moves to the nearest point where its label changes (a new day), so it reads "14 Oct", not 02:30 into it
+  const snap = (i: number) => {
+    for (let d = 0; d < n / 8; d++) for (const j of [i - d, i + d]) if (j > 0 && j < n - 1 && fmtX(points[j].t) !== fmtX(points[j - 1].t)) return j;
+    return i;
+  };
+  const xt = Array.from(new Set([0, snap(Math.round(n * 0.25)), snap(Math.round(n * 0.5)), snap(Math.round(n * 0.75)), n - 1]))
     .filter(i => i >= 0 && i < n);
   const idxOf = (t: string) => {
     const ms = new Date(t).getTime();
@@ -76,11 +81,21 @@ export function PriceChart({ points, marks = [], pins = [], height = 260, fmtX, 
     const i = Math.round(((x - L) / (w - L - R)) * (n - 1));
     setHover(i >= 0 && i < n ? i : null);
   };
+  // the keyboard steps the crosshair too: the tooltip isn't for the mouse alone
+  const onKey = (e: React.KeyboardEvent<SVGSVGElement>) => {
+    const k = { ArrowLeft: -1, ArrowRight: 1, Home: -n, End: n }[e.key];
+    if (!k) return;
+    e.preventDefault();
+    setHover(i => Math.min(n - 1, Math.max(0, (i ?? n - 1) + k)));
+  };
   const hp = hover !== null ? points[hover] : null;
+  // beside the point, not on the labels drawn along the top: below a high point, above a low one
+  const tipTop = hp ? (Y(hp.v) < h / 2 ? Y(hp.v) + 12 : Y(hp.v) - 40) : 0;
   return (
     <div ref={box} style={{ position: "relative" }}>
       <svg className="chart" viewBox={`0 0 ${w} ${h}`} style={{ height: h }} onMouseMove={onMove} onMouseLeave={() => setHover(null)}
-        role="img" aria-label={chartSummary(points, marks, fmtY, fmtTip)}>
+        role="img" aria-label={`${chartSummary(points, marks, fmtY, fmtTip)} Left and right arrows step through the prices.`}
+        tabIndex={0} onFocus={() => setHover(h0 => h0 ?? n - 1)} onBlur={() => setHover(null)} onKeyDown={onKey}>
         <defs>
           <linearGradient id="pcfill" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0" stopColor="var(--accent)" stopOpacity={0.18} />
@@ -117,10 +132,11 @@ export function PriceChart({ points, marks = [], pins = [], height = 260, fmtX, 
         )}
       </svg>
       {hp && hover !== null && (
-        <div className="maptip" style={{ position: "absolute", top: 4, left: Math.min(Math.max(X(hover) / w * 100, 8), 80) + "%", transform: "translateX(-50%)", pointerEvents: "none" }}>
+        <div className="maptip" style={{ position: "absolute", top: tipTop, left: Math.min(Math.max(X(hover) / w * 100, 8), 80) + "%", transform: "translateX(-50%)", pointerEvents: "none" }}>
           <b className="num">{fmtY(hp.v)}</b> <span className="muted">· {fmtTip(hp.t)}</span>
         </div>
       )}
+      <span className="sr" aria-live="polite">{hp ? `${fmtY(hp.v)}, ${fmtTip(hp.t)}` : ""}</span>
     </div>
   );
 }

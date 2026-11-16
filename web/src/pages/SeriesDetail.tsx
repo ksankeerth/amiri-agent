@@ -56,7 +56,7 @@ function Chart({ s, findings }: { s: Series; findings: Finding[] }) {
         {anchored && <p className="small muted" style={{ margin: "0 0 8px" }}>No new prices since {dayTime(s.latest?.bar_end ?? lastBar!)}, so this shows {range.phrase} up to the last one.</p>}
         {err ? <div className="rawerr">{err}</div> : bars === null ? <InlineSkeleton /> :
           <PriceChart points={bars.map(b => ({ t: b.ts, v: b.close }))} marks={marks}
-            fmtX={t => (range.interval === "1h" && range.days <= 7 ? dayTime(t) : day(t))} fmtY={price}
+            fmtX={day} fmtY={price}
             fmtTip={t => (range.interval === "1h" ? `hour from ${dayTime(t)}` : day(t))} />}
       </div>
     </div>
