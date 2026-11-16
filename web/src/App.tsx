@@ -3,7 +3,8 @@ import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-route
 import { Icon } from "./components/Icon";
 import { Empty, PageHead, PageSkeleton, useNow, useRole, type Role } from "./components/ui";
 import { api, ME } from "./api/client";
-import { fullNow, setZone, ZONE_LABEL } from "./format";
+import { ago, fullNow, setZone, ZONE_LABEL } from "./format";
+import { overviewApi, type Overview } from "./api/overview";
 import "./styles/shell.css";
 import { InstitutionPage, NewInstitutionPage } from "./pages/institution/InstitutionPage";
 import { SetupWizard } from "./pages/institution/SetupWizard";
@@ -90,6 +91,17 @@ function useTheme() {
     try { localStorage.setItem("amiri.theme", next); } catch { /* private mode */ }
   };
   return toggle;
+}
+
+/** The top bar's status, from what the Overview call already says: green only when updates run and prices are fresh. */
+function pulse(o: Overview | null, now: Date): { tone: "ok" | "warn" | "off"; word: string; why: string } | null {
+  if (!o) return null;
+  if (o.first_run || !o.services) return { tone: "off", word: "Not watching yet", why: "Set up an institution and Amiri Agent starts watching for it." };
+  const t = o.services.tick;
+  if (!t.ok) return { tone: "off", word: "Paused", why: t.last_at ? `Updates are late: they last ran ${ago(t.last_at, now)}.` : "Updates haven't run yet, so no news or prices arrive." };
+  const late = (o.markets ?? []).filter(m => m.state === "stale");
+  if (late.length) return { tone: "warn", word: "Prices late", why: `Updates run, but ${late.map(m => m.name).join(", ")} ${late.length === 1 ? "hasn't" : "haven't"} updated${late[0].state_reason ? `: ${late[0].state_reason.replace(/^No new bar since (.+?) \(.*$/, "no new price since $1")}` : ""}.` };
+  return { tone: "ok", word: "Live", why: `Updates ran ${t.last_at ? ago(t.last_at, now) : "recently"}; prices are up to date.` };
 }
 
 /** Each page's heading becomes the tab title; after a navigation focus moves to the page and a screen reader
@@ -185,6 +197,13 @@ function Frame({ inst }: { inst: Installation }) {
     window.addEventListener("keydown", k);
     return () => window.removeEventListener("keydown", k);
   }, [menu]);
+  const [ov, setOv] = useState<Overview | null>(null);
+  useEffect(() => {  // the Live pill: the same one call the Overview makes, once a minute
+    const load = () => overviewApi.get().then(setOv).catch(() => {});
+    load(); const t = setInterval(load, 60_000);
+    return () => clearInterval(t);
+  }, []);
+  const live = pulse(ov, now);
   const [alerts, setAlerts] = useState<AlertSummary | null>(null);
   useEffect(() => {  // the menu badge: alerts to review
     const load = () => alertsApi.summary().then(setAlerts).catch(() => {});
@@ -204,7 +223,9 @@ function Frame({ inst }: { inst: Installation }) {
           <b>Amiri Agent</b>
           <span className="inst">{inst.name ?? "No institution profile yet"}</span>
         </Link>
-        <span className="worldpill" title={`Live world · times in ${ZONE_LABEL}`}><span className="dot" /><span className="wtxt">Live · {fullNow(now)} {ZONE_LABEL}</span></span>
+        <span className={`worldpill${live ? ` is-${live.tone}` : ""}`} title={`${live ? `${live.word}: ${live.why} ` : ""}Times in ${ZONE_LABEL}.`}>
+          <span className="dot" aria-hidden="true" />{live && <b className="wword">{live.word}</b>}<span className="wtxt">{fullNow(now)} {ZONE_LABEL}</span>
+          {live && <span className="sr">. {live.why}</span>}</span>
         <span className="spacer" />
         <span className="seg" role="group" aria-label="View as">
           <button type="button" aria-pressed={role === "risk_manager"} onClick={() => setRole("risk_manager")}>Risk Manager</button>

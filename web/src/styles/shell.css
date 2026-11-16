@@ -1,4 +1,15 @@
-/* The Overview's hero: one headline, one action, four numbers. */
+/* The shell (top bar status, menu) and the Overview's hero: one headline, one action, four numbers. */
+
+/* ---------- the honest Live pill: green when it runs, amber when prices are late, grey when paused */
+.worldpill .dot { background:var(--ink-3); box-shadow:none; }
+.worldpill .wword { color:var(--ink); font-weight:700; }
+.worldpill .wtxt { color:var(--ink-2); }
+.worldpill.is-ok .dot { background:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+.worldpill.is-warn { border-color:var(--high-line); background:var(--high-soft); }
+.worldpill.is-warn .dot { background:var(--high); box-shadow:0 0 0 3px var(--high-line); }
+.worldpill.is-warn .wword, .worldpill.is-warn .wtxt { color:var(--high-ink); }
+.worldpill.is-off .dot { background:transparent; box-shadow:inset 0 0 0 2px var(--ink-3); }  /* a hollow dot: off, not just grey */
+.worldpill { cursor:default; }
 
 /* ---------- Overview hero */
 .ovx .ph { margin-bottom:24px; }
