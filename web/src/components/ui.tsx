@@ -39,7 +39,7 @@ export function LoadError({ error, onRetry, what = "this page" }: { error: unkno
       <Icon name="warn" />
       <div className="col" style={{ gap: 4, flex: 1, minWidth: 0 }}>
         <h2>{down ? "Amiri Agent didn't answer" : `Couldn't load ${what}`}</h2>
-        <p>{down ? "The server may be starting up after a quiet spell, or the connection dropped. Nothing you saved is lost." : errText(error)}</p>
+        <p>{down ? "It may be starting up after a quiet spell, or the connection dropped. Nothing you saved is lost." : errText(error)}</p>
       </div>
       <button className="btn btn--primary" type="button" disabled={busy} onClick={retry}><Icon name="refresh" />{busy ? "Trying…" : "Try again"}</button>
     </div></div>

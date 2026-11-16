@@ -167,14 +167,14 @@ export function AlertsPage() {
         { value: s.acknowledged_week, label: "Acknowledged this week", sub: "by your Risk Managers", tone: "blue", icon: "check" },
       ]} />}
 
-      <div className="filters">
+      {(items !== null || err == null) && <div className="filters">
         <span className="seg" role="group" aria-label="Which alerts">{SHOW.map(([k, label]) => <button key={k} type="button" aria-pressed={show === k} onClick={() => setShow(k)}>{label}{k === "new" && s?.to_review ? ` (${s.to_review})` : ""}</button>)}</span>
         {s && s.all_teams.length > 1 && <div className="al-teams" role="group" aria-label="Team">
           <button type="button" className={`chip click ${team === "" ? "sel" : ""}`} aria-pressed={team === ""} onClick={() => setTeam("")}>All teams</button>
           {s.all_teams.map(t => { const n = s.teams.find(x => x.owner === t)?.to_review;
             return <button key={t} type="button" className={`chip click ${team === t ? "sel" : ""}`} aria-pressed={team === t} onClick={() => setTeam(team === t ? "" : t)}>{t}{n ? ` (${n})` : ""}</button>; })}
         </div>}
-      </div>
+      </div>}
 
       {items === null ? (err == null && <div className="mt12"><ListSkeleton rows={3} /></div>)
         : !items.length ? <div className="card mt12"><Empty icon="check" title={show === "new" ? "All caught up" : "Nothing here"}
