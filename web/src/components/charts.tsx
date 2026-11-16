@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { niceTicks } from "./chartMath";
 
 export function Spark({ values, color = "var(--accent)", w = 140, h = 40 }: { values: number[]; color?: string; w?: number; h?: number }) {
   if (values.length < 2) return <svg className="spark" style={{ width: w, height: h }} />;
@@ -16,7 +17,10 @@ export function Spark({ values, color = "var(--accent)", w = 140, h = 40 }: { va
 }
 
 export interface Point { t: string; v: number }
-export interface Mark { t: string; color: string; label: string }
+/** A flagged point: a dot and dashed line; `tag` is drawn next to it so it reads without hovering. */
+export interface Mark { t: string; color: string; label: string; tag?: string; note?: boolean }  // note: marked but not a flagged move
+/** Something that happened at a time (a headline): a small tick on the time axis, label on hover. */
+export interface Pin { t: string; label: string }
 
 /**
  * Price chart over trading time: points are spaced evenly, so weekends and
@@ -26,12 +30,12 @@ export interface Mark { t: string; color: string; label: string }
 function chartSummary(points: Point[], marks: Mark[], fmtY: (v: number) => string, fmtTip: (t: string) => string): string {
   if (points.length < 2) return "Price chart: not enough prices yet.";
   const vs = points.map(p => p.v), lo = Math.min(...vs), hi = Math.max(...vs);
-  const first = points[0], last = points[points.length - 1];
-  return `Price chart from ${fmtTip(first.t)} to ${fmtTip(last.t)}: started at ${fmtY(first.v)}, ended at ${fmtY(last.v)}, lowest ${fmtY(lo)}, highest ${fmtY(hi)}.${marks.length ? ` ${marks.length} unusual ${marks.length === 1 ? "move" : "moves"} flagged.` : ""}`;
+  const first = points[0], last = points[points.length - 1], flags = marks.filter(m => !m.note).length;
+  return `Price chart from ${fmtTip(first.t)} to ${fmtTip(last.t)}: started at ${fmtY(first.v)}, ended at ${fmtY(last.v)}, lowest ${fmtY(lo)}, highest ${fmtY(hi)}.${flags ? ` ${flags} unusual ${flags === 1 ? "move" : "moves"} flagged.` : ""}`;
 }
 
-export function PriceChart({ points, marks = [], height = 260, fmtX, fmtY, fmtTip }: {
-  points: Point[]; marks?: Mark[]; height?: number;
+export function PriceChart({ points, marks = [], pins = [], height = 260, fmtX, fmtY, fmtTip }: {
+  points: Point[]; marks?: Mark[]; pins?: Pin[]; height?: number;
   fmtX: (t: string) => string; fmtY: (v: number) => string; fmtTip: (t: string) => string;
 }) {
   const box = useRef<HTMLDivElement>(null);
@@ -56,7 +60,8 @@ export function PriceChart({ points, marks = [], height = 260, fmtX, fmtY, fmtTi
   const { lo, hi, n, X, Y } = geo;
   const d = points.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join("");
   const area = `${d}L${X(n - 1).toFixed(1)},${h - B}L${X(0).toFixed(1)},${h - B}Z`;
-  const ticks = [0, 0.5, 1].map(f => lo + (hi - lo) * f);
+  const { ticks, dec } = niceTicks(lo, hi);  // round values (330.5, 331.0), not the padded min/mid/max
+  const fmtTick = (v: number) => v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
   const xt = Array.from(new Set([0, Math.round(n * 0.25), Math.round(n * 0.5), Math.round(n * 0.75), n - 1]))
     .filter(i => i >= 0 && i < n);
   const idxOf = (t: string) => {
@@ -84,7 +89,7 @@ export function PriceChart({ points, marks = [], height = 260, fmtX, fmtY, fmtTi
         </defs>
         {ticks.map((v, i) => (
           <g className="ax" key={i}><line x1={L} x2={w - R} y1={Y(v)} y2={Y(v)} />
-            <text x={L - 8} y={Y(v) + 3.5} textAnchor="end">{fmtY(v)}</text></g>
+            <text x={L - 8} y={Y(v) + 3.5} textAnchor="end">{fmtTick(v)}</text></g>
         ))}
         {xt.map(i => (
           <g className="ax" key={i}><text x={X(i)} y={h - 8} textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"}>{fmtX(points[i].t)}</text></g>
@@ -94,10 +99,17 @@ export function PriceChart({ points, marks = [], height = 260, fmtX, fmtY, fmtTi
         {marks.map((m, k) => {
           const i = idxOf(m.t);
           if (i < 0) return null;
+          const right = X(i) > w * 0.7;
           return (
             <g key={k}><line x1={X(i)} x2={X(i)} y1={T} y2={h - B} stroke={m.color} strokeDasharray="3 3" />
-              <circle cx={X(i)} cy={Y(points[i].v)} r={4.5} fill={m.color} stroke="var(--surface)" strokeWidth={1.5}><title>{m.label}</title></circle></g>
+              <circle cx={X(i)} cy={Y(points[i].v)} r={5} fill={m.color} stroke="var(--surface)" strokeWidth={1.5}><title>{m.label}</title></circle>
+              {m.tag && <text className="mk-tag" x={X(i) + (right ? -8 : 8)} y={T + 12} textAnchor={right ? "end" : "start"} fill={m.color}>{m.tag}</text>}</g>
           );
+        })}
+        {pins.map((p, k) => {
+          const ms = new Date(p.t).getTime(), i = points.findIndex(q => new Date(q.t).getTime() >= ms);  // the close it fed into
+          if (i < 0) return null;
+          return <path key={`p${k}`} className="pin" d={`M${X(i).toFixed(1)},${h - B - 1}l-4.5,7h9z`}><title>{p.label}</title></path>;
         })}
         {hp && hover !== null && (
           <g><line x1={X(hover)} x2={X(hover)} y1={T} y2={h - B} stroke="var(--ink-3)" strokeWidth={1} />

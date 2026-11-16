@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { seriesApi, type Bar, type Finding, type ProviderCall, type Series, type SimulateResult } from "../api/series";
 import { FactList, PageHeader, Places, Section, StatTiles, StatusPill, TechnicalDetails } from "../components/blocks";
-import { PriceChart } from "../components/charts";
+import { PriceChart, type Mark } from "../components/charts";
+import { spikeIndex } from "../components/chartMath";
 import { Icon } from "../components/Icon";
 import { EditSeriesModal, FetchBadge, RefreshButton, seriesSentence, StateBadge, themeMeaning } from "../components/series";
 import { Banner, Empty, Modal, useNow, useRole, useToast, PageSkeleton, InlineSkeleton } from "../components/ui";
@@ -13,29 +14,46 @@ import { InvestigateNowButton } from "./events/Events";
 import { PricesHelp, PrototypeBanner, useSeriesStatus } from "./SeriesList";
 
 const RANGES = [
-  { id: "1w", label: "1 week", days: 7, interval: "1h" as const },
-  { id: "1m", label: "1 month", days: 31, interval: "1h" as const },
-  { id: "3m", label: "3 months", days: 92, interval: "1d" as const },
+  { id: "1w", label: "1 week", phrase: "the week", days: 7, interval: "1h" as const },
+  { id: "1m", label: "1 month", phrase: "the month", days: 31, interval: "1h" as const },
+  { id: "3m", label: "3 months", phrase: "3 months", days: 92, interval: "1d" as const },
 ];
+
+/** The chart's takeaway in one line: which way it went over the range, and by how much. */
+function takeaway(name: string, vs: number[], range: string, typical: number | null | undefined): string {
+  if (vs.length < 2) return name;
+  const chg = (vs[vs.length - 1] / vs[0] - 1) * 100;
+  const flat = Math.abs(chg) < Math.max(0.1, (typical ?? 0) / 2);
+  return `${name} ${flat ? "flat" : chg > 0 ? "up" : "down"} over ${range} (${pct(chg)})`;
+}
 
 function Chart({ s, findings }: { s: Series; findings: Finding[] }) {
   const [range, setRange] = useState(RANGES[0]);
   const [bars, setBars] = useState<Bar[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const lastBar = s.latest?.bar_ts;
+  // a stale series is drawn up to its last price, not to now (which would leave the chart empty)
+  const lastMs = lastBar ? new Date(lastBar).getTime() : 0;
+  const anchored = !!lastMs && Date.now() - lastMs > range.days * 86400_000 / 2;
   useEffect(() => {
-    const until = new Date(Date.now() + 3600_000);
+    const until = new Date((anchored ? lastMs : Date.now()) + 3600_000);
     const from = new Date(until.getTime() - range.days * 86400_000);
     setErr(null);
     seriesApi.bars(s.series_id, from, until, range.interval).then(setBars).catch(e => setErr(e instanceof ApiError ? e.full : String(e)));
-  }, [s.series_id, range, lastBar]);
-  const marks = findings.filter(f => f.world === "live").map(f => ({ t: f.evidence?.signals?.[0]?.end_at ?? f.created_at, color: "var(--high)", label: f.title }));
+  }, [s.series_id, range, lastBar, anchored, lastMs]);
+  const marks: Mark[] = findings.filter(f => f.world === "live").map(f => ({ t: f.evidence?.signals?.[0]?.end_at ?? f.created_at, color: "var(--high)", label: f.title, tag: "Flagged move" }));
+  const vs = (bars ?? []).map(b => b.close);
+  const spike = spikeIndex(vs);
+  if (bars && spike >= 0) marks.push({ t: bars[spike].ts, color: "var(--ink-3)", note: true, tag: `One-${range.interval === "1h" ? "hour" : "day"} spike, not flagged`,
+    label: "A single price far from its neighbours that came straight back: Amiri Agent looks at closes over whole days, so it doesn't count as a move." });
   return (
     <div className="card">
-      <div className="hd wrap"><h2>Price</h2><span className="small muted">{range.interval === "1h" ? "Hourly" : "Daily"} closes, {ZONE_LABEL} time · orange dots: flagged moves</span>
+      <div className="hd wrap"><h2>{bars && bars.length > 1 ? takeaway(s.name, vs, `${range.phrase}${anchored ? ` to ${day(bars[bars.length - 1].ts)}` : ""}`, s.latest?.typical_daily_move_pct) : "Price"}</h2>
+        <span className="small muted">{range.interval === "1h" ? "Hourly" : "Daily"} closes, {ZONE_LABEL} time</span>
         <span className="spacer" />
         <span className="seg" role="group" aria-label="Period">{RANGES.map(r => <button key={r.id} type="button" aria-pressed={r.id === range.id} onClick={() => setRange(r)}>{r.label}</button>)}</span></div>
       <div className="bd">
+        {anchored && <p className="small muted" style={{ margin: "0 0 8px" }}>No new prices since {dayTime(s.latest?.bar_end ?? lastBar!)}, so this shows {range.phrase} up to the last one.</p>}
         {err ? <div className="rawerr">{err}</div> : bars === null ? <InlineSkeleton /> :
           <PriceChart points={bars.map(b => ({ t: b.ts, v: b.close }))} marks={marks}
             fmtX={t => (range.interval === "1h" && range.days <= 7 ? dayTime(t) : day(t))} fmtY={price}

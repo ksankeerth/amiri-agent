@@ -11,19 +11,19 @@ import { Banner, Empty, useNow, useRole, useToast, ListSkeleton } from "../../co
 import { ago, dayTime, placeName, placeOrder, when } from "../../format";
 import type { Tone } from "../../plain";
 import { themeText } from "../events/Events";
+import "../../styles/showcase.css";
 
 type Show = "all" | "sent" | "below" | "dismissed";
 const SHOW: [Show, string][] = [["all", "All"], ["sent", "Sent for investigation"], ["below", "Held back"], ["dismissed", "Dismissed"]];
 const REL: Record<RadarStory["relevance"], [string, Tone]> = { high: ["Highly relevant", "blue"], medium: ["Relevant", "grey"], low: ["Slightly relevant", "grey"] };
 
+/** The last run in words: what it read, what it kept, what it sent to you (numbers, not bar heights). */
 function Funnel({ s }: { s: RadarStatus }) {
   const r = s.last_run;
-  const vals = [r?.considered ?? 0, r?.shortlisted ?? 0, r?.stories ?? 0, r?.sent ?? 0];
-  const max = Math.sqrt(Math.max(1, ...vals));  // square root: the later bars stay visible next to "read"
-  return <>
-    <div className="rd-funnel">{vals.map((v, i) => <div key={i} className={`bar ${i === 3 ? "sent" : ""}`} style={{ height: `${Math.max(12, (Math.sqrt(v) / max) * 100)}%` }} title={String(v)} />)}</div>
-    <div className="rd-funnel-l"><span>{vals[0]} read</span><span>{vals[1]} grouped</span><span>{vals[2]} kept</span><span><b>{vals[3]} sent to you</b></span></div>
-  </>;
+  if (!r) return <span className="rd-v">no run yet</span>;
+  return <span className="rd-v rd-funnel-t" title={`${r.considered ?? 0} read, ${r.shortlisted ?? 0} grouped into stories, ${r.stories ?? 0} kept, ${r.sent ?? 0} sent`}>
+    <span><b>{r.considered ?? 0}</b> read</span><span aria-hidden="true">→</span><span><b>{r.stories ?? 0}</b> kept</span><span aria-hidden="true">→</span>
+    <span className="sent"><b>{r.sent ?? 0}</b> sent to you</span></span>;
 }
 
 function StoryCard({ s, names, onChange }: { s: RadarStory; names: Record<string, string | null>; onChange: (s: RadarStory) => void }) {
@@ -87,6 +87,7 @@ export function RadarPage() {
   const [err, setErr] = useState<string | null>(null);
   const [running, setRunning] = useState<string | null>(null);
   const [why, setWhy] = useState<string | null>(null);  // the watched place whose reason is open
+  const [places, setPlaces] = useState(false);  // the watched places, folded to one line until asked
 
   const load = useCallback(async () => {
     try {
@@ -129,43 +130,45 @@ export function RadarPage() {
     <div className="page">
       <PageHeader title="Radar"
         status={!status ? "" : !status.connected ? "Not running yet" : <>Reads world news {sched}{lr ? `, last ${ago(lr.finished_at ?? lr.created_at, now)}` : ""}</>}
-        help={<HowItWorks><p>Radar reads the world's news for anything that touches {profile?.institution.name ?? "your institution"}, using the places and names in your profile. What matters goes to the investigation like any other finding; the rest is kept here, and you can still send it.</p></HowItWorks>}
+        help={<HowItWorks><p>Radar reads the world's news for anything that touches {profile?.institution.name ?? "your institution"}, using the places and names in your profile. What matters goes to the investigation like any other finding; the rest is kept here, and you can still send it.</p>
+          {status && <p>Prototype limits: Radar reads the news {sched}, and you can Check now {status.run_now.limit} times a day. English news only.</p>}</HowItWorks>}
         actions={<>
           <Link className="btn" to="/institution/agents">What Radar reads from your profile</Link>
           <button className="btn btn--primary" type="button" disabled={!!cantRun} title={cantRun ?? undefined} onClick={runNow}>
             <Icon name={running ? "refresh" : "radar"} />{running ? "Checking…" : status?.connected ? `Check now · ${left} left today` : "Check now"}</button></>} />
       <div className="banners">
         {err && <Banner kind="crit" icon="warn">{err}</Banner>}
-        {status && <Banner kind="info" icon="info">{left === 0 && status.connected
-          ? <><b>Prototype limits:</b> you've used today's {status.run_now.limit} checks; the next run is {nextRun}.</>
-          : <><b>Prototype limits:</b> Radar reads the news {sched}, and you can Check now {status.run_now.limit} times a day. English news only.</>}</Banner>}
+        {status && left === 0 && status.connected && <Banner kind="info" icon="info">You've used today's {status.run_now.limit} checks; the next run is {nextRun}.</Banner>}
         {admin ? status?.notes.map(n => <Banner key={n} kind="warn" icon="warn">{n}</Banner>)
           : status && !status.connected && <Banner kind="warn" icon="warn"><b>Radar isn't running yet.</b> It reads the news for you once your Platform Admin connects it. Monitors and market series still work.</Banner>}
         {lr?.status === "failed" && <Banner kind="crit" icon="warn"><b>The last run failed</b> {ago(lr.finished_at ?? lr.created_at, now)}.{admin ? ` ${lr.error ?? ""}` : " Radar will try again at the next run."}</Banner>}
       </div>
-      {status && <div className="rd-strip">
-        <div className="card ov-kpi" style={{ ["--kpi" as string]: lr?.status === "failed" ? "var(--critical)" : "var(--accent)" }}>
-          <div className="l">Last run</div><div className="v" style={{ fontSize: 20 }}>{lr ? ago(lr.finished_at ?? lr.created_at, now) : "never"}</div>
-          <div className="s">{lr ? `${lr.trigger === "now" ? "on request" : "on schedule"}, ${lr.status === "completed" ? "finished" : lr.status.replace("_", " ")}` : "no run yet"}</div></div>
-        <div className="card ov-kpi" style={{ ["--kpi" as string]: "var(--info)" }}>
-          <div className="l">Next run</div><div className="v" style={{ fontSize: 20 }}>{status.connected ? nextRun : "—"}</div>
-          <div className="s">{sched}{status.running ? " · running now" : ""}</div></div>
-        <div className="card ov-kpi"><div className="l">The last run</div><Funnel s={status} /></div>
-        <div className="card ov-kpi" style={{ ["--kpi" as string]: status.budget_spent ? "var(--critical)" : "var(--hairline-2)" }}>
-          <div className="l">{admin ? "BigQuery today" : "Today's reading budget"}</div><div className="v" style={{ fontSize: 20 }}>{admin ? <>{gb(status.bytes_today)} <span className="small muted">of {gb(status.bytes_cap)}</span></> : <>{Math.round((status.bytes_today / Math.max(1, status.bytes_cap)) * 100)}% <span className="small muted">used</span></>}</div>
-          <div className={`meter ${status.bytes_today / status.bytes_cap > 0.9 ? "crit" : status.bytes_today / status.bytes_cap > 0.6 ? "warn" : ""}`} style={{ marginTop: 8 }}>
-            <span style={{ width: `${Math.min(100, (status.bytes_today / Math.max(1, status.bytes_cap)) * 100)}%` }} /></div>
-          <div className="s">{admin ? `at most ${status.limits.max_queries} queries a run, ${gb(status.limits.max_bytes_per_query)} each` : "resets at midnight UTC"}</div></div>
+      {status && <div className="card rd-status">
+        {status.connected && <div className="rd-facts">
+          <div className={`rd-fact ${lr?.status === "failed" ? "bad" : ""}`}><span className="rd-k">Last read</span>
+            <span className="rd-v">{lr ? ago(lr.finished_at ?? lr.created_at, now) : "never"}</span>
+            <span className="rd-s">{lr ? `${lr.trigger === "now" ? "on request" : "on schedule"}, ${lr.status === "completed" ? "finished" : lr.status.replace("_", " ")}` : "no run yet"}</span></div>
+          <div className="rd-fact"><span className="rd-k">Next</span><span className="rd-v">{status.connected ? nextRun : "—"}</span>
+            <span className="rd-s">{sched}{status.running ? " · running now" : ""}</span></div>
+          <div className="rd-fact wide"><span className="rd-k">The last run</span><Funnel s={status} /></div>
+          <div className={`rd-fact ${status.budget_spent ? "bad" : ""}`}><span className="rd-k">{admin ? "BigQuery today" : "Reading budget"}</span>
+            <span className="rd-v">{admin ? <>{gb(status.bytes_today)} <span className="rd-s">of {gb(status.bytes_cap)}</span></> : <>{Math.round((status.bytes_today / Math.max(1, status.bytes_cap)) * 100)}% <span className="rd-s">used today</span></>}</span>
+            <span className="rd-s">{admin ? `at most ${status.limits.max_queries} queries a run, ${gb(status.limits.max_bytes_per_query)} each` : "resets at midnight UTC"}</span></div>
+        </div>}
+        {scope && <div className="rd-watch">
+          <span><b>Watching {scope.places.length} {scope.places.length === 1 ? "place" : "places"}</b>{!places && scope.places.length > 0 && <span className="muted">: {scope.places.slice(0, 3).map(p => names[p] ?? p).join(", ")}{scope.places.length > 3 ? " and more" : ""}</span>}
+            {scope.actors.length > 0 && <span className="muted"> · also {scope.actors.length} {scope.actors.length === 1 ? "name" : "names"}</span>}</span>
+          <button type="button" className="btn btn--sm btn--ghost" aria-expanded={places} onClick={() => setPlaces(o => !o)}>
+            <Icon name="chevron" className={`ico16 ${places ? "rot" : ""}`} />{places ? "Hide places" : `Show ${scope.places.length} places`}</button>
+        </div>}
+        {scope && places && <div className="rd-places col" style={{ gap: 8 }}>
+          <div className="row wrap" style={{ gap: 8 }}>{scope.places.map(p => (
+            <button key={p} type="button" className={`chip click ${why === p ? "sel" : ""}`} aria-expanded={why === p} onClick={() => setWhy(why === p ? null : p)}>{names[p] ?? p}</button>))}</div>
+          {why && <div className="note" role="status"><b>{names[why] ?? why}</b>: {(scope.why[why] ?? []).join("; ") || "part of where you operate"}</div>}
+          {scope.actors.length > 0 && <span className="small">Also looks for: {scope.actors.join(", ")}</span>}
+          <span className="small muted">Select a place to see why it's watched.</span>
+        </div>}
       </div>}
-
-      {scope && <div className="card mt16"><div className="bd col" style={{ gap: 8 }}>
-        <span className="label">Watching</span>
-        <div className="row wrap" style={{ gap: 6 }}>{scope.places.map(p => (
-          <button key={p} type="button" className={`chip click ${why === p ? "sel" : ""}`} aria-expanded={why === p} onClick={() => setWhy(why === p ? null : p)}>{names[p] ?? p}</button>))}</div>
-        {why && <div className="note" role="status"><b>{names[why] ?? why}</b>: {(scope.why[why] ?? []).join("; ") || "part of where you operate"}</div>}
-        {scope.actors.length > 0 && <span className="small">Also looks for: {scope.actors.slice(0, 6).join(", ")}{scope.actors.length > 6 ? ` and ${scope.actors.length - 6} more` : ""}</span>}
-        <span className="small muted">Select a place to see why it's watched.</span>
-      </div></div>}
 
       <div className="row wrap mt16" style={{ gap: 10 }}>
         <span className="seg">{SHOW.map(([k, label]) => <button key={k} type="button" aria-pressed={show === k} onClick={() => setShow(k)}>{label}</button>)}</span>
@@ -174,7 +177,8 @@ export function RadarPage() {
       </div>
       <div className="col gap16 mt12">
         {items === null ? <ListSkeleton rows={3} />
-          : !items.length ? <div className="card"><Empty icon="radar" title={show === "all" ? "No stories yet" : "Nothing here"}>
+          : !items.length ? <div className="card"><Empty icon="radar" title={show === "all" ? "No stories yet" : "Nothing here"}
+            actions={show === "all" && !status?.connected ? <Link className="btn" to="/institution/agents">See what Radar will read</Link> : undefined}>
             {show === "all" ? (status?.connected ? "Radar hasn't found anything touching your footprint yet. Check now runs it at once." : admin ? "Connect the Radar agent (RADAR_URL) and it starts reading the news." : "Radar starts reading the news once your Platform Admin connects it.") : "No stories in this group."}</Empty></div>
           : items.map(s => <StoryCard key={s.story_id} s={s} names={names} onChange={x => setItems(xs => xs?.map(y => (y.story_id === x.story_id ? x : y)) ?? null)} />)}
       </div>

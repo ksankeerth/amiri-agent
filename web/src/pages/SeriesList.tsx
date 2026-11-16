@@ -74,7 +74,7 @@ function SeriesCard({ s, onChange }: { s: Series; onChange: (s: Series) => void 
           <div><dt>Updated</dt><dd>{ago(s.fetch.last_at, now)}</dd></div>
           {s.last_finding && <div><dt>Last flagged</dt><dd><Link to={`/series/${s.series_id}#findings`}>{when(s.last_finding.at, now)}</Link></dd></div>}
         </dl>
-        {s.state !== "normal" && <div className="note small">{seriesSentence(s, now)}</div>}
+        {s.state !== "normal" && s.state !== "stale" && <div className="note small">{seriesSentence(s, now)}</div>}
         <div className="foot">
           <RefreshButton s={s} onDone={onChange} />
           <span className="spacer" />

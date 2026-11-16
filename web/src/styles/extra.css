@@ -90,11 +90,6 @@ a.ov-need:hover { background:var(--hover-bg); }
 
 /* ---------------------------------------------------------------- Radar */
 .rd-strip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
-.rd-funnel { display:flex; align-items:flex-end; gap:8px; height:44px; margin-top:8px; }
-.rd-funnel .bar { flex:1; border-radius:6px 6px 2px 2px; background:var(--line-strong); position:relative; min-height:6px; }
-.rd-funnel .bar.sent { background:var(--accent); }
-.rd-funnel-l { display:flex; gap:8px; font-size:var(--fs-xs); color:var(--ink-3); margin-top:4px; }
-.rd-funnel-l span { flex:1; text-align:center; }
 .rd-story { padding:16px 16px; display:flex; flex-direction:column; gap:12px; }
 .rd-story h2 { margin:0; font-size:var(--fs-lg); letter-spacing:-.01em; }
 .rd-story .sum { margin:0; color:var(--ink-2); font-size:var(--fs-md); line-height:1.5; }
@@ -151,8 +146,9 @@ a.ov-need:hover { background:var(--hover-bg); }
 * { scrollbar-width:thin; scrollbar-color:var(--hairline-2) transparent; }
 html { scroll-behavior:smooth; }
 
-/* a page eases in; the global reduced-motion rule switches this off */
-.page { animation:pagein 260ms var(--ease) both; }
+/* a page eases in; the global reduced-motion rule switches this off. "backwards", not "both": a held end transform
+   would make .page the containing block of every position:fixed child (the replay alert opened off-screen) */
+.page { animation:pagein 260ms var(--ease) backwards; }
 @keyframes pagein { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
 
 /* surfaces: a soft two-layer shadow, a lift on anything clickable */
