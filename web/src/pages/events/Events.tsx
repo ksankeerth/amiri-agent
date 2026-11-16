@@ -7,7 +7,7 @@ import { CheckBrief } from "../../components/checks";
 import { Icon } from "../../components/Icon";
 import { Banner, Empty, useNow, useRole, useToast, InlineSkeleton } from "../../components/ui";
 import { ago, dayTime, until, plural } from "../../format";
-import { count, longWhen, sourceInfo, themeLabel } from "../../plain";
+import { count, eventTitle, longWhen, sourceInfo, themeLabel } from "../../plain";
 import { DAYS, useRecentFindings } from "../findings/recent";
 
 /** A theme tag in words ("Oil prices up"): the Overview and Radar use it too. */
@@ -131,7 +131,7 @@ export function EventsPage() {
     .sort((a, b) => sort === "impacts" ? b.hypotheses - a.hypotheses || (a.anchor < b.anchor ? 1 : -1) : (a.anchor < b.anchor ? 1 : -1)), [events, show, sim, sort]);
   const ev = useEventDetails(rows.map(e => e.event_id));
   // the headline each event came from: its first finding, when it's among the recent ones
-  const lead = useMemo(() => new Map((recent.items ?? []).filter(f => f.outcome?.event_id).map(f => [f.outcome!.event_id!, f])), [recent.items]);
+  const byId = useMemo(() => new Map((recent.items ?? []).map(f => [f.finding_id, f])), [recent.items]);
   const live = (events ?? []).filter(e => e.world === "live");
   const open = live.filter(e => e.status === "open");
   const bad = open.filter(e => e.tone === "bad" || e.tone === "mixed").length;
@@ -178,13 +178,13 @@ export function EventsPage() {
             When Amiri Agent traces news or a price move to your products, the event appears here.</Empty>
         ) : (
           <ul className="evlist" aria-label="Events">{rows.map(e => {
-            const f = lead.get(e.event_id), si = f ? sourceInfo(f.source) : null;
+            const f = byId.get(e.finding_ids[0]), si = f ? sourceInfo(f.source) : null;
             return (
               <li key={e.event_id}>
                 <Link className="evrow" to={`/events/${e.event_id}`}>
                   <span className={`evrow-ico tone-${e.tone}`}><Icon name="events" /></span>
                   <span className="evrow-main">
-                    <span className="row-top"><b className="row-l">{e.title}</b><TonePill tone={e.tone} />
+                    <span className="row-top"><b className="row-l">{eventTitle(e)}</b><TonePill tone={e.tone} />
                       {e.world !== "live" && <span className="pill t-blue">Simulated</span>}
                       {e.status === "closed" && <span className="pill t-grey">Closed</span>}</span>
                     {f && <span className="evrow-src">{si && <Icon name={si.icon} />}<span>{f.title}</span></span>}

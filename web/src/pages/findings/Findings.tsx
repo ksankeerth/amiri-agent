@@ -8,7 +8,7 @@ import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
 import { Icon } from "../../components/Icon";
 import { Banner, Empty, InlineSkeleton, useNow, useToast } from "../../components/ui";
 import { ago, dayTime, until } from "../../format";
-import { count, FINDING_STATUS, longWhen, sourceInfo } from "../../plain";
+import { count, eventTitle, FINDING_STATUS, longWhen, sourceInfo } from "../../plain";
 import { InvestigateNowButton, useInvestigationStatus } from "../events/Events";
 import { DAYS, reasonText, useRecentFindings } from "./recent";
 
@@ -84,7 +84,7 @@ export function FindingsPage() {
                     <span className="row-d fd-what">
                       {f.status === "new" && <>Waiting to be investigated{nextBatch ? `: the next batch goes ${nextBatch}` : ""}</>}
                       {f.status === "grouped" && <>Being investigated{f.run_started_at ? `, started ${ago(f.run_started_at, now)}` : ""}</>}
-                      {f.status === "linked" && f.outcome?.event_id && <>In the event <Link to={`/events/${f.outcome.event_id}`}>{ev?.title ?? "open the event"}</Link></>}
+                      {f.status === "linked" && f.outcome?.event_id && <>In the event <Link to={`/events/${f.outcome.event_id}`}>{ev ? eventTitle(ev) : "open the event"}</Link></>}
                       {f.status === "set_aside" && <>No impact found: {reasonText(f) || "no link to your products"}</>}
                     </span>
                     {f.explanation && <span className="row-d muted">{f.explanation}</span>}

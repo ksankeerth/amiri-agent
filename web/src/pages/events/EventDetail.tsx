@@ -9,10 +9,11 @@ import { CheckPill, CheckSummary } from "../../components/checks";
 import { Icon } from "../../components/Icon";
 import { Markdown } from "../../components/markdown";
 import { Banner, Empty, PageSkeleton } from "../../components/ui";
+import "../../styles/daily.css";
 import { dayTime } from "../../format";
 import {
-  ALERT_STATUS, checkMove, count, dateRange, earliest, impactText, LEVEL_LABEL, LEVEL_TONE, listText, longWhen, metricWords, onDay,
-  productAngle, relDay, SCREENING, sizeTiming, sourceInfo, splitCheckText, themeLabel, verdictWhy, type VerdictKey,
+  angleLabel, ALERT_STATUS, checkMove, count, dateRange, earliest, eventTitle, impactText, LEVEL_LABEL, LEVEL_TONE, listText, longWhen, metricWords, onDay,
+  productTypeLabel, relDay, SCREENING, sizeTiming, sourceInfo, splitCheckText, themeLabel, verdictWhy, type VerdictKey,
 } from "../../plain";
 
 type Task = EventDetail["tasks"][number];
@@ -57,6 +58,7 @@ export function EventDetailPage() {
   const lead = e.findings[0];
   const headline = lead?.evidence?.headlines?.[0];
   const src = lead ? sourceInfo(lead.source) : null;
+  const title = eventTitle(e);
 
   const steps: Step[] = [
     { label: "Noticed", detail: onDay(e.anchor.slice(0, 10)), state: "done", icon: "eye" },
@@ -70,8 +72,8 @@ export function EventDetailPage() {
 
   return (
     <div className="page">
-      <PageHeader crumbs={<><Link to="/events">Events</Link><span aria-hidden="true">/</span><span>{e.title}</span></>}
-        title={e.title}
+      <PageHeader crumbs={<><Link to="/events">Events</Link><span aria-hidden="true">/</span><span>{title}</span></>}
+        title={title}
         pills={<>{TONE_PILL[nBad && nGood ? "mixed" : nBad ? "bad" : nGood ? "good" : "neutral"]}{e.world !== "live" && <StatusPill tone="blue">Simulated</StatusPill>}
           <StatusPill tone={e.status === "open" ? "blue" : "grey"}>{e.status === "open" ? "Open" : "Closed"}</StatusPill></>}
         status={<>Noticed {longWhen(e.anchor)}{e.places.length ? <> · <Places codes={e.places} max={2} /></> : null}</>}
@@ -88,7 +90,7 @@ export function EventDetailPage() {
           {lead ? <>
             <p className="ev-head">{headline?.url ? <a href={headline.url} target="_blank" rel="noreferrer">{headline.title ?? lead.title}<Icon name="external" className="src-ext" /><span className="sr"> (opens the article)</span></a> : headline?.title ?? lead.title}</p>
             <p className="ev-meta">{src && <Icon name={src.icon} />}{[src?.label, headline?.outlet, onDay((headline?.published_at ?? lead.created_at).slice(0, 10))].filter(Boolean).join(" · ")}</p>
-          </> : <p className="ev-head">{e.title}</p>}
+          </> : <p className="ev-head">{title}</p>}
           {e.themes.length > 0 && <div className="ev-chips">{e.themes.map((t, i) => <span key={i} className="chip">{themeLabel(t)}</span>)}</div>}
         </section>
         <section className="card ev-card" aria-labelledby="ev-why">
@@ -114,7 +116,7 @@ export function EventDetailPage() {
           {e.hypotheses.map(h => {
             const t = tasks.get(h.hypothesis_id), c = checkOf(h), m = t?.check ? checkMove(t.check.what) : null;
             return (
-              <ImpactRow key={h.hypothesis_id} product={h.product_name ?? h.product_id} kind={productAngle(h.product_type, h.angle)}
+              <ImpactRow key={h.hypothesis_id} product={h.product_name ?? h.product_id}
                 impact={<>{impactText(metricName(h), h.expected.direction)}{m && <span className="ir-move"><b>{m.move}</b> {m.against}</span>}</>}
                 adverse={adverseOf(h)} size={sizeTiming(h.expected.size, h.expected.timing)}
                 status={!same && c ? <CheckPill c={c} /> : undefined}>
@@ -140,7 +142,7 @@ export function EventDetailPage() {
             <Section title="Considered, no impact" count={e.set_aside.length} flush>
               {e.set_aside.map((s, i) => (
                 <details key={i} className="ir aside">
-                  <summary className="lrow"><span className="row-main"><b className="row-l">{productAngle(s.product_type, s.angle)}</b></span>
+                  <summary className="lrow"><span className="row-main"><b className="row-l">{productTypeLabel(s.product_type)}<span className="dl-angle">{angleLabel(s.angle)}</span></b></span>
                     <span className="row-meta">{SCREENING[s.decision] ?? "No clear link"}</span><Icon name="chevron" className="row-go ir-chev" /></summary>
                   <p className="aside-why">{s.reason}</p>
                 </details>))}
