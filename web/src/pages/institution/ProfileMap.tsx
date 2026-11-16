@@ -3,7 +3,7 @@
 // (coordinates from the gazetteer, or a country's centre from its shape).
 import { geoCentroid, geoCircle, geoNaturalEarth1, geoPath } from "d3-geo";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { feature } from "topojson-client";
 import type { PlaceInfo, Profile } from "../../api/institutions";
 import { ref, type Hazard, type Route } from "../../api/reference";
@@ -39,9 +39,9 @@ function ToneShape({ tone, s = 1, stroke = "var(--surface)", sw = 2 }: { tone: M
 const Key = ({ tone }: { tone: MapEvent["tone"] }) => <svg width={14} height={14} viewBox="-8 -9 16 16" aria-hidden="true" style={{ verticalAlign: -2 }}><ToneShape tone={tone} s={0.85} sw={0} /></svg>;
 const FLOW_COLOR: Record<string, string> = { remittances_in: "var(--accent)", remittances_out: "var(--accent)", tourism: "var(--info)", services: "var(--info)", exports: "var(--high)", imports: "var(--medium-stroke)" };
 
-export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {}, layers, compact = false, onEvent }: {
+export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {}, layers, compact = false, onEvent, title }: {
   profile: Profile; height?: number; events?: MapEvent[]; extraPlaces?: Record<string, PlaceInfo>; layers?: Layer[];
-  compact?: boolean; onEvent?: (eventId: string) => void;
+  compact?: boolean; onEvent?: (eventId: string) => void; title?: ReactNode;
 }) {
   const world = useLoad(loadWorld);
   const routes = useLoad(() => ref.routes()) ?? [];
@@ -92,6 +92,10 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
       S.rivals.forEach(r => r.places.forEach(add)); usedRoutes.forEach(r => r.points.forEach(([la, lo]) => pts.push([lo, la])));
     }
     if (!pts.length) add(home);
+    // the full map keeps home in its middle third: each point gets a 60 % mirror image around home, so the fit leans
+    // towards it (Sri Lanka sat in the bottom corner, under the zoom buttons, with the Gulf risks pulling the view north-west)
+    const h0 = !compact && view === "home" ? at(home) : null;
+    if (h0) pts.push(...pts.map(([x, y]) => [h0[0] + 0.6 * (h0[0] - x), h0[1] + 0.6 * (h0[1] - y)] as [number, number]));
     const proj = geoNaturalEarth1();
     if (pts.length) {
       // pad a small area (one country, one point) to at least MIN_SPAN degrees, so the neighbours show
@@ -160,13 +164,19 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
 
   return (
     <div ref={setBox} style={{ position: "relative" }}>
-      <div className="row wrap" style={{ gap: 6, marginBottom: 8, display: compact ? "none" : undefined }}>
+      {!compact && <div className="pmap-bar">
+        {title && <h2 className="pmap-title">{title}</h2>}
+        <span className="spacer" />
         <span className="seg"><button type="button" aria-pressed={view === "home"} onClick={() => setView("home")}>Your footprint</button>
           <button type="button" aria-pressed={view === "world"} onClick={() => setView("world")}>Everything</button></span>
-        <span className="spacer" />
-        {LAYERS.map(([k, label]) => <button key={k} type="button" className={`chip click ${on.has(k) ? "sel" : ""}`} onClick={() => toggle(k)}>{label}</button>)}
-      </div>
-      <div style={{ position: "relative" }}>
+        <details className="menu pmap-layers">
+          <summary className="btn btn--sm">Layers · {on.size} of {LAYERS.length}<span aria-hidden="true" className="caret">▾</span></summary>
+          <div className="menu-pop" role="group" aria-label="Map layers">
+            {LAYERS.map(([k, label]) => <label key={k} className="check"><input type="checkbox" checked={on.has(k)} onChange={() => toggle(k)} />{label}</label>)}
+          </div>
+        </details>
+      </div>}
+      <div style={{ position: "relative" }} className={compact ? undefined : "pmap-full"}>
       <svg ref={svgRef} width="100%" height={height} viewBox={`0 0 ${w} ${height}`} role="img" aria-label="Map of the institution profile"
         style={{ background: "var(--map-ocean)", borderRadius: 12, display: "block", cursor: drag.current ? "grabbing" : "grab", touchAction: "none" }}
         onPointerDown={e => { drag.current = { x: e.clientX, y: e.clientY }; }}

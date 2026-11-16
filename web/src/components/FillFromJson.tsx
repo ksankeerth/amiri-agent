@@ -33,7 +33,7 @@ export function FillFromJson({ what, read, onFill, example }: {
   return (
     <div className="fillfile" style={{ gridColumn: "1 / -1" }}>
       <div className="row wrap" style={{ gap: 8, alignItems: "center" }}>
-        <label className="btn btn--sm" title={`Load ${what} from a JSON file into this form; nothing is saved until you do`}>
+        <label className="btn btn--sm btn--ghost" title={`Load ${what} from a JSON file into this form; nothing is saved until you do`}>
           <Icon name="plus" />Fill from a JSON file
           <input type="file" accept="application/json,.json" className="sr" aria-describedby={`${id}-msg`}
             onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) load(f); }} /></label>

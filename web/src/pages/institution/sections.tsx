@@ -7,26 +7,31 @@ import { dayTime, plural } from "../../format";
 import { Icon } from "../../components/Icon";
 import { Modal, useToast } from "../../components/ui";
 import { dimWord, monthsText, PlaceName, usdText, useRoutes, valueWord } from "./fields";
-import { FLOW_WORDS, ItemModal, LABELS, splitErrors, type Ctx } from "./forms";
+import { AREA_WORDS, FLOW_WORDS, ItemModal, LABELS, splitErrors, type Ctx } from "./forms";
+import { productTypeLabel } from "../../plain";
 
 const pn = (ctx: Ctx, c: string) => <PlaceName code={c} names={ctx.profile?.place_names} />;
 const join = (xs: ReactNode[]) => xs.reduce<ReactNode[]>((a, x, i) => (i ? [...a, ", ", x] : [x]), []);
 const byId = (ctx: Ctx, s: SectionName, id: string, key: string) => ctx.profile?.sections[s].find(x => x.id === id)?.[key] ?? id;
+/** An enum value as a word: "finance_company" → "Finance company". */
+const cw = (s: string) => (s ? s[0].toUpperCase() + s.slice(1).replace(/_/g, " ") : s);
+/** "US Treasury sanctions (OFAC)" stays as it is; "Central Bank of Sri Lanka" gets "(CBSL)". */
+const withShort = (name: string, short?: string | null) => (short && !name.includes(`(${short})`) ? `${name} (${short})` : name);
 
 /** One row's text per section: title, details, badges. */
 function describe(section: SectionName, it: Item, ctx: Ctx): { title: ReactNode; sub: ReactNode; badges?: ReactNode } {
   switch (section) {
     case "footprint":
-      return { title: pn(ctx, it.code), sub: <>{it.code} · {it.role.replace(/_/g, " ")}{it.scope === "part" ? " (part)" : ""}{it.branch_count != null ? ` · ${it.branch_count} branches` : ""}</>,
+      return { title: pn(ctx, it.code), sub: <>{it.role === "home" ? "Home country" : cw(it.role)}{it.scope === "part" ? " (part)" : ""}{it.branch_count != null ? ` · ${it.branch_count} branches` : ""}</>,
         badges: it.role === "home" ? <span className="badge b-ok">HOME</span> : undefined };
     case "watch-places":
-      return { title: it.name, sub: <>{it.kind}{it.code ? <> · {it.code}</> : ""}{it.reason ? ` · ${it.reason}` : ""}</> };
+      return { title: it.name, sub: <>{cw(it.kind)}{it.reason ? ` · ${it.reason}` : ""}</> };
     case "segments":
-      return { title: it.label, sub: <>{it.kind}{it.places.length ? <> · {join(it.places.map((c: string) => pn(ctx, c)))}</> : ""}
-        {it.spec_mapping.length ? ` · data: ${it.spec_mapping.map((m: any) => `${dimWord(m.dimension)} = ${valueWord(m.value)}`).join(", ")}` : ""}</>,
+      return { title: it.label, sub: <>{cw(it.kind)}{it.places.length ? <> · {join(it.places.map((c: string) => pn(ctx, c)))}</> : ""}
+        {it.spec_mapping.length ? ` · in your data: ${it.spec_mapping.map((m: any) => `${dimWord(m.dimension).toLowerCase()} “${valueWord(m.value)}”`).join(", ")}` : ""}</>,
         badges: !it.spec_mapping.length ? <span className="badge b-warn" title="Checks can't be scoped to this group">NO DATA VALUE</span> : undefined };
     case "products":
-      return { title: it.name, sub: <>{it.category} › {it.product_type.replace(/_/g, " ")}{it.owner ? ` · ${it.owner}` : ""}
+      return { title: it.name, sub: <>{productTypeLabel(it.product_type)}{it.owner ? ` · ${it.owner}` : ""}
         {it.segments.length ? ` · for ${it.segments.map((s: string) => byId(ctx, "segments", s, "label")).join(", ")}` : ""}
         {it.book_size ? ` · book ${it.book_size.currency} ${(it.book_size.amount / 1e9).toFixed(1)} bn` : ""}</>,
         badges: <>{it.status !== "active" && <span className="badge b-paused">{it.status.toUpperCase()}</span>}
@@ -41,19 +46,19 @@ function describe(section: SectionName, it: Item, ctx: Ctx): { title: ReactNode;
           {it.segments.length ? ` · ${it.segments.map((s: string) => byId(ctx, "segments", s, "label")).join(", ")}` : ""}</>,
         badges: <>{it.status === "suggested" && <span className="badge b-sub">TO CHECK</span>}{it.source.sample && <span className="badge b-warn">SAMPLE</span>}</> };
     case "regulators":
-      return { title: <>{it.name}{it.short ? ` (${it.short})` : ""}</>, sub: <>{it.area.replace(/_/g, " ")} · {it.country ? pn(ctx, it.country) : "global"}{it.controls.length ? ` · ${it.controls.join(", ")}` : ""}</>,
+      return { title: withShort(it.name, it.short), sub: <>{AREA_WORDS[it.area] ?? cw(it.area)} · {it.country ? pn(ctx, it.country) : "global"}{it.controls.length ? ` · ${it.controls.join(", ")}` : ""}</>,
         badges: <><span className={`badge ${it.relation === "home" ? "b-ok" : it.relation === "reach" ? "b-warn" : "b-info"}`}>{it.relation.toUpperCase()}</span>
           {it.basis === "rule" && <span className="badge b-noeffect" title="From the rule table">RULE</span>}</> };
     case "rivals":
-      return { title: it.name, sub: <>{it.type.replace(/_/g, " ")}{it.places.length ? <> · {join(it.places.map((c: string) => pn(ctx, c)))}</> : ""}{it.categories.length ? ` · ${it.categories.join(", ")}` : ""}</>,
+      return { title: it.name, sub: <>{cw(it.type)}{it.places.length ? <> · {join(it.places.map((c: string) => pn(ctx, c)))}</> : ""}{it.categories.length ? ` · ${it.categories.map(productTypeLabel).join(", ")}` : ""}</>,
         badges: <span className={`badge ${it.overlap === "high" ? "b-down" : it.overlap === "medium" ? "b-warn" : "b-noeffect"}`}>{it.overlap.toUpperCase()} OVERLAP</span> };
     case "counterparties":
-      return { title: it.name, sub: <>{it.kind.replace(/_/g, " ")}{it.places.length ? <> · {join(it.places.map((c: string) => pn(ctx, c)))}</> : ""}</>,
+      return { title: it.name, sub: <>{cw(it.kind)}{it.places.length ? <> · {join(it.places.map((c: string) => pn(ctx, c)))}</> : ""}</>,
         badges: it.importance === "critical" ? <span className="badge b-down">CRITICAL</span> : undefined };
     case "risk-exposures": {
       const t = it.touches;
       const parts = [t.segments.length && `${plural(t.segments.length, "group")}`, t.products.length && `${plural(t.products.length, "product")}`, t.flows.length && `${plural(t.flows.length, "flow")}`, t.routes.length && `${plural(t.routes.length, "route")}`].filter(Boolean);
-      return { title: it.title, sub: <>{it.kind} · {monthsText(it.months)}{parts.length ? ` · touches ${parts.join(", ")}` : ""}</>,
+      return { title: it.title, sub: <>{cw(it.kind)} · {monthsText(it.months)}{parts.length ? ` · touches ${parts.join(", ")}` : ""}</>,
         badges: <>{it.status === "dismissed" && <span className="badge b-noeffect">DISMISSED</span>}{it.source === "finder" && <span className="badge b-info">FOUND</span>}</> };
     }
   }
@@ -131,7 +136,7 @@ export function SectionList({ section, ctx, reload, suggest, extra, compact, ite
         {extra}
         {suggest && !archived && <button className="btn btn--sm" type="button" onClick={() => setSuggesting(true)}><Icon name="search" />Suggestions</button>}
         {!archived && <ImportItems section={section} iid={iid} onAdded={reload} />}
-        {!archived && <button className="btn btn--sm btn--primary" type="button" onClick={() => setEditing("new")}><Icon name="plus" />Add</button>}
+        {!archived && <button className="btn btn--sm" type="button" onClick={() => setEditing("new")}><Icon name="plus" />Add</button>}
       </div>
       {!items.length ? <div className="bd small muted">None yet.{suggest ? " Use Suggestions to start from the usual ones, or Add your own." : ""}</div> : (
         <div className="list" style={{ marginTop: 8 }}>{items.map(it => {
@@ -175,8 +180,8 @@ function suggestionText(section: SectionName, s: Suggestion, ctx: Ctx, routeName
   const i = s.item;
   switch (section) {
     case "products": return { title: i.name, sub: <>{s.typical_products}{s.islamic_variant ? ` · Islamic: ${s.islamic_variant}` : ""}</>, group: s.category_name };
-    case "segments": return { title: i.label, sub: <>{i.note || i.kind}{i.spec_mapping.length ? ` · data: ${i.spec_mapping.map((m: any) => valueWord(m.value)).join(", ")}` : ""}</> };
-    case "regulators": return { title: <>{i.name}{i.short ? ` (${i.short})` : ""}</>, sub: <>{s.why} · {i.area.replace(/_/g, " ")}</>, group: i.relation };
+    case "segments": return { title: i.label, sub: <>{i.note || cw(i.kind)}</> };
+    case "regulators": return { title: withShort(i.name, i.short), sub: <>{s.why} · {AREA_WORDS[i.area] ?? cw(i.area)}</>, group: i.relation };
     case "rivals": return { title: <>{i.name}{i.aliases?.length ? ` (${i.aliases[0]})` : ""}</>, sub: <>{s.why} · overlap {i.overlap}</>, group: `${i.overlap} overlap` };
     case "flows": return { title: <>{FLOW_WORDS[i.kind]} {i.goods ? `(${i.goods}) ` : ""}· {pn(ctx, i.local)} ↔ {pn(ctx, i.counterpart)}</>,
       sub: <>{usdText(i.value.amount)} a year · {i.source.dataset} ({i.source.dataset_year}){i.source.sample ? " · sample figure" : ""}</>, group: FLOW_WORDS[i.kind] };
@@ -233,7 +238,7 @@ export function SuggestionPicker({ section, ctx, onAdded, inline }: { section: S
               const s = data.items[i];
               const t = suggestionText(section, s, ctx, id => routes.find(r => r.route_id === id)?.name ?? id);
               return (
-                <label key={i} className="check" style={{ padding: "8px 12px", borderBottom: "1px solid var(--hairline)", opacity: s.added ? 0.55 : 1 }}>
+                <label key={i} className="check" style={{ padding: "8px 12px", borderBottom: "1px solid var(--hairline)" }}>
                   <input type="checkbox" disabled={s.added} checked={s.added || picked.has(i)}
                     onChange={e => setPicked(p => { const n = new Set(p); if (e.target.checked) n.add(i); else n.delete(i); return n; })} />
                   <span className="col" style={{ gap: 2 }}><b style={{ color: "var(--ink)" }}>{t.title}{s.added && <span className="badge b-ok" style={{ marginLeft: 8 }}>{s.status === "dismissed" ? "DISMISSED" : "ADDED"}</span>}</b><span className="small muted">{t.sub}</span></span>
@@ -246,7 +251,8 @@ export function SuggestionPicker({ section, ctx, onAdded, inline }: { section: S
       {err.length > 0 && <div className="rawerr">{err.join(" · ")}</div>}
       <div className="row"><span className="small muted">{picked.size} ticked</span><span className="spacer" />
         {open > 0 && <button className="btn btn--sm" type="button" onClick={() => setPicked(new Set(data.items.map((x, i) => (x.added ? -1 : i)).filter(i => i >= 0)))}>Tick all</button>}
-        <button className="btn btn--primary" type="button" disabled={busy || !picked.size} onClick={add}>Add {picked.size || ""}</button></div>
+        {/* in a setup step "Next" is the one primary; in the Suggestions dialog, adding is */}
+        <button className={`btn${inline ? "" : " btn--primary"}`} type="button" disabled={busy || !picked.size} onClick={add}>Add {picked.size || ""}</button></div>
     </div>
   );
 }
@@ -273,7 +279,8 @@ export function LinkGrid({ ctx, rows, cols, field, reload, title }: {
     } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
     finally { setBusy(false); }
   };
-  const rowLabel = (r: Item) => rows === "flows" ? `${FLOW_WORDS[r.kind]} ${r.local} ↔ ${r.counterpart}${r.goods ? ` (${r.goods})` : ""}` : r[LABELS[rows].nameKey];
+  const place = (c: string) => ctx.profile?.place_names?.[c] ?? c;
+  const rowLabel = (r: Item) => rows === "flows" ? `${cw(FLOW_WORDS[r.kind] ?? r.kind)}${r.goods ? ` (${r.goods})` : ""}: ${place(r.counterpart)}` : r[LABELS[rows].nameKey];
   return (
     <div className="card">
       <div className="hd"><h2>{title}</h2><span className="spacer" />

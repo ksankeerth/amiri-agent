@@ -1,20 +1,22 @@
 // The Institution page (ongoing edits) and its shared loading. Everything here works
 // without the assistant: forms, suggestion pickers and link grids on the profile API.
-import { Fragment, useCallback, useEffect, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { inst, type HistoryRow, type InstitutionSummary, type Item, type Profile, type Readiness } from "../../api/institutions";
 import type { Installation } from "../../App";
 import { Icon } from "../../components/Icon";
 import { WithChat } from "../../components/SetupChat";
+import { changeWords, countOf, fieldWord, SECTION_ONE, valueText } from "../../components/setupFlow";
 import { PageHeader, StatusPill } from "../../components/blocks";
-import { Banner, DEMOS, MenuButton, Modal, PageHead, ResetModal, useToast, PageSkeleton, StatusIcon } from "../../components/ui";
+import { Banner, DEMOS, InlineSkeleton, MenuButton, Modal, PageHead, ResetModal, useRole, useToast, PageSkeleton, StatusIcon } from "../../components/ui";
 import { dayTime, plural } from "../../format";
 import { PlaceName, useLoad } from "./fields";
 import { InstitutionFields, InstitutionModal, LABELS, splitErrors, useHiddenErrors, type Ctx } from "./forms";
 import { ProfileMap } from "./ProfileMap";
 import { LinkGrid, SectionList } from "./sections";
 import { DraftFromProfile } from "../monitors/Monitors";
+import "../../styles/setup.css";
 
 // ---------------------------------------------------------------- loading
 
@@ -113,7 +115,7 @@ export function ReadinessList({ r, onFix }: { r: Readiness; onFix?: (section: st
           <span className="small" style={{ color: "var(--ink)" }}>{c.message}</span>
           {!c.ok && c.fix && <span className="small muted">{c.fix}</span>}
         </div>
-        <span className="badge b-noeffect">{c.level}</span>
+        <span className="badge b-noeffect">{c.level === "required" ? "Required" : "Recommended"}</span>
         {!c.ok && onFix && c.section !== "institution" && <button className="btn btn--sm" type="button" onClick={() => onFix(c.section)}>Fix</button>}
       </div>))}</div>
   );
@@ -131,20 +133,49 @@ function download(name: string, data: unknown) {
 
 // ---------------------------------------------------------------- tabs
 
+// short names, so the eight fit one row beside the Setup agent; the full name is the tooltip
 const TABS = [
-  ["overview", "Overview"], ["customers", "Customers and products"], ["footprint", "Footprint and flows"], ["rules", "Rules"],
-  ["rivals", "Rivals and partners"], ["risks", "Risks"], ["history", "History"], ["agents", "What the agents see"],
+  ["overview", "Overview", "Overview"], ["customers", "Customers", "Customers and products"], ["footprint", "Footprint", "Footprint and flows"],
+  ["rules", "Rules", "Rules"], ["rivals", "Rivals", "Rivals and partners"], ["risks", "Risks", "Risks"], ["history", "History", "History"],
+  ["agents", "Agents' view", "What the agents see"],
 ] as const;
+/** The map's takeaway: "Sri Lanka · money moves with 6 places abroad". */
+const mapTitle = (p: Profile) => {
+  const abroad = new Set(p.sections.flows.map(f => f.counterpart)).size;
+  const home = p.place_names[p.institution.home_country] ?? p.institution.home_country;
+  return abroad ? `${home} · money moves with ${plural(abroad, "place")} abroad` : `Where ${p.institution.short_name ?? p.institution.name} operates`;
+};
 const TAB_OF_SECTION: Record<string, string> = {
   footprint: "footprint", "watch-places": "footprint", flows: "footprint", segments: "customers", products: "customers",
   regulators: "rules", rivals: "rivals", counterparties: "rivals", "risk-exposures": "risks", institution: "overview",
 };
 
-function History({ id, pv, onChanged, readOnly }: { id: string; pv: number; onChanged: () => void; readOnly: boolean }) {
+const SOURCE_WORDS: Record<string, string> = { form: "a form", assistant: "the Setup agent", setup: "guided setup", import: "an import", system: "the system" };
+const who = (actor: string, source: string) => `${actor === "anonymous" || !actor ? "System" : actor} · via ${SOURCE_WORDS[source] ?? source}`;
+
+/** One change as a sentence: "Added rival **Coastal Remit**". */
+function ChangeSentence({ r, names }: { r: HistoryRow; names: Record<string, string | null> }) {
+  const w = changeWords(r, "done", names);
+  return <>{w.lead} {w.name && <b>{w.name}</b>}{w.tail ? ` ${w.tail}` : ""}</>;
+}
+
+/** Before and after as a field list, not JSON. */
+function BeforeAfter({ r }: { r: HistoryRow }) {
+  const keys = [...new Set([...Object.keys(r.before ?? {}), ...Object.keys(r.after ?? {})])]
+    .filter(k => r.op !== "update" || JSON.stringify(r.before?.[k]) !== JSON.stringify(r.after?.[k]));
+  if (!keys.length) return <span className="small muted">No field changes.</span>;
+  return (
+    <div className="diff hist-diff">{keys.map(k => (
+      <Fragment key={k}><span className="k">{fieldWord(k)}</span><span>
+        {r.before && <del>{valueText(r.before[k])}</del>}{r.before && r.after && <span aria-hidden="true"> → </span>}{r.after && <ins>{valueText(r.after[k])}</ins>}</span></Fragment>))}</div>
+  );
+}
+
+function History({ id, pv, onChanged, readOnly, names }: { id: string; pv: number; onChanged: () => void; readOnly: boolean; names: Record<string, string | null> }) {
   const toast = useToast();
   const [rows, setRows] = useState<HistoryRow[]>([]);
   const [next, setNext] = useState<number | null>(null);
-  const [open, setOpen] = useState<number | null>(null);
+  const [open, setOpen] = useState<string | null>(null);
   const [undo, setUndo] = useState<Awaited<ReturnType<typeof inst.undo>> | null>(null);
   const askUndo = async (batchId: string) => {
     try { setUndo(await inst.undo(id, batchId)); } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
@@ -154,57 +185,88 @@ function History({ id, pv, onChanged, readOnly }: { id: string; pv: number; onCh
     try { await inst.batch(id, undo.operations); toast("Undone."); setUndo(null); onChanged(); }
     catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
   };
-  const firstOfBatch = new Set<number>();
-  { const seen = new Set<string>(); for (const r of rows) if (!seen.has(r.batch_id)) { seen.add(r.batch_id); firstOfBatch.add(r.change_id); } }
+  // one row per save: a batch of changes (an import, an applied proposal) reads as one line with a count
+  const batches: HistoryRow[][] = [];
+  { const at = new Map<string, HistoryRow[]>(); for (const r of rows) { let b = at.get(r.batch_id); if (!b) { b = []; at.set(r.batch_id, b); batches.push(b); } b.push(r); } }
+  const summary = (b: HistoryRow[]) => {
+    const by = new Map<string, number>();
+    for (const r of b) by.set(r.section, (by.get(r.section) ?? 0) + 1);
+    return [...by].map(([s, n]) => countOf(s, n)).join(", ");
+  };
   useEffect(() => { inst.history(id).then(r => { setRows(r.items); setNext(r.next_before); }).catch(() => {}); }, [id, pv]);
   return (
     <div className="card">
-      <div className="hd"><h2>Every change</h2><span className="small muted">who, from where (form, assistant, setup, import), and what changed</span></div>
-      <div className="tblwrap"><table className="tbl">
-        <thead><tr><th>When</th><th>Who</th><th>From</th><th>What</th><th>Change</th><th><span className="sr">Actions</span></th></tr></thead>
-        <tbody>{rows.map(r => (<Fragment key={r.change_id}>
+      <div className="hd"><h2>Every change</h2><span className="small muted">what changed, when, and who made it (a form, the Setup agent, an import)</span></div>
+      <div className="tblwrap"><table className="tbl hist">
+        <thead><tr><th>When</th><th>What changed</th><th>By</th><th><span className="sr">Actions</span></th></tr></thead>
+        <tbody>{batches.map(b => { const r = b[0], k = r.batch_id; return (<Fragment key={k}>
           <tr>
-            <td className="num small">{dayTime(r.at)}</td><td className="small">{r.actor}</td><td className="small">{r.source}</td>
-            <td className="small">{LABELS[r.section as keyof typeof LABELS]?.one ?? r.section} <span className="mono muted">{r.item_id ?? ""}</span></td>
-            <td className="small">{r.op}{r.op === "update" && r.after ? `: ${Object.keys(r.after).join(", ")}` : ""}</td>
-            <td><div className="row" style={{ gap: 4 }}><button className="btn btn--sm btn--ghost" type="button" onClick={() => setOpen(open === r.change_id ? null : r.change_id)}>{open === r.change_id ? "Hide" : "Details"}</button>
-              {!readOnly && firstOfBatch.has(r.change_id) && r.op !== "status" && <button className="btn btn--sm" type="button" title="Undo this whole save" onClick={() => askUndo(r.batch_id)}>Undo</button>}</div></td>
+            <td className="num small">{dayTime(r.at)}</td>
+            <td>{b.length === 1 ? <ChangeSentence r={r} names={names} />
+              : <>{r.source === "import" ? "Imported" : "Saved"} <b>{plural(b.length, "change")}</b>: {summary(b)}</>}</td>
+            <td className="small muted">{who(r.actor, r.source)}</td>
+            <td><div className="row" style={{ gap: 4, justifyContent: "flex-end" }}><button className="btn btn--sm btn--ghost" type="button" aria-expanded={open === k} onClick={() => setOpen(open === k ? null : k)}>{open === k ? "Hide" : "Details"}</button>
+              {!readOnly && r.op !== "status" && <button className="btn btn--sm" type="button" title="Undo this whole save" onClick={() => askUndo(k)}>Undo</button>}</div></td>
           </tr>
-          {open === r.change_id && <tr><td colSpan={6}><div className="grid2">
-            <div><div className="label">Before</div><pre className="mono small" style={{ whiteSpace: "pre-wrap", margin: 0 }}>{JSON.stringify(r.before, null, 1) ?? "—"}</pre></div>
-            <div><div className="label">After</div><pre className="mono small" style={{ whiteSpace: "pre-wrap", margin: 0 }}>{JSON.stringify(r.after, null, 1) ?? "—"}</pre></div></div></td></tr>}
-        </Fragment>))}</tbody>
+          {open === k && <tr><td colSpan={4}>{b.length === 1 ? <BeforeAfter r={r} />
+            : <ul className="hist-items">{b.map(x => <li key={x.change_id}><ChangeSentence r={x} names={names} /></li>)}</ul>}</td></tr>}
+        </Fragment>); })}</tbody>
       </table></div>
       {next && <div className="bd"><button className="btn btn--sm" type="button" onClick={() => inst.history(id, next).then(r => { setRows(x => [...x, ...r.items]); setNext(r.next_before); })}>Older changes</button></div>}
       {undo && <Modal title="Undo this change?" onClose={() => setUndo(null)} footer={<>
         <button className="btn" type="button" onClick={() => setUndo(null)}>Cancel</button>
         <button className="btn btn--primary" type="button" disabled={!undo.valid} onClick={doUndo}>Undo</button></>}>
-        <p className="small muted">Saved by {undo.actor} ({undo.source}) on {dayTime(undo.at)}{undo.proposal_id ? ", from a setup agent proposal" : ""}. Undoing it is a new change, kept in the history.</p>
-        {undo.valid ? <ul className="small">{undo.changes.map((c, k) => <li key={k}>{c.op === "create" ? "Add back" : c.op === "delete" ? "Remove" : "Restore"} {LABELS[c.section as keyof typeof LABELS]?.one ?? c.section} <span className="mono">{c.id ?? ""}</span></li>)}</ul>
+        <p className="small muted">Saved by {who(undo.actor, undo.source)} on {dayTime(undo.at)}{undo.proposal_id ? ", from a Setup agent proposal" : ""}. Undoing it is a new change, kept in the history.</p>
+        {undo.valid ? <ul className="small">{undo.changes.map((c, k) => { const w = changeWords(c, "propose", names); return <li key={k}>{c.op === "create" ? "Add back" : c.op === "delete" ? "Remove" : "Restore"} {w.name ? <b>{w.name}</b> : SECTION_ONE[c.section] ?? c.section}{w.name ? ` (${SECTION_ONE[c.section] ?? c.section})` : ""}</li>; })}</ul>
           : <div className="rawerr">Can't be undone as it stands: {undo.errors.map(e => e.message).join("; ")}</div>}
       </Modal>}
     </div>
   );
 }
 
-function AgentsView({ id, pv, names }: { id: string; pv: number; names: Record<string, string | null> }) {
+const THEME_WORDS: Record<string, string> = {
+  rates: "Interest rates", sector: "Banking and insurance", macro: "The economy", fx: "Exchange rates", commodities: "Commodities (oil, gold, food)",
+  remittance: "Remittances", prices: "Prices and inflation", regulation: "Rules and regulators", disaster: "Disasters", trust: "Trust in banks",
+  competitor: "Rivals' moves", markets: "Share and bond markets",
+};
+const WHY_TAG: Record<string, string> = { footprint: "Footprint", "place to watch": "Place to watch", flow: "Flow", risk: "Risk" };
+
+/** "flow: remittances in with LK" → a tag "Flow" and "remittances in with Sri Lanka". */
+function whyParts(w: string, names: Record<string, string | null>): [tag: string, text: string] {
+  const m = /^(footprint|place to watch|flow|risk)\b:?\s*(.*)$/i.exec(w);
+  const tag = m ? WHY_TAG[m[1].toLowerCase()] : "";
+  let text = (m ? m[2] : w).replace(/\b([A-Z]{2}(?:-\w+)?)\b/g, c => names[c] ?? c);
+  if (tag === "Footprint") text = text.replace(/^\((.*)\)$/, "$1");
+  return [tag, text ? text[0].toUpperCase() + text.slice(1) : text];
+}
+
+function AgentsView({ id, pv, names, regulators }: { id: string; pv: number; names: Record<string, string | null>; regulators: Item[] }) {
+  const { role } = useRole();
   const [c, setC] = useState<Record<string, any> | null>(null);
   const [raw, setRaw] = useState(false);
   useEffect(() => { inst.context(id).then(setC).catch(() => {}); }, [id, pv]);
-  if (!c) return <div className="muted small">Loading…</div>;
+  if (!c) return <InlineSkeleton />;
   const s = c.radar_scope;
-  const chips = (xs: ReactNode[]) => <div className="row wrap" style={{ gap: 6 }}>{xs.map((x, i) => <span key={i} className="chip">{x}</span>)}</div>;
+  const actorName = (a: string) => { const r = regulators.find(x => x.short === a); return r ? `${r.name}${r.name.includes(`(${a})`) ? "" : ` (${a})`}` : a; };
   return (
     <div className="col gap16">
-      <Banner kind="info">This is the profile as the agents read it (Radar, monitors, the investigation and the assistant), with the Radar scope worked out from it by code. Profile version {c.profile_version}.</Banner>
+      <p className="agents-lead">Radar reads news about these places, topics and names. Code works them out from your profile (version {c.profile_version}); the monitors, the investigation and the Setup agent read the same profile.</p>
+      <div className="card"><div className="hd"><h2>Places Radar watches</h2><span className="count">{s.places.length}</span></div>
+        <div className="tblwrap"><table className="tbl agents-tbl">
+          <thead><tr><th>Place</th><th>Why it is watched</th></tr></thead>
+          <tbody>{s.places.map((p: string) => (
+            <tr key={p}><td className="strong"><PlaceName code={p} names={names} /></td>
+              <td><ul className="why">{(s.why?.[p] ?? []).map((w: string, k: number) => { const [tag, text] = whyParts(w, names); return (
+                <li key={k}>{tag && <span className="badge b-noeffect">{tag}</span>}<span>{text}</span></li>); })}</ul></td></tr>))}</tbody>
+        </table></div></div>
       <div className="grid2">
-        <div className="card"><div className="hd"><h2>Radar watches these places, because</h2></div><div className="bd col" style={{ gap: 6 }}>
-          {s.places.map((p: string) => <div key={p} className="small"><span className="chip"><PlaceName code={p} names={names} /></span> <span className="muted">{(s.why?.[p] ?? []).join(" · ")}</span></div>)}</div></div>
-        <div className="card"><div className="hd"><h2>…for news about</h2></div><div className="bd">{chips(s.themes)}</div>
-          <div className="hd"><h2>…and these names</h2></div><div className="bd">{chips(s.actors)}</div></div>
+        <div className="card"><div className="hd"><h2>Topics</h2></div><div className="bd"><div className="row wrap" style={{ gap: 6 }}>
+          {s.themes.map((t: string) => <span key={t} className="chip">{THEME_WORDS[t] ?? t}</span>)}</div></div></div>
+        <div className="card"><div className="hd"><h2>Names</h2></div><div className="bd"><div className="row wrap" style={{ gap: 6 }}>
+          {s.actors.map((a: string) => <span key={a} className="chip">{actorName(a)}</span>)}</div></div></div>
       </div>
-      <div className="card"><div className="hd"><h2>The full context</h2><span className="spacer" /><button className="btn btn--sm" type="button" onClick={() => setRaw(!raw)}>{raw ? "Hide" : "Show"} JSON</button></div>
-        {raw && <div className="bd"><pre className="mono small" style={{ whiteSpace: "pre-wrap", margin: 0, maxHeight: 520, overflow: "auto" }}>{JSON.stringify(c, null, 2)}</pre></div>}</div>
+      {role === "platform_admin" && <div className="card"><div className="hd"><h2>The full context</h2><span className="spacer" /><button className="btn btn--sm" type="button" onClick={() => setRaw(!raw)}>{raw ? "Hide" : "Show"} JSON</button></div>
+        {raw && <div className="bd"><pre className="mono small" style={{ whiteSpace: "pre-wrap", margin: 0, maxHeight: 520, overflow: "auto" }}>{JSON.stringify(c, null, 2)}</pre></div>}</div>}
     </div>
   );
 }
@@ -256,7 +318,7 @@ export function InstitutionPage() {
   };
 
   return (
-    <WithChat institutionId={i.institution_id} onTrack={follow} onApplied={applied}><div className="page">
+    <WithChat institutionId={i.institution_id} onTrack={follow} onApplied={applied} at={{ tab }}><div className="page">
       <PageHeader
         title={i.name} pills={<StatusBadge status={i.status} />}
         status={<>{i.subtype ? `${i.subtype.replace(/_/g, " ")[0].toUpperCase()}${i.subtype.replace(/_/g, " ").slice(1)} ${i.institution_type === "bank" ? "bank" : "insurer"}` : i.institution_type === "bank" ? "Bank" : "Insurer"}{i.islamic ? " (Islamic)" : ""} in <PlaceName code={i.home_country} names={profile.place_names} /> · {i.base_currency}</>}
@@ -280,11 +342,11 @@ export function InstitutionPage() {
         {i.status === "setup" && readiness.ready && <Banner kind="info">Everything required is there. <b>Activate</b> to let the agents use this profile{readiness.open_recommendations ? `; ${plural(readiness.open_recommendations, "recommendation")} still open` : ""}.</Banner>}
       </div>
       <div className="tabs" role="tablist" aria-label="Parts of the profile">
-        {TABS.map(([k, label]) => <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => nav(`/institution/${k}`)}>{label}</button>)}
+        {TABS.map(([k, label, full]) => <button key={k} type="button" role="tab" aria-selected={tab === k} title={full !== label ? full : undefined} onClick={() => nav(`/institution/${k}`)}>{label}</button>)}
       </div>
 
       {tab === "overview" && <div className="col gap16">
-        <div className="card"><div className="bd"><ProfileMap profile={profile} /></div></div>
+        <div className="card"><div className="bd"><ProfileMap profile={profile} height={340} title={mapTitle(profile)} /></div></div>
         <div className="grid2">
           <div className="card"><div className="hd"><h2>Ready to go live?</h2></div><div className="bd"><ReadinessList r={readiness} onFix={goFix} /></div></div>
           <div className="card"><div className="hd"><h2>In the profile</h2></div><div className="bd"><div className="kv">
@@ -320,8 +382,8 @@ export function InstitutionPage() {
         <Banner kind="info">The risk finder (Suggestions) checks a library of known hazards against your footprint, customer groups, flows and the sea routes your goods take. Code only; no model. Dismiss what doesn't apply and it won't be offered again.</Banner>
         <SectionList section="risk-exposures" ctx={ctx} reload={S.reload} suggest itemAction={monitorButton("risk-exposures")} />
       </div>}
-      {tab === "history" && <History id={i.institution_id} pv={i.profile_version} onChanged={S.reload} readOnly={archived} />}
-      {tab === "agents" && <AgentsView id={i.institution_id} pv={i.profile_version} names={profile.place_names} />}
+      {tab === "history" && <History id={i.institution_id} pv={i.profile_version} onChanged={S.reload} readOnly={archived} names={profile.place_names} />}
+      {tab === "agents" && <AgentsView id={i.institution_id} pv={i.profile_version} names={profile.place_names} regulators={profile.sections.regulators} />}
 
       {drafting && <DraftFromProfile only={drafting} onClose={() => setDrafting(null)} />}
       {editing && <InstitutionModal profile={profile} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); S.reload(); }} />}
