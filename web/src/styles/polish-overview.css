@@ -92,10 +92,10 @@
 .login-still { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:var(--r-control); background:var(--high-soft); color:var(--high-ink); font-size:var(--fs-md); }
 .login-card .btn--lg { margin-top:8px; gap:8px; }
 
-:root[data-theme="dark"] .login-brand { background:#0C2A20; border-right:1px solid var(--hairline); }
+:root[data-theme="dark"] .login-brand { background:#0C2A20; }
 :root[data-theme="dark"] .login-flow .ico { background:#0C2A20; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .login-brand { background:#0C2A20; border-right:1px solid var(--hairline); }
+  :root:not([data-theme="light"]) .login-brand { background:#0C2A20; }
   :root:not([data-theme="light"]) .login-flow .ico { background:#0C2A20; }
 }
 @media (max-width: 1200px) { .login-brand { padding:40px; } .login-pitch h1 { font-size:var(--fs-3xl); } }
@@ -110,4 +110,51 @@
   .login-pitch, .login-flow { max-width:680px; }
   .login-pitch h1 { font-size:48px; }
   .login-pitch p { font-size:18px; max-width:600px; }
+}
+
+/* ---------- Sign-in, one surface: the brand's green bleeds into the card side instead of stopping at a seam */
+.login-main { background:radial-gradient(110% 85% at 0% 45%, rgba(15,61,46,.13), transparent 62%), var(--bg); }
+.login-brand { background:linear-gradient(90deg, #0F3D2E 0%, #0F3D2E 82%, #124634 100%); }
+:root[data-theme="dark"] .login { background:radial-gradient(60% 70% at 30% 45%, rgba(30,110,78,.35), transparent 70%), linear-gradient(90deg, #0C2A20 0%, #0C2A20 35%, #0B1A15 70%, #0A120F 100%); }
+:root[data-theme="dark"] .login-brand, :root[data-theme="dark"] .login-main { background:transparent; }
+:root[data-theme="dark"] .login-card { background:rgba(20,28,24,.92); border-color:rgba(191,230,210,.12); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .login { background:radial-gradient(60% 70% at 30% 45%, rgba(30,110,78,.35), transparent 70%), linear-gradient(90deg, #0C2A20 0%, #0C2A20 35%, #0B1A15 70%, #0A120F 100%); }
+  :root:not([data-theme="light"]) .login-brand, :root:not([data-theme="light"]) .login-main { background:transparent; }
+  :root:not([data-theme="light"]) .login-card { background:rgba(20,28,24,.92); border-color:rgba(191,230,210,.12); }
+}
+
+/* ---------- Watch → Find → Trace → Alert as a flow: light pours along the line and lights each step in turn.
+   One 8 s cycle; step n starts at n × 2 s (the delay is set per step below). */
+.login-flow li { --d:0s; }
+.login-flow li:nth-child(2) { --d:2s; } .login-flow li:nth-child(3) { --d:4s; } .login-flow li:nth-child(4) { --d:6s; }
+.login-flow .flow-fill { position:absolute; left:44px; right:4px; top:19px; height:3px; border-radius:3px; transform:scaleX(0); transform-origin:left;
+  background:linear-gradient(90deg, rgba(127,224,176,.15), #7FE0B0 70%, #F0FFF7); box-shadow:0 0 10px rgba(127,224,176,.65);
+  animation:flow-pour 8s cubic-bezier(.45,.05,.35,1) var(--d) infinite; }
+.login-flow li:last-child .flow-fill { display:none; }
+.login-flow .ico { position:relative; z-index:1; transition:none; animation:flow-lit 8s ease-out var(--d) infinite; }
+.login-flow li b { animation:flow-text 8s ease-out var(--d) infinite; }
+@keyframes flow-pour {
+  0%, 6% { transform:scaleX(0); opacity:1; }
+  24% { transform:scaleX(1); opacity:1; }
+  70% { transform:scaleX(1); opacity:.55; }
+  85%, 100% { transform:scaleX(1); opacity:0; }
+}
+@keyframes flow-lit {
+  0% { background:#0F3D2E; color:#BFE6D2; border-color:rgba(191,230,210,.5); box-shadow:0 0 0 0 rgba(127,224,176,0); }
+  5% { background:#7FE0B0; color:#0B2A1F; border-color:#CFF5E2; box-shadow:0 0 0 8px rgba(127,224,176,.16), 0 0 28px rgba(127,224,176,.55); }
+  22% { background:#7FE0B0; color:#0B2A1F; border-color:#CFF5E2; box-shadow:0 0 0 4px rgba(127,224,176,.10), 0 0 16px rgba(127,224,176,.35); }
+  40%, 100% { background:#0F3D2E; color:#BFE6D2; border-color:rgba(191,230,210,.5); box-shadow:0 0 0 0 rgba(127,224,176,0); }
+}
+@keyframes flow-text { 0%, 40%, 100% { color:inherit; } 6%, 22% { color:#CFF5E2; } }
+
+/* the pitch arrives once: headline, line, then the flow */
+.login-pitch > * { animation:login-rise .7s cubic-bezier(.2,.7,.2,1) both; }
+.login-pitch > p { animation-delay:.12s; } .login-pitch > ol { animation-delay:.24s; }
+.login-card { animation:login-rise .7s cubic-bezier(.2,.7,.2,1) .18s both; }
+@keyframes login-rise { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .login-flow .flow-fill { animation:none; transform:scaleX(1); opacity:.35; }
+  .login-flow .ico, .login-flow li b, .login-pitch > *, .login-card { animation:none; }
 }

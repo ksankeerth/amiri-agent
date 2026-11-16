@@ -57,7 +57,7 @@ function Brand() {
       <p>Amiri Agent reads the news and the markets for your institution, traces each event to the products it could move, and tells the team that owns them.</p>
       <ol className="login-flow" aria-label="How it works">
         {([["radar", "Watch", "news and markets"], ["search", "Find", "what's unusual"], ["events", "Trace", "to your products"], ["alert", "Alert", "the owning team"]] as const).map(([i, t, d]) => (
-          <li key={t}><span className="ico"><Icon name={i} /></span><b>{t}</b><span>{d}</span></li>))}
+          <li key={t}><i className="flow-fill" aria-hidden="true" /><span className="ico"><Icon name={i} /></span><b>{t}</b><span>{d}</span></li>))}
       </ol>
     </div>
     <span className="login-foot">Prototype · a demo bank with sample data, no real customers</span>
