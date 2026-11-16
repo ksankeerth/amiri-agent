@@ -1,14 +1,14 @@
 /* Amiri Agent design tokens and components. */
 :root {
-  --paper:#F7F8FA; --surface:#FFFFFF; --surface-2:#FCFCFD; --sunken:#F0F1F4;
-  --hairline:#E7E9ED; --hairline-2:#D7DAE0;
+  --paper:#F2F4F7; --surface:#FFFFFF; --surface-2:#FAFBFC; --sunken:#EEF0F3;
+  --hairline:#DDE1E6; --hairline-2:#CDD2D9; --line-strong:#8A919B; /* line-strong: inputs and data marks, 3:1 on white */
   --ink:#1B1D21; --ink-2:#585C64; --ink-3:#656A73; --focus:#0E7A4B; --accent-strong:#15774A; --accent-strong-hover:#0F5E3A;
   --accent:#1E9D63; --accent-hover:#16804F; --accent-ink:#0E5234;
   --accent-soft:#E9F6EF; --accent-line:#BFE6D2; --on-accent:#FFFFFF;
   --brand:#0F3D2E; --brand-cream:#F1F5EC; --brand-candle:#F05A28;
   --critical:#CF4040; --critical-soft:#FBECEC; --critical-line:#F1CECE; --critical-ink:#8E2626;
   --high:#D17A28; --high-soft:#FBEFE1; --high-line:#F0D6B4; --high-ink:#8A4D12;
-  --medium:#C29A1E; --medium-soft:#FAF3DA; --medium-line:#ECDDA3; --medium-ink:#806405;
+  --medium:#C29A1E; --medium-stroke:#A07C0E; --medium-soft:#FAF3DA; --medium-line:#ECDDA3; --medium-ink:#806405;
   --low:#6E8AA8; --low-soft:#EDF1F6; --low-line:#D2DCE8; --low-ink:#3C5067;
   --info:#3B82C4; --info-soft:#E9F1FA; --info-line:#C3DBF0; --info-ink:#1E5285;
   --hover-bg:rgba(31,31,28,.04); --active-bg:rgba(31,31,28,.08);
@@ -16,15 +16,16 @@
   --font-ui:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --font-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
   --r-card:14px; --r-control:10px; --r-nav:8px; --r-badge:6px; --r-pill:999px;
-  --e-sm:0 1px 2px rgba(31,31,28,.05); --e-pop:0 6px 24px rgba(31,31,28,.10); --e-lg:0 16px 48px rgba(31,31,28,.16);
+  --e-sm:0 1px 2px rgba(20,24,31,.05), 0 2px 8px rgba(20,24,31,.04); --e-md:0 2px 4px rgba(20,24,31,.05), 0 10px 28px rgba(20,24,31,.09); --e-pop:0 6px 24px rgba(31,31,28,.10); --e-lg:0 16px 48px rgba(31,31,28,.16);
   --d-fast:120ms; --d-base:180ms; --d-slow:320ms; --ease:cubic-bezier(.2,.6,.2,1);
-  --map-ocean:#EEF2F6; --map-land:#FFFFFF; --map-border:#D3D8DF; --map-home:#1E9D63; --map-home-fill:#CDEBDB; --map-label:#5E6670; --map-halo:#FFFFFF;
+  --map-ocean:#E3E9F0; --map-land:#FFFFFF; --map-border:#B9C0CA; --map-home:#1E9D63; --map-home-fill:#CDEBDB; --map-label:#5E6670; --map-halo:#FFFFFF;
   color-scheme: light;
 }
+/* dark: the same values twice (the OS setting, or the toggle); edit both */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper:#161614; --surface:#1F1F1D; --surface-2:#1B1B19; --sunken:#262624;
-    --hairline:#322F2B; --hairline-2:#433F39;
+    --paper:#111311; --surface:#222422; --surface-2:#2C2E2C; --sunken:#191B19;
+    --hairline:#3A3D3A; --hairline-2:#4A4E49; --line-strong:#6E726C; --medium-stroke:#E5C55A;
     --ink:#ECEBE6; --ink-2:#A8A69E; --ink-3:#9A988F; --focus:#7FD3A8;
     --accent-soft:rgba(30,157,99,.16); --accent-line:rgba(30,157,99,.38); --accent-ink:#7FD3A8;
     --brand-cream:#1B2A22;
@@ -34,14 +35,14 @@
     --low-soft:rgba(110,138,168,.16); --low-line:rgba(110,138,168,.36); --low-ink:#AFC2D8;
     --info-soft:rgba(59,130,196,.16); --info-line:rgba(59,130,196,.36); --info-ink:#9CC4EC;
     --hover-bg:rgba(255,255,255,.04); --active-bg:rgba(255,255,255,.08); --overlay:rgba(0,0,0,.66);
-    --e-sm:0 1px 2px rgba(0,0,0,.30); --e-pop:0 6px 24px rgba(0,0,0,.40); --e-lg:0 16px 48px rgba(0,0,0,.50);
-    --map-ocean:#141513; --map-land:#24241F; --map-border:#3A3832; --map-home:#3FBF84; --map-home-fill:rgba(30,157,99,.34); --map-label:#A8A69E; --map-halo:#161614;
+    --e-sm:0 1px 2px rgba(0,0,0,.30); --e-md:0 6px 20px rgba(0,0,0,.45); --e-pop:0 6px 24px rgba(0,0,0,.40); --e-lg:0 16px 48px rgba(0,0,0,.50);
+    --map-ocean:#101211; --map-land:#3A3E37; --map-border:#6A7066; --map-home:#3FBF84; --map-home-fill:rgba(30,157,99,.34); --map-label:#A8A69E; --map-halo:#111311;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --paper:#161614; --surface:#1F1F1D; --surface-2:#1B1B19; --sunken:#262624;
-  --hairline:#322F2B; --hairline-2:#433F39;
+  --paper:#111311; --surface:#222422; --surface-2:#2C2E2C; --sunken:#191B19;
+  --hairline:#3A3D3A; --hairline-2:#4A4E49; --line-strong:#6E726C; --medium-stroke:#E5C55A;
   --ink:#ECEBE6; --ink-2:#A8A69E; --ink-3:#9A988F; --focus:#7FD3A8;
   --accent-soft:rgba(30,157,99,.16); --accent-line:rgba(30,157,99,.38); --accent-ink:#7FD3A8;
   --brand-cream:#1B2A22;
@@ -51,8 +52,8 @@
   --low-soft:rgba(110,138,168,.16); --low-line:rgba(110,138,168,.36); --low-ink:#AFC2D8;
   --info-soft:rgba(59,130,196,.16); --info-line:rgba(59,130,196,.36); --info-ink:#9CC4EC;
   --hover-bg:rgba(255,255,255,.04); --active-bg:rgba(255,255,255,.08); --overlay:rgba(0,0,0,.66);
-  --e-sm:0 1px 2px rgba(0,0,0,.30); --e-pop:0 6px 24px rgba(0,0,0,.40); --e-lg:0 16px 48px rgba(0,0,0,.50);
-  --map-ocean:#141513; --map-land:#24241F; --map-border:#3A3832; --map-home:#3FBF84; --map-home-fill:rgba(30,157,99,.34); --map-label:#A8A69E; --map-halo:#161614;
+  --e-sm:0 1px 2px rgba(0,0,0,.30); --e-md:0 6px 20px rgba(0,0,0,.45); --e-pop:0 6px 24px rgba(0,0,0,.40); --e-lg:0 16px 48px rgba(0,0,0,.50);
+  --map-ocean:#101211; --map-land:#3A3E37; --map-border:#6A7066; --map-home:#3FBF84; --map-home-fill:rgba(30,157,99,.34); --map-label:#A8A69E; --map-halo:#111311;
   color-scheme: dark;
 }
 
@@ -103,7 +104,7 @@ p { margin:0; }
 .worldpill .dot { width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
 .worldpill.sim { border-color:var(--info-line); background:var(--info-soft); color:var(--info-ink); }
 .worldpill.sim .dot { background:var(--info); box-shadow:0 0 0 3px var(--info-line); }
-.seg { display:inline-flex; border:1px solid var(--hairline-2); border-radius:var(--r-control); overflow:hidden; background:var(--surface); }
+.seg { display:inline-flex; border:1px solid var(--line-strong); border-radius:var(--r-control); overflow:hidden; background:var(--surface); }
 .seg button { border:0; background:transparent; height:30px; padding:0 12px; font-size:12px; font-weight:600; color:var(--ink-3); cursor:pointer; white-space:nowrap; }
 .seg button[aria-pressed="true"] { background:var(--accent-soft); color:var(--accent-ink); }
 .seg button + button { border-left:1px solid var(--hairline); }
@@ -140,7 +141,7 @@ p { margin:0; }
 .btn[disabled], .btn[aria-disabled="true"] { opacity:.45; cursor:not-allowed; }
 .iconbtn { position:relative; }
 .iconbtn .pip { position:absolute; top:3px; right:3px; min-width:16px; height:16px; padding:0 4px; border-radius:8px; background:var(--critical); color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; }
-.input, select.input, textarea.input { width:100%; height:34px; padding:0 10px; border:1px solid var(--hairline-2); border-radius:var(--r-control); background:var(--surface); color:var(--ink); }
+.input, select.input, textarea.input { width:100%; height:34px; padding:0 10px; border:1px solid var(--line-strong); border-radius:var(--r-control); background:var(--surface); color:var(--ink); }
 textarea.input { height:auto; min-height:72px; padding:8px 10px; resize:vertical; }
 .input.err { border-color:var(--critical); box-shadow:0 0 0 3px var(--critical-soft); }
 .field { display:flex; flex-direction:column; gap:6px; }
@@ -149,7 +150,7 @@ textarea.input { height:auto; min-height:72px; padding:8px 10px; resize:vertical
 .field .errtext { font-size:12px; color:var(--critical-ink); }
 .check { display:flex; gap:8px; align-items:flex-start; cursor:pointer; }
 .check input { margin-top:3px; accent-color:var(--accent); }
-.switch { position:relative; width:36px; height:20px; border-radius:10px; background:var(--hairline-2); border:0; cursor:pointer; flex:none; transition:background var(--d-fast); }
+.switch { position:relative; width:36px; height:20px; border-radius:10px; background:var(--line-strong); border:0; cursor:pointer; flex:none; transition:background var(--d-fast); }
 .switch::after { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:var(--e-sm); transition:left var(--d-fast); }
 .switch[aria-checked="true"] { background:var(--accent); }
 .switch[aria-checked="true"]::after { left:18px; }

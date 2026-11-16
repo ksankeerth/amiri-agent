@@ -28,7 +28,7 @@ export type Layer = (typeof LAYERS)[number][0];
 /** An event to mark on the map (the Overview): its places, coloured by what it means for the institution. */
 export interface MapEvent { event_id: string; title: string; tone: "good" | "bad" | "mixed" | "neutral"; places: string[] }
 const TONE_COLOR: Record<MapEvent["tone"], string> = { bad: "var(--critical)", good: "var(--accent)", mixed: "var(--high)", neutral: "var(--ink-3)" };
-const FLOW_COLOR: Record<string, string> = { remittances_in: "var(--accent)", remittances_out: "var(--accent)", tourism: "var(--info)", services: "var(--info)", exports: "var(--high)", imports: "var(--medium)" };
+const FLOW_COLOR: Record<string, string> = { remittances_in: "var(--accent)", remittances_out: "var(--accent)", tourism: "var(--info)", services: "var(--info)", exports: "var(--high)", imports: "var(--medium-stroke)" };
 
 export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {}, layers, compact = false, onEvent }: {
   profile: Profile; height?: number; events?: MapEvent[]; extraPlaces?: Record<string, PlaceInfo>; layers?: Layer[];
@@ -174,7 +174,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           const isHome = on.has("footprint") && iso === home;
           const inFp = on.has("footprint") && iso && fpCountries.has(iso);
           return <path key={String(f.id)} d={path(f) ?? ""} fill={isHome || (inFp && fpWhole.has(iso!)) ? "var(--map-home-fill)" : inFp ? "var(--accent-soft)" : "var(--map-land)"}
-            stroke={inFp ? "var(--map-home)" : "var(--map-border)"} strokeWidth={inFp ? 1 : 0.5} />;
+            stroke={inFp ? "var(--map-home)" : "var(--map-border)"} strokeWidth={inFp ? 1 : 0.75} />;
         })}</g>}
         {on.has("risks") && riskHazards.map(h => {
           const c = h.centre ? geoCircle().center([h.centre[1], h.centre[0]]).radius((h.radius_km ?? 100) / 111)() : null;
@@ -190,7 +190,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           const [from, to] = ["exports", "remittances_out"].includes(f.kind) ? [a, b] : [b, a];
           const mx = (from[0] + to[0]) / 2, my = (from[1] + to[1]) / 2 - Math.hypot(to[0] - from[0], to[1] - from[1]) * 0.22;
           const width = (compact ? 0.9 : 1) + (compact ? 2.4 : 4.5) * Math.sqrt((f.value?.amount ?? 0) / maxFlow);
-          return <path key={f.id} d={`M${from[0]},${from[1]} Q${mx},${my} ${to[0]},${to[1]}`} fill="none" stroke={FLOW_COLOR[f.kind]} strokeOpacity={compact ? 0.6 : 0.7} strokeWidth={width} strokeLinecap="round"
+          return <path key={f.id} d={`M${from[0]},${from[1]} Q${mx},${my} ${to[0]},${to[1]}`} fill="none" stroke={FLOW_COLOR[f.kind]} strokeOpacity={compact ? 0.75 : 0.85} strokeWidth={width} strokeLinecap="round"
             onMouseMove={e => show(e, `${FLOW_WORDS[f.kind]}${f.goods ? ` (${f.goods})` : ""}: ${P[f.counterpart]?.name ?? f.counterpart} ↔ ${P[f.local]?.name ?? f.local}${f.value ? ` · ${usdText(f.value.amount)} a year` : ""}`)} onMouseLeave={() => setTip(null)} />;
         })}
         {on.has("regulators") && homeXY && S.regulators.filter(r => r.relation === "reach").map((r, i) => {
@@ -235,7 +235,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
       </div> : <div className="row wrap small muted" style={{ gap: 14, marginTop: 6 }}>
         <span><span className="statusdot" style={{ background: "var(--accent)" }} /> customer groups · remittances</span>
         <span><span className="statusdot" style={{ background: "var(--high)" }} /> exports · rivals</span>
-        <span><span className="statusdot" style={{ background: "var(--medium)" }} /> imports</span>
+        <span><span className="statusdot" style={{ background: "var(--medium-stroke)" }} /> imports</span>
         <span><span className="statusdot" style={{ background: "var(--critical)" }} /> risk zones</span>
         <span>Line width: flow size · global standards are listed, not pinned</span>
       </div>}
