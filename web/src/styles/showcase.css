@@ -65,3 +65,21 @@
 .chart .pin { fill:var(--ink-2); }
 @media (max-width: 1100px) { .rn-split { grid-template-columns:minmax(0,1fr); } }
 .rn-story { flex:1; min-width:0; }
+
+/* ---- Radar: one status card (facts + what it watches) so the news starts above the fold ---- */
+.rd-status { margin-top:16px; }
+.rd-facts { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr) minmax(0,1fr); }
+.rd-fact { display:flex; flex-direction:column; gap:4px; padding:12px 16px; min-width:0; }
+.rd-fact + .rd-fact { border-left:1px solid var(--hairline); }
+.rd-k { font-size:var(--fs-xs); font-weight:600; color:var(--ink-3); }
+.rd-v { font-size:var(--fs-lg); font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; }
+.rd-s { font-size:var(--fs-xs); font-weight:400; color:var(--ink-3); }
+.rd-fact.bad .rd-v { color:var(--critical-ink); }
+.rd-funnel-t { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px; font-weight:400; color:var(--ink-2); }
+.rd-funnel-t b { font-size:var(--fs-xl); font-weight:700; color:var(--ink); }
+.rd-funnel-t .sent, .rd-funnel-t .sent b { color:var(--accent-ink); font-weight:700; }
+.rd-facts + .rd-watch { border-top:1px solid var(--hairline); }
+.rd-watch { display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:space-between; padding:8px 8px 8px 16px; font-size:var(--fs-sm); }
+.rd-places { padding:4px 16px 16px; }
+.ico16.rot { transform:rotate(90deg); }
+@media (max-width: 1100px) { .rd-facts { grid-template-columns:repeat(2,minmax(0,1fr)); } .rd-fact:nth-child(3) { border-left:0; } }
