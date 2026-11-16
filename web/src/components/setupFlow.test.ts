@@ -1,7 +1,7 @@
 // Run with `npm test` (Node runs the TypeScript directly).
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { continuedTo, continueText, nextOpen, setupOrder, stepFrom, waitingForAnswer } from "./setupFlow.ts";
+import { continuedTo, continueText, nextOpen, setupOrder, stepFrom, trackFor, waitingForAnswer } from "./setupFlow.ts";
 
 test("an unanswered question holds the move; anything said after it releases it", () => {
   const q = { role: "assistant", kind: "question" }, said = { role: "user", kind: "text" }, picked = { role: "user", kind: "answer" };
@@ -55,4 +55,21 @@ test("the moving-on message is recognised, and nothing else is", () => {
   assert.equal(continuedTo(labelled, "Continue with footprint and flows.")?.track, "footprint_flows");
   assert.equal(continuedTo(labelled, "continue with footprint and flows"), null);
   assert.equal(continuedTo(labelled, undefined), null);
+});
+
+test("the chat follows the page: a setup step or a tab names its track", () => {
+  const defs = [
+    { ...t("institution", 1), setup_step: "institution", tab: "overview" },
+    { ...t("footprint_flows", 2), setup_step: "where", tab: "footprint" },
+    { ...t("customers_products", 3), setup_step: "customers", tab: "customers" },
+    { ...t("verification", 8), setup_step: "review", tab: "overview" },
+    { ...t("offtopic", null, "not_started", { shown: false }), setup_step: null, tab: "rules" },
+  ];
+  assert.equal(trackFor(defs, { step: "customers" })?.track, "customers_products");
+  assert.equal(trackFor(defs, { step: "products" })?.track, "customers_products");  // shares its neighbour's
+  assert.equal(trackFor(defs, { step: "flows" })?.track, "footprint_flows");
+  assert.equal(trackFor(defs, { step: "review" })?.track, "verification");
+  assert.equal(trackFor(defs, { tab: "overview" })?.track, "institution");           // the first one for a shared tab
+  assert.equal(trackFor(defs, { tab: "rules" }), null);                                // hidden tracks never
+  assert.equal(trackFor(defs, {}), null);
 });

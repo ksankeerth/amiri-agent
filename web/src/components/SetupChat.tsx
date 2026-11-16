@@ -8,8 +8,9 @@ import { ApiError } from "../api/client";
 import { chat, type AssistantStatus, type ChatMessage, type Proposal, type TrackDef, type TrackState } from "../api/assistant";
 import { dayTime, plural } from "../format";
 import { Icon } from "./Icon";
-import { continuedTo, continueText, nextOpen, stepFrom, waitingForAnswer } from "./setupFlow";
-import { ChatToggleCtx, Modal, useRole, useToast } from "./ui";
+import { continuedTo, continueText, nextOpen, STARTERS, trackFor, waitingForAnswer } from "./setupFlow";
+import { ChatToggleCtx, MenuButton, Modal, StatusIcon, useRole, useToast } from "./ui";
+import "../styles/setup.css";
 
 // Applying the new institution remounts the chat (it now belongs to the institution): the move to the next
 // track is handed over through here, and dropped if nobody picks it up soon.
@@ -80,12 +81,18 @@ function ProposalCard({ p, onDecided }: { p: Proposal; onDecided: (p: Proposal) 
   );
 }
 
-const DOT: Record<string, string> = { not_started: "sd-off", in_progress: "sd-warn", concluded: "sd-ok" };
+const TRACK_STATUS = { not_started: "open", in_progress: "partial", concluded: "done" } as const;
+const TRACK_WORDS = { not_started: "not started", in_progress: "in progress", concluded: "done" } as const;
 
-export function SetupChat({ institutionId, onTrack, onApplied }: {
+/** Where the page is: a guided-setup step or an Institution tab, and how to name it ("Step 3 · Customers"). */
+export interface ChatAt { step?: string; tab?: string; label?: string }
+
+export function SetupChat({ institutionId, onTrack, onApplied, at, askKey = 0 }: {
   institutionId: string | null;
   onTrack?: (t: TrackDef) => void;                         // the tab (or setup step) to follow
   onApplied?: (p: Proposal) => void;                       // a proposal was applied (reload; a new institution)
+  at?: ChatAt;                                             // the page's place: the chat follows it
+  askKey?: number;                                         // bumped by "Ask the Setup agent": focus the message box
 }) {
   const chatToggle = useContext(ChatToggleCtx);
   const toast = useToast();
@@ -103,6 +110,7 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
   const [busy, setBusy] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
   const log = useRef<HTMLDivElement>(null);
+  const box = useRef<HTMLTextAreaElement>(null);
   const def = (id: string | null) => defs.find(d => d.track === id);
 
   const [writing, setWriting] = useState(false);  // a reply still being written (after a reload or from another tab)
@@ -291,7 +299,15 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
       moved?.track);
   };
   const here = picked ?? current;
-  const back = stepFrom(tracks, here, -1), fwd = stepFrom(tracks, here, 1);
+  // The page is the single source of "where": a step or tab clicked there sets the chat's topic, as picking it here would.
+  const atTrack = trackFor(defs, at ?? {})?.track ?? null;
+  useEffect(() => {
+    if (!atTrack || atTrack === (picked ?? current)) return;
+    setPicked(atTrack); setHeld(null);
+  }, [atTrack]);  // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (askKey) box.current?.focus(); }, [askKey]);
+  const hereLabel = here && here === atTrack && at?.label ? at.label : def(here)?.label ?? null;
+  const starters = here && !working && !messages.some(m => m.track === here && m.role === "user") ? STARTERS[here] ?? [] : [];
   const answered = new Set(messages.filter(m => m.kind === "answer").map(m => m.content.question_id));
   const lastQuestion = [...messages].reverse().find(m => m.kind === "question");
   const shownTracks = tracks.filter(t => t.shown);
@@ -311,30 +327,32 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
 
   return (
     <div className="col" style={{ height: "100%", minHeight: 0 }}>
-      <div style={{ padding: "12px 14px 10px", borderBottom: "1px solid var(--hairline)", display: "flex", flexDirection: "column", gap: 8 }}>
+      <div className="chathead">
         <div className="row"><Icon name="chat" className="ico16" /><b>Setup agent</b><span className="spacer" />
-          <button className="btn btn--sm btn--ghost" type="button" disabled={!back || busy} onClick={() => back && pick(back)}
-            aria-label={back ? `Back to ${back.label}` : "Back"} title={back ? `Back to ${back.label}` : undefined}>←</button>
-          <button className="btn btn--sm btn--ghost" type="button" disabled={!fwd || busy} onClick={() => fwd && pick(fwd)}
-            aria-label={fwd ? `Next: ${fwd.label}` : "Next"} title={fwd ? `Next: ${fwd.label}` : undefined}>→</button>
           {chatToggle && <button className="btn btn--sm btn--ghost" type="button" onClick={chatToggle.toggle} aria-label="Hide the setup agent">Hide<Icon name="x" /></button>}</div>
-        <div className="row wrap" style={{ gap: 4 }}>
-          {shownTracks.map(t => (
-            <button key={t.track} type="button" className={`chip click ${(picked ?? current) === t.track ? "sel" : ""}`} style={{ height: 22, fontSize: 11 }}
-              title={`${t.label}: ${t.status.replace("_", " ")}${t.summary ? ` · ${t.summary}` : ""}${t.read_only ? " · read only" : ""}${t.notes.length ? ` · noted: ${t.notes.map(n => n.text).join("; ")}` : ""}`} onClick={() => pick(t)}>
-              <span className={`statusdot ${DOT[t.status]}`} />{t.label}{t.notes.length > 0 && t.status === "not_started" ? " ●" : ""}</button>))}
+        <div className="helping">
+          <span className="helping-l">Helping with: <b>{hereLabel ?? "anything about your profile"}</b></span>
+          <MenuButton label="Topic">
+            {shownTracks.map(t => (
+              <button key={t.track} type="button" className="btn btn--ghost" aria-current={here === t.track ? "true" : undefined}
+                title={t.summary ?? undefined} onClick={() => pick(t)}>
+                <StatusIcon status={TRACK_STATUS[t.status]} label={`${t.label}: ${TRACK_WORDS[t.status]}`} />{t.label}</button>))}
+          </MenuButton>
         </div>
         {status && !status.connected && (status.starting
           ? <div className="note small" role="status"><b>Starting the setup assistant…</b> This can take up to a minute. You can type now: your message waits for it.</div>
           : <div className="note small" style={{ background: "var(--medium-soft)", color: "var(--medium-ink)" }}>
             <b>Not connected yet.</b> {status.message}{role === "platform_admin" && <span className="mono"> ({status.backend})</span>}</div>)}
-        {status?.connected && status.backend === "stub" && <div className="note small">Stub agent: canned replies and keyword routing, for building the UI.</div>}
+        {status?.connected && status.backend === "stub" && role === "platform_admin" && <div className="note small">Stub agent: canned replies and keyword routing, for building the UI.</div>}
       </div>
       <div ref={log} role="log" aria-label="Conversation with the setup agent" tabIndex={0} style={{ flex: 1, overflow: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>
         {!messages.length && <div className="msg ai">{institutionId
-          ? "Ask me to fill in or change any part of your profile, to check it, or how something got there. You can also pick a track above. Every change comes back for you to apply."
+          ? `Tell me about ${hereLabel ? hereLabel.replace(/^Step \d+ · /, "").toLowerCase() : "any part of your profile"} in plain words, or ask me to check it. I draft each change as a card; nothing changes until you apply it.`
           : "I can set up your institution with you: what kind it is, where you operate, your customers and products, flows, rules, rivals and risks. Tell me in plain words; nothing is saved until you apply it. The forms work too."}</div>}
         {rows}
+        {starters.length > 0 && <div className="starters" aria-label="Things you could say">
+          <span className="small muted">Try saying</span>
+          {starters.map(x => <button key={x} type="button" className="starter" onClick={() => send({ text: x })}>{x}</button>)}</div>}
         {retryable && !working && <div className="row" style={{ justifyContent: "center" }}>
           <button className="btn btn--sm" type="button" onClick={retry}><Icon name="refresh" />Try again</button></div>}
         {live && <div className="msg ai">{live}<span className="muted">▍</span></div>}
@@ -347,7 +365,7 @@ export function SetupChat({ institutionId, onTrack, onApplied }: {
       {draft.length >= MAX_CHARS * 0.8 && <div className="small" role="status" style={{ padding: "6px 12px 0", color: draft.length >= MAX_CHARS ? "var(--medium-ink)" : "var(--ink-3)" }}>
         {draft.length}/{MAX_CHARS}{draft.length >= MAX_CHARS ? " · That's the limit: keep to one topic, and send the rest after the reply." : ""}</div>}
       <div style={{ borderTop: "1px solid var(--hairline)", padding: 12, display: "flex", gap: 8, alignItems: "center" }}>
-        <textarea className="input" rows={2} aria-label="Message to the setup agent" style={{ flex: 1, resize: "none" }} value={draft} disabled={working}
+        <textarea ref={box} className="input" rows={2} aria-label="Message to the setup agent" style={{ flex: 1, resize: "none" }} value={draft} disabled={working}
           maxLength={MAX_CHARS}
           placeholder={working ? "The setup agent is working… you can type once it's done." : picked ? `About ${def(picked)?.label.toLowerCase()}…` : institutionId ? "Ask, check, or ask for a change…" : "e.g. We're a commercial bank in Sri Lanka with branches in Kerala"}
           onChange={e => setDraft(e.target.value)}
@@ -409,19 +427,31 @@ function MessageRow({ m, proposals, flash, open, busy, onAnswer, onDecided }: {
   }
 }
 
+const ASK_EVENT = "amiri:ask-setup";
+/** Opens the setup agent beside the page and focuses its message box. */
+export const askSetupAgent = () => window.dispatchEvent(new Event(ASK_EVENT));
+
 /** A page with the setup agent's chat beside it (hide or show; the forms work either way). */
-export function WithChat({ institutionId, onTrack, onApplied, children }: {
-  institutionId: string | null; onTrack?: (t: TrackDef) => void; onApplied?: (p: Proposal) => void; children: ReactNode;
+export function WithChat({ institutionId, onTrack, onApplied, at, children }: {
+  institutionId: string | null; onTrack?: (t: TrackDef) => void; onApplied?: (p: Proposal) => void; at?: ChatAt; children: ReactNode;
 }) {
   const [open, setOpen] = useState(() => { try { return localStorage.getItem("amiri.setupChat") !== "closed"; } catch { return true; } });
-  const toggle = () => { setOpen(!open); try { localStorage.setItem("amiri.setupChat", open ? "closed" : "open"); } catch { /* */ } };
+  const setShown = (v: boolean) => { setOpen(v); try { localStorage.setItem("amiri.setupChat", v ? "open" : "closed"); } catch { /* */ } };
+  const toggle = () => setShown(!open);
+  // "Ask the Setup agent instead" (Edit details, the step's explainer): open the panel and put the cursor in it
+  const [askKey, setAskKey] = useState(0);
+  useEffect(() => {
+    const f = () => { setShown(true); setAskKey(k => k + 1); };
+    window.addEventListener(ASK_EVENT, f);
+    return () => window.removeEventListener(ASK_EVENT, f);
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <ChatToggleCtx.Provider value={{ open, toggle }}>
     <div className={`withchat ${open ? "open" : ""}`}>
       <div style={{ minWidth: 0 }}>
         {children}
       </div>
-      {open && <aside className="chatside" aria-label="Setup agent"><SetupChat key={institutionId ?? "new"} institutionId={institutionId} onTrack={onTrack} onApplied={onApplied} /></aside>}
+      {open && <aside className="chatside" aria-label="Setup agent"><SetupChat key={institutionId ?? "new"} institutionId={institutionId} onTrack={onTrack} onApplied={onApplied} at={at} askKey={askKey} /></aside>}
     </div>
     </ChatToggleCtx.Provider>
   );

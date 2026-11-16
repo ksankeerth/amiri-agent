@@ -5,6 +5,8 @@ import { ApiError } from "../../api/client";
 import { inst, type InstitutionType, type Item, type Profile, type SectionName } from "../../api/institutions";
 import { ref, type Category } from "../../api/reference";
 import { FillFromJson } from "../../components/FillFromJson";
+import { Icon } from "../../components/Icon";
+import { askSetupAgent } from "../../components/SetupChat";
 import { draftFrom, institutionsOf, itemsOf } from "../../components/fillJson";
 import { Modal, useToast } from "../../components/ui";
 import {
@@ -305,8 +307,6 @@ export function InstitutionFields({ d, set, err, creating, fill }: { d: Draft; s
   const t = (d.institution_type ?? "bank") as InstitutionType;
   return (
     <div className="grid2">
-      {fill && <FillFromJson what="the institution" read={institutionsOf} onFill={c => fill(c.data)}
-        example={'{"institution": {"name": "…", "institution_type": "bank", "home_country": "LK", …}}, or those fields on their own'} />}
       <Field req label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} placeholder="e.g. Serendib Commercial Bank" /></Field>
       <Field label="Legal name" error={err.legal_name}><input className="input" value={d.legal_name ?? ""} onChange={e => set("legal_name", e.target.value || null)} /></Field>
       <Field req label="Type" error={err.institution_type} hint={!creating ? "Can't change while products of this type exist." : undefined}>
@@ -329,6 +329,8 @@ export function InstitutionFields({ d, set, err, creating, fill }: { d: Draft; s
       <Field label="Short name" error={err.short_name}><input className="input" value={d.short_name ?? ""} onChange={e => set("short_name", e.target.value || null)} /></Field>
       <Field label="Website" error={err.website}><input className="input" value={d.website ?? ""} onChange={e => set("website", e.target.value || null)} placeholder="https://" /></Field>
       <Field label="In a few lines: what you do" error={err.summary} full><textarea className="input" value={d.summary ?? ""} onChange={e => set("summary", e.target.value || null)} /></Field>
+      {fill && <FillFromJson what="the institution" read={institutionsOf} onFill={c => fill(c.data)}
+        example={'{"institution": {"name": "…", "institution_type": "bank", "home_country": "LK", …}}, or those fields on their own'} />}
     </div>
   );
 }
@@ -351,7 +353,9 @@ export function InstitutionModal({ profile, onClose, onSaved }: { profile: Profi
   };
   return (
     <Modal wide title="Institution details" onClose={onClose} footer={<>
-      <span className="small muted" style={{ marginRight: "auto" }}><span className="req">*</span> required; the rest is optional</span>
+      <button className="btn btn--ghost" type="button" style={{ marginRight: "auto" }} title="Close this form and tell the Setup agent instead; its changes wait for your Apply"
+        onClick={() => { onClose(); askSetupAgent(); }}><Icon name="chat" />Ask the Setup agent instead</button>
+      <span className="small muted"><span className="req">*</span> required</span>
       <button className="btn" type="button" onClick={onClose}>Cancel</button><button className="btn btn--primary" type="button" onClick={save}>Save</button></>}>
       <div ref={box}><InstitutionFields d={d} set={(k, v) => setD(x => ({ ...x, [k]: v }))} err={err} creating={false}
         fill={data => { setErr({}); setGeneral([]); setD(x => ({ ...x, ...data })); }} /></div>

@@ -42,3 +42,30 @@ export const continueText = (label: string) => `Continue with ${label.toLowerCas
 /** The track a message moved the chat on to, if it is one of those messages. */
 export const continuedTo = <T extends FlowTrack>(ts: T[], text: unknown): T | null =>
   typeof text === "string" ? ts.find(t => continueText(t.label) === text) ?? null : null;
+
+// Steps of the guided setup that have no track of their own: they share their neighbour's.
+const STEP_SHARES: Record<string, string> = { products: "customers", flows: "where" };
+
+/** The track the chat should help with for the page's place: a guided-setup step or an Institution tab.
+ *  The page is the single source of "where": the chat follows it. */
+export function trackFor<T extends FlowTrack & { setup_step: string | null; tab: string | null }>(
+  ts: T[], at: { step?: string; tab?: string },
+): T | null {
+  if (at.step) { const s = STEP_SHARES[at.step] ?? at.step; return ts.find(t => t.setup_step === s && t.shown) ?? null; }
+  if (at.tab) return ts.find(t => t.tab === at.tab && t.shown) ?? null;
+  return null;
+}
+
+/** A few things worth saying to the agent about each topic: one click sends it. */
+export const STARTERS: Record<string, string[]> = {
+  institution: ["We're a commercial bank in Sri Lanka", "Our Board Risk Committee owns risk decisions"],
+  footprint_flows: ["We have branches in Kerala and Tamil Nadu", "Many customers get remittances from the Gulf"],
+  customers_products: ["Most of our customers are migrant-worker families", "We sell gold loans and vehicle finance"],
+  rules: ["We also settle in euros", "Which regulators reach us through USD?"],
+  rivals_partners: ["Bank of Ceylon is our main rival", "We clear dollars through a US correspondent bank"],
+  risks: ["What risks meet our Gulf remittance corridor?", "Monsoon floods hit our branches in the south"],
+  monitors: ["Watch Gulf jobs for our migrant families", "Watch our main rival's deposit rates"],
+  verification: ["Check my profile before we go live", "What is still missing?"],
+  history: ["What changed this week?"],
+  agent_view: ["Which places does Radar watch, and why?"],
+};

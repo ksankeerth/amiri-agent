@@ -1,0 +1,47 @@
+/* Guided setup and the Setup agent panel: the stepper, the two ways to answer, "Helping with", starter prompts. */
+
+/* ---- stepper: one row of 10 steps, icon above a short name; never wraps */
+.stepper { container-type:inline-size; margin:0 0 16px; }
+.stepper-top { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+.stepper-bar { flex:1; height:6px; border-radius:var(--r-pill); background:var(--sunken); overflow:hidden; box-shadow:inset 0 0 0 1px var(--hairline); }
+.stepper-bar > span { display:block; height:100%; background:var(--accent); border-radius:inherit; }
+.stepper ol { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(10, minmax(0, 1fr)); gap:4px; border-bottom:1px solid var(--hairline); }
+.stepper li { min-width:0; }
+.stepper button { width:100%; min-width:0; display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 2px 8px; border:0; background:none; cursor:pointer;
+  color:var(--ink-2); font:inherit; font-size:var(--fs-xs); font-weight:600; border-bottom:2px solid transparent; margin-bottom:-1px; border-radius:6px 6px 0 0; }
+.stepper button:hover { background:var(--sunken); color:var(--ink); }
+.stepper button[aria-current="step"] { color:var(--ink); border-bottom-color:var(--accent-strong); background:var(--accent-soft); }
+.stepper .stat { margin:0; width:20px; height:20px; }
+.stepper .lbl { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* too narrow for ten names (125 % zoom with the agent open): names only for the current step, the rest by icon and tooltip */
+@container (max-width: 600px) {
+  .stepper button:not([aria-current="step"]) .lbl { display:none; }
+  .stepper ol { grid-template-columns:repeat(10, auto); justify-content:space-between; }
+}
+
+/* ---- the two ways to answer a step */
+.twoway { display:flex; align-items:stretch; gap:8px; margin:0 0 16px; flex-wrap:wrap; }
+.twoway .tw-opt { flex:0 1 auto; display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:var(--r-control); border:1px solid var(--hairline);
+  background:var(--surface); color:var(--ink-2); font:inherit; font-size:var(--fs-sm); text-align:left; }
+.twoway .tw-opt svg { width:16px; height:16px; flex:none; color:var(--ink-3); }
+.twoway .tw-opt b { color:var(--ink); }
+.twoway .tw-ask { flex:1 1 auto; cursor:pointer; border-color:var(--accent-line); background:var(--accent-soft); }
+.twoway .tw-ask svg { color:var(--accent-ink); }
+.twoway .tw-ask:hover { border-color:var(--accent); }
+.twoway .tw-or { align-self:center; font-size:var(--fs-xs); color:var(--ink-3); }
+
+/* ---- Setup agent panel head: "Helping with" instead of a grid of chips */
+.chathead { padding:12px 16px; border-bottom:1px solid var(--hairline); display:flex; flex-direction:column; gap:8px; }
+.helping { display:flex; align-items:center; gap:8px; min-width:0; }
+.helping-l { flex:1; min-width:0; font-size:var(--fs-sm); color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.helping-l b { color:var(--ink); }
+.helping .menu > .btn { height:28px; font-size:var(--fs-xs); }
+.helping .menu-pop .btn { gap:8px; font-weight:500; }
+.helping .menu-pop .btn[aria-current="true"] { background:var(--accent-soft); font-weight:600; }
+.helping .menu-pop .stat { margin:0; }
+
+/* ---- starter prompts: one click sends */
+.starters { display:flex; flex-direction:column; align-items:flex-start; gap:8px; margin-top:4px; }
+.starter { border:1px solid var(--accent-line); background:var(--surface); color:var(--ink); border-radius:12px; padding:8px 12px; min-height:32px;
+  font:inherit; font-size:var(--fs-sm); text-align:left; cursor:pointer; }
+.starter:hover { background:var(--accent-soft); }

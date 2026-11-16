@@ -256,7 +256,7 @@ export function InstitutionPage() {
   };
 
   return (
-    <WithChat institutionId={i.institution_id} onTrack={follow} onApplied={applied}><div className="page">
+    <WithChat institutionId={i.institution_id} onTrack={follow} onApplied={applied} at={{ tab }}><div className="page">
       <PageHeader
         title={i.name} pills={<StatusBadge status={i.status} />}
         status={<>{i.subtype ? `${i.subtype.replace(/_/g, " ")[0].toUpperCase()}${i.subtype.replace(/_/g, " ").slice(1)} ${i.institution_type === "bank" ? "bank" : "insurer"}` : i.institution_type === "bank" ? "Bank" : "Insurer"}{i.islamic ? " (Islamic)" : ""} in <PlaceName code={i.home_country} names={profile.place_names} /> · {i.base_currency}</>}
