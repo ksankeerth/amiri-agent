@@ -182,7 +182,7 @@ export function SetupWizard() {
       {step === "monitors" && <MonitorsStep institutionId={i.institution_id} />}
 
       {step === "review" && <div className="col gap16">
-        <div className="card"><div className="bd"><ProfileMap profile={profile} /></div></div>
+        <div className="card"><div className="bd"><ProfileMap profile={profile} height={320} /></div></div>
         <div className="card"><div className="hd"><h2>Ready to go live?</h2><span className="spacer" />
           {i.status === "setup" && <button className="btn btn--primary" type="button" disabled={!readiness.ready} onClick={activate}>Activate</button>}
           {i.status === "active" && <span className="badge b-ok">ACTIVE</span>}</div>

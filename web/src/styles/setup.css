@@ -66,3 +66,11 @@
 .why { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px; font-size:var(--fs-sm); }
 .why li { display:flex; gap:8px; align-items:baseline; }
 .why .badge { flex:none; width:112px; justify-content:center; }
+
+/* ---- profile map: one control row, layers in a menu, zoom buttons in the top corner (clear of home) */
+.pmap-bar { display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+.pmap-title { font-size:var(--fs-lg); margin:0; min-width:0; flex:1 1 auto; }
+.pmap-layers > summary { list-style:none; height:34px; }
+.pmap-layers .menu-pop { min-width:200px; gap:4px; }
+.pmap-layers .check { padding:4px 8px; min-height:28px; font-size:var(--fs-sm); color:var(--ink); }
+.pmap-full .mapzoom { top:10px; bottom:auto; }

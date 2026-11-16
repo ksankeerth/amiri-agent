@@ -133,10 +133,18 @@ function download(name: string, data: unknown) {
 
 // ---------------------------------------------------------------- tabs
 
+// short names, so the eight fit one row beside the Setup agent; the full name is the tooltip
 const TABS = [
-  ["overview", "Overview"], ["customers", "Customers and products"], ["footprint", "Footprint and flows"], ["rules", "Rules"],
-  ["rivals", "Rivals and partners"], ["risks", "Risks"], ["history", "History"], ["agents", "What the agents see"],
+  ["overview", "Overview", "Overview"], ["customers", "Customers", "Customers and products"], ["footprint", "Footprint", "Footprint and flows"],
+  ["rules", "Rules", "Rules"], ["rivals", "Rivals", "Rivals and partners"], ["risks", "Risks", "Risks"], ["history", "History", "History"],
+  ["agents", "Agents' view", "What the agents see"],
 ] as const;
+/** The map's takeaway: "Sri Lanka · money moves with 6 places abroad". */
+const mapTitle = (p: Profile) => {
+  const abroad = new Set(p.sections.flows.map(f => f.counterpart)).size;
+  const home = p.place_names[p.institution.home_country] ?? p.institution.home_country;
+  return abroad ? `${home} · money moves with ${plural(abroad, "place")} abroad` : `Where ${p.institution.short_name ?? p.institution.name} operates`;
+};
 const TAB_OF_SECTION: Record<string, string> = {
   footprint: "footprint", "watch-places": "footprint", flows: "footprint", segments: "customers", products: "customers",
   regulators: "rules", rivals: "rivals", counterparties: "rivals", "risk-exposures": "risks", institution: "overview",
@@ -334,11 +342,11 @@ export function InstitutionPage() {
         {i.status === "setup" && readiness.ready && <Banner kind="info">Everything required is there. <b>Activate</b> to let the agents use this profile{readiness.open_recommendations ? `; ${plural(readiness.open_recommendations, "recommendation")} still open` : ""}.</Banner>}
       </div>
       <div className="tabs" role="tablist" aria-label="Parts of the profile">
-        {TABS.map(([k, label]) => <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => nav(`/institution/${k}`)}>{label}</button>)}
+        {TABS.map(([k, label, full]) => <button key={k} type="button" role="tab" aria-selected={tab === k} title={full !== label ? full : undefined} onClick={() => nav(`/institution/${k}`)}>{label}</button>)}
       </div>
 
       {tab === "overview" && <div className="col gap16">
-        <div className="card"><div className="bd"><ProfileMap profile={profile} /></div></div>
+        <div className="card"><div className="bd"><ProfileMap profile={profile} height={340} title={mapTitle(profile)} /></div></div>
         <div className="grid2">
           <div className="card"><div className="hd"><h2>Ready to go live?</h2></div><div className="bd"><ReadinessList r={readiness} onFix={goFix} /></div></div>
           <div className="card"><div className="hd"><h2>In the profile</h2></div><div className="bd"><div className="kv">
