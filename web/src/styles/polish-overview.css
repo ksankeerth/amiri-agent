@@ -42,3 +42,72 @@
 /* a neutral event is secondary: it keeps its row but steps back */
 .ovx .ovp-ev[data-tone="neutral"] .ttl { color:var(--ink-2); }
 
+
+/* ---------- Sign-in (the bot check) and the paused page: a flat brand panel, one calm card, one action */
+.login { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+.login-brand { background:#0F3D2E; padding:40px 56px; gap:32px; color:#EAF3EE; }
+.login-brand::after { display:none; }  /* no dots, no glow: a bank's tool, not a poster */
+.login-logo { gap:12px; flex-wrap:wrap; }
+.login-logo b { font-size:var(--fs-xl); letter-spacing:-.01em; color:#fff; }
+.login-logo svg { width:36px; height:36px; }
+.login-tag { flex-basis:100%; padding-left:48px; margin-top:-8px; font-size:var(--fs-sm); color:rgba(234,243,238,.8); }
+.login-pitch { margin:auto 0; max-width:580px; }
+.login-pitch h1 { font-size:40px; line-height:1.15; letter-spacing:-.03em; }
+.login-pitch p { font-size:var(--fs-lg); line-height:1.6; color:rgba(234,243,238,.86); margin-top:20px; max-width:520px; }
+/* the four steps as one flow: numbered marks joined by a line */
+.login-flow { margin:40px 0 0; gap:0; max-width:580px; }
+.login-flow li { position:relative; padding:0 16px 0 0; background:none; border:0; border-radius:0; animation:none; gap:4px; }
+.login-flow li::before { content:""; position:absolute; left:44px; right:4px; top:20px; height:1px; background:rgba(234,243,238,.28); }
+.login-flow li:last-child::before { display:none; }
+.login-flow .ico { width:40px; height:40px; border-radius:50%; background:#0F3D2E; border:1px solid rgba(191,230,210,.5); color:#BFE6D2; margin-bottom:8px; }
+.login-flow .ico svg { width:18px; height:18px; }
+.login-flow li b { font-size:var(--fs-lg); }
+.login-flow li span:last-child { font-size:var(--fs-sm); color:rgba(234,243,238,.8); }
+.login-foot { font-size:var(--fs-sm); color:rgba(234,243,238,.75); }
+
+.login-main { padding:40px 32px; }
+.login-card { width:min(440px,100%); border-radius:16px; padding:40px 40px 32px; display:flex; flex-direction:column; gap:16px; box-shadow:var(--e-md); }
+.login-card h2 { font-size:var(--fs-2xl); line-height:1.2; letter-spacing:-.02em; }
+.login-eyebrow { font-size:var(--fs-xs); font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-ink); margin-bottom:-8px; }
+.login-lede { margin:0; font-size:var(--fs-lg); line-height:1.5; color:var(--ink-2); }
+/* the one action: the check sits alone in its own well */
+.login-check { display:flex; flex-direction:column; align-items:center; gap:12px; padding:20px 16px; margin-top:8px;
+  border:1px solid var(--hairline); border-radius:12px; background:var(--surface-2); }
+.login-check .captcha { min-height:78px; }
+.login-check .errtext { align-self:stretch; }
+.login-busy { display:flex; align-items:center; gap:8px; font-size:var(--fs-md); color:var(--ink-2); }
+.login-busy svg, .login-still svg { width:16px; height:16px; flex:none; }
+.login-why { display:flex; gap:12px; align-items:flex-start; }
+.login-why > svg { width:18px; height:18px; flex:none; color:var(--ink-3); margin-top:2px; }
+.login-why p { margin:0; font-size:var(--fs-md); line-height:1.5; color:var(--ink-2); }
+.login-why b { color:var(--ink); }
+.login-legal { margin:0; padding-top:16px; border-top:1px solid var(--hairline); font-size:var(--fs-xs); line-height:1.5; color:var(--ink-3); }
+/* paused: the same card, a calm mark and three plain steps */
+.login-badge { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--info-soft); color:var(--info-ink); border:1px solid var(--info-line); }
+.login-badge svg { width:22px; height:22px; }
+.login-todo { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px; }
+.login-todo li { display:flex; align-items:flex-start; gap:12px; font-size:var(--fs-md); line-height:1.5; color:var(--ink-2); }
+.login-todo li span { width:24px; height:24px; flex:none; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+  background:var(--sunken); border:1px solid var(--hairline-2); color:var(--ink); font-size:var(--fs-xs); font-weight:700; }
+.login-still { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:var(--r-control); background:var(--high-soft); color:var(--high-ink); font-size:var(--fs-md); }
+.login-card .btn--lg { margin-top:8px; gap:8px; }
+
+:root[data-theme="dark"] .login-brand { background:#0C2A20; border-right:1px solid var(--hairline); }
+:root[data-theme="dark"] .login-flow .ico { background:#0C2A20; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .login-brand { background:#0C2A20; border-right:1px solid var(--hairline); }
+  :root:not([data-theme="light"]) .login-flow .ico { background:#0C2A20; }
+}
+@media (max-width: 1200px) { .login-brand { padding:40px; } .login-pitch h1 { font-size:var(--fs-3xl); } }
+@media (max-width: 900px) {
+  .login-tag { display:none; }
+  .login-pitch { margin:0; }
+  .login-pitch h1 { font-size:21px; }
+  .login-card { padding:28px 24px 24px; }
+}
+@media (min-width: 1600px) {
+  .login-brand { padding:56px 80px; }
+  .login-pitch, .login-flow { max-width:680px; }
+  .login-pitch h1 { font-size:48px; }
+  .login-pitch p { font-size:18px; max-width:600px; }
+}
