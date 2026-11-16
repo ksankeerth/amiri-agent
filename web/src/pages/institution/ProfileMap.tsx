@@ -159,6 +159,30 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
       <circle r={r} fill={ring ? "none" : color} stroke={ring ? color : "var(--surface)"} strokeWidth={ring ? 2 : 1.5} /></g>;
   };
   const maxFlow = Math.max(1, ...S.flows.map(f => f.value?.amount ?? 0));
+  // Which money flows an open event reaches: its place is the flow's far end (same country), or it sits in a risk zone
+  // from the profile whose exposure names that flow or its sea route. These light up and carry a pulse home.
+  const reached = useMemo(() => {
+    const country = (c: string) => P[c]?.country ?? c.split("-")[0];
+    const km = (a: [number, number], lat: number, lon: number) => {
+      const r = Math.PI / 180, dLat = (lat - a[1]) * r, dLon = (lon - a[0]) * r;
+      const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[1] * r) * Math.cos(lat * r) * Math.sin(dLon / 2) ** 2;
+      return 12742 * Math.asin(Math.sqrt(h));
+    };
+    const hit = new Map<string, MapEvent>();
+    for (const e of events.filter(x => x.tone !== "neutral")) for (const c of e.places) {  // a neutral event doesn't reach the bank
+      const pt = at(c), cc = country(c);
+      if (cc === home) continue;  // an event at home isn't carried in along a flow
+      for (const f of S.flows) if (country(f.counterpart) === cc && !hit.has(f.id)) hit.set(f.id, e);
+      for (const x of risks) {
+        const hz = hazards.find(h => h.hazard_id === x.hazard_id);
+        const inside = hz && ((hz.places ?? []).includes(cc) || (pt && hz.centre && km(pt, hz.centre[0], hz.centre[1]) <= (hz.radius_km ?? 100) * 1.5));
+        if (!inside) continue;
+        for (const f of S.flows) if ((x.touches.flows ?? []).includes(f.id) || (f.route_id && (x.touches.routes ?? []).includes(f.route_id))) if (!hit.has(f.id)) hit.set(f.id, e);
+      }
+    }
+    return hit;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, S.flows, risks.length, hazards.length, P, home]);
   const homeXY = xy(at(home));
   const toggle = (l: Layer) => setOn(s => { const n = new Set(s); if (n.has(l)) n.delete(l); else n.add(l); return n; });
 
@@ -208,10 +232,24 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           if (!a || !b) return null;
           const [from, to] = ["exports", "remittances_out"].includes(f.kind) ? [a, b] : [b, a];
           const mx = (from[0] + to[0]) / 2, my = (from[1] + to[1]) / 2 - Math.hypot(to[0] - from[0], to[1] - from[1]) * 0.22;
-          const width = (compact ? 0.9 : 1) + (compact ? 2.4 : 4.5) * Math.sqrt((f.value?.amount ?? 0) / maxFlow);
-          return <path key={f.id} d={`M${from[0]},${from[1]} Q${mx},${my} ${to[0]},${to[1]}`} fill="none" stroke={FLOW_COLOR[f.kind]} strokeOpacity={compact ? 0.75 : 0.85} strokeWidth={width} strokeLinecap="round"
-            onMouseMove={e => show(e, `${FLOW_WORDS[f.kind]}${f.goods ? ` (${f.goods})` : ""}: ${P[f.counterpart]?.name ?? f.counterpart} ↔ ${P[f.local]?.name ?? f.local}${f.value ? ` · ${usdText(f.value.amount)} a year` : ""}`)} onMouseLeave={() => setTip(null)} />;
+          const share = Math.sqrt((f.value?.amount ?? 0) / maxFlow);
+          const width = (compact ? 0.9 : 1) + (compact ? 2.4 : 4.5) * share;
+          const d = `M${from[0]},${from[1]} Q${mx},${my} ${to[0]},${to[1]}`;
+          const inward = `M${b[0]},${b[1]} Q${mx},${my} ${a[0]},${a[1]}`;  // the event's pulse always runs from the far end to home
+          const ev = reached.get(f.id), quiet = reached.size > 0 && !ev;  // when an event reaches some flows, the rest step back
+          const gap = Math.round(30 - 14 * share);  // bigger flows carry more particles
+          return <g key={f.id} className={ev ? "mapflow is-hit" : quiet ? "mapflow is-quiet" : "mapflow"}
+            onMouseMove={e => show(e, `${FLOW_WORDS[f.kind]}${f.goods ? ` (${f.goods})` : ""}: ${P[f.counterpart]?.name ?? f.counterpart} ${["exports", "remittances_out"].includes(f.kind) ? "←" : "→"} ${P[f.local]?.name ?? f.local}${f.value ? ` · ${usdText(f.value.amount)} a year` : ""}${ev ? ` · reached by: ${ev.title}` : ""}`)} onMouseLeave={() => setTip(null)}>
+            <path d={d} fill="none" stroke={FLOW_COLOR[f.kind]} strokeOpacity={quiet ? 0.28 : compact ? 0.75 : 0.85} strokeWidth={width} strokeLinecap="round" />
+            {/* the direction: small particles travel from where the money starts to where it goes */}
+            <path className="flowdots" d={d} fill="none" stroke="var(--map-particle)" strokeOpacity={quiet ? 0.3 : 0.9} strokeWidth={Math.max(2, width * 0.7)} strokeLinecap="round"
+              strokeDasharray={`0.1 ${gap}`} style={{ ["--cycle" as string]: `${gap + 0.1}px` }} />
+            {/* an event on this flow: a pulse in the event's colour runs along it to the bank's home */}
+            {ev && <path className="flowpulse" d={inward} pathLength={100} fill="none" stroke={TONE_COLOR[ev.tone]} strokeWidth={width + 2.5} strokeLinecap="round" strokeDasharray="10 90" style={{ color: TONE_COLOR[ev.tone] }} />}
+          </g>;
         })}
+        {reached.size > 0 && homeXY && <circle className="homeglow" cx={homeXY[0]} cy={homeXY[1]} r={16} fill="none"
+          stroke={TONE_COLOR[[...reached.values()].some(e => e.tone === "bad") ? "bad" : [...reached.values()][0].tone]} strokeWidth={2} />}
         {on.has("regulators") && homeXY && S.regulators.filter(r => r.relation === "reach").map((r, i) => {
           const far = xy(at(r.short === "OFAC" ? "US" : r.short === "EU" ? "BE" : r.short === "OFSI" ? "GB" : r.country));
           return far && <line key={`t${i}`} x1={homeXY[0]} y1={homeXY[1]} x2={far[0]} y2={far[1]} stroke="var(--ink-3)" strokeDasharray="2 3" />;
@@ -234,7 +272,8 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           const color = TONE_COLOR[e.tone];
           return <g key={`e${e.event_id}${c}`} transform={`translate(${p[0]},${p[1]})`} style={{ cursor: onEvent ? "pointer" : "default" }}
             onClick={() => onEvent?.(e.event_id)} onMouseMove={ev => show(ev, `${e.title} · ${P[c]?.name ?? c}`)} onMouseLeave={() => setTip(null)}>
-            <circle r={13} fill={color} opacity={0.16} className="mappulse" />
+            {[0, 1].map(i => <circle key={i} r={9} fill="none" stroke={color} strokeWidth={1.25} className="mapripple" style={{ animationDelay: `${i * 1.3}s` }} />)}
+            <circle r={13} fill={color} opacity={0.16} />
             <ToneShape tone={e.tone} /></g>;
         }))}
       </svg>
@@ -253,7 +292,8 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
         <span><Key tone="neutral" /> neutral</span>
         <span><span className="statusdot" style={{ background: "var(--map-home-fill)", outline: "1px solid var(--map-home)" }} /> where you operate</span>
         {layers?.includes("risks") !== false && <span><svg width={14} height={14} aria-hidden="true" style={{ verticalAlign: -2 }}><circle cx={7} cy={7} r={5.5} fill="var(--critical-soft)" stroke="var(--critical)" strokeDasharray="3 2" /></svg> risk areas in your profile</span>}
-        {layers?.includes("flows") !== false && <span><svg width={16} height={10} aria-hidden="true"><path d="M1 8Q8 0 15 8" fill="none" stroke="var(--accent)" strokeWidth={2} /></svg> money flows</span>}
+        {layers?.includes("flows") !== false && <span><svg width={16} height={10} aria-hidden="true"><path d="M1 8Q8 0 15 8" fill="none" stroke="var(--accent)" strokeWidth={2} /></svg> money flows, moving the way the money goes</span>}
+        {reached.size > 0 && <span><svg width={16} height={10} aria-hidden="true"><path d="M1 8Q8 0 15 8" fill="none" stroke="var(--critical)" strokeWidth={3} /></svg> flows an open event reaches</span>}
       </div> : <div className="row wrap small muted" style={{ gap: 14, marginTop: 6 }}>
         <span><span className="statusdot" style={{ background: "var(--accent)" }} /> customer groups · remittances</span>
         <span><span className="statusdot" style={{ background: "var(--high)" }} /> exports · rivals</span>

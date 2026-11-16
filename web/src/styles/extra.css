@@ -741,3 +741,27 @@ a.evrow:hover .row-l, a.lrow:hover .row-l { text-decoration:underline !important
 .mapzoom button:last-child { font-size:var(--fs-xs); }
 .mapzoom button:hover:not(:disabled) { color:var(--ink); }
 .mapzoom button:disabled { opacity:.45; cursor:default; }
+
+/* ---------- The map in motion: money flows show their direction, an event ripples where it happens and, when it
+   sits on a flow, a pulse carries it to the bank's home. Each motion means something; nothing moves on a quiet day
+   except the flows themselves. */
+:root { --map-particle: rgba(12,40,30,.85); }  /* light: dark particles on the coloured lines */
+:root[data-theme="dark"] { --map-particle: rgba(255,255,255,.95); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --map-particle: rgba(255,255,255,.95); } }
+.mapflow { cursor:default; }
+.mapflow path { transition:stroke-opacity .4s ease; }
+.flowdots { animation:flowdots 1.6s linear infinite; }
+@keyframes flowdots { to { stroke-dashoffset:calc(-1 * var(--cycle)); } }
+.mapflow.is-hit .flowdots { animation-duration:.9s; }
+.flowpulse { animation:flowpulse 2.2s cubic-bezier(.5,0,.6,1) infinite; filter:drop-shadow(0 0 4px currentColor); }
+@keyframes flowpulse { 0% { stroke-dashoffset:10; opacity:0; } 8% { opacity:1; } 88% { opacity:1; } 100% { stroke-dashoffset:-90; opacity:0; } }
+.mapripple { transform-box:fill-box; transform-origin:center; animation:mapripple 2.6s ease-out infinite; opacity:0; }
+@keyframes mapripple { 0% { transform:scale(.7); opacity:.6; } 100% { transform:scale(2.4); opacity:0; } }
+.homeglow { transform-box:fill-box; transform-origin:center; animation:homeglow 2.2s ease-out infinite; }
+@keyframes homeglow { 0%, 60% { transform:scale(.5); opacity:0; } 80% { opacity:.9; } 100% { transform:scale(1.6); opacity:0; } }
+@media (prefers-reduced-motion: reduce) {
+  .flowdots, .mapripple, .homeglow { animation:none; }
+  .flowdots { display:none; }
+  .mapripple:not(:first-child) { display:none; }
+  .flowpulse { animation:none; stroke-dasharray:none; opacity:.55; }
+}
