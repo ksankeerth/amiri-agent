@@ -226,7 +226,8 @@ export function SeriesDetail() {
     <div className="page">
       <PageHeader crumbs={<><Link to="/series">Market series</Link><span aria-hidden="true">/</span><span>{s.name}</span></>}
         title={s.name} pills={<><StateBadge state={s.state} /><FetchBadge s={s} /></>}
-        status={seriesSentence(s, now)}
+        status={(status && !status.provider.configured) || (s.fetch.last_status === "error" && s.fetch.last_error)  // a banner below says who was told: not twice
+          ? seriesSentence(s, now).replace(/; your Platform Admin has been told\.$/, ".") : seriesSentence(s, now)}
         actions={<>
           <RefreshButton s={s} onDone={updated} small={false} />
           {isAdmin && <>
