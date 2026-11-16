@@ -19,8 +19,8 @@
 .ph-cta { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:8px; }
 .btn--lg { height:44px; padding:0 20px; font-size:var(--fs-lg); }
 .btn--lg svg { width:18px; height:18px; }
-.ovx-warn { display:inline-flex; align-items:center; gap:8px; color:var(--high-ink); font-weight:600; }
-.ovx-warn svg { width:18px; height:18px; flex:none; }
+.ovx-warn { display:inline-flex; align-items:baseline; gap:8px; color:var(--high-ink); font-weight:600; }
+.ovx-warn svg { width:18px; height:18px; flex:none; align-self:center; }
 
 /* four numbers that read left to right; only the one that needs someone stands out */
 .ovx-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
