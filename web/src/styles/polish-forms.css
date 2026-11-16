@@ -7,3 +7,30 @@
 .rd-line b { color:var(--ink); font-weight:600; }
 .rd-line + .rd-watch { border-top:1px solid var(--hairline); }
 .rd-facts .rd-k { font-size:var(--fs-sm); }
+
+/* ---- Data connections: sample institutions as two clear cards, conditions as a spaced list */
+.pf-samples > .bd { display:flex; flex-direction:column; gap:16px; }
+.pf-lead { margin:0; max-width:72ch; font-size:var(--fs-md); line-height:1.6; color:var(--ink-2); }
+.pf-sample-list { display:flex; flex-direction:column; gap:16px; }
+.pf-sample { border:1px solid var(--hairline); border-radius:var(--r-card); background:var(--surface); padding:20px 24px; display:flex; flex-direction:column; gap:20px; }
+.pf-sample.on { border-color:var(--accent-line); }
+.pf-sample-hd { display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap; }
+.pf-sample-hd .switch { margin-top:4px; }
+.pf-sample-t { flex:1 1 320px; min-width:0; display:flex; flex-direction:column; gap:4px; }
+.pf-sample-t h3 { margin:0; font-size:var(--fs-lg); display:flex; align-items:center; gap:8px; }
+.pf-sample-acts { display:flex; gap:8px; flex-wrap:wrap; margin-left:auto; }
+.pf-conds { border:0; margin:0; padding:0; min-width:0; }
+.pf-conds legend { padding:0; margin-bottom:4px; display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; font-size:var(--fs-md); }
+.pf-conds legend b { color:var(--ink); font-weight:600; }
+.pf-conds legend .muted { font-size:var(--fs-sm); }
+.pf-conds ul { list-style:none; margin:0 -12px; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 400px), 1fr)); gap:4px 24px; }
+.pf-conds li { padding:12px; border-radius:10px; border:1px solid transparent; display:flex; flex-direction:column; gap:8px; }
+.pf-conds li:hover { background:var(--sunken); }
+.pf-conds li.on, .pf-conds li.on:hover { border-color:var(--accent-line); background:var(--accent-soft); }
+.pf-cond { display:flex; gap:12px; align-items:flex-start; }
+.pf-cond input[type=checkbox] { margin-top:2px; }
+.pf-cond > span { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.pf-cond-t { font-size:var(--fs-md); font-weight:500; color:var(--ink); }
+.pf-cond-d { font-size:var(--fs-sm); line-height:1.5; color:var(--ink-2); }
+.pf-cond-opts { display:flex; flex-wrap:wrap; gap:8px 16px; padding-left:32px; }
+.pf-sample-ft { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding-top:16px; border-top:1px solid var(--hairline); }
