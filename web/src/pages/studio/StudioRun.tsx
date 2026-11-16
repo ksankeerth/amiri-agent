@@ -149,6 +149,7 @@ export function StudioRunPage() {
   const [sim, setSim] = useState<Simulation | null>(null);
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [playing, setPlaying] = useState(false);
+  const [stopping, setStopping] = useState(false);  // Stop asks once: it ends the run for good, unlike Pause
   const [err, setErr] = useState<string | null>(null);
   const [loadErr, setLoadErr] = useState<unknown>(null);  // the first load: the page has nothing to show without it
   const [newFrom, setNewFrom] = useState(Infinity);  // rows from this seq on arrived with the last step: highlighted
@@ -200,7 +201,7 @@ export function StudioRunPage() {
   const findings = timeline.filter(t => t.kind === "finding");
   const marks: Mark[] = findings.filter(f => f.data.source === "timeseries").map(f => ({ t: f.at, color: "var(--high)", label: f.data.title, tag: "Flagged move" }));
   const pins = timeline.filter(t => t.kind === "headline").map(t => ({ t: t.at, label: `${t.data.title} · ${t.data.outlet}` }));
-  const stop = async () => { try { take(await studioApi.stop(id)); } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); } };
+  const stop = async () => { setStopping(false); setPlaying(false); try { take(await studioApi.stop(id)); } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); } };
   const mode = sim.mode === "replay" ? "Replaying a recording" : sim.mode === "record" ? "Recording" : "Live agents";
   return (
     <div className="page">
@@ -211,15 +212,20 @@ export function StudioRunPage() {
         <div className="rn-ctl">{active ? <>
           <button className="btn btn--primary btn--lg" type="button" onClick={() => setPlaying(p => !p)}><Icon name={playing ? "pause" : "play"} />{playing ? "Pause" : "Play"}</button>
           <button className="btn btn--lg" type="button" disabled={playing} onClick={step} title="Run one simulated day">Step</button>
-          <button className="btn btn--ghost" type="button" onClick={stop}>Stop</button></>
+          {stopping ? <span className="row" style={{ gap: 6 }}><span className="small">End this run for good? It can't carry on after.</span>
+            <button className="btn btn--danger btn--sm" type="button" onClick={stop}>Stop the run</button>
+            <button className="btn btn--sm" type="button" onClick={() => setStopping(false)}>Keep it</button></span>
+            : <button className="btn btn--ghost" type="button" onClick={() => setStopping(true)} title="End this run (Pause keeps it, Stop ends it)">Stop</button>}</>
           : <StatusPill tone={sim.status === "finished" ? "green" : "grey"} icon={sim.status === "finished" ? "check" : undefined}>{sim.status === "finished" ? "Finished" : sim.status[0].toUpperCase() + sim.status.slice(1).replace(/_/g, " ")}</StatusPill>}</div>
         <Clock sim={sim} timeline={timeline} />
       </section>
       {moment && <AlertMoment a={moment} onDone={closeMoment} />}
       <Chain timeline={timeline} sim={sim} />
-      {(err || sim.pending.length > 0) && <div className="banners">
+      {(err || (active && sim.pending.length > 0) || sim.status.startsWith("stopped")) && <div className="banners">
         {err && <Banner kind="crit" icon="warn">{err}</Banner>}
-        {sim.pending.length > 0 && <Banner kind="info" icon="refresh">Waiting for {sim.pending.map(p => `the ${p.kind === "check" ? "monitor agent" : "investigation agent"} (${p.seconds} s)`).join(" and ")}. The clock moves on when {sim.pending.length > 1 ? "they answer" : "it answers"}.</Banner>}
+        {sim.status.startsWith("stopped") && <Banner kind="info" icon="info" action={<Link className="btn btn--sm" to={`/studio/${sim.scenario_id}`}>Back to the scenario</Link>}>
+          This run was stopped on day {sim.step} of {sim.steps}, so its clock won't move again. What it found up to then stays below; to see the rest, start a new run from the scenario.</Banner>}
+        {active && sim.pending.length > 0 && <Banner kind="info" icon="refresh">Waiting for {sim.pending.map(p => `the ${p.kind === "check" ? "monitor agent" : "investigation agent"} (${p.seconds} s)`).join(" and ")}. The clock moves on when {sim.pending.length > 1 ? "they answer" : "it answers"}.</Banner>}
       </div>}
       <div className="split rn-split">
         <div className="col gap16">

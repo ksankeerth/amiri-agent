@@ -35,6 +35,15 @@ function CurrentBanner({ sim }: { sim: Simulation | null }) {
   </Banner>;
 }
 
+/** Coming back to a scenario: its latest run, one click away (the full list stays in Runs, lower down). */
+function LastRunBanner({ m }: { m: Scenario["simulations"][number] }) {
+  const how = m.mode === "replay" ? "replay" : m.mode === "record" ? "live, saved" : "live";
+  const where = m.status === "completed" || m.status === "finished" ? "finished" : m.status === "stopped" ? `stopped on day ${m.step} of ${m.steps}` : `${m.status.replace(/_/g, " ")}, day ${m.step} of ${m.steps}`;
+  return <Banner kind="info" icon="studio" action={<Link className="btn btn--sm btn--primary" to={`/studio/run/${m.sim_id}`}>Open the run</Link>}>
+    Your last run ({how} · {dayTime(m.created_at)}) {where}. Its findings, events and alerts are still there.
+  </Banner>;
+}
+
 /** A name for a scenario you write yourself. */
 function NewOwnModal({ onClose }: { onClose: () => void }) {
   const nav = useNavigate();
@@ -282,6 +291,7 @@ export function ScenarioPage() {
       <div className="banners">
         {err != null && <LoadError error={err} onRetry={load} what="this scenario" />}
         <CurrentBanner sim={current} />
+        {!current && s.simulations[0] && <LastRunBanner m={s.simulations[0]} />}
         <Banner kind="info">{own ? "Your headlines are marked simulated and never reach the live pages. Amiri Agent's monitor reads each one on its day; the investigation traces what it finds to your products."
           : "The headlines are written for this scenario and marked simulated; you can edit, add or remove them. Their figures come from the price path. Sizes are illustrative."}</Banner>
       </div>
