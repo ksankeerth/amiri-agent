@@ -39,3 +39,12 @@ button.worldpill:hover { background-image:linear-gradient(var(--hover-bg), var(-
   padding:10px 12px; border-radius:var(--r-control); background:var(--surface); border:1px solid var(--hairline-2); box-shadow:var(--e-pop);
   color:var(--ink); font-size:var(--fs-sm); line-height:1.45; white-space:normal; }
 .world-why.open, .worldwrap:has(.worldpill:focus-visible) .world-why { display:block; }
+
+/* ---------- PE12: empty-state prose at a readable measure */
+.empty p { max-width:60ch; margin-inline:auto; }
+
+/* ---------- PE9 leftovers: checkboxes are bigger and their whole label is the target; Spec code never under 12 px */
+input[type=checkbox] { width:20px; height:20px; cursor:pointer; }
+label:has(> input[type=checkbox]:not(:disabled)) { cursor:pointer; }
+.st-pick { display:flex; align-items:flex-start; gap:12px; flex:1; min-width:0; cursor:pointer; }
+.page .md code, .sp-metric code, .sp-body code { font-size:max(12px, .88em); }

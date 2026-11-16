@@ -199,11 +199,13 @@ function Headlines({ s, save, startOpen }: { s: Scenario; save: (body: { custom?
         ? <div key={h.id} className="li"><HeadlineForm value={{ id: h.id, title: h.title, day: h.day, time: h.time }} dayLabel={dayLabel} onSave={upsert} onCancel={() => setEditing(null)} /></div>
         : (
           <div key={h.id} className={`li st-head ${off.has(h.id) ? "off" : ""}`}>
-            <input type="checkbox" checked={!off.has(h.id)} onChange={() => toggle(h.id)} aria-label={`Include: ${h.title}`} />
-            <div className="col" style={{ gap: 2, flex: 1, minWidth: 0 }}>
-              <span className="small muted">Day {h.day} · {dayLabel(h.day)} {h.time}{h.story === "custom" && b.template_id !== "blank" ? " · added by you" : ""}</span>
-              <span className="st-title">{h.title}</span>
-            </div>
+            <label className="st-pick">{/* the whole headline is the checkbox's target, not 18 px of it */}
+              <input type="checkbox" checked={!off.has(h.id)} onChange={() => toggle(h.id)} aria-label={`Include: ${h.title}`} />
+              <span className="col" style={{ gap: 2, flex: 1, minWidth: 0 }}>
+                <span className="small muted">Day {h.day} · {dayLabel(h.day)} {h.time}{h.story === "custom" && b.template_id !== "blank" ? " · added by you" : ""}</span>
+                <span className="st-title">{h.title}</span>
+              </span>
+            </label>
             <button className="btn btn--sm btn--ghost btn--icon" type="button" aria-label={`Edit: ${h.title}`} onClick={() => setEditing(h.id)}><Icon name="edit" /></button>
             <button className="btn btn--sm btn--ghost btn--icon" type="button" aria-label={`Remove: ${h.title}`} onClick={() => remove(h.id)}><Icon name="trash" /></button>
           </div>))}
