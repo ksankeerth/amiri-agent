@@ -184,6 +184,9 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events, S.flows, risks.length, hazards.length, P, home]);
   const homeXY = xy(at(home));
+  // event symbols: small at the whole-picture view so they don't hide a country (Sri Lanka vanished under a square),
+  // growing as you zoom in, up to the full size
+  const ms = Math.min(1, Math.max(compact ? 0.55 : 0.7, (compact ? 0.55 : 0.7) * Math.sqrt(zoom.k)));
   const toggle = (l: Layer) => setOn(s => { const n = new Set(s); if (n.has(l)) n.delete(l); else n.add(l); return n; });
 
   return (
@@ -276,9 +279,9 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           const color = TONE_COLOR[e.tone];
           return <g key={`e${e.event_id}${c}`} transform={`translate(${p[0]},${p[1]})`} style={{ cursor: onEvent ? "pointer" : "default" }}
             onClick={() => onEvent?.(e.event_id)} onMouseMove={ev => show(ev, `${e.title} · ${P[c]?.name ?? c}`)} onMouseLeave={() => setTip(null)}>
-            {[0, 1].map(i => <circle key={i} r={9} fill="none" stroke={color} strokeWidth={1.25} className="mapripple" style={{ animationDelay: `${i * 1.3}s` }} />)}
-            <circle r={13} fill={color} opacity={0.16} />
-            <ToneShape tone={e.tone} /></g>;
+            {[0, 1].map(i => <circle key={i} r={9 * ms} fill="none" stroke={color} strokeWidth={1.25} className="mapripple" style={{ animationDelay: `${i * 1.3}s` }} />)}
+            <circle r={13 * ms} fill={color} opacity={0.16} />
+            <ToneShape tone={e.tone} s={ms} sw={1.5} /></g>;
         }))}
       </svg>
       <div className="mapzoom">
