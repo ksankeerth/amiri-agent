@@ -181,7 +181,7 @@ export function EventsPage() {
             When Amiri Agent traces news or a price move to your products, the event appears here.</Empty>
         ) : (
           <ul className="evlist" aria-label="Events">{rows.map(e => {
-            const f = byId.get(e.finding_ids[0]), si = f ? sourceInfo(f.source) : null;
+            const f0 = byId.get(e.finding_ids[0]), f = f0?.outcome?.event_id === e.event_id ? f0 : undefined, si = f ? sourceInfo(f.source) : null;
             return (
               <li key={e.event_id}>
                 <Link className="evrow" to={`/events/${e.event_id}`}>
