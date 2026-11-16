@@ -136,7 +136,7 @@ export function SectionList({ section, ctx, reload, suggest, extra, compact, ite
         {extra}
         {suggest && !archived && <button className="btn btn--sm" type="button" onClick={() => setSuggesting(true)}><Icon name="search" />Suggestions</button>}
         {!archived && <ImportItems section={section} iid={iid} onAdded={reload} />}
-        {!archived && <button className="btn btn--sm btn--primary" type="button" onClick={() => setEditing("new")}><Icon name="plus" />Add</button>}
+        {!archived && <button className="btn btn--sm" type="button" onClick={() => setEditing("new")}><Icon name="plus" />Add</button>}
       </div>
       {!items.length ? <div className="bd small muted">None yet.{suggest ? " Use Suggestions to start from the usual ones, or Add your own." : ""}</div> : (
         <div className="list" style={{ marginTop: 8 }}>{items.map(it => {
@@ -238,7 +238,7 @@ export function SuggestionPicker({ section, ctx, onAdded, inline }: { section: S
               const s = data.items[i];
               const t = suggestionText(section, s, ctx, id => routes.find(r => r.route_id === id)?.name ?? id);
               return (
-                <label key={i} className="check" style={{ padding: "8px 12px", borderBottom: "1px solid var(--hairline)", opacity: s.added ? 0.55 : 1 }}>
+                <label key={i} className="check" style={{ padding: "8px 12px", borderBottom: "1px solid var(--hairline)" }}>
                   <input type="checkbox" disabled={s.added} checked={s.added || picked.has(i)}
                     onChange={e => setPicked(p => { const n = new Set(p); if (e.target.checked) n.add(i); else n.delete(i); return n; })} />
                   <span className="col" style={{ gap: 2 }}><b style={{ color: "var(--ink)" }}>{t.title}{s.added && <span className="badge b-ok" style={{ marginLeft: 8 }}>{s.status === "dismissed" ? "DISMISSED" : "ADDED"}</span>}</b><span className="small muted">{t.sub}</span></span>
@@ -251,7 +251,8 @@ export function SuggestionPicker({ section, ctx, onAdded, inline }: { section: S
       {err.length > 0 && <div className="rawerr">{err.join(" · ")}</div>}
       <div className="row"><span className="small muted">{picked.size} ticked</span><span className="spacer" />
         {open > 0 && <button className="btn btn--sm" type="button" onClick={() => setPicked(new Set(data.items.map((x, i) => (x.added ? -1 : i)).filter(i => i >= 0)))}>Tick all</button>}
-        <button className="btn btn--primary" type="button" disabled={busy || !picked.size} onClick={add}>Add {picked.size || ""}</button></div>
+        {/* in a setup step "Next" is the one primary; in the Suggestions dialog, adding is */}
+        <button className={`btn${inline ? "" : " btn--primary"}`} type="button" disabled={busy || !picked.size} onClick={add}>Add {picked.size || ""}</button></div>
     </div>
   );
 }

@@ -115,7 +115,7 @@ export function ReadinessList({ r, onFix }: { r: Readiness; onFix?: (section: st
           <span className="small" style={{ color: "var(--ink)" }}>{c.message}</span>
           {!c.ok && c.fix && <span className="small muted">{c.fix}</span>}
         </div>
-        <span className="badge b-noeffect">{c.level}</span>
+        <span className="badge b-noeffect">{c.level === "required" ? "Required" : "Recommended"}</span>
         {!c.ok && onFix && c.section !== "institution" && <button className="btn btn--sm" type="button" onClick={() => onFix(c.section)}>Fix</button>}
       </div>))}</div>
   );

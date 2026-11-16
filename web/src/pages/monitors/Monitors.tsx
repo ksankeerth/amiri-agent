@@ -124,6 +124,7 @@ export function DraftFromProfile({ onClose, only }: { onClose: () => void; only?
 
 export function MonitorsPage() {
   const now = useNow(30_000);
+  const { role } = useRole();
   const { status, reload: reloadStatus } = useMonitorsStatus();
   const [items, setItems] = useState<MonitorRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -136,6 +137,7 @@ export function MonitorsPage() {
   const actions = <>
     <button className="btn" type="button" onClick={() => setDrafting(true)}><Icon name="bank" />Draft from the profile</button>
     <Link className="btn btn--primary" to="/monitors/new"><Icon name="plus" />New monitor</Link></>;
+  const empty = items !== null && !items.length;
   const live = (items ?? []).filter(m => m.status === "live").length;
   const waiting = (items ?? []).filter(m => m.status === "submitted" || m.pending?.status === "submitted").length;
   return (
@@ -143,12 +145,14 @@ export function MonitorsPage() {
       <PageHeader title="Monitors"
         status={items === null ? "" : <><b className="ink">{count(live, "live monitor")}</b>
           {status?.next_check_at ? `, next check ${due(status.next_check_at)}` : ""}{waiting ? ` · ${waiting} waiting for approval` : ""}</>}
-        actions={actions} help={<MonitorHelp status={status} />} />
-      <div className="banners">{err && <Banner kind="crit" icon="warn">{err}</Banner>}<MonitorBanners status={status} /></div>
+        actions={empty ? undefined : actions} help={<MonitorHelp status={status} />} />
+      {/* with no monitors yet, "can't check the news" changes nothing for a Risk Manager: the empty state says it calmly */}
+      <div className="banners">{err && <Banner kind="crit" icon="warn">{err}</Banner>}{(!empty || role === "platform_admin") && <MonitorBanners status={status} />}</div>
       <div className="card">
         {items === null ? <InlineSkeleton /> : !items.length ? (
           <Empty icon="monitor" title="No monitors yet" actions={actions}>
             Monitors watch the news for what you care about: a rival's prices, a regulator's rules, jobs in a remittance corridor.
+            {status && !status.connected && <span className="small" style={{ display: "block", marginTop: 8 }}>News checks are paused right now; a monitor you add starts once they are back.</span>}
           </Empty>
         ) : (
           <ul className="evlist" aria-label="Monitors">{items.map(m => (
