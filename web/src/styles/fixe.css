@@ -25,3 +25,8 @@
 a.card:hover { border-color:var(--line-strong); }
 /* a text link shows it's a link under the cursor */
 .evrow a.row-l:hover, .ov-event:hover .ttl { text-decoration:underline; text-underline-offset:2px; }
+
+/* ---------- PE10: other topics' messages folded into one line in the setup chat */
+.chat-earlier { align-self:center; border:1px dashed var(--hairline-2); background:transparent; color:var(--ink-3); font-size:var(--fs-xs);
+  padding:4px 12px; border-radius:var(--r-pill); cursor:pointer; }
+.chat-earlier:hover { color:var(--ink); border-color:var(--line-strong); }

@@ -303,6 +303,8 @@ export function SetupChat({ institutionId, onTrack, onApplied, at, askKey = 0 }:
       moved?.track);
   };
   const here = picked ?? current;
+  const [showAll, setShowAll] = useState(false);
+  useEffect(() => setShowAll(false), [here]);  // a new topic starts folded again
   // The page is the single source of "where": a step or tab clicked there sets the chat's topic, as picking it here would.
   const atTrack = trackFor(defs, at ?? {})?.track ?? null;
   useEffect(() => {
@@ -316,10 +318,17 @@ export function SetupChat({ institutionId, onTrack, onApplied, at, askKey = 0 }:
   const lastQuestion = [...messages].reverse().find(m => m.kind === "question");
   const shownTracks = tracks.filter(t => t.shown);
 
+  // The thread follows the topic: other topics' messages fold into one "Earlier" line (while a reply is coming the
+  // latest exchange always shows, so a reply that moves to another topic isn't hidden).
+  const lastUser = busy || writing ? messages.map(m => m.role === "user").lastIndexOf(true) : messages.length;
+  const trackOf = (m: ChatMessage) => (m.track && def(m.track)?.shown ? m.track : null);
+  const visible = showAll || !here ? messages : messages.filter((m, k) => k >= lastUser || !trackOf(m) || trackOf(m) === here);
+  const folded = messages.filter(m => !visible.includes(m) && m.kind !== "track" && m.kind !== "session");
+  const foldedTopics = [...new Set(folded.map(m => def(trackOf(m))?.label).filter(Boolean))];
   // messages, with a divider each time the track changes
   const rows: ReactNode[] = [];
   let prevTrack: string | null | undefined;
-  for (const m of messages) {
+  for (const m of visible) {
     const tr = m.track && def(m.track)?.shown ? m.track : null;
     if (tr && tr !== prevTrack && m.kind !== "session") rows.push(<div key={`d${m.message_id}`} className="trackdiv"><span>{def(tr)?.label}</span></div>);
     if (tr) prevTrack = tr;
@@ -350,10 +359,12 @@ export function SetupChat({ institutionId, onTrack, onApplied, at, askKey = 0 }:
         {status?.connected && status.backend === "stub" && role === "platform_admin" && <div className="note small">Stub agent: canned replies and keyword routing, for building the UI.</div>}
       </div>
       <div ref={log} role="log" aria-label="Conversation with the setup agent" tabIndex={0} style={{ flex: 1, overflow: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>
-        {!messages.length && <div className="msg ai">{institutionId
+        {folded.length > 0 && <button type="button" className="chat-earlier" onClick={() => setShowAll(true)}>
+          Earlier: {foldedTopics.join(", ")} ({folded.length === 1 ? "1 message" : `${folded.length} messages`}) · <u>Show</u></button>}
+        {rows}
+        {!visible.some(m => m.kind !== "session" && m.kind !== "track") && <div className="msg ai">{institutionId
           ? `Tell me about ${hereLabel ? hereLabel.replace(/^Step \d+ · /, "").toLowerCase() : "any part of your profile"} in plain words, or ask me to check it. I draft each change as a card; nothing changes until you apply it.`
           : "I can set up your institution with you: what kind it is, where you operate, your customers and products, flows, rules, rivals and risks. Tell me in plain words; nothing is saved until you apply it. The forms work too."}</div>}
-        {rows}
         {starters.length > 0 && <div className="starters" aria-label="Things you could say">
           <span className="small muted">Try saying</span>
           {starters.map(x => <button key={x} type="button" className="starter" onClick={() => send({ text: x })}>{x}</button>)}</div>}
