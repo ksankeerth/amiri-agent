@@ -1,7 +1,7 @@
 // Run with `npm test` (Node runs the TypeScript directly).
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { continuedTo, continueText, nextOpen, setupOrder, stepFrom, trackFor, waitingForAnswer } from "./setupFlow.ts";
+import { changeWords, continuedTo, countOf, continueText, fieldWord, nextOpen, setupOrder, stepFrom, trackFor, valueText, waitingForAnswer } from "./setupFlow.ts";
 
 test("an unanswered question holds the move; anything said after it releases it", () => {
   const q = { role: "assistant", kind: "question" }, said = { role: "user", kind: "text" }, picked = { role: "user", kind: "answer" };
@@ -72,4 +72,24 @@ test("the chat follows the page: a setup step or a tab names its track", () => {
   assert.equal(trackFor(defs, { tab: "overview" })?.track, "institution");           // the first one for a shared tab
   assert.equal(trackFor(defs, { tab: "rules" }), null);                                // hidden tracks never
   assert.equal(trackFor(defs, {}), null);
+});
+
+test("a change reads as words: names not ids, field names not keys", () => {
+  const rival = { section: "rivals", op: "create", id: "bank-of-ceylon", before: null, after: { name: "Bank of Ceylon", type: "bank" } };
+  assert.deepEqual(changeWords(rival, "propose"), { lead: "Add", name: "Bank of Ceylon", tail: "as a rival" });
+  assert.deepEqual(changeWords(rival, "done"), { lead: "Added rival", name: "Bank of Ceylon", tail: "" });
+  const ccy = { section: "institution", op: "update", id: "serendib-bank", before: { clearing_currencies: ["USD"] }, after: { clearing_currencies: ["USD", "EUR"] } };
+  assert.equal(changeWords(ccy, "propose").lead, "Change the institution details");
+  assert.equal(changeWords(ccy, "done").lead, "Changed currencies you settle in abroad");
+  assert.equal(fieldWord("clearing_currencies"), "Currencies you settle in abroad");
+  assert.equal(fieldWord("some_new_key"), "Some new key");
+  assert.equal(countOf("watch-places", 6), "6 places to watch");
+  assert.equal(countOf("rivals", 1), "1 rival");
+  assert.equal(valueText(["USD", "EUR"]), "USD, EUR");
+  assert.equal(valueText("remittances_in"), "remittances in");
+  assert.equal(valueText(null), "—");
+  const flow = { section: "flows", op: "create", item_id: "remit-kw", before: null, after: { kind: "remittances_in", local: "LK", counterpart: "KW" } };
+  assert.equal(changeWords(flow, "done", { KW: "Kuwait" }).name, "remittances in: Kuwait");
+  assert.equal(changeWords({ section: "rivals", op: "delete", id: "old-rival", before: null, after: null }, "propose").name, "Old rival");
+  assert.equal(changeWords({ section: "institution", op: "status", before: { status: "setup" }, after: { status: "active" } }, "done").lead, "Went live");
 });

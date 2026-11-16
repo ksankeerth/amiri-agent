@@ -45,3 +45,24 @@
 .starter { border:1px solid var(--accent-line); background:var(--surface); color:var(--ink); border-radius:12px; padding:8px 12px; min-height:32px;
   font:inherit; font-size:var(--fs-sm); text-align:left; cursor:pointer; }
 .starter:hover { background:var(--accent-soft); }
+
+/* ---- proposal cards in words */
+.proposal .pchange { display:flex; flex-direction:column; gap:4px; padding:8px 0 0; border-top:1px solid var(--hairline); }
+.proposal .pc-line { font-size:var(--fs-sm); color:var(--ink); }
+.proposal .diff { grid-template-columns:minmax(96px, 40%) minmax(0,1fr); }
+.proposal .diff .k { font-size:var(--fs-xs); }
+.badge.pstate { display:inline-flex; align-items:center; gap:4px; text-transform:none; letter-spacing:0; }
+.badge.pstate svg { width:12px; height:12px; }
+
+/* ---- History and "What the agents see" */
+.tbl.hist td { vertical-align:top; }
+.tbl.hist b { color:var(--ink); font-weight:600; }
+.hist-items { margin:0; padding-left:20px; font-size:var(--fs-sm); columns:2 320px; column-gap:24px; }
+.hist-items li { break-inside:avoid; padding:2px 0; }
+.hist-diff { max-width:720px; grid-template-columns:minmax(140px, 220px) minmax(0,1fr); font-size:var(--fs-sm); }
+.agents-lead { margin:0; max-width:75ch; color:var(--ink-2); }
+.agents-tbl td { vertical-align:top; }
+.agents-tbl th:first-child { width:28%; }
+.why { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px; font-size:var(--fs-sm); }
+.why li { display:flex; gap:8px; align-items:baseline; }
+.why .badge { flex:none; width:112px; justify-content:center; }

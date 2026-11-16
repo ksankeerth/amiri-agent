@@ -5,10 +5,10 @@
 import { Fragment, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../api/client";
-import { chat, type AssistantStatus, type ChatMessage, type Proposal, type TrackDef, type TrackState } from "../api/assistant";
+import { chat, type AssistantStatus, type Change, type ChatMessage, type Proposal, type TrackDef, type TrackState } from "../api/assistant";
 import { dayTime, plural } from "../format";
 import { Icon } from "./Icon";
-import { continuedTo, continueText, nextOpen, STARTERS, trackFor, waitingForAnswer } from "./setupFlow";
+import { changeWords, continuedTo, continueText, fieldWord, nextOpen, STARTERS, trackFor, valueText, waitingForAnswer } from "./setupFlow";
 import { ChatToggleCtx, MenuButton, Modal, StatusIcon, useRole, useToast } from "./ui";
 import "../styles/setup.css";
 
@@ -22,13 +22,23 @@ const MAX_CHARS = 600;
 const RETRYABLE = new Set(["models_busy", "turn_timeout", "server_unavailable",
   "assistant_timeout", "assistant_unavailable", "assistant_not_connected", "agent_session_lost"]);
 
-const SECTION_WORDS: Record<string, string> = {
-  institution: "Institution", footprint: "Footprint", "watch-places": "Place to watch", segments: "Customer group",
-  products: "Product", flows: "Flow", regulators: "Regulator", rivals: "Rival", counterparties: "Counterparty", "risk-exposures": "Risk exposure",
-  monitors: "Monitor",
+// A proposal's state in words, with its own glyph: never colour alone.
+const PSTATE: Record<Proposal["status"], [cls: string, icon: string, words: string]> = {
+  pending: ["b-sub", "hourglass", "Waiting for you"], confirmed: ["b-ok", "good", "Applied"], rejected: ["b-noeffect", "x", "Not applied"],
+  expired: ["b-noeffect", "clock", "Expired"], failed: ["b-down", "bad", "Failed"],
 };
-const show = (v: unknown): string => (v === null || v === undefined ? "—" : Array.isArray(v) ? v.map(show).join(", ") || "—"
-  : typeof v === "object" ? Object.entries(v as object).map(([k, x]) => `${k}: ${show(x)}`).join("; ") : String(v));
+
+/** One change on a proposal card: "Add **Bank of Ceylon** as a rival", then each changed field as before → after. */
+function ChangeRow({ c }: { c: Change }) {
+  const w = changeWords(c, "propose");
+  return (
+    <div className="pchange">
+      <span className="pc-line">{w.lead} {w.name && <b>{w.name}</b>} {w.tail}</span>
+      {c.op === "update" && c.after && <div className="diff">{Object.keys(c.after).map(k => (
+        <Fragment key={k}><span className="k">{fieldWord(k)}</span><span><del>{valueText(c.before?.[k])}</del> <span aria-hidden="true">→</span> <ins>{valueText(c.after?.[k])}</ins></span></Fragment>))}</div>}
+    </div>
+  );
+}
 
 function ProposalCard({ p, onDecided }: { p: Proposal; onDecided: (p: Proposal) => void }) {
   const toast = useToast();
@@ -42,26 +52,20 @@ function ProposalCard({ p, onDecided }: { p: Proposal; onDecided: (p: Proposal) 
     catch (e) { toast(e instanceof ApiError ? e.full : String(e)); chat.proposal(p.proposal_id).then(onDecided).catch(() => {}); }
     finally { setBusy(false); }
   };
-  const badge = { pending: "b-sub", confirmed: "b-ok", rejected: "b-noeffect", expired: "b-noeffect", failed: "b-down" }[p.status];
+  const [badge, icon, said] = PSTATE[p.status];
   return (
     <div className="proposal" data-proposal={p.proposal_id}>
-      <div className="ph"><Icon name="edit" className="ico16" /><b style={{ flex: 1 }}>{p.status === "pending" ? "Shall I apply these changes?" : p.summary}</b><span className={`badge ${badge}`}>{p.status.toUpperCase()}</span></div>
+      <div className="ph"><Icon name="edit" className="ico16" /><b style={{ flex: 1 }}>{p.status === "pending" ? "Shall I apply these changes?" : p.summary}</b><span className={`badge pstate ${badge}`}><Icon name={icon} />{said}</span></div>
       <div className="pb">
         {p.status === "pending" && <span className="small" style={{ color: "var(--ink)" }}>{p.summary}</span>}
         {p.kind === "monitors" ? p.changes.map((c, i) => (
           <div key={i} className="col" style={{ gap: 2 }}>
-            <span className="small"><b>{c.op === "create" ? "New monitor" : "Change monitor"}</b> {c.after?.name} {c.id && <span className="mono muted">{c.id}</span>}</span>
+            <span className="small">{c.op === "create" ? "New monitor" : "Change monitor"} <b>{c.after?.name}</b></span>
             <span className="small muted">{c.after?.sentence}</span>
             <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>{(c.after?.tell_me_if ?? []).map((l: string) => (
               <li key={l}>{c.before && !(c.before.tell_me_if ?? []).includes(l) ? <ins>{l}</ins> : l}</li>))}</ul>
-            <span className="small muted">Where: {show(c.after?.places)} · every {c.after?.check_frequency >= 1440 ? "day" : c.after?.check_frequency >= 360 ? "6 hours" : "hour"}</span>
-          </div>)) : p.changes.map((c, i) => (
-          <div key={i} className="col" style={{ gap: 2 }}>
-            <span className="small"><b>{c.op === "create" ? "Add" : c.op === "delete" ? "Remove" : "Change"}</b> {SECTION_WORDS[c.section] ?? c.section} <span className="mono muted">{c.id}</span></span>
-            {c.op === "update" && c.after && <div className="diff">{Object.keys(c.after).map(k => (
-              <Fragment key={k}><span className="k">{k}</span><span><del>{show(c.before?.[k])}</del> <ins>{show(c.after?.[k])}</ins></span></Fragment>))}</div>}
-            {c.op === "create" && c.after && <span className="small muted">{show(c.after.name ?? c.after.label ?? c.after.title ?? c.after.code ?? c.after)}</span>}
-          </div>))}
+            <span className="small muted">Where: {valueText(c.after?.places)} · every {c.after?.check_frequency >= 1440 ? "day" : c.after?.check_frequency >= 360 ? "6 hours" : "hour"}</span>
+          </div>)) : p.changes.map((c, i) => <ChangeRow key={i} c={c} />)}
         {p.kind === "monitors" && p.status === "pending" && <div className="note">Applying submits {p.changes.length === 1 ? "it" : "them"} for approval; a Risk Manager makes {p.changes.length === 1 ? "it" : "them"} live on the Monitors page.</div>}
         {p.kind === "monitors" && p.status === "confirmed" && <span className="small">{(p.result?.monitors ?? []).map((m: { monitor_id: string; name: string }) => (
           <Link key={m.monitor_id} to={`/monitors/${m.monitor_id}`} style={{ marginRight: 8 }}>{m.name} →</Link>))}</span>}
@@ -75,7 +79,7 @@ function ProposalCard({ p, onDecided }: { p: Proposal; onDecided: (p: Proposal) 
       {sure && <Modal title={`Remove ${p.deletes} items?`} onClose={() => setSure(false)} footer={<>
         <button className="btn" type="button" onClick={() => setSure(false)}>Cancel</button>
         <button className="btn btn--danger" type="button" onClick={() => decide("confirm", p.deletes)}>Yes, remove {p.deletes}</button></>}>
-        <p>This proposal removes {p.deletes} items from your profile: {p.changes.filter(c => c.op === "delete").map(c => c.id).join(", ")}. The history keeps them, and Undo can bring them back.</p>
+        <p>This proposal removes {p.deletes} items from your profile: {p.changes.filter(c => c.op === "delete").map(c => changeWords(c, "propose").name ?? c.id).join(", ")}. The history keeps them, and Undo can bring them back.</p>
       </Modal>}
     </div>
   );

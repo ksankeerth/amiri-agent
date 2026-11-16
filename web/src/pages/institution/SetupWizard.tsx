@@ -31,6 +31,11 @@ type Step = (typeof STEPS)[number][0];
 const REQUIRED_BY_STEP: Partial<Record<Step, string[]>> = { institution: ["identity"], where: ["footprint_home"], customers: ["segments"], products: ["products"] };
 const RECOMMENDED_BY_STEP: Partial<Record<Step, string[]>> = { customers: ["segment_mapping"], products: ["product_segments"], flows: ["flows"], rules: ["regulators"], rivals: ["rivals"], risks: ["risk_exposures"] };
 
+/** "Commercial bank (Islamic)" rather than "bank · commercial". */
+const kindText = (i: { institution_type: string; subtype?: string | null; islamic?: boolean }) => {
+  const kind = i.subtype ? `${i.subtype.replace(/_/g, " ")} ${i.institution_type === "bank" ? "bank" : "insurer"}` : i.institution_type;
+  return `${kind[0].toUpperCase()}${kind.slice(1)}${i.islamic ? " (Islamic)" : ""}`;
+};
 const STATE_WORDS: Record<Status, string> = { done: "done", partial: "recommended part still open", required: "required, not done", open: "not started" };
 
 /** The two ways to answer a step, side by side: the form saves at once, the agent's changes wait for Apply. */
@@ -115,7 +120,7 @@ export function SetupWizard() {
       {step === "institution" && <div className="col gap16">
         <div className="card"><div className="hd"><h2>{i.name}</h2><span className="spacer" /><button className="btn btn--sm" type="button" onClick={() => setEditing(true)}><Icon name="edit" />Edit details</button></div>
           <div className="bd"><div className="kv">
-            <div className="k">Type</div><div className="v">{i.institution_type}{i.subtype ? ` · ${i.subtype}` : ""}{i.islamic ? " · Islamic" : ""}</div>
+            <div className="k">Type</div><div className="v">{kindText(i)}</div>
             <div className="k">Home</div><div className="v">{profile.place_names[i.home_country] ?? i.home_country} · {i.base_currency} · {i.time_zone}</div>
             <div className="k">Owns risk decisions</div><div className="v">{i.governance_body ?? "—"}</div>
             <div className="k">Summary</div><div className="v">{i.summary ?? "—"}</div>
@@ -126,7 +131,7 @@ export function SetupWizard() {
         <div className="card"><div className="hd"><h2>Add where you operate</h2></div><div className="bd grid2">
           <Field label="Place" hint="Countries, states, provinces or districts."><PlacePicker scope="iso" onPick={p => addFootprint(p.code)} placeholder="e.g. Kerala, Tamil Nadu, Singapore" /></Field>
           <Field label="As"><select className="input" value={role} onChange={e => setRole(e.target.value)}>
-            {["branches", "subsidiary", "representative_office", "agents", "digital_only", "home"].map(r => <option key={r} value={r}>{r.replace(/_/g, " ")}</option>)}</select></Field>
+            {["branches", "subsidiary", "representative_office", "agents", "digital_only", "home"].map(r => <option key={r} value={r}>{r === "home" ? "Home country" : `${r[0].toUpperCase()}${r.slice(1).replace(/_/g, " ")}`}</option>)}</select></Field>
         </div></div>
         <div className="card"><div className="bd"><ProfileMap profile={profile} height={340} /></div></div>
         <SectionList section="footprint" ctx={ctx} reload={S.reload} />
@@ -137,11 +142,11 @@ export function SetupWizard() {
         <div className="card"><div className="hd"><h2>Usual customer groups for {i.institution_type === "bank" ? "a bank" : "an insurer"}</h2></div>
           <div className="bd"><SuggestionPicker inline section="segments" ctx={ctx} onAdded={S.reload} /></div></div>
         <SectionList section="segments" ctx={ctx} reload={S.reload} />
-        <Banner kind="info">Edit each group to say where it is concentrated and how your data identifies it (a Metrics Spec value), so checks can look at just that group.</Banner>
+        <Banner kind="info">Edit each group to say where it is concentrated and how your data identifies it, so checks can look at just that group.</Banner>
       </div>}
 
       {step === "products" && <div className="col gap16">
-        <div className="card"><div className="hd"><h2>What do you offer? (Metrics Spec product types)</h2></div>
+        <div className="card"><div className="hd"><h2>What do you offer?</h2></div>
           <div className="bd"><SuggestionPicker inline section="products" ctx={ctx} onAdded={S.reload} /></div></div>
         <SectionList section="products" ctx={ctx} reload={S.reload} />
         <LinkGrid ctx={ctx} rows="products" cols="segments" field="segments" reload={S.reload} title="Who uses which product" />

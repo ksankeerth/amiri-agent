@@ -56,7 +56,8 @@ export const LABELS: Record<SectionName, { one: string; many: string; nameKey: s
   "risk-exposures": { one: "risk exposure", many: "Risk exposures", nameKey: "title" },
 };
 
-const opt = (xs: string[], words: Record<string, string> = {}) => xs.map(x => <option key={x} value={x}>{words[x] ?? x.replace(/_/g, " ")}</option>);
+const capFirst = (s: string) => s[0].toUpperCase() + s.slice(1);
+const opt = (xs: string[], words: Record<string, string> = {}) => xs.map(x => <option key={x} value={x}>{capFirst(words[x] ?? x.replace(/_/g, " "))}</option>);
 const ROLE_WORDS: Record<string, string> = { home: "home (headquarters country)", branches: "branches", subsidiary: "subsidiary", representative_office: "representative office", agents: "agents only", digital_only: "digital only" };
 export const FLOW_WORDS: Record<string, string> = { remittances_in: "remittances in", remittances_out: "remittances out", tourism: "tourist spending", services: "services income", exports: "exports", imports: "imports" };
 const INCOME: [string, string][] = [["salary", "salary"], ["remittances", "remittances"], ["business_income", "business income"], ["farm_income", "farm income"], ["pension", "pension"], ["government_transfers", "government transfers"], ["investment_income", "investment income"], ["other", "other"]];
@@ -64,7 +65,7 @@ const RIVAL_TYPES = ["bank", "insurer", "takaful", "wallet", "fintech", "microfi
 const CP_KINDS = ["correspondent_bank", "reinsurer", "payment_scheme", "clearing_house", "technology_provider", "distribution_partner", "outsourcer", "other"];
 const RISK_KINDS = ["conflict", "climate", "economic", "regulatory", "market", "health", "technology", "other"];
 const AREAS = ["banking", "insurance", "securities", "aml", "data_protection", "sanctions", "conduct", "standards", "other"];
-const AREA_WORDS: Record<string, string> = { aml: "anti-money-laundering", data_protection: "data protection" };
+export const AREA_WORDS: Record<string, string> = { aml: "Anti-money-laundering", data_protection: "Data protection", banking: "Banking", insurance: "Insurance", securities: "Securities", sanctions: "Sanctions", conduct: "Conduct", standards: "Global standards", other: "Other" };
 const RELATION_WORDS: Record<string, string> = { home: "home: your home country", host: "host: a country you operate in", reach: "reach: through a currency or market", standard: "standard: a global standard" };
 
 // ---------------------------------------------------------------- per-section form bodies
@@ -323,7 +324,7 @@ export function InstitutionFields({ d, set, err, creating, fill }: { d: Draft; s
       <Field label="Currencies you settle in abroad" error={err.clearing_currencies} full hint="Decides which sanctions regimes reach you (USD → OFAC).">
         <CurrenciesField value={d.clearing_currencies ?? []} onChange={v => set("clearing_currencies", v)} /></Field>
       <Field label="Who owns risk decisions" error={err.governance_body}><input className="input" value={d.governance_body ?? ""} onChange={e => set("governance_body", e.target.value || null)} placeholder="e.g. Board Risk Committee" /></Field>
-      <Field label="Size" error={err.size_band}><select className="input" value={d.size_band ?? ""} onChange={e => set("size_band", e.target.value || null)}><option value="">—</option>{opt(["small", "mid", "large", "systemic"])}</select></Field>
+      <Field label="Size" error={err.size_band}><select className="input" value={d.size_band ?? ""} onChange={e => set("size_band", e.target.value || null)}><option value="">—</option>{opt(["small", "mid", "large", "systemic"], { mid: "mid-size", systemic: "systemically important" })}</select></Field>
       <Field label="Financial year starts in" error={err.fiscal_year_start_month}><select className="input" value={d.fiscal_year_start_month ?? 1} onChange={e => set("fiscal_year_start_month", Number(e.target.value))}>{MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select></Field>
       <Field label="LEI" error={err.lei}><input className="input mono" value={d.lei ?? ""} onChange={e => set("lei", e.target.value.toUpperCase() || null)} placeholder="20 characters" /></Field>
       <Field label="Short name" error={err.short_name}><input className="input" value={d.short_name ?? ""} onChange={e => set("short_name", e.target.value || null)} /></Field>
