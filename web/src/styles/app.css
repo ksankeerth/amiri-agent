@@ -117,6 +117,7 @@ p { margin:0; }
 .seg button { border:0; background:transparent; height:30px; padding:0 12px; font-size:var(--fs-xs); font-weight:600; color:var(--ink-3); cursor:pointer; white-space:nowrap; }
 .seg button[aria-pressed="true"] { background:color-mix(in srgb, var(--ink) 12%, var(--surface)); color:var(--ink); }
 .seg button + button { border-left:1px solid var(--hairline); }
+.seg button:focus-visible { outline-offset:-3px; } /* .seg clips its overflow: draw the ring inside */
 .body { display:grid; grid-template-columns:232px minmax(0,1fr); min-height:0; }
 .side { background:var(--surface); border-right:1px solid var(--hairline); display:flex; flex-direction:column; min-height:0; }
 .nav { padding:12px 8px; display:flex; flex-direction:column; gap:2px; overflow:auto; flex:1; }
@@ -127,7 +128,10 @@ p { margin:0; }
 .nav a svg { width:18px; height:18px; flex:none; }
 .nav a .count { margin-left:auto; font-size:var(--fs-xs); font-weight:700; min-width:20px; height:20px; padding:0 8px; border-radius:var(--r-pill); display:inline-flex; align-items:center; justify-content:center; background:var(--sunken); color:var(--ink-2); }
 .nav a .count.hot { background:var(--critical); color:var(--surface); }
-.side-foot { border-top:1px solid var(--hairline); padding:12px; display:none; flex-direction:column; gap:8px; }
+/* the role switch lives at the foot of the sidebar: a demo setting, not the page's main control, and no longer an early
+   Tab stop (it came third on every page); the header copy is hidden. On small screens the theme button joins it. */
+.side-foot { border-top:1px solid var(--hairline); padding:12px; display:flex; flex-direction:column; gap:8px; }
+.side-foot > .btn, .appbar > .seg { display:none; }
 .appbar .menubtn { display:none; }
 .main { overflow:auto; min-width:0; position:relative; }
 .page { max-width:1320px; margin:0 auto; padding:20px 32px 64px; }
@@ -159,6 +163,7 @@ textarea.input { height:auto; min-height:72px; padding:8px 12px; resize:vertical
 .field .errtext { font-size:var(--fs-xs); color:var(--critical-ink); }
 .check { display:flex; gap:8px; align-items:flex-start; cursor:pointer; }
 .check input { margin-top:3px; accent-color:var(--accent); }
+input[type=checkbox] { width:18px; height:18px; flex:none; accent-color:var(--accent-strong); } /* a 24 px target with its label */
 .switch { position:relative; width:36px; height:20px; border-radius:10px; background:var(--line-strong); border:0; cursor:pointer; flex:none; transition:background var(--d-fast); }
 .switch::after { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:var(--e-sm); transition:left var(--d-fast); }
 .switch[aria-checked="true"] { background:var(--accent); }
@@ -196,11 +201,11 @@ textarea.input { height:auto; min-height:72px; padding:8px 12px; resize:vertical
 .b-live { background:var(--accent-soft); color:var(--accent-ink); }
 .b-sub { background:var(--info-soft); color:var(--info-ink); }
 .b-paused { background:var(--medium-soft); color:var(--medium-ink); }
-.chip { display:inline-flex; align-items:center; gap:4px; height:24px; padding:0 8px; border-radius:var(--r-pill); background:var(--sunken); color:var(--ink-2); font-size:var(--fs-xs); white-space:nowrap; border:1px solid var(--hairline); }
+.chip { display:inline-flex; align-items:center; gap:4px; min-height:24px; padding:0 8px; border-radius:var(--r-pill); background:var(--sunken); color:var(--ink-2); font-size:var(--fs-xs); white-space:nowrap; border:1px solid var(--hairline); }
 .chip button { border:0; background:none; padding:0; cursor:pointer; color:var(--ink-3); line-height:1; }
 .chip.sel { background:var(--surface); color:var(--ink); border-color:var(--line-strong); font-weight:600; }
 .chip.sel::before { content:"✓"; font-weight:700; } /* selected says so without colour */
-.chip.click { cursor:pointer; }
+.chip.click, button.chip { cursor:pointer; min-height:28px; padding:0 12px; } /* clickable chips: 28 px targets */
 
 /* ---------- banners ---------- */
 .banners { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
@@ -368,6 +373,7 @@ svg.chart .ax line { stroke:var(--hairline); }
 .kv { display:grid; grid-template-columns:150px minmax(0,1fr); gap:8px 12px; font-size:var(--fs-sm); }
 .kv .k { color:var(--ink-3); }
 .kv .v { color:var(--ink); }
+.kv .v > a:only-child { display:inline-flex; align-items:center; min-width:24px; min-height:24px; } /* count links: 24 px targets */
 .timeline { display:flex; flex-direction:column; position:relative; padding-left:16px; }
 .timeline::before { content:""; position:absolute; left:5px; top:6px; bottom:6px; width:2px; background:var(--hairline); }
 .tl { position:relative; padding:8px 0 12px; }
@@ -401,9 +407,9 @@ svg.chart .ax line { stroke:var(--hairline); }
   .body { grid-template-columns:minmax(0,1fr); }
   .side { display:none; }
   .side[data-open="true"] { display:flex; position:fixed; top:56px; left:0; bottom:0; width:min(280px,86vw); z-index:45; box-shadow:var(--e-lg); }
-  .side-foot { display:flex; }
+  .side-foot > .btn { display:inline-flex; }
   .appbar .menubtn { display:inline-flex; }
-  .appbar > .seg, .appbar > .themebtn { display:none; }
+  .appbar > .themebtn { display:none; }
   .scrim { position:fixed; inset:56px 0 0 0; background:rgba(0,0,0,.35); z-index:44; }
   .appbar { gap:8px; }
   .page { padding:16px 16px 64px; }
@@ -412,3 +418,10 @@ svg.chart .ax line { stroke:var(--hairline); }
   .lane { grid-template-columns:96px minmax(0,1fr); }
 }
 @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+
+/* every disclosure row is at least a 24 px target */
+details > summary { min-height:24px; }
+.side-foot .seg { width:100%; }
+.side-foot .seg button { flex:1; padding:0 8px; }
+.crumbs a, .sp-toc-list a { display:inline-block; padding:4px 0; } /* 24 px tall targets */
+.sp-toc-list { gap:0; }
