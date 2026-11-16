@@ -28,13 +28,13 @@ import { SpecPage } from "./pages/spec/Spec";
 import { SpecPrintPage } from "./pages/spec/SpecPrint";
 import { alertsApi, type AlertSummary } from "./api/alerts";
 
-// The menu follows the day: what needs me, what Amiri Agent watches, who I am, and the what-if tool.
+// The menu follows the day: what needs me, what Amiri Agent found, what it watches, who I am, and the what-if tool.
 const GROUPS: [string, string[]][] = [
   ["Today", ["/home", "/alerts"]],
-  ["What Amiri Agent watches", ["/findings", "/events", "/radar", "/monitors", "/series"]],
-  ["Your institution", ["/institution"]],
+  ["What it found", ["/events", "/findings"]],
+  ["What it watches", ["/radar", "/monitors", "/series"]],
+  ["Your institution", ["/institution", "/spec"]],
   ["Try it", ["/studio"]],
-  ["Reference", ["/spec"]],
 ];
 
 const NAV: Record<Role, [string, string, string][]> = {
@@ -84,13 +84,13 @@ function useTheme() {
   useEffect(() => {
     if (theme) document.documentElement.dataset.theme = theme; else delete document.documentElement.dataset.theme;
   }, [theme]);
+  const dark = theme ? theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
   const toggle = () => {
-    const dark = theme ? theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
     const next = dark ? "light" : "dark";
     setTheme(next);
     try { localStorage.setItem("amiri.theme", next); } catch { /* private mode */ }
   };
-  return toggle;
+  return { dark, toggle };
 }
 
 /** The top bar's status, from what the Overview call already says: green only when updates run and prices are fresh. */
@@ -184,7 +184,7 @@ function Installed() {
 
 function Frame({ inst }: { inst: Installation }) {
   const { role, setRole } = useRole();
-  const toggleTheme = useTheme();
+  const { dark, toggle: toggleTheme } = useTheme();
   const now = useNow(30_000);
   const nav = NAV[role].filter(([, , to]) => BUILT.has(to));  // a page that isn't built isn't offered
   const said = useRouteA11y();
@@ -197,6 +197,9 @@ function Frame({ inst }: { inst: Installation }) {
     window.addEventListener("keydown", k);
     return () => window.removeEventListener("keydown", k);
   }, [menu]);
+  useEffect(() => {  // an admin page is the Platform Admin's: show its menu, so the page is selected in it
+    if (pathname.startsWith("/admin/") && role !== "platform_admin") setRole("platform_admin");
+  }, [pathname]);  // eslint-disable-line react-hooks/exhaustive-deps
   const [ov, setOv] = useState<Overview | null>(null);
   useEffect(() => {  // the Live pill: the same one call the Overview makes, once a minute
     const load = () => overviewApi.get().then(setOv).catch(() => {});
@@ -231,13 +234,13 @@ function Frame({ inst }: { inst: Installation }) {
           <button type="button" aria-pressed={role === "risk_manager"} onClick={() => setRole("risk_manager")}>Risk Manager</button>
           <button type="button" aria-pressed={role === "platform_admin"} onClick={() => setRole("platform_admin")}>Platform Admin</button>
         </span>
-        <button className="btn btn--ghost btn--icon themebtn" type="button" aria-label="Switch between light and dark" onClick={toggleTheme}><Icon name="moon" /></button>
+        <button className="btn btn--ghost btn--icon themebtn" type="button" aria-label={dark ? "Switch to light" : "Switch to dark"} onClick={toggleTheme}><Icon name={dark ? "sun" : "moon"} /></button>
       </header>
       {menu && <div className="scrim" onClick={() => setMenu(false)} />}
       <div className="body">
         <aside className="side" id="sidenav" aria-label="Menu" data-open={menu}>
           <nav className="nav" aria-label="Main">
-            {role === "platform_admin" && <div className="grp label">Platform</div>}
+            {role === "platform_admin" && <div className="grp label">Platform Admin</div>}
             {(role === "risk_manager" ? GROUPS : [["", nav.map(n => n[2])] as [string, string[]]]).map(([group, paths]) => {
               const items = nav.filter(n => paths.includes(n[2]));
               return items.length === 0 ? null : (
@@ -263,7 +266,7 @@ function Frame({ inst }: { inst: Installation }) {
               <button type="button" aria-pressed={role === "risk_manager"} onClick={() => setRole("risk_manager")}>Risk Manager</button>
               <button type="button" aria-pressed={role === "platform_admin"} onClick={() => setRole("platform_admin")}>Platform Admin</button>
             </span>
-            <button className="btn btn--sm" type="button" onClick={toggleTheme}><Icon name="moon" />Light or dark</button>
+            <button className="btn btn--sm" type="button" onClick={toggleTheme}><Icon name={dark ? "sun" : "moon"} />{dark ? "Light theme" : "Dark theme"}</button>
           </div>
         </aside>
         <main className="main" id="main" tabIndex={-1}>
