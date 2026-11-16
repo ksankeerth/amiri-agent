@@ -11,6 +11,7 @@ import { Banner, Empty, errText, InlineSkeleton, isDown, LoadError, useNow, useT
 import { ago, dayTime, until } from "../../format";
 import { count, eventTitle, FINDING_STATUS, longWhen, signalStrength, sourceInfo } from "../../plain";
 import "../../styles/daily.css";
+import "../../styles/polish-daily.css";
 import { InvestigateNowButton, useInvestigationStatus } from "../events/Events";
 import { DAYS, reasonText, useRecentFindings } from "./recent";
 
@@ -56,7 +57,7 @@ export function FindingsPage() {
   };
   const nextBatch = status?.next_batch_at && status.connected ? (new Date(status.next_batch_at) <= now ? "very soon" : `in ${until(status.next_batch_at, now)}`) : null;
   return (
-    <div className="page">
+    <div className="page pd-find">
       <PageHeader title="Findings"
         status={items === null ? "" : <><b className="ink">{count(items.length, "finding")}</b> in the last {DAYS} days{n("grouped") ? `, ${n("grouped")} being investigated` : ""}</>}
         actions={<>
@@ -99,7 +100,7 @@ export function FindingsPage() {
                       {f.status === "linked" && f.outcome?.event_id && <>In the event <Link to={`/events/${f.outcome.event_id}`}>{ev ? eventTitle(ev) : "open the event"}</Link></>}
                       {f.status === "set_aside" && <>No impact found: {reasonText(f) || "no link to your products"}</>}
                     </span>
-                    {f.explanation && <span className="row-d muted">{f.explanation}</span>}
+                    {f.explanation && <span className="row-d fd-expl">{f.explanation}</span>}
                     {f.status === "grouped" && f.run_status === "running" && f.run_id && <span className="row wrap">
                       <button className="btn btn--sm" type="button" disabled={checking === f.finding_id} onClick={() => check(f)}>
                         <Icon name="refresh" className={checking === f.finding_id ? "spin" : undefined} />Check now</button>
