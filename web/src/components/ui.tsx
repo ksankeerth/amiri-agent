@@ -75,6 +75,15 @@ export function ResetModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+/** Status as a glyph and words, never colour alone: done ✓, partial ◐, required-and-open !, open ○. The words go to
+ *  screen readers (pass `label` to override), and the glyph's shape tells the states apart in greyscale. */
+export type Status = "done" | "partial" | "required" | "open";
+const STATUS: Record<Status, [icon: string, words: string]> = { done: ["good", "Done"], partial: ["half", "In progress"], required: ["bad", "Required, not done"], open: ["todo", "Open"] };
+export function StatusIcon({ status, label }: { status: Status; label?: string }) {
+  const [icon, words] = STATUS[status];
+  return <span className={`stat stat-${status}`} role="img" aria-label={label ?? words} title={label ?? words}><Icon name={icon} /></span>;
+}
+
 /** Placeholders shaped like what is loading, so the page doesn't jump and nothing says "Loading…". */
 export function Skel({ w = "100%", h = 14, r = 6 }: { w?: number | string; h?: number; r?: number }) {
   return <span className="skel" style={{ width: w, height: h, borderRadius: r }} aria-hidden="true" />;

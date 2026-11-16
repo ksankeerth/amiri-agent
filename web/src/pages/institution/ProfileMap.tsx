@@ -28,6 +28,15 @@ export type Layer = (typeof LAYERS)[number][0];
 /** An event to mark on the map (the Overview): its places, coloured by what it means for the institution. */
 export interface MapEvent { event_id: string; title: string; tone: "good" | "bad" | "mixed" | "neutral"; places: string[] }
 const TONE_COLOR: Record<MapEvent["tone"], string> = { bad: "var(--critical)", good: "var(--accent)", mixed: "var(--high)", neutral: "var(--ink-3)" };
+/** The event's marker: a shape per tone as well as a colour, so it reads without colour (▲ bad, ● good, ◆ mixed, ■ neutral). */
+function ToneShape({ tone, s = 1, stroke = "var(--surface)", sw = 2 }: { tone: MapEvent["tone"]; s?: number; stroke?: string; sw?: number }) {
+  const p = { fill: TONE_COLOR[tone], stroke, strokeWidth: sw, strokeLinejoin: "round" as const };
+  if (tone === "bad") return <path d={`M0,${-8.5 * s}L${8 * s},${6 * s}L${-8 * s},${6 * s}Z`} {...p} />;
+  if (tone === "mixed") return <path d={`M0,${-8 * s}L${8 * s},0L0,${8 * s}L${-8 * s},0Z`} {...p} />;
+  if (tone === "neutral") return <rect x={-5.5 * s} y={-5.5 * s} width={11 * s} height={11 * s} rx={1} {...p} />;
+  return <circle r={6.5 * s} {...p} />;
+}
+const Key = ({ tone }: { tone: MapEvent["tone"] }) => <svg width={14} height={14} viewBox="-8 -9 16 16" aria-hidden="true" style={{ verticalAlign: -2 }}><ToneShape tone={tone} s={0.85} sw={0} /></svg>;
 const FLOW_COLOR: Record<string, string> = { remittances_in: "var(--accent)", remittances_out: "var(--accent)", tourism: "var(--info)", services: "var(--info)", exports: "var(--high)", imports: "var(--medium-stroke)" };
 
 export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {}, layers, compact = false, onEvent }: {
@@ -216,7 +225,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           return <g key={`e${e.event_id}${c}`} transform={`translate(${p[0]},${p[1]})`} style={{ cursor: onEvent ? "pointer" : "default" }}
             onClick={() => onEvent?.(e.event_id)} onMouseMove={ev => show(ev, `${e.title} · ${P[c]?.name ?? c}`)} onMouseLeave={() => setTip(null)}>
             <circle r={13} fill={color} opacity={0.16} className="mappulse" />
-            <circle r={6.5} fill={color} stroke="var(--surface)" strokeWidth={2} /></g>;
+            <ToneShape tone={e.tone} /></g>;
         }))}
       </svg>
       <div className="mapzoom">
@@ -228,11 +237,13 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
       </div>
       {tip && <div className="maptip" style={{ left: Math.min(tip.x + 12, w - 250), top: tip.y + 12 }}>{tip.text}</div>}
       {compact ? <div className="row wrap small muted" style={{ gap: 14, marginTop: 8 }}>
-        <span><span className="statusdot" style={{ background: "var(--critical)" }} /> bad for you</span>
-        <span><span className="statusdot" style={{ background: "var(--accent)" }} /> good for you</span>
-        <span><span className="statusdot" style={{ background: "var(--high)" }} /> mixed</span>
-        <span><span className="statusdot" style={{ background: "var(--ink-3)" }} /> neutral</span>
+        <span><Key tone="bad" /> bad for you</span>
+        <span><Key tone="good" /> good for you</span>
+        <span><Key tone="mixed" /> mixed</span>
+        <span><Key tone="neutral" /> neutral</span>
         <span><span className="statusdot" style={{ background: "var(--map-home-fill)", outline: "1px solid var(--map-home)" }} /> where you operate</span>
+        {layers?.includes("risks") !== false && <span><svg width={14} height={14} aria-hidden="true" style={{ verticalAlign: -2 }}><circle cx={7} cy={7} r={5.5} fill="var(--critical-soft)" stroke="var(--critical)" strokeDasharray="3 2" /></svg> risk areas in your profile</span>}
+        {layers?.includes("flows") !== false && <span><svg width={16} height={10} aria-hidden="true"><path d="M1 8Q8 0 15 8" fill="none" stroke="var(--accent)" strokeWidth={2} /></svg> money flows</span>}
       </div> : <div className="row wrap small muted" style={{ gap: 14, marginTop: 6 }}>
         <span><span className="statusdot" style={{ background: "var(--accent)" }} /> customer groups · remittances</span>
         <span><span className="statusdot" style={{ background: "var(--high)" }} /> exports · rivals</span>

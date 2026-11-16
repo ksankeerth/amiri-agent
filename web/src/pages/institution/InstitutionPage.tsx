@@ -8,7 +8,7 @@ import type { Installation } from "../../App";
 import { Icon } from "../../components/Icon";
 import { WithChat } from "../../components/SetupChat";
 import { PageHeader, StatusPill } from "../../components/blocks";
-import { Banner, DEMOS, MenuButton, Modal, PageHead, ResetModal, useToast, PageSkeleton } from "../../components/ui";
+import { Banner, DEMOS, MenuButton, Modal, PageHead, ResetModal, useToast, PageSkeleton, StatusIcon } from "../../components/ui";
 import { dayTime, plural } from "../../format";
 import { PlaceName, useLoad } from "./fields";
 import { InstitutionFields, InstitutionModal, LABELS, splitErrors, useHiddenErrors, type Ctx } from "./forms";
@@ -108,13 +108,13 @@ export function ReadinessList({ r, onFix }: { r: Readiness; onFix?: (section: st
   return (
     <div className="list">{r.checks.map(c => (
       <div key={c.id} className="li" style={{ padding: "8px 0" }}>
-        <span className={`statusdot ${c.ok ? "sd-ok" : c.level === "required" ? "sd-down" : c.level === "info" ? "sd-off" : "sd-warn"}`} style={{ marginTop: 6 }} />
+        <StatusIcon status={c.ok ? "done" : c.level === "required" ? "required" : "open"} />
         <div className="col" style={{ gap: 2, flex: 1 }}>
           <span className="small" style={{ color: "var(--ink)" }}>{c.message}</span>
           {!c.ok && c.fix && <span className="small muted">{c.fix}</span>}
         </div>
-        <span className={`badge ${c.level === "required" ? (c.ok ? "b-ok" : "b-down") : c.level === "info" ? "b-noeffect" : c.ok ? "b-ok" : "b-warn"}`}>{c.level.toUpperCase()}</span>
-        {!c.ok && onFix && c.section !== "institution" && <button className="btn btn--sm btn--ghost" type="button" onClick={() => onFix(c.section)}>Fix</button>}
+        <span className="badge b-noeffect">{c.level}</span>
+        {!c.ok && onFix && c.section !== "institution" && <button className="btn btn--sm" type="button" onClick={() => onFix(c.section)}>Fix</button>}
       </div>))}</div>
   );
 }
