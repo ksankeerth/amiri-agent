@@ -9,3 +9,6 @@
 .loaderr .btn { flex:none; align-self:center; }
 .page > .loaderr, .ph + .loaderr { margin-top:var(--s-4); }
 
+/* ---------- PE3: the profile's state is a square chip with an icon, never the app bar's round Live dot */
+.profile-state { display:inline-flex; }
+.profile-state .pill { border-radius:var(--r-badge); font-weight:600; }

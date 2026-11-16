@@ -121,8 +121,12 @@ export function ReadinessList({ r, onFix }: { r: Readiness; onFix?: (section: st
   );
 }
 
+/** The profile's state, as a square chip with an icon: not a green dot, so it can't be read as the app bar's Live pill. */
 export function StatusBadge({ status }: { status: string }) {
-  return <StatusPill tone={status === "active" ? "green" : status === "archived" ? "grey" : "blue"}>{status === "active" ? "Live" : status === "archived" ? "Archived" : "Being set up"}</StatusPill>;
+  const [tone, icon, word] = status === "active" ? ["blue", "check", "Profile active"] as const
+    : status === "archived" ? ["grey", "box", "Archived"] as const : ["grey", "edit", "Being set up"] as const;
+  return <span className="profile-state"><StatusPill tone={tone} icon={icon}
+    title={status === "active" ? "The agents use this profile" : status === "archived" ? "The agents don't use this profile" : "Not active yet: the agents don't use it until it's activated"}>{word}</StatusPill></span>;
 }
 
 function download(name: string, data: unknown) {
