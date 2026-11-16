@@ -36,3 +36,58 @@
 .ffc-o[aria-pressed="true"] { background:var(--active-bg); color:var(--ink); font-weight:600; padding-left:12px; }
 .ffc-o svg { width:15px; height:15px; flex:none; }
 .filters:has(.ff) { gap:12px 16px; margin:4px 0 8px; }
+
+/* ---- Event detail (the page judges see): one 24 px edge, 24 px between blocks, a real stepper ---- */
+.pd-event .ph { margin-bottom:var(--s-6); }
+.pd-event .ph-title h1 { font-size:var(--fs-3xl); letter-spacing:-.025em; line-height:1.15; }
+.pd-event .ph-status { font-size:var(--fs-md); color:var(--ink-2); }
+/* stepper: circles on one continuous line, the words under them */
+.pd-event .steps { padding:var(--s-5) var(--s-6); gap:var(--s-4); margin-bottom:var(--s-6); }
+.pd-event .step-dot { width:32px; height:32px; }
+.pd-event .step-dot svg { width:16px; height:16px; }
+.pd-event .step-txt { gap:2px; }
+.pd-event .step-txt b { font-size:var(--fs-md); }
+.pd-event .step-txt span { font-size:var(--fs-sm); }
+@media (min-width: 901px) {
+  .pd-event .step { flex-direction:column; align-items:flex-start; gap:var(--s-3); }
+  /* from 8 px after the previous circle to 8 px before this one */
+  .pd-event .step + .step::before { left:calc(-100% + 24px); top:15px; width:calc(100% - 32px); height:2px; border-radius:2px; }
+  .pd-event .step.s-now + .step::before { background:repeating-linear-gradient(90deg, var(--hairline-2) 0 6px, transparent 6px 10px); }
+}
+/* the three summary cards: label, one big value, one line under it, pills on a shared baseline */
+.pd-event .ev-sum { gap:var(--s-4); margin-bottom:var(--s-6); }
+.pd-event .ev-card { padding:var(--s-5) var(--s-6); gap:var(--s-3); }
+.pd-event .ev-big { flex-direction:column; align-items:flex-start; gap:var(--s-1); font-size:var(--fs-3xl); line-height:1.1; }
+.pd-event .ev-big span { font-size:var(--fs-md); color:var(--ink-2); line-height:1.4; }
+.pd-event .ev-head { font-size:var(--fs-lg); line-height:1.4; }
+.pd-event .ev-chips { gap:var(--s-2); padding-top:var(--s-2); }
+.pd-event .ev-card > .ck-sum { margin-top:auto; gap:var(--s-2); padding-top:var(--s-2); }
+/* sections share the cards' 24 px edge */
+.pd-event .sec-hd { padding:var(--s-5) var(--s-6) 0; gap:var(--s-2); }
+.pd-event .sec-hd .dl-ai-chip { margin-left:var(--s-2); }
+.pd-event .sec-bd.flush { padding:var(--s-2) 0 var(--s-1); }
+.pd-event .sec-line { padding:0 var(--s-6) var(--s-4); font-size:var(--fs-md); line-height:1.5; max-width:none; }
+.pd-event .sec-line { max-width:calc(80ch + 48px); }
+.pd-allbad { display:block; }
+.pd-event .lrow { padding:var(--s-3) var(--s-6); min-height:64px; }
+.pd-event .ev-grid2 { gap:var(--s-4); margin-top:var(--s-6); }
+.pd-event .ev-grid2 > .col { gap:var(--s-4); }
+.pd-event .src { padding-left:var(--s-6); padding-right:var(--s-6); }
+.pd-event .rep { margin-top:var(--s-6); }
+.pd-event .rep > summary { padding:var(--s-4) var(--s-6); }
+.pd-event .rep > summary .dl-ai-chip { flex:none; margin-right:auto; }
+.pd-event .rep > summary > span:not(.dl-ai-chip) { flex:none; }
+/* possible impacts: column heads, equal rows, the size quiet, the check results in one aligned column */
+.pd-imp .irs { --ir-m:200px; }
+.pd-imp .irs.with-status { --ir-s:200px; }
+.pd-imp .ir-row { padding:var(--s-3) var(--s-6); min-height:64px; }
+.pd-imp .pd-ir-head { grid-template-columns:minmax(150px,1fr) minmax(0,1.5fr) var(--ir-m,250px) var(--ir-s,0) 16px; min-height:0;
+  padding-top:var(--s-2); padding-bottom:var(--s-2); background:var(--surface-2); border-top:1px solid var(--hairline); border-bottom:1px solid var(--hairline);
+  font-size:var(--fs-xs); font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
+.pd-imp .pd-ir-head + .ir { border-top:0; }
+.pd-imp .ir-prod b { font-size:var(--fs-md); }
+.pd-imp .ir-impact { font-size:var(--fs-md); gap:2px; }
+.pd-imp .ir-move { font-size:var(--fs-sm); }
+.pd-imp .ir-size { font-size:var(--fs-sm); color:var(--ink-2); }
+@media (max-width: 760px) { .pd-imp .pd-ir-head { display:none; } .pd-imp .ir-row, .pd-event .lrow, .pd-event .sec-line { padding-left:var(--s-4); padding-right:var(--s-4); }
+  .pd-event .sec-hd { padding:var(--s-4) var(--s-4) 0; } }
