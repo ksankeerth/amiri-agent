@@ -4,6 +4,7 @@ import { Icon } from "./components/Icon";
 import { Empty, PageHead, PageSkeleton, useNow, useRole, type Role } from "./components/ui";
 import { api, ME } from "./api/client";
 import { fullNow, setZone, ZONE_LABEL } from "./format";
+import "./styles/shell.css";
 import { InstitutionPage, NewInstitutionPage } from "./pages/institution/InstitutionPage";
 import { SetupWizard } from "./pages/institution/SetupWizard";
 import { EventDetailPage } from "./pages/events/EventDetail";

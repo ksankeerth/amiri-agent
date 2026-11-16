@@ -1,0 +1,43 @@
+/* The Overview's hero: one headline, one action, four numbers. */
+
+/* ---------- Overview hero */
+.ovx .ph { margin-bottom:24px; }
+.ovx .ph-title h1 { font-size:var(--fs-3xl); letter-spacing:-.025em; line-height:1.15; }
+.ovx .ph-status { font-size:var(--fs-lg); color:var(--ink-2); }
+.ovx .ph-status a b { color:inherit; }
+.ph-cta { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:8px; }
+.btn--lg { height:44px; padding:0 20px; font-size:var(--fs-lg); }
+.btn--lg svg { width:18px; height:18px; }
+.ovx-warn { display:inline-flex; align-items:center; gap:8px; color:var(--high-ink); font-weight:600; }
+.ovx-warn svg { width:18px; height:18px; flex:none; }
+
+/* four numbers that read left to right; only the one that needs someone stands out */
+.ovx-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
+.ovx-kpi { display:flex; flex-direction:column; padding:16px 20px; text-decoration:none; color:inherit; }
+.ovx-kpi:hover { text-decoration:none; box-shadow:var(--e-md); border-color:var(--hairline-2); }
+.ovx-kpi .step { font-size:var(--fs-xs); font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; }
+.ovx-kpi .v { display:flex; align-items:center; gap:8px; font-size:var(--fs-3xl); font-weight:700; letter-spacing:-.03em; line-height:1.1; color:var(--ink); font-variant-numeric:tabular-nums; }
+.ovx-kpi .v svg { width:24px; height:24px; stroke-width:2.2; }
+.ovx-kpi .l { font-size:var(--fs-md); font-weight:600; color:var(--ink-2); margin-top:4px; }
+.ovx-kpi .s { font-size:var(--fs-xs); color:var(--ink-3); margin-top:8px; }
+.ovx-kpi.hot { background:var(--critical-soft); border-color:var(--critical-line); }
+.ovx-kpi.hot .step, .ovx-kpi.hot .v, .ovx-kpi.hot .l, .ovx-kpi.hot .s { color:var(--critical-ink); }
+.ovx-kpi.hot:hover { border-color:var(--critical); }
+.ovx .ov-grid { margin-top:24px; }
+@media (max-width: 1100px) { .ovx-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+/* ---------- first run: the one-click demo first, your own setup second */
+.ovx-demo { border-color:var(--accent-line); }
+.ovx-demo .bd { padding:24px; display:flex; flex-direction:column; gap:8px; }
+.ovx-demo h2 { font-size:var(--fs-xl); }
+.ovx-demo p { font-size:var(--fs-md); color:var(--ink-2); max-width:72ch; }
+.ovx-demo-btns { display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; }
+.ovx-demo-btns .btn--lg { height:auto; min-height:56px; padding:8px 20px; justify-content:flex-start; text-align:left; }
+.ovx-demo-t { display:flex; flex-direction:column; line-height:1.3; }
+.ovx-demo-t span { font-size:var(--fs-xs); font-weight:500; }
+.ovx-or { font-size:var(--fs-lg); margin:32px 0 12px; }
+.ovx .ov-step h3 { font-size:var(--fs-lg); }
+.ovx .ov-step .n svg { width:14px; height:14px; stroke-width:2.6; }
+.ovx .ov-step.locked { background:var(--surface-2); box-shadow:none; }
+.ovx .ov-step.locked .n { background:transparent; box-shadow:inset 0 0 0 1px var(--hairline-2); color:var(--ink-3); }
+.ovx .ov-step.locked h3 { color:var(--ink-2); }
