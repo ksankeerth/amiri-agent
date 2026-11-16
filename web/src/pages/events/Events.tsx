@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../../api/client";
+import { alertsApi } from "../../api/alerts";
 import { investigationApi, type EventDetail, type EventRow, type InvestigationStatus, type Run, type Theme } from "../../api/investigation";
 import { HowItWorks, PageHeader, Places, StatTiles, TonePill } from "../../components/blocks";
 import { CheckBrief } from "../../components/checks";
@@ -55,7 +56,7 @@ export function InvestigateNowButton({ ids, onDone, small }: { ids?: string[]; o
     } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
     finally { setBusy(false); }
   };
-  return <button className={`btn${small ? " btn--sm" : " btn--primary"}`} type="button" onClick={go} disabled={busy}>
+  return <button className={`btn${small ? " btn--sm" : ""}`} type="button" onClick={go} disabled={busy} title="Skips the wait for the next batch">
     <Icon name={busy ? "refresh" : "play"} className={busy ? "spin" : undefined} />Investigate now</button>;
 }
 
@@ -116,6 +117,8 @@ export function EventsPage() {
   const [err, setErr] = useState<string | null>(null);
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const recent = useRecentFindings();
+  const [toReview, setToReview] = useState(0);
+  useEffect(() => { alertsApi.summary().then(x => setToReview(x.to_review)).catch(() => {}); }, []);
   const load = useCallback(async () => {
     try {
       const [e, r] = await Promise.all([investigationApi.events(), investigationApi.runs()]);
@@ -143,7 +146,7 @@ export function EventsPage() {
           <span className="small muted">Updated {loadedAt ? ago(loadedAt.toISOString(), now) : ""}</span>
           <button className="btn" type="button" onClick={refresh}><Icon name="refresh" />Refresh</button>
           {sim && ((events ?? []).some(e => e.world === "sandbox") || runs.some(r => r.world === "sandbox")) ? <ClearSandbox onDone={load} /> : null}
-          {status && status.findings_waiting > 0 && status.connected ? <InvestigateNowButton onDone={refresh} /> : null}
+          {toReview > 0 && <Link className="btn btn--primary" to="/alerts"><Icon name="alert" />Review {count(toReview, "alert")}</Link>}
         </>}
         help={<HowItWorks><p>An event is something that happened in the world, traced to the products it could hit. It stays open while news about it keeps coming, then closes.</p></HowItWorks>} />
       <div className="banners">
@@ -151,9 +154,9 @@ export function EventsPage() {
         {admin && status?.notes.map(n => <Banner key={n} kind={status.connected ? "info" : "warn"} icon="info">{n}</Banner>)}
         {!admin && status && !status.connected && <Banner kind="warn" icon="warn">New findings can't be investigated right now. Your Platform Admin has been told.</Banner>}
         {status && status.findings_waiting > 0 && (
-          <Banner kind="info" icon="info">
+          <Banner kind="info" icon="info" action={status.connected ? <InvestigateNowButton onDone={refresh} small /> : undefined}>
             <b>{plural(status.findings_waiting, "finding")} waiting</b> to be investigated
-            {status.next_batch_at && status.connected ? <>, {new Date(status.next_batch_at) <= now ? "very soon" : `in ${until(status.next_batch_at, now)}`}. Investigate now skips the wait.</> : "."}
+            {status.next_batch_at && status.connected ? <>, {new Date(status.next_batch_at) <= now ? "very soon" : `in ${until(status.next_batch_at, now)}`}.</> : "."}
           </Banner>
         )}
       </div>
