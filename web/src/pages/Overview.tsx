@@ -14,6 +14,7 @@ import { Banner, CountUp, DEMOS, errText, isDown, LoadError, PageHead, PageSkele
 import { ago, dayTime, pct, placeName, placeOrder, plural, price, TIME_ZONE, ZONE_LABEL } from "../format";
 import { eventTitle, setAsideReason, themeLabel } from "../plain";
 import { ProfileMap } from "./institution/ProfileMap";
+import "../styles/polish-overview.css";
 
 const REFRESH_MS = 60_000;
 const LEVEL_ICON: Record<Attention["level"], string> = { crit: "warn", warn: "warn", info: "info" };
@@ -176,7 +177,8 @@ export function OverviewPage() {
 
       <div className="ov-grid">
         <div className="col gap16">
-          <div className="card" id="needs"><div className="hd"><h2>{alerts ? "Also waiting for you" : "Needs you"}</h2></div>
+          <div className="card ovp-list" id="needs"><div className="hd"><h2>{alerts ? "Also waiting for you" : "Needs you"}</h2>
+            {more > 0 && <span className="ovp-n">{more}</span>}</div>
             {!rest.length ? <div className="ov-need" data-lv="info" style={{ ["--lv" as string]: "var(--accent)" }}>
               <span className="ico"><Icon name="check" /></span><div><div className="t">{alerts ? "Nothing else needs you" : "Nothing needs you right now"}</div>
                 <div className="d">Approvals, failed checks, prices that stop updating and gaps in your profile appear here.</div></div></div>
@@ -187,26 +189,26 @@ export function OverviewPage() {
                 return a.link ? <Link key={n} to={a.link} className="ov-need" data-lv={a.level}>{body}</Link>
                   : <div key={n} className="ov-need" data-lv={a.level}>{body}</div>;
               })}
-            {o.attention_more > 0 && <div className="li small muted">and {o.attention_more} more</div>}
-            {o.admin_notes > 0 && <div className="li small muted">{plural(o.admin_notes, "note")} about Amiri Agent's own services {o.admin_notes === 1 ? "is" : "are"} with your Platform Admin.</div>}
+            {o.attention_more > 0 && <div className="ovp-more">and {o.attention_more} more</div>}
+            {o.admin_notes > 0 && <div className="ovp-foot"><Icon name="info" />{plural(o.admin_notes, "note")} about Amiri Agent's own services {o.admin_notes === 1 ? "is" : "are"} with your Platform Admin.</div>}
           </div>
 
-          <div className="card"><div className="hd"><h2>Open events</h2><span className="spacer" /><Link className="small" to="/events">All events</Link></div>
-            {!o.events.length ? <div className="bd col" style={{ gap: 10 }}>
-              <span className="small muted">No open events. When Amiri Agent traces news or a price move to your products, it appears here.</span></div>
+          <div className="card ovp-list"><div className="hd"><h2>Open events</h2>{o.events.length > 0 && <span className="ovp-n">{o.events.length}</span>}
+            <span className="spacer" /><Link className="small" to="/events">All events</Link></div>
+            {!o.events.length ? <div className="ovp-empty"><Icon name="events" /><span>No open events. When Amiri Agent traces news or a price move to your products, it appears here.</span></div>
               : [...o.events].sort((x, y) => RANK[x.tone] - RANK[y.tone]).map(e => (
-                <Link key={e.event_id} to={`/events/${e.event_id}`} className="ov-event">
+                <Link key={e.event_id} to={`/events/${e.event_id}`} className="ov-event ovp-ev" data-tone={e.tone}>
                   <div className="h"><span className="ttl">{eventTitle(e)}</span><TonePill tone={e.tone} /></div>
-                  {e.top_effects.length > 0 && <ul className="fx">{e.top_effects.map((x, n) => (
-                    <li key={n}><span className="muted">→</span><span><b>{x.product}</b>: {x.label}</span></li>))}</ul>}
-                  <div className="ov-tags">{e.themes.map((t, n) => <span key={n} className="chip">{themeLabel(t)}</span>)}</div>
-                  <div className="m"><span>{plural(e.effects, "possible impact")}</span>
+                  <div className="m"><span>{e.effects ? plural(e.effects, "possible impact") : "No possible impact on your products"}</span>
                     {e.places.length > 0 && <span>{placeOrder(e.places).slice(0, 2).map(p => names[p] ?? placeName(p)).join(", ")}{e.places.length > 2 ? ` +${e.places.length - 2} more` : ""}</span>}
                     <span>last news {ago(e.last_finding_at, now)}</span></div>
+                  {e.top_effects.length > 0 && <ul className="fx" aria-label="Your products it could move">{e.top_effects.map((x, n) => (
+                    <li key={n}><b>{x.product}</b><span>{x.label}</span></li>))}</ul>}
+                  {e.themes.length > 0 && <div className="ov-tags">{e.themes.map((t, n) => <span key={n} className="chip">{themeLabel(t)}</span>)}</div>}
                 </Link>))}
           </div>
-          <div className="card"><div className="hd"><h2>Latest findings</h2><span className="spacer" /><Link className="small" to="/findings">All findings</Link></div>
-            {!o.findings.length ? <div className="bd small muted">None yet.</div> : <div className="list">{o.findings.map(f => (
+          <div className="card ovp-list"><div className="hd"><h2>Latest findings</h2><span className="spacer" /><Link className="small" to="/findings">All findings</Link></div>
+            {!o.findings.length ? <div className="ovp-empty"><Icon name="search" /><span>No findings yet. They appear here when a monitor, a market price or Radar notices something.</span></div> : <div className="list">{o.findings.map(f => (
               <Link key={f.finding_id} to={f.event_id ? `/events/${f.event_id}` : `/findings#f-${f.finding_id}`} className="li ov-finding">
                 <Icon name={f.source === "monitor" ? "monitor" : f.source === "radar" ? "radar" : "series"} className="ico16" />
                 <div className="col" style={{ gap: 2, minWidth: 0 }}><span className="small" style={{ color: "var(--ink)" }}>{f.title}</span>
@@ -222,7 +224,7 @@ export function OverviewPage() {
               events={o.events.map(e => ({ event_id: e.event_id, title: eventTitle(e), tone: e.tone, places: e.places }))}
               extraPlaces={o.map.places} onEvent={id => nav(`/events/${id}`)} /></div></div>}
 
-          {o.markets.length > 0 && <div className="card"><div className="hd"><h2>Markets</h2><span className="spacer" /><Link className="small" to="/series">Market series</Link></div>
+          {o.markets.length > 0 && <div className="card ovp-list"><div className="hd"><h2>Markets</h2><span className="spacer" /><Link className="small" to="/series">Market series</Link></div>
             {o.markets.map(m => (
               <Link key={m.series_id} to={`/series/${m.series_id}`} className="ov-mkt">
                 <span className="ov-mkt-name"><span className="n">{m.name}</span>{m.state !== "normal" && <StateBadge state={m.state as SeriesState} />}</span>
@@ -231,7 +233,7 @@ export function OverviewPage() {
                 <span className="c">{pct(m.change_1d_pct)}</span>
               </Link>))}</div>}
 
-          <div className="card"><div className="hd"><h2>Latest from Radar</h2><span className="spacer" /><Link className="small" to="/radar">Radar</Link></div>
+          <div className="card ovp-list"><div className="hd"><h2>Latest from Radar</h2><span className="spacer" /><Link className="small" to="/radar">Radar</Link></div>
             {s.radar.connected && <div className="bd small muted" style={{ paddingBottom: 0 }}>Prototype: {scheduleText(o.radar.every_minutes, o.radar.run_at)}, Check now {o.radar.run_now_limit} times a day.</div>}
             {!o.radar.stories.length ? <div className="bd small muted">{s.radar.connected ? "No stories yet." : "Radar isn't connected yet."}</div>
               : <div className="list">{o.radar.stories.map(r => (
