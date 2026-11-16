@@ -14,7 +14,7 @@ import { themeText } from "../events/Events";
 
 type Show = "all" | "sent" | "below" | "dismissed";
 const SHOW: [Show, string][] = [["all", "All"], ["sent", "Sent for investigation"], ["below", "Held back"], ["dismissed", "Dismissed"]];
-const REL: Record<RadarStory["relevance"], [string, Tone]> = { high: ["Highly relevant", "red"], medium: ["Relevant", "amber"], low: ["Slightly relevant", "grey"] };
+const REL: Record<RadarStory["relevance"], [string, Tone]> = { high: ["Highly relevant", "blue"], medium: ["Relevant", "grey"], low: ["Slightly relevant", "grey"] };
 
 function Funnel({ s }: { s: RadarStatus }) {
   const r = s.last_run;

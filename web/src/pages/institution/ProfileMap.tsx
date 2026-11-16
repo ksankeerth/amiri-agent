@@ -204,10 +204,10 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
         {on.has("regulators") && S.regulators.filter(r => r.country).map(r => {
           const p = xy(at(r.country));
           const n = S.regulators.filter(x => x.country === r.country).findIndex(x => x.id === r.id);  // stack labels per country
-          return p && <g key={`g${r.id}`} transform={`translate(${p[0] + 30},${p[1] - 12 - n * 22})`} onMouseMove={e => show(e, `${r.name} · ${r.relation}`)} onMouseLeave={() => setTip(null)}>
-            {(() => { const t = (r.short ?? r.name).slice(0, 7), hw = 6 + t.length * 3.7;  // 12 px label: the floor for a projector
-              return <><rect x={-hw} y={-10} width={hw * 2} height={19} rx={4} fill="var(--surface)" stroke="var(--line-strong)" />
-                <text textAnchor="middle" y={4} fontSize={12} fontWeight={700} fill="var(--ink-2)">{t}</text></>; })()}</g>;
+          const t = (r.short ?? r.name).slice(0, 7), hw = 6 + t.length * 3.7;  // a 12 px label (the floor for a projector), kept inside the map
+          return p && <g key={`g${r.id}`} transform={`translate(${Math.min(p[0] + 30, w - hw - 4)},${p[1] - 12 - n * 22})`} onMouseMove={e => show(e, `${r.name} · ${r.relation}`)} onMouseLeave={() => setTip(null)}>
+            <rect x={-hw} y={-10} width={hw * 2} height={19} rx={4} fill="var(--surface)" stroke="var(--line-strong)" />
+            <text textAnchor="middle" y={4} fontSize={12} fontWeight={700} fill="var(--ink-2)">{t}</text></g>;
         })}
         {events.flatMap(e => e.places.map(c => {
           const p = xy(at(c));

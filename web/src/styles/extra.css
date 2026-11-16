@@ -80,7 +80,7 @@ a.ov-need:hover { background:var(--hover-bg); }
 .ov-steps { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
 .ov-step { padding:16px; display:flex; flex-direction:column; gap:8px; }
 .ov-step .n { width:26px; height:26px; border-radius:50%; background:var(--accent-soft); color:var(--accent-ink); font-weight:700; display:flex; align-items:center; justify-content:center; font-size:var(--fs-sm); }
-.ov-step.done .n { background:var(--accent); color:#fff; }
+.ov-step.done .n { background:var(--accent); color:var(--on-accent); }
 .ov-step h2 { margin:0; }
 .mappulse { transform-origin:center; animation:mappulse 2.4s ease-out infinite; }
 @keyframes mappulse { 0% { transform:scale(.6); opacity:.35; } 70% { transform:scale(1.5); opacity:0; } 100% { opacity:0; } }
@@ -191,10 +191,10 @@ a.card:hover, .card.click:hover { box-shadow:var(--e-md); border-color:var(--lin
 .navgroup + .navgroup { margin-top:8px; }
 .navgroup > .grp { margin:12px 12px 4px; font-size:var(--fs-xs); letter-spacing:.04em; }
 .nav a { transition:background var(--d-fast), color var(--d-fast); position:relative; }
-.nav a[aria-current="page"]::before { content:""; position:absolute; left:-8px; top:7px; bottom:7px; width:3px; border-radius:0 3px 3px 0; background:var(--accent); }
+.nav a[aria-current="page"]::before { content:""; position:absolute; left:-8px; top:7px; bottom:7px; width:3px; border-radius:0 3px 3px 0; background:var(--ink); }
 .side-user { display:flex; align-items:center; gap:12px; padding:12px 16px; border-top:1px solid var(--hairline); }
 .side-user b { color:var(--ink); font-size:var(--fs-sm); line-height:1.2; }
-.avatar { width:32px; height:32px; border-radius:50%; background:var(--accent-strong); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:var(--fs-sm); flex:none; }
+.avatar { width:32px; height:32px; border-radius:50%; background:var(--accent-strong); color:var(--on-accent); display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:var(--fs-sm); flex:none; }
 .side { box-shadow:1px 0 0 var(--hairline); }
 .appbar { box-shadow:0 1px 0 var(--hairline), 0 4px 16px rgba(20,24,31,.03); }
 
@@ -247,7 +247,7 @@ input[type=radio]:checked { border:2px solid var(--accent-strong); background:va
 .chain-ico { width:30px; height:30px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; background:var(--sunken); color:var(--ink-3); transition:background var(--d-slow), color var(--d-slow); }
 .chain-ico svg { width:16px; height:16px; }
 .chain-step.on .chain-ico { background:var(--accent-soft); color:var(--accent-ink); }
-.chain-step.hot .chain-ico { background:var(--critical); color:#fff; }
+.chain-step.hot .chain-ico { background:var(--critical); color:var(--surface); }
 .chain-n { font-size:var(--fs-2xl); font-weight:700; letter-spacing:-.03em; color:var(--ink); font-variant-numeric:tabular-nums; animation:pop 420ms var(--ease); }
 @keyframes pop { 0% { transform:scale(.86); opacity:.4; } 60% { transform:scale(1.08); } 100% { transform:none; opacity:1; } }
 .chain-l { font-size:var(--fs-sm); font-weight:600; color:var(--ink-2); margin-top:2px; }
@@ -261,7 +261,7 @@ input[type=radio]:checked { border:2px solid var(--accent-strong); background:va
   box-shadow:0 18px 48px rgba(20,24,31,.22); animation:momentin 420ms cubic-bezier(.2,.9,.25,1.15) both; }
 .moment b { color:var(--ink); font-size:var(--fs-md); }
 .moment-k { font-size:var(--fs-xs); font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--critical-ink); }
-.moment-ico { width:34px; height:34px; border-radius:50%; background:var(--critical); color:#fff; display:inline-flex; align-items:center; justify-content:center; flex:none; animation:ring 1.4s ease-out 2; }
+.moment-ico { width:34px; height:34px; border-radius:50%; background:var(--critical); color:var(--surface); display:inline-flex; align-items:center; justify-content:center; flex:none; animation:ring 1.4s ease-out 2; }
 .moment-ico svg { width:17px; height:17px; }
 @keyframes momentin { from { opacity:0; transform:translateY(16px) scale(.96); } to { opacity:1; transform:none; } }
 @keyframes ring { 0% { box-shadow:0 0 0 0 rgba(207,64,64,.45); } 100% { box-shadow:0 0 0 14px rgba(207,64,64,0); } }
