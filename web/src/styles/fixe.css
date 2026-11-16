@@ -12,3 +12,16 @@
 /* ---------- PE3: the profile's state is a square chip with an icon, never the app bar's round Live dot */
 .profile-state { display:inline-flex; }
 .profile-state .pill { border-radius:var(--r-badge); font-weight:600; }
+
+/* ---------- PE4: a visible hover (about 7-8 % ink, the tokens in app.css) and a pressed state (about 13-14 %), both themes.
+   Rows and the menu are see-through: pressed sets the colour. A filled control (the primary button, a chip, a red "hot" card) gets the
+   overlay as a background-image, so it tints the fill instead of replacing it. */
+:is(.nav a, .li.click, a.ov-need, .ov-event, .ov-mkt, a.lrow, .evrow, details.ir > .ir-row, details.aside > summary, .results button:not(:disabled),
+  .btn:not(:disabled):not(.btn--primary)):active,
+.tbl tr.click:active td { background-color:var(--press-bg); }
+:is(a.card, .seg button, .chip.click):hover { background-image:linear-gradient(var(--hover-bg), var(--hover-bg)); }
+:is(a.card, .seg button, .chip.click):active { background-image:linear-gradient(var(--press-bg), var(--press-bg)); }
+.btn--primary:active:not(:disabled) { background-image:linear-gradient(rgba(0,0,0,.14), rgba(0,0,0,.14)); }
+a.card:hover { border-color:var(--line-strong); }
+/* a text link shows it's a link under the cursor */
+.evrow a.row-l:hover, .ov-event:hover .ttl { text-decoration:underline; text-underline-offset:2px; }

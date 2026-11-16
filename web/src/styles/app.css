@@ -11,7 +11,7 @@
   --medium:#C29A1E; --medium-stroke:#A07C0E; --medium-soft:#FAF3DA; --medium-line:#ECDDA3; --medium-ink:#806405;
   --low:#6E8AA8; --low-soft:#EDF1F6; --low-line:#D2DCE8; --low-ink:#3C5067;
   --info:#3B82C4; --info-soft:#E9F1FA; --info-line:#C3DBF0; --info-ink:#1E5285;
-  --hover-bg:rgba(31,31,28,.04); --active-bg:rgba(31,31,28,.08);
+  --hover-bg:rgba(31,31,28,.07); --active-bg:rgba(31,31,28,.10); --press-bg:rgba(31,31,28,.13); /* hover, selected, pressed: visible on a projector */
   --overlay:rgba(27,29,33,.5);
   --font-ui:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --font-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
@@ -40,7 +40,7 @@
     --medium-soft:rgba(229,197,90,.16); --medium-line:rgba(229,197,90,.40); --medium-ink:#E8CD74;
     --low-soft:rgba(157,179,204,.18); --low-line:rgba(157,179,204,.40); --low-ink:#B9CADD;
     --info-soft:rgba(127,178,229,.18); --info-line:rgba(127,178,229,.42); --info-ink:#A6C9EE;
-    --hover-bg:rgba(255,255,255,.04); --active-bg:rgba(255,255,255,.08); --overlay:rgba(0,0,0,.66);
+    --hover-bg:rgba(255,255,255,.08); --active-bg:rgba(255,255,255,.11); --press-bg:rgba(255,255,255,.14); --overlay:rgba(0,0,0,.66);
     --e-sm:0 1px 2px rgba(0,0,0,.30); --e-md:0 6px 20px rgba(0,0,0,.45); --e-pop:0 6px 24px rgba(0,0,0,.40); --e-lg:0 16px 48px rgba(0,0,0,.50);
     --map-ocean:#101211; --map-land:#3A3E37; --map-border:#6A7066; --map-home:#5CC795; --map-home-fill:rgba(30,157,99,.34); --map-label:#A8A69E; --map-halo:#111311;
     color-scheme: dark;
@@ -60,7 +60,7 @@
   --medium-soft:rgba(229,197,90,.16); --medium-line:rgba(229,197,90,.40); --medium-ink:#E8CD74;
   --low-soft:rgba(157,179,204,.18); --low-line:rgba(157,179,204,.40); --low-ink:#B9CADD;
   --info-soft:rgba(127,178,229,.18); --info-line:rgba(127,178,229,.42); --info-ink:#A6C9EE;
-  --hover-bg:rgba(255,255,255,.04); --active-bg:rgba(255,255,255,.08); --overlay:rgba(0,0,0,.66);
+  --hover-bg:rgba(255,255,255,.08); --active-bg:rgba(255,255,255,.11); --press-bg:rgba(255,255,255,.14); --overlay:rgba(0,0,0,.66);
   --e-sm:0 1px 2px rgba(0,0,0,.30); --e-md:0 6px 20px rgba(0,0,0,.45); --e-pop:0 6px 24px rgba(0,0,0,.40); --e-lg:0 16px 48px rgba(0,0,0,.50);
   --map-ocean:#101211; --map-land:#3A3E37; --map-border:#6A7066; --map-home:#5CC795; --map-home-fill:rgba(30,157,99,.34); --map-label:#A8A69E; --map-halo:#111311;
   color-scheme: dark;
