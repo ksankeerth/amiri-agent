@@ -12,7 +12,7 @@ import { FactList, PageHeader, Places, Row, Section, SourceCard, StatusPill, Tec
 import { Icon } from "../../components/Icon";
 import { Banner, useNow, useToast, PageSkeleton } from "../../components/ui";
 import { ago, dayTime, plainError, when } from "../../format";
-import { everyText, longWhen, MONITOR_CHECK, setAsideReason } from "../../plain";
+import { eventTitle, everyText, longWhen, MONITOR_CHECK, setAsideReason } from "../../plain";
 import type { Installation } from "../../App";
 import { ChipsInput, Field, PlacesField } from "../institution/fields";
 import { FLOW_WORDS } from "../institution/forms";
@@ -374,7 +374,7 @@ export function MonitorPage() {
   const [drafting, setDrafting] = useState(false);
   const [editing, setEditing] = useState<boolean | null>(null);  // null: the default for its state (a fresh draft opens in the form)
   const [eventTitles, setEventTitles] = useState<Record<string, string>>({});
-  useEffect(() => { if (findings.some(f => f.outcome?.event_id)) investigationApi.events().then(xs => setEventTitles(Object.fromEntries(xs.map(e => [e.event_id, e.title])))).catch(() => {}); }, [findings]);
+  useEffect(() => { if (findings.some(f => f.outcome?.event_id)) investigationApi.events().then(xs => setEventTitles(Object.fromEntries(xs.map(e => [e.event_id, eventTitle(e)])))).catch(() => {}); }, [findings]);
 
   const owner = m?.institution_id;
   useEffect(() => {  // the exposure chips come from the monitor's own institution (the installation's for a new one)

@@ -13,7 +13,7 @@ import { StateBadge } from "../components/series";
 import { Icon } from "../components/Icon";
 import { Banner, CountUp, DEMOS, PageSkeleton, useNow, useRole } from "../components/ui";
 import { ago, dayTime, pct, placeName, placeOrder, plural, price, TIME_ZONE, ZONE_LABEL } from "../format";
-import { setAsideReason, themeLabel } from "../plain";
+import { eventTitle, setAsideReason, themeLabel } from "../plain";
 import { ProfileMap } from "./institution/ProfileMap";
 
 const REFRESH_MS = 60_000;
@@ -133,7 +133,7 @@ export function OverviewPage() {
   // The headline answers "does anything need my teams?" and the one button under it is the next step.
   const head = alerts
     ? { title: `${plural(alerts, "alert")} need${alerts === 1 ? "s" : ""} your teams`,
-        line: bad.length ? <>Most serious: <Link to={`/events/${bad[0].event_id}`}><b>{bad[0].title}</b></Link>, bad for you</> : <>Early warnings for products your teams own</>,
+        line: bad.length ? <>Most serious: <Link to={`/events/${bad[0].event_id}`}><b>{eventTitle(bad[0])}</b></Link>, bad for you</> : <>Early warnings for products your teams own</>,
         cta: <Link className="btn btn--primary btn--lg" to="/alerts">Review the alerts<Icon name="arrow" /></Link> }
     : o.events.length
       ? { title: "No alerts for your teams", line: <>Amiri Agent is following {plural(o.events.length, "open event")}; none needs a team yet</>,
@@ -197,7 +197,7 @@ export function OverviewPage() {
               <span className="small muted">No open events. When Amiri Agent traces news or a price move to your products, it appears here.</span></div>
               : [...o.events].sort((x, y) => RANK[x.tone] - RANK[y.tone]).map(e => (
                 <Link key={e.event_id} to={`/events/${e.event_id}`} className="ov-event">
-                  <div className="h"><span className="ttl">{e.title}</span><TonePill tone={e.tone} /></div>
+                  <div className="h"><span className="ttl">{eventTitle(e)}</span><TonePill tone={e.tone} /></div>
                   {e.top_effects.length > 0 && <ul className="fx">{e.top_effects.map((x, n) => (
                     <li key={n}><span className="muted">→</span><span><b>{x.product}</b>: {x.label}</span></li>))}</ul>}
                   <div className="ov-tags">{e.themes.map((t, n) => <span key={n} className="chip">{themeLabel(t)}</span>)}</div>
@@ -218,9 +218,9 @@ export function OverviewPage() {
 
         <div className="col gap16">
           {profile && <div className="card"><div className="hd"><h2>Where it's happening</h2></div><div className="bd">
-            <p className="sr">{o.events.length ? `Open events by place: ${o.events.map(e => `${e.title}${e.places.length ? ` (${e.places.map(p => names[p] ?? p).join(", ")})` : ""}`).join("; ")}.` : "No open events on the map."} Places where you operate: {Object.values(names).slice(0, 12).join(", ")}.</p>
+            <p className="sr">{o.events.length ? `Open events by place: ${o.events.map(e => `${eventTitle(e)}${e.places.length ? ` (${e.places.map(p => names[p] ?? p).join(", ")})` : ""}`).join("; ")}.` : "No open events on the map."} Places where you operate: {Object.values(names).slice(0, 12).join(", ")}.</p>
             <ProfileMap profile={profile} height={290} compact layers={["footprint", "flows", "risks"]}
-              events={o.events.map(e => ({ event_id: e.event_id, title: e.title, tone: e.tone, places: e.places }))}
+              events={o.events.map(e => ({ event_id: e.event_id, title: eventTitle(e), tone: e.tone, places: e.places }))}
               extraPlaces={o.map.places} onEvent={id => nav(`/events/${id}`)} /></div></div>}
 
           {o.markets.length > 0 && <div className="card"><div className="hd"><h2>Markets</h2><span className="spacer" /><Link className="small" to="/series">Market series</Link></div>
