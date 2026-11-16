@@ -98,12 +98,12 @@ function SpecBody({ s, q }: { s: Spec; q: string }) {
   const ids = useMemo(() => anchors(s.categories), [s]);
   const g = (n: string) => s.guide[n];
   const guideSection = (n: string) => g(n) && (
-    <section key={n} id={`s${n}`} className="sp-sec"><h2>{n}. {g(n).title}</h2><Markdown text={g(n).md} /></section>);
+    <section key={n} id={`s${n}`} className="sp-sec"><h2>{n}. {g(n).title}</h2><Markdown text={g(n).md} under={2} /></section>);
   const cats = s.categories.map(c => ({ c, ms: (c.metrics ?? []).filter(m => matches(m, q)) })).filter(x => !q || x.ms.length);
   return (
     <>
       {!q && <>
-        <section className="sp-sec" id="intro"><Markdown text={g("intro")?.md ?? ""} /></section>
+        <section className="sp-sec" id="intro"><Markdown text={g("intro")?.md ?? ""} under={1} /></section>
         {GUIDE_BEFORE.map(guideSection)}
         <section id="s4" className="sp-sec"><h2>4. Product taxonomy</h2>
           <ScrollTable label="Product taxonomy"><table><thead><tr><th scope="col">Category</th><th scope="col">For</th><th scope="col">Product types</th></tr></thead>

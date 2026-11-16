@@ -19,12 +19,17 @@ export function ScrollTable({ label, children }: { label: string; children: Reac
 
 const cells = (row: string) => row.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(c => c.trim());
 
-/** `shift` moves every heading level (the print layout's sections are h1, so its guide subsections are h2). */
-export function Markdown({ text, shift = 0 }: { text: string; shift?: number }) {
+/** `shift` moves every heading level (the print layout's sections are h1, so its guide subsections are h2). `under` is the
+ *  level of the heading the text sits under: no heading skips a level below it or below the one before (h2 → h4). */
+export function Markdown({ text, shift = 0, under }: { text: string; shift?: number; under?: number }) {
+  let prev = under ?? null;
   const out: ReactNode[] = [];
   let bullets: string[] = [], numbered: string[] = [], rows: string[] = [], quote: string[] = [];
   const heading = (level: number, body: string) => {
-    const H = `h${Math.min(6, Math.max(1, level + shift))}` as "h2";
+    let lvl = Math.min(6, Math.max(1, level + shift));
+    if (prev !== null && lvl > prev + 1) lvl = prev + 1;
+    prev = lvl;
+    const H = `h${lvl}` as "h2";
     return <H key={out.length} className="md-h">{inline(body)}</H>;
   };
   const flush = () => {
