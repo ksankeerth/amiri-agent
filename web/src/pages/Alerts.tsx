@@ -6,6 +6,7 @@ import { alertsApi, type AlertItem, type AlertSummary, type Effect } from "../ap
 import { investigationApi, type EventDetail } from "../api/investigation";
 import { HowItWorks, ImpactRow, PageHeader, StatTiles, StatusPill } from "../components/blocks";
 import "../styles/daily.css";
+import "../styles/polish-daily.css";
 import { CheckPill } from "../components/checks";
 import { ChipFilter, FlowFilter } from "../components/FlowFilter";
 import { Icon } from "../components/Icon";
@@ -62,16 +63,16 @@ function AlertCard({ a, next, ev, primary, onChange }: {
     <article className={`card alc dl-alc ${a.status !== "new" ? "done" : ""}`} data-lv={a.level} aria-labelledby={`t-${a.alert_id}`}>
       <div className="dl-alc-hd">
         <StatusPill tone={LEVEL_TONE[a.level]} icon={a.level === "adverse" ? "bad" : "alert"}>{LEVEL_LABEL[a.level]}</StatusPill>
-        <h2 className="dl-alc-t" id={`t-${a.alert_id}`}><span className="dl-team">{a.owner}</span><span className="dl-dot" aria-hidden="true">·</span>
-          {lead ? lower(impactText(lead.metric_name, lead.direction)) : a.title}</h2>
-        <span className="spacer" />
         {a.status !== "new" && <StatusPill tone={statusTone}>{statusText}</StatusPill>}
-        <span className="alc-time" title={longWhen(changed(a))}>{ago(changed(a), now)}</span>
+        <span className="spacer" />
+        <span className="alc-time" title={longWhen(changed(a))}><Icon name="clock" />{ago(changed(a), now)}</span>
       </div>
+      <h2 className="dl-alc-t" id={`t-${a.alert_id}`}><span className="dl-team">{a.owner}</span><span className="dl-dot" aria-hidden="true">·</span>
+        <span className="dl-what">{lead ? lower(impactText(lead.metric_name, lead.direction)) : a.title}</span></h2>
       <ul className="dl-alc-meta" aria-label="In short">
         <li><Icon name="box" /><span>{listText(products, 2)}</span></li>
         {move && <li className="dl-move"><Icon name="data" /><span>Your data: <b>{move.move}</b> {move.against}</span></li>}
-        {a.effects.length > 1 && <li>{bad === a.effects.length ? `${count(a.effects.length, "impact")}, all bad for you` : `${bad} of ${a.effects.length} impacts bad for you`}</li>}
+        {a.effects.length > 1 && <li><Icon name="bad" /><span>{bad === a.effects.length ? `${count(a.effects.length, "impact")}, all bad for you` : `${bad} of ${a.effects.length} impacts bad for you`}</span></li>}
         {next && <li><Icon name="calendar" /><span>{checks.some(c => c.verdict !== "not_yet") ? "Next check" : "First check"} <b>{onDay(next)}</b> <span className="muted">({relDay(next)})</span></span></li>}
       </ul>
       {a.status === "acknowledged" && <div className="alc-note"><Icon name="check" /><span><b>{a.acknowledged_by}</b> is on it{a.acknowledged_at ? `, ${ago(a.acknowledged_at, now)}` : ""}{a.ack_note ? `: “${a.ack_note}”` : ""}</span></div>}
@@ -89,6 +90,7 @@ function AlertCard({ a, next, ev, primary, onChange }: {
           {a.status === "new" && <button className={`btn btn--sm${primary ? " btn--primary" : ""}`} type="button" title={ACTION_MEANS.ack} onClick={() => setAsking("ack")}><Icon name="check" />Acknowledge</button>}
           {a.status !== "resolved" && <button className="btn btn--sm btn--ghost" type="button" title={ACTION_MEANS.resolve} onClick={() => setAsking("resolve")}>Resolve</button>}
           {a.status !== "new" && <button className="btn btn--sm btn--ghost" type="button" title={ACTION_MEANS.reopen} disabled={busy} onClick={() => act("reopen")}>Reopen</button>}
+          <span className="pd-vr" aria-hidden="true" />
           <details className="tech dl-why"><summary>Why Amiri Agent expects this</summary>
             <div className="tech-bd col gap12">
               <p className="dl-ai"><span className="dl-ai-chip"><b aria-hidden="true">AI</b>Amiri Agent's assessment</span>
@@ -107,7 +109,7 @@ function AlertCard({ a, next, ev, primary, onChange }: {
             <div className="tech-bd"><ol className="alc-hist">{[...a.history].reverse().map((h, i) => (
               <li key={i}><b>{CHANGE[h.change] ?? h.change}</b><span>{dayTime(h.at)}{h.by && h.by !== "Amiri Agent" ? ` · ${h.by}` : ""}</span></li>))}</ol></div></details>
           <span className="spacer" />
-          <Link className="dl-ev" to={`/events/${a.event_id}`}><span className="muted">From</span> {title}{a.event_status === "closed" && <span className="muted"> (closed)</span>}<Icon name="arrow" /></Link>
+          <Link className="dl-ev" to={`/events/${a.event_id}`}><span className="muted">From the event</span> <b>{title}</b>{a.event_status === "closed" && <span className="muted"> (closed)</span>}<Icon name="arrow" /></Link>
         </div>
       )}
     </article>
