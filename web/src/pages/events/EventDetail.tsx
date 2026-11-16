@@ -17,6 +17,9 @@ import {
 } from "../../plain";
 
 type Task = EventDetail["tasks"][number];
+// what Amiri Agent inferred, labelled apart from the sourced facts (rule 7.2)
+const AI_CHIP = <span className="dl-ai-chip"><b aria-hidden="true">AI</b>Amiri Agent's assessment</span>;
+const AI_WROTE = <span className="dl-ai-chip"><b aria-hidden="true">AI</b>Written by Amiri Agent</span>;
 const TONE_PILL: Record<"bad" | "good" | "mixed" | "neutral", ReactNode> = {
   bad: <ImpactMarker adverse={true} />, good: <ImpactMarker adverse={false} />,
   mixed: <StatusPill tone="amber">Mixed for you</StatusPill>, neutral: <StatusPill tone="grey">Neutral for you</StatusPill>,
@@ -53,6 +56,7 @@ export function EventDetailPage() {
   const next = earliest(e.tasks.filter(t => !t.check?.final).map(t => t.next_check_after ?? t.check?.next_check_after));
   const checked = checks.filter(c => c.verdict !== "not_yet").length;
   const nBad = e.hypotheses.filter(h => adverseOf(h) === true).length, nGood = e.hypotheses.filter(h => adverseOf(h) === false).length;
+  const allBad = e.hypotheses.length > 1 && nBad === e.hypotheses.length;  // then "Bad for you" is said once, not on every row
   const teams = [...new Set(alerts.map(a => a.owner))];
   const toReview = alerts.filter(a => a.status === "new").length;
   const lead = e.findings[0];
@@ -111,19 +115,21 @@ export function EventDetailPage() {
         </section>
       </div>
 
-      <Section title="Possible impacts" count={e.hypotheses.length} flush id="ev-impacts">
-        {!e.hypotheses.length ? <p className="sec-line">None of your products is exposed to this event.</p> : <div className={`irs${same ? "" : " with-status"}`}>
+      <Section title="Possible impacts" count={e.hypotheses.length} flush id="ev-impacts" action={e.hypotheses.length ? AI_CHIP : undefined}>
+        {!e.hypotheses.length ? <p className="sec-line">None of your products is exposed to this event.</p> : <>
+        <p className="sec-line">Expectations, not facts yet: each is checked against your own figures as they're published.{allBad ? " All of them would be bad for you." : ""}</p>
+        <div className={`irs${same ? "" : " with-status"}`}>
           {e.hypotheses.map(h => {
             const t = tasks.get(h.hypothesis_id), c = checkOf(h), m = t?.check ? checkMove(t.check.what) : null;
             return (
               <ImpactRow key={h.hypothesis_id} product={h.product_name ?? h.product_id}
                 impact={<>{impactText(metricName(h), h.expected.direction)}{m && <span className="ir-move"><b>{m.move}</b> {m.against}</span>}</>}
-                adverse={adverseOf(h)} size={sizeTiming(h.expected.size, h.expected.timing)}
+                adverse={allBad ? undefined : adverseOf(h)} size={sizeTiming(h.expected.size, h.expected.timing)}
                 status={!same && c ? <CheckPill c={c} /> : undefined}>
                 <ImpactDetail h={h} t={t} metric={metricName(h)} />
               </ImpactRow>);
           })}
-        </div>}
+        </div></>}
       </Section>
 
       <div className="ev-grid2">
@@ -163,7 +169,7 @@ export function EventDetailPage() {
       </div>
 
       <details className="card rep">
-        <summary><Icon name="book" /><span>Full investigation report</span><Icon name="chevron" className="ir-chev" /></summary>
+        <summary><Icon name="book" /><span>Full investigation report</span>{AI_WROTE}<Icon name="chevron" className="ir-chev" /></summary>
         <div className="rep-bd">{e.run.report ? <Markdown text={e.run.report} /> : <span className="muted small">No report.</span>}</div>
       </details>
       <div className="mt16"><TechnicalDetails>

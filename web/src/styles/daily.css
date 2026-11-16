@@ -31,7 +31,6 @@
 .dl-ai-chip b { font-size: var(--fs-xs); letter-spacing: .04em; line-height: 1; padding: 3px 6px; border-radius: var(--r-pill);
   background: var(--info-ink); color: var(--surface); }
 .sec-hd .dl-ai-chip { margin-left: var(--s-1); }
-.dl-sec-line { margin: 0; padding: var(--s-3) var(--s-5); font-size: var(--fs-sm); color: var(--ink-2); border-bottom: 1px solid var(--hairline); }
 
 /* ---- Findings: signal strength, the article link ---- */
 .dl-fd-t a { color: var(--ink); }
@@ -40,3 +39,5 @@
 
 /* ---- Considered, no impact: the product, then the angle in words ---- */
 .dl-angle { font-weight: 400; color: var(--ink-3); margin-left: var(--s-2); }
+.dl-sig { font-size: var(--fs-sm); font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+.dl-sig.t-blue { color: var(--info-ink); }
