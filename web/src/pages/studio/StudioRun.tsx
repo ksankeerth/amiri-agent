@@ -92,7 +92,8 @@ function Clock({ sim, timeline }: { sim: Simulation; timeline: TimelineItem[] })
         <div className="rn-track" role="progressbar" aria-label="How far the simulated days have run" aria-valuemin={0} aria-valuemax={sim.steps} aria-valuenow={sim.step}>
           <span className="rn-fill" style={{ width: pct(sim.step) }} />
           {days("headline").map(d => <span key={`h${d}`} className="rn-tick" style={{ left: pct(d - 0.5) }} title={`Day ${d}: headlines`} />)}
-          {days("event").map(d => <span key={`e${d}`} className="rn-tick ev" style={{ left: pct(d - 0.5) }} title={`Day ${d}: an event`} />)}
+          {days("event").map(d => <span key={`e${d}`} className="rn-tick ev" style={{ left: pct(d - 0.5) }}
+            title={`Day ${d}: ${plural(timeline.filter(t => t.kind === "event" && t.step === d).length, "event")} formed${days("headline").includes(d) ? ", and headlines" : ""}`} />)}
         </div>
         <span className="rn-legend"><span className="rn-tick inl" />headlines <span className="rn-tick ev inl" />event formed</span>
       </div>

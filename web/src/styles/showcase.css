@@ -21,8 +21,7 @@
 .rn-legend { display:inline-flex; align-items:center; gap:8px; font-size:var(--fs-xs); color:var(--ink-3); white-space:nowrap; }
 .rn-tick.inl { position:static; display:inline-block; height:12px; margin:0 0 0 4px; vertical-align:middle; }
 .rn-tick.ev.inl { position:relative; top:0; width:12px; height:12px; margin-left:8px; background:transparent; }
-.rn-tick.ev.inl::before { top:1px; width:9px; height:9px; box-shadow:none; }
-.rn-tick.ev.inl::after { content:""; position:absolute; left:4px; top:6px; width:4px; height:8px; background:var(--critical); border-radius:1px; }
+.rn-tick.ev.inl::before { top:50%; width:9px; height:9px; box-shadow:none; transform:translate(-50%,-50%) rotate(45deg); }  /* the key: just the diamond, so it can't read as a stray marker */
 .rn-legend .rn-tick.inl:first-child { margin-left:0; }
 .rn-pin.inl { display:inline-block; width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; border-bottom:8px solid var(--ink-2); }
 .rn-dot.inl { display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--high); margin-left:4px; }
