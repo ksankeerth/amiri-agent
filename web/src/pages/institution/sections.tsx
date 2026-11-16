@@ -9,59 +9,77 @@ import { Modal, useToast } from "../../components/ui";
 import { dimWord, monthsText, PlaceName, usdText, useRoutes, valueWord } from "./fields";
 import { AREA_WORDS, FLOW_WORDS, ItemModal, LABELS, splitErrors, type Ctx } from "./forms";
 import { productTypeLabel } from "../../plain";
+import "../../styles/polish-forms.css";
 
 const pn = (ctx: Ctx, c: string) => <PlaceName code={c} names={ctx.profile?.place_names} />;
 const join = (xs: ReactNode[]) => xs.reduce<ReactNode[]>((a, x, i) => (i ? [...a, ", ", x] : [x]), []);
 const byId = (ctx: Ctx, s: SectionName, id: string, key: string) => ctx.profile?.sections[s].find(x => x.id === id)?.[key] ?? id;
 /** An enum value as a word: "finance_company" → "Finance company". */
 const cw = (s: string) => (s ? s[0].toUpperCase() + s.slice(1).replace(/_/g, " ") : s);
+const capWord = (s?: string) => (s ? s[0].toUpperCase() + s.slice(1) : "");
 /** "US Treasury sanctions (OFAC)" stays as it is; "Central Bank of Sri Lanka" gets "(CBSL)". */
 const withShort = (name: string, short?: string | null) => (short && !name.includes(`(${short})`) ? `${name} (${short})` : name);
 
+/** A row's details as separate pieces: [label, value]. A piece without a label is the item's kind, shown as a quiet tag. */
+type Meta = [string | null, ReactNode][];
+const keep = (xs: (Meta[number] | false | null | undefined | "" | 0)[]): Meta => xs.filter(Boolean) as Meta;
+const places = (ctx: Ctx, xs: string[]) => (xs.length ? join(xs.map(c => pn(ctx, c))) : null);
+
 /** One row's text per section: title, details, badges. */
-function describe(section: SectionName, it: Item, ctx: Ctx): { title: ReactNode; sub: ReactNode; badges?: ReactNode } {
+function describe(section: SectionName, it: Item, ctx: Ctx): { title: ReactNode; meta: Meta; badges?: ReactNode } {
   switch (section) {
     case "footprint":
-      return { title: pn(ctx, it.code), sub: <>{it.role === "home" ? "Home country" : cw(it.role)}{it.scope === "part" ? " (part)" : ""}{it.branch_count != null ? ` · ${it.branch_count} branches` : ""}</>,
+      return { title: pn(ctx, it.code), meta: keep([[null, `${it.role === "home" ? "Home country" : cw(it.role)}${it.scope === "part" ? " (part)" : ""}`],
+        it.branch_count != null && ["Branches", it.branch_count]]),
         badges: it.role === "home" ? <span className="badge b-ok">HOME</span> : undefined };
     case "watch-places":
-      return { title: it.name, sub: <>{cw(it.kind)}{it.reason ? ` · ${it.reason}` : ""}</> };
+      return { title: it.name, meta: keep([[null, cw(it.kind)], it.reason && ["Why", it.reason]]) };
     case "segments":
-      return { title: it.label, sub: <>{cw(it.kind)}{it.places.length ? <> · {join(it.places.map((c: string) => pn(ctx, c)))}</> : ""}
-        {it.spec_mapping.length ? ` · in your data: ${it.spec_mapping.map((m: any) => `${dimWord(m.dimension).toLowerCase()} “${valueWord(m.value)}”`).join(", ")}` : ""}</>,
+      return { title: it.label, meta: keep([[null, cw(it.kind)], it.places.length && ["Places", places(ctx, it.places)],
+        it.spec_mapping.length && ["In your data", it.spec_mapping.map((m: any) => `${dimWord(m.dimension).toLowerCase()} “${valueWord(m.value)}”`).join(", ")]]),
         badges: !it.spec_mapping.length ? <span className="badge b-warn" title="Checks can't be scoped to this group">NO DATA VALUE</span> : undefined };
     case "products":
-      return { title: it.name, sub: <>{productTypeLabel(it.product_type)}{it.owner ? ` · ${it.owner}` : ""}
-        {it.segments.length ? ` · for ${it.segments.map((s: string) => byId(ctx, "segments", s, "label")).join(", ")}` : ""}
-        {it.book_size ? ` · book ${it.book_size.currency} ${(it.book_size.amount / 1e9).toFixed(1)} bn` : ""}</>,
+      return { title: it.name, meta: keep([[null, productTypeLabel(it.product_type)], it.owner && ["Owner", it.owner],
+        it.segments.length && ["For", it.segments.map((s: string) => byId(ctx, "segments", s, "label")).join(", ")],
+        it.book_size && ["Book", `${it.book_size.currency} ${(it.book_size.amount / 1e9).toFixed(1)} bn`]]),
         badges: <>{it.status !== "active" && <span className="badge b-paused">{it.status.toUpperCase()}</span>}
           {it.islamic && <span className="badge b-info">ISLAMIC</span>}
           {!it.segments.length && <span className="badge b-warn">NO CUSTOMER GROUP</span>}
           {!it.data?.source_id && <span className="badge b-noeffect" title="Checks need its numbers from a data connection">NO DATA YET</span>}</> };
     case "flows":
-      return { title: <>{FLOW_WORDS[it.kind]} {it.goods ? `(${it.goods}) ` : ""}· {pn(ctx, it.local)} ↔ {pn(ctx, it.counterpart)}</>,
-        sub: <>{it.value ? `${usdText(it.value.amount)} a year (${it.value.year})` : "no figure"} · {it.source.kind === "dataset"
-          ? `${it.source.dataset}${it.source.sample ? " (sample figure)" : ""}`
-          : it.source.original_amount != null ? `your figure (dataset said ${usdText(it.source.original_amount)}; changed by ${it.source.edited_by})` : "your figure"}
-          {it.segments.length ? ` · ${it.segments.map((s: string) => byId(ctx, "segments", s, "label")).join(", ")}` : ""}</>,
+      return { title: <>{capWord(FLOW_WORDS[it.kind])} {it.goods ? `(${it.goods}) ` : ""}· {pn(ctx, it.local)} ↔ {pn(ctx, it.counterpart)}</>,
+        meta: keep([["Value", it.value ? `${usdText(it.value.amount)} a year (${it.value.year})` : "no figure"],
+          ["Source", it.source.kind === "dataset" ? `${it.source.dataset}${it.source.sample ? " (sample figure)" : ""}`
+            : it.source.original_amount != null ? `your figure (dataset said ${usdText(it.source.original_amount)}; changed by ${it.source.edited_by})` : "your figure"],
+          it.segments.length && ["Groups", it.segments.map((s: string) => byId(ctx, "segments", s, "label")).join(", ")]]),
         badges: <>{it.status === "suggested" && <span className="badge b-sub">TO CHECK</span>}{it.source.sample && <span className="badge b-warn">SAMPLE</span>}</> };
     case "regulators":
-      return { title: withShort(it.name, it.short), sub: <>{AREA_WORDS[it.area] ?? cw(it.area)} · {it.country ? pn(ctx, it.country) : "global"}{it.controls.length ? ` · ${it.controls.join(", ")}` : ""}</>,
+      return { title: withShort(it.name, it.short), meta: keep([[null, AREA_WORDS[it.area] ?? cw(it.area)], ["Where", it.country ? pn(ctx, it.country) : "global"],
+        it.controls.length && ["Controls", it.controls.join(", ")]]),
         badges: <><span className={`badge ${it.relation === "home" ? "b-ok" : it.relation === "reach" ? "b-warn" : "b-info"}`}>{it.relation.toUpperCase()}</span>
           {it.basis === "rule" && <span className="badge b-noeffect" title="From the rule table">RULE</span>}</> };
     case "rivals":
-      return { title: it.name, sub: <>{cw(it.type)}{it.places.length ? <> · {join(it.places.map((c: string) => pn(ctx, c)))}</> : ""}{it.categories.length ? ` · ${it.categories.map(productTypeLabel).join(", ")}` : ""}</>,
+      return { title: it.name, meta: keep([[null, cw(it.type)], it.places.length && ["Where", places(ctx, it.places)],
+        it.categories.length && ["Competes in", it.categories.map(productTypeLabel).join(", ")]]),
         badges: <span className={`badge ${it.overlap === "high" ? "b-down" : it.overlap === "medium" ? "b-warn" : "b-noeffect"}`}>{it.overlap.toUpperCase()} OVERLAP</span> };
     case "counterparties":
-      return { title: it.name, sub: <>{cw(it.kind)}{it.places.length ? <> · {join(it.places.map((c: string) => pn(ctx, c)))}</> : ""}</>,
+      return { title: it.name, meta: keep([[null, cw(it.kind)], it.places.length && ["Where", places(ctx, it.places)]]),
         badges: it.importance === "critical" ? <span className="badge b-down">CRITICAL</span> : undefined };
     case "risk-exposures": {
       const t = it.touches;
       const parts = [t.segments.length && `${plural(t.segments.length, "group")}`, t.products.length && `${plural(t.products.length, "product")}`, t.flows.length && `${plural(t.flows.length, "flow")}`, t.routes.length && `${plural(t.routes.length, "route")}`].filter(Boolean);
-      return { title: it.title, sub: <>{cw(it.kind)} · {monthsText(it.months)}{parts.length ? ` · touches ${parts.join(", ")}` : ""}</>,
+      return { title: it.title, meta: keep([[null, cw(it.kind)], ["When", monthsText(it.months)], parts.length && ["Touches", parts.join(", ")]]),
         badges: <>{it.status === "dismissed" && <span className="badge b-noeffect">DISMISSED</span>}{it.source === "finder" && <span className="badge b-info">FOUND</span>}</> };
     }
   }
+}
+
+/** The details line: the kind as a quiet tag, then labelled pieces spaced apart (not one long dot-joined string). */
+function MetaLine({ meta }: { meta: Meta }) {
+  if (!meta.length) return null;
+  return <div className="pf-meta">{meta.map(([k, v], i) => k
+    ? <span key={i} className="pf-m"><span className="pf-mk">{k}</span><span>{v}</span></span>
+    : <span key={i} className="pf-tag">{v}</span>)}</div>;
 }
 
 /** Every section's list, with Add / Edit / Delete. */
@@ -130,7 +148,7 @@ export function SectionList({ section, ctx, reload, suggest, extra, compact, ite
     }
   };
   return (
-    <div className="card">
+    <div className="card pf-list">
       <div className="hd"><h2>{LABELS[section].many}</h2><span className="tabs" style={{ border: 0, margin: 0 }}><span className="count">{items.length}</span></span>
         <span className="spacer" />
         {extra}
@@ -138,21 +156,21 @@ export function SectionList({ section, ctx, reload, suggest, extra, compact, ite
         {!archived && <ImportItems section={section} iid={iid} onAdded={reload} />}
         {!archived && <button className="btn btn--sm" type="button" onClick={() => setEditing("new")}><Icon name="plus" />Add</button>}
       </div>
-      {!items.length ? <div className="bd small muted">None yet.{suggest ? " Use Suggestions to start from the usual ones, or Add your own." : ""}</div> : (
-        <div className="list" style={{ marginTop: 8 }}>{items.map(it => {
+      {!items.length ? <div className="bd pf-none">None yet.{suggest ? " Use Suggestions to start from the usual ones, or Add your own." : ""}</div> : (
+        <div className="list">{items.map(it => {
           const x = describe(section, it, ctx);
           // icon buttons named for their row: "Delete rival Sampath Bank", not five identical "Delete"s
           const what = `${LABELS[section].one} ${typeof x.title === "string" ? x.title : String((it as Record<string, unknown>)[LABELS[section].nameKey] ?? "")}`.trim();
           return (
-            <div key={it.id} className="li">
-              <div className="col" style={{ gap: 3, flex: 1, minWidth: 0 }}>
-                <div className="row wrap" style={{ gap: 8 }}><span className="ttl">{x.title}</span>{x.badges}<Via o={ctx.profile?.origins?.[section]?.[it.id]} /></div>
-                {!compact && <div className="meta">{x.sub}</div>}
+            <div key={it.id} className="li pf-row">
+              <div className="pf-row-main">
+                <div className="pf-row-t"><span className="ttl">{x.title}</span>{x.badges}<Via o={ctx.profile?.origins?.[section]?.[it.id]} /></div>
+                {!compact && <MetaLine meta={x.meta} />}
               </div>
-              {!archived && <div className="row" style={{ gap: 4 }}>
+              {!archived && <div className="pf-acts">
                 {itemAction?.(it)}
-                <button className="btn btn--sm btn--ghost" type="button" aria-label={`Edit ${what}`} onClick={() => setEditing(it)}><Icon name="edit" />Edit</button>
-                <button className="btn btn--sm btn--ghost" type="button" aria-label={`Delete ${what}`} title={`Delete ${what}`} onClick={() => setDeleting({ item: it })}><Icon name="trash" /></button>
+                <button className="btn btn--sm btn--ghost pf-ib" type="button" aria-label={`Edit ${what}`} title={`Edit ${what}`} onClick={() => setEditing(it)}><Icon name="edit" /></button>
+                <button className="btn btn--sm btn--ghost pf-ib pf-del" type="button" aria-label={`Delete ${what}`} title={`Delete ${what}`} onClick={() => setDeleting({ item: it })}><Icon name="trash" /></button>
               </div>}
             </div>
           );

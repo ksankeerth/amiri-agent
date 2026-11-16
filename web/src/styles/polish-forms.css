@@ -34,3 +34,34 @@
 .pf-cond-d { font-size:var(--fs-sm); line-height:1.5; color:var(--ink-2); }
 .pf-cond-opts { display:flex; flex-wrap:wrap; gap:8px 16px; padding-left:32px; }
 .pf-sample-ft { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding-top:16px; border-top:1px solid var(--hairline); }
+
+/* ---- Institution profile lists (and the guided setup, which uses the same list): two-level rows with air */
+.pf-list > .hd { padding:20px 20px 0; }
+.pf-list > .hd h2 { font-size:var(--fs-lg); }
+.pf-list .list { margin-top:12px; }
+.pf-list .pf-row { padding:16px 20px; gap:16px; align-items:center; }
+.pf-row-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:8px; }
+.pf-row-t { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.pf-row .ttl { font-size:var(--fs-lg); line-height:1.3; }
+.pf-meta { display:flex; flex-wrap:wrap; align-items:center; gap:4px 20px; font-size:var(--fs-sm); line-height:1.5; color:var(--ink-2); }
+.pf-m { display:inline-flex; gap:8px; align-items:baseline; min-width:0; }
+.pf-mk { color:var(--ink-3); font-size:var(--fs-xs); font-weight:600; white-space:nowrap; }
+.pf-tag { display:inline-flex; align-items:center; min-height:24px; padding:0 8px; border-radius:6px; background:var(--sunken); color:var(--ink-2); font-size:var(--fs-xs); font-weight:500; }
+.pf-none { color:var(--ink-3); font-size:var(--fs-sm); padding:16px 20px 20px; }
+/* row actions: quiet until the row is hovered or focused, then full strength */
+.pf-acts { display:flex; align-items:center; gap:4px; flex:none; }
+.pf-acts .btn { color:var(--ink-3); }
+.pf-row:hover .pf-acts .btn, .pf-row:focus-within .pf-acts .btn { color:var(--ink-2); }
+.pf-acts .btn:hover, .pf-acts .btn:focus-visible { color:var(--ink); background:var(--sunken); }
+.pf-acts .pf-del:hover, .pf-acts .pf-del:focus-visible { color:var(--critical-ink); background:var(--critical-soft); }
+.pf-ib { width:32px; height:32px; padding:0; justify-content:center; }
+.pf-ib svg { width:16px; height:16px; }
+
+/* ---- Add / Edit dialogs: grouped fields, more room, larger labels */
+.modal .grid2 { gap:20px 24px; }
+.modal .field { gap:8px; }
+.modal .field > span, .modal .field > label { font-size:var(--fs-sm); color:var(--ink); }
+.modal .field .hint, .modal .field .errtext { font-size:var(--fs-sm); line-height:1.5; }
+.pf-group { grid-column:1 / -1; margin:8px 0 -8px; padding-top:20px; border-top:1px solid var(--hairline);
+  font-size:var(--fs-xs); font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-3); }
+.pf-group.first { margin-top:0; padding-top:0; border-top:0; }
