@@ -16,5 +16,5 @@ test("spikeIndex finds a one-bar jump that reverses, and nothing in a trend", ()
 test("tagGroups draws one tag per cluster of close marks, with the count", () => {
   const m = (x: number, tag = "Flagged move") => ({ m: { tag }, x, ok: true });
   const g = tagGroups([m(700), m(640), m(560), m(600), m(100), { m: { tag: "x" }, x: 300, ok: false }]);
-  assert.deepEqual(g.map(({ x, n }) => [x, n]), [[100, 1], [700, 4]]);
+  assert.deepEqual(g.map(({ x0, x, n }) => [x0, x, n]), [[100, 100, 1], [560, 700, 4]]);
 });

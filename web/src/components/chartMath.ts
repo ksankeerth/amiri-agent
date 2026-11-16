@@ -25,14 +25,14 @@ export function spikeIndex(vs: number[], factor = 8): number {
   return best;
 }
 
-/** One tag per cluster of marks closer than `gap` px (so labels never print over each other), placed at the cluster's last mark. */
-export function tagGroups<M extends { tag?: string }>(items: { m: M; x: number; ok: boolean }[], gap = 120): { m: M; x: number; n: number }[] {
+/** One tag per cluster of marks closer than `gap` px (so labels never print over each other), spanning x0 (first mark) to x (last). */
+export function tagGroups<M extends { tag?: string }>(items: { m: M; x: number; ok: boolean }[], gap = 120): { m: M; x0: number; x: number; n: number }[] {
   const xs = items.filter(it => it.ok && it.m.tag).sort((a, b) => a.x - b.x);
-  const out: { m: M; x: number; n: number }[] = [];
+  const out: { m: M; x0: number; x: number; n: number }[] = [];
   for (const it of xs) {
     const last = out[out.length - 1];
     if (last && last.m.tag === it.m.tag && it.x - last.x < gap) { last.m = it.m; last.x = it.x; last.n += 1; }
-    else out.push({ m: it.m, x: it.x, n: 1 });
+    else out.push({ m: it.m, x0: it.x, x: it.x, n: 1 });
   }
   return out;
 }

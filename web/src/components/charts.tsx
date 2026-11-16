@@ -47,7 +47,8 @@ export function PriceChart({ points, marks = [], pins = [], height = 260, fmtX, 
     ro.observe(box.current);
     return () => ro.disconnect();
   }, []);
-  const L = 64, R = 12, T = 10, B = 26, h = height;
+  const tagged = marks.some(m => m.tag);
+  const L = 64, R = 12, T = tagged ? 34 : 10, B = 26, h = height;  // tags get their own band above the plot, clear of the lines
   const geo = useMemo(() => {
     const vs = points.map(p => p.v);
     const mn = Math.min(...vs), mx = Math.max(...vs), pad = (mx - mn) * 0.08 || Math.abs(mx) * 0.001 || 1;
@@ -55,7 +56,7 @@ export function PriceChart({ points, marks = [], pins = [], height = 260, fmtX, 
     const X = (i: number) => L + (n <= 1 ? 0 : (i * (w - L - R)) / (n - 1));
     const Y = (v: number) => T + ((hi - v) / (hi - lo)) * (h - T - B);
     return { lo, hi, n, X, Y };
-  }, [points, w, h]);
+  }, [points, w, h, T]);
   if (points.length < 2) return <div ref={box} className="empty small">Not enough prices in this range.</div>;
   const { lo, hi, n, X, Y } = geo;
   const d = points.map((p, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join("");
@@ -119,10 +120,16 @@ export function PriceChart({ points, marks = [], pins = [], height = 260, fmtX, 
               <circle cx={X(i)} cy={Y(points[i].v)} r={5} fill={m.color} stroke="var(--surface)" strokeWidth={1.5}><title>{m.label}</title></circle></g>
           );
         })}
-        {tagGroups(marks.map(m => ({ m, x: X(idxOf(m.t)), ok: idxOf(m.t) >= 0 }))).map(({ m, x, n }, k) => {
-          const right = x > w * 0.7;
-          return <text key={`t${k}`} className="mk-tag" x={x + (right ? -8 : 8)} y={T + 12} textAnchor={right ? "end" : "start"} fill={m.color}>
-            {n > 1 ? `${m.tag} ×${n}` : m.tag}</text>;
+        {tagGroups(marks.map(m => ({ m, x: X(idxOf(m.t)), ok: idxOf(m.t) >= 0 }))).map(({ m, x0, x, n }, k) => {
+          const text = n > 1 ? `${m.tag} ×${n}` : m.tag!;
+          const half = text.length * 3.6 + 4;  // about half the label's width at the tag's 12 px bold
+          const cx = Math.min(Math.max((x0 + x) / 2, L + half), w - R - half);
+          return (
+            <g key={`t${k}`} className="mk-tag-g">
+              {n > 1 && <path d={`M${x0},${T - 2}v-4H${x}v4`} fill="none" stroke={m.color} strokeWidth={1.25} />}
+              <text className="mk-tag" x={cx} y={T - 12} textAnchor="middle" fill={m.color}>{text}</text>
+            </g>
+          );
         })}
         {pins.map((p, k) => {
           const ms = new Date(p.t).getTime(), i = points.findIndex(q => new Date(q.t).getTime() >= ms);  // the close it fed into
