@@ -9,6 +9,7 @@ import { Icon } from "../../components/Icon";
 import { Markdown, ScrollTable } from "../../components/markdown";
 import { FactList, PageHeader } from "../../components/blocks";
 import { Banner, PageSkeleton } from "../../components/ui";
+import "../../styles/showcase.css";
 
 const words = (s: string) => s.replace(/_/g, " ");
 const TIER: Record<string, string> = { required: "b-ok", recommended: "b-info", optional: "b-sub" };
@@ -191,7 +192,7 @@ export function SpecPage() {
       <div className="sp-layout mt16">
         <nav className="sp-toc card" aria-label="Spec contents">
           <label className="label" htmlFor="sp-search">Find a metric</label>
-          <input id="sp-search" className="input" type="search" placeholder="key or name, e.g. lc_openings" value={query} onChange={e => setQuery(e.target.value)} />
+          <input id="sp-search" className="input" type="search" placeholder="e.g. letters of credit" value={query} onChange={e => setQuery(e.target.value)} />
           {q ? <div className="small mt8" role="status">{found.length} metric{found.length === 1 ? "" : "s"}</div>
             : <ol className="sp-toc-list">{CONTENTS.map(([id, label]) => <li key={id}><a href={`#${id}`}>{label}</a></li>)}</ol>}
         </nav>
