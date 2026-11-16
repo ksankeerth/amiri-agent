@@ -11,6 +11,7 @@ import { Icon } from "../../components/Icon";
 import { PageHeader } from "../../components/blocks";
 import { Banner, Empty, ListSkeleton, LoadError, PageHead, useToast } from "../../components/ui";
 import { ago, dayTime, plural } from "../../format";
+import "../../styles/polish-forms.css";
 
 const STATUS_BADGE: Record<CheckStatus, [string, string]> = {
   ready: ["b-ok", "READY"], ready_with_gaps: ["b-warn", "READY WITH GAPS"], not_ready: ["b-down", "NOT READY"],
@@ -75,14 +76,16 @@ export function DataConnectionsPage() {
         {report ? <ReportCard report={report} history={history} current={!!conn.latest_check?.current && conn.latest_check.check_id === report.check_id}
           onPick={async id => { try { setReport(await connectApi.report(id)); } catch (e) { toast(errText(e)); } }} />
           : conn.configured && <div className="card"><Empty icon="data" title="Not checked yet">Press <b>Check</b> to see whether the API is the reference API and what your profile is missing.</Empty></div>}
-        <div className="card"><div className="hd"><h2>Sample institutions</h2></div>
-          <div className="bd col gap12">
-            <p className="small muted" style={{ margin: 0 }}>A bank and an insurer that serve the Metrics Spec exactly, shaped by your profile (or a
-              bundled one): a working example of the API, something to check, and data the validator can read. Conditions make the
-              data show an effect, or make the API break a rule on purpose.</p>
-            {samples.map(s => <SampleCard key={s.kind} sample={s} onSaved={x => setSamples(ss => ss!.map(y => (y.kind === x.kind ? x : y)))}
-              onUse={async () => { try { const c = await connectApi.put({ source: "sample", sample: s.kind }); setConn(c); setReport(null); toast(`Connected to the sample ${s.kind}: check it next.`); } catch (e) { toast(errText(e)); } }} />)}
-          </div></div>
+        <section className="card pf-samples" aria-labelledby="dc-samples">
+          <div className="hd"><h2 id="dc-samples">Sample institutions</h2></div>
+          <div className="bd">
+            <p className="pf-lead">A sample bank and insurer that serve the Metrics Spec exactly, shaped by your profile. Use one as a test API;
+              conditions make its data show an effect, or make it break a rule on purpose.</p>
+            <div className="pf-sample-list">
+              {samples.map(s => <SampleCard key={s.kind} sample={s} onSaved={x => setSamples(ss => ss!.map(y => (y.kind === x.kind ? x : y)))}
+                onUse={async () => { try { const c = await connectApi.put({ source: "sample", sample: s.kind }); setConn(c); setReport(null); toast(`Connected to the sample ${s.kind}: check it next.`); } catch (e) { toast(errText(e)); } }} />)}
+            </div>
+          </div></section>
       </div>
     </div>
   );
@@ -278,44 +281,49 @@ function SampleCard({ sample, onSaved, onUse }: { sample: Sample; onSaved: (s: S
     const url = URL.createObjectURL(new Blob([JSON.stringify({ conditions: conds }, null, 2)], { type: "application/json" }));
     const a = document.createElement("a"); a.href = url; a.download = `sample-${sample.kind}-conditions.json`; a.click(); URL.revokeObjectURL(url);
   };
-  const groups: [string, "data" | "fault"][] = [["What the data shows", "data"], ["What the API gets wrong (to show the checker)", "fault"]];
+  const groups: [string, string, "data" | "fault"][] = [
+    ["What the data shows", "Effects in the figures, from a start date you choose", "data"],
+    ["What the API gets wrong", "Rule breaks, to show what the checker catches", "fault"]];
   return (
-    <div className="card flat">
-      <div className="hd"><Switch on={sample.enabled} label={`The sample ${sample.kind}`} disabled={busy || !sample.allowed} onChange={v => put(v, conds)} />
-        <h2 style={{ margin: 0 }}>The sample {sample.kind}</h2>
-        <span className="small muted">shaped by {sample.shaped_by.name} ({sample.shaped_by.source === "installation" ? "your profile" : "a bundled sample"})</span>
-        <span className="row" style={{ marginLeft: "auto", gap: 8 }}>
-          {sample.enabled && <a className="btn btn--sm btn--ghost" href={sample.openapi_path} target="_blank" rel="noreferrer">OpenAPI document</a>}
-          <button className="btn btn--sm" type="button" onClick={onUse} disabled={!sample.enabled}>Use it as the connection</button></span></div>
-      <div className="bd col gap12">
-        {!sample.allowed && <Banner kind="info">Sample institutions are switched off on this server (MOCK_INSTITUTIONS).</Banner>}
-        <div className="small mono muted">{sample.base_path}</div>
-        {groups.map(([title, group]) => (
-          <fieldset key={group} className="col gap8" style={{ border: 0, padding: 0, margin: 0 }}>
-            <legend className="small" style={{ fontWeight: 600, marginBottom: 6 }}>{title}</legend>
-            {sample.presets.filter(p => p.group === group).map(p => { const c = byId[p.id]; const on = !!c && c.on !== false; return (
-              <div key={p.id} className="row wrap" style={{ alignItems: "flex-start", gap: 10 }}>
-                <label className="row" style={{ gap: 6, minWidth: 260, alignItems: "flex-start" }}>
-                  <input type="checkbox" checked={on} onChange={e => set(p.id, e.target.checked ? { on: true } : null)} />
-                  <span><span>{p.label}</span>{p.note && <span className="small muted" style={{ display: "block" }}>{p.note}</span>}</span></label>
-                {on && group === "data" && <>
-                  <label className="row small" style={{ gap: 6 }}>From
-                    <input type="date" className="input" style={{ width: "auto" }} value={c?.start ?? ""} aria-label={`${p.label}: from`}
-                      onChange={e => set(p.id, { start: e.target.value || null })} />
-                    {!c?.start && <span className="muted">({p.start_days_ago} days ago)</span>}</label>
-                  {p.size_label && <label className="row small" style={{ gap: 6 }}>{p.size_label}
-                    <input type="number" className="input" style={{ width: 90 }} value={c?.size ?? ""} placeholder={String(p.size ?? "")} aria-label={`${p.label}: ${p.size_label}`}
-                      onChange={e => set(p.id, { size: e.target.value === "" ? null : Number(e.target.value) })} /></label>}
-                </>}
-              </div>); })}
-          </fieldset>))}
-        <div className="row wrap" style={{ gap: 8 }}>
-          <button className="btn btn--primary btn--sm" type="button" disabled={busy || !dirty} onClick={() => put(sample.enabled, conds)}>Save conditions</button>
-          <button className="btn btn--sm" type="button" onClick={download}>Download as JSON</button>
-          <FillFromJson what="the conditions" read={read} onFill={c => setConds((c.data as { conditions: Condition[] }).conditions)}
-            example={'{"conditions": [{"id": "floods", "start": "2026-10-01", "size": 600}]}'} />
+    <article className={`pf-sample ${sample.enabled ? "on" : ""}`} aria-label={`The sample ${sample.kind}`}>
+      <header className="pf-sample-hd">
+        <Switch on={sample.enabled} label={`The sample ${sample.kind}`} disabled={busy || !sample.allowed} onChange={v => put(v, conds)} />
+        <div className="pf-sample-t">
+          <h3>The sample {sample.kind} <span className={`badge ${sample.enabled ? "b-ok" : "b-noeffect"}`}>{sample.enabled ? "ON" : "OFF"}</span></h3>
+          <span className="small muted">Shaped by {sample.shaped_by.name} ({sample.shaped_by.source === "installation" ? "your profile" : "a bundled sample"}) · <span className="mono">{sample.base_path}</span></span>
         </div>
-      </div>
-    </div>
+        <span className="pf-sample-acts">
+          {sample.enabled && <a className="btn btn--sm btn--ghost" href={sample.openapi_path} target="_blank" rel="noreferrer">OpenAPI document</a>}
+          <button className="btn btn--sm" type="button" onClick={onUse} disabled={!sample.enabled} title={sample.enabled ? undefined : "Switch it on first"}>Use it as the connection</button></span>
+      </header>
+      {!sample.allowed && <Banner kind="info">Sample institutions are switched off on this server (MOCK_INSTITUTIONS).</Banner>}
+      {groups.map(([title, note, group]) => (
+        <fieldset key={group} className="pf-conds">
+          <legend><b>{title}</b><span className="muted">{note}</span></legend>
+          <ul>{sample.presets.filter(p => p.group === group).map(p => { const c = byId[p.id]; const on = !!c && c.on !== false; return (
+            <li key={p.id} className={on ? "on" : ""}>
+              <label className="pf-cond">
+                <input type="checkbox" checked={on} onChange={e => set(p.id, e.target.checked ? { on: true } : null)} />
+                <span><span className="pf-cond-t">{p.label}</span>{p.note && <span className="pf-cond-d">{p.note}</span>}</span></label>
+              {on && group === "data" && <div className="pf-cond-opts">
+                <label className="row small" style={{ gap: 8 }}>From
+                  <input type="date" className="input" style={{ width: "auto" }} value={c?.start ?? ""} aria-label={`${p.label}: from`}
+                    onChange={e => set(p.id, { start: e.target.value || null })} />
+                  {!c?.start && <span className="muted">({p.start_days_ago} days ago)</span>}</label>
+                {p.size_label && <label className="row small" style={{ gap: 8 }}>{p.size_label}
+                  <input type="number" className="input" style={{ width: 96 }} value={c?.size ?? ""} placeholder={String(p.size ?? "")} aria-label={`${p.label}: ${p.size_label}`}
+                    onChange={e => set(p.id, { size: e.target.value === "" ? null : Number(e.target.value) })} /></label>}
+              </div>}
+            </li>); })}</ul>
+        </fieldset>))}
+      <footer className="pf-sample-ft">
+        <button className="btn btn--sm" type="button" onClick={download}>Download as JSON</button>
+        <FillFromJson what="the conditions" read={read} onFill={c => setConds((c.data as { conditions: Condition[] }).conditions)}
+          example={'{"conditions": [{"id": "floods", "start": "2026-10-01", "size": 600}]}'} />
+        <span className="spacer" />
+        {dirty && <span className="small muted">Unsaved changes</span>}
+        <button className="btn btn--primary btn--sm" type="button" disabled={busy || !dirty} onClick={() => put(sample.enabled, conds)}>Save conditions</button>
+      </footer>
+    </article>
   );
 }

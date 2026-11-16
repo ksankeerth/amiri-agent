@@ -198,7 +198,7 @@ export function Toggles<T extends string | number>({ options, value, onChange }:
       {options.map(([v, label]) => {
         const on = value.includes(v);
         return <button key={String(v)} type="button" className={`chip click ${on ? "sel" : ""}`} aria-pressed={on}
-          onClick={() => onChange(on ? value.filter(x => x !== v) : [...value, v])}>{on && <Icon name="check" />}{label}</button>;
+          onClick={() => onChange(on ? value.filter(x => x !== v) : [...value, v])}>{label}</button>;  {/* .chip.sel draws the ✓ */}
       })}
     </div>
   );

@@ -13,6 +13,7 @@ import { ago, dayTime, placeName, placeOrder, when } from "../../format";
 import type { Tone } from "../../plain";
 import { themeText } from "../events/Events";
 import "../../styles/showcase.css";
+import "../../styles/polish-forms.css";
 
 type Show = "all" | "sent" | "below" | "dismissed";
 const SHOW: [Show, string][] = [["all", "All"], ["sent", "Sent for investigation"], ["below", "Held back"], ["dismissed", "Dismissed"]];
@@ -146,15 +147,20 @@ export function RadarPage() {
       </div>
       {status && <div className="card rd-status">
         {status.connected && <div className="rd-facts">
-          <div className={`rd-fact ${lr?.status === "failed" ? "bad" : ""}`}><span className="rd-k">Last read</span>
+          <div className={`rd-fact ${lr?.status === "failed" ? "bad" : ""}`}><span className="rd-k">Last run</span>
             <span className="rd-v">{lr ? ago(lr.finished_at ?? lr.created_at, now) : "never"}</span>
             <span className="rd-s">{lr ? `${lr.trigger === "now" ? "on request" : "on schedule"}, ${lr.status === "completed" ? "finished" : lr.status.replace("_", " ")}` : "no run yet"}</span></div>
-          <div className="rd-fact"><span className="rd-k">Next</span><span className="rd-v">{status.connected ? nextRun : "—"}</span>
+          <div className="rd-fact"><span className="rd-k">Next run</span><span className="rd-v">{status.connected ? nextRun : "—"}</span>
             <span className="rd-s">{sched}{status.running ? " · running now" : ""}</span></div>
-          <div className="rd-fact wide"><span className="rd-k">The last run</span><Funnel s={status} /></div>
+          <div className="rd-fact wide"><span className="rd-k">What that run found</span><Funnel s={status} /></div>
           <div className={`rd-fact ${status.budget_spent ? "bad" : ""}`}><span className="rd-k">{admin ? "BigQuery today" : "Reading budget"}</span>
             <span className="rd-v">{admin ? <>{gb(status.bytes_today)} <span className="rd-s">of {gb(status.bytes_cap)}</span></> : <>{Math.round((status.bytes_today / Math.max(1, status.bytes_cap)) * 100)}% <span className="rd-s">used today</span></>}</span>
             <span className="rd-s">{admin ? `at most ${status.limits.max_queries} queries a run, ${gb(status.limits.max_bytes_per_query)} each` : "resets at midnight UTC"}</span></div>
+        </div>}
+        {/* not connected: the same two facts on one quiet line, so "when does it run?" is never hidden */}
+        {!status.connected && <div className="rd-line">
+          <span><span className="rd-k">Last run</span><b>{lr ? ago(lr.finished_at ?? lr.created_at, now) : "never"}</b></span>
+          <span><span className="rd-k">Next run</span><b>{sched.replace(/^once a day/, "daily")}</b><span className="muted">once Radar is connected</span></span>
         </div>}
         {scope && <div className="rd-watch">
           <span><b>Watching {scope.places.length} {scope.places.length === 1 ? "place" : "places"}</b>{!places && scope.places.length > 0 && <span className="muted">: {scope.places.slice(0, 3).map(p => names[p] ?? p).join(", ")}{scope.places.length > 3 ? " and more" : ""}</span>}
