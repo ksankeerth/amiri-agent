@@ -26,15 +26,15 @@
 .chain-l { font-size:var(--fs-md); color:var(--ink); }
 .chain-s { font-size:var(--fs-sm); color:var(--ink-2); white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; min-height:2.8em; line-height:1.4; }
 
-/* ---- Replay: the alert moment, under the top bar where the eye is ---- */
-.moment { top:72px; bottom:auto; right:24px; width:min(480px, calc(100vw - 32px)); padding:16px 16px 16px 20px; border-left-width:6px;
+/* ---- Replay: the alert moment, bottom right above the fold: it never covers the title, the run bar or the counts ---- */
+.moment { top:auto; bottom:24px; right:24px; box-shadow:var(--e-lg); width:min(480px, calc(100vw - 32px)); padding:16px 16px 16px 20px; border-left-width:6px;
   animation:momentdown 420ms cubic-bezier(.2,.9,.25,1.15) both; }
 .moment b { font-size:var(--fs-xl); line-height:1.3; }
 .moment-k { font-size:var(--fs-sm); }
 .moment-s { font-size:var(--fs-sm); color:var(--ink-2); line-height:1.45; }
 .moment-ico { width:40px; height:40px; }
 .moment-ico svg { width:20px; height:20px; }
-@keyframes momentdown { from { opacity:0; transform:translateY(-16px) scale(.96); } to { opacity:1; transform:none; } }
+@keyframes momentdown { from { opacity:0; transform:translateY(16px) scale(.96); } to { opacity:1; transform:none; } }
 
 /* ---- Replay: the right column (scorecard over timeline) ---- */
 .rn-split { grid-template-columns:minmax(0,1fr) minmax(360px,440px); }
