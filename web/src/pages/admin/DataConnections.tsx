@@ -129,10 +129,12 @@ function ConnectionCard({ conn, samples, checking, onSaved, onCheck, onApprove, 
         {conn.auth_allowed === false && <Banner kind="warn" icon="warn"><b>Prototype: no authorization.</b> Use only the sample institutions or a test API with no real data.</Banner>}
         {conn.configured && !editing && <div className="col gap8">
           <div className="row wrap"><b>{conn.source === "sample" ? `The sample ${conn.sample}` : "Your institution's API"}</b>
-            <span className="mono small" style={{ wordBreak: "break-all" }}>{conn.base_url}</span>
+            {conn.source === "sample" ? <span className="small muted" title={conn.base_url ?? undefined}>hosted with Amiri Agent</span>
+              : <span className="mono small" style={{ wordBreak: "break-all" }}>{conn.base_url}</span>}
             {conn.auth_set && <span className="badge">key stored ({conn.auth_header})</span>}</div>
-          {latest?.server_version && <div className="small">Your API: <b>Metrics Spec {latest.server_version}</b> · {latest.server_version.split(".")[0] === SPEC.split(".")[0]
-            ? <>accepted (same MAJOR as {SPEC})</> : <b style={{ color: "var(--critical-ink)" }}>not accepted: a different MAJOR from {SPEC}</b>}</div>}
+          {latest?.server_version && <div className="small">{latest.server_version.split(".")[0] === SPEC.split(".")[0]
+            ? <>Compatible with Metrics Spec {SPEC.split(".")[0]}.x <span className="muted">(the API serves {latest.server_version})</span></>
+            : <b style={{ color: "var(--critical-ink)" }}>Not compatible: the API serves Metrics Spec {latest.server_version}, and Amiri Agent reads {SPEC.split(".")[0]}.x</b>}</div>}
           <div className="small">{conn.approved ? <>Approved by {conn.approved.by} {ago(conn.approved.at)}.</> : latest
             ? latest.current ? <>Checked {ago(latest.started_at)}: <b>{STATUS_BADGE[latest.status][1].toLowerCase()}</b>. Not approved yet.</> : <>Changed since the last check: check it again.</>
             : <>Not checked yet.</>}</div>
@@ -180,6 +182,9 @@ function ConnectionCard({ conn, samples, checking, onSaved, onCheck, onApprove, 
   );
 }
 
+// the spec's capability levels (section 3) by name
+const LEVEL: Record<string, string> = { L1: "Values", L2: "Checkable values", L3: "Timed and deep", L4: "Vintages", L5: "Change concentration" };
+
 function ReportCard({ report, history, current, onPick }: { report: Report; history: Awaited<ReturnType<typeof connectApi.checks>>; current: boolean; onPick: (id: string) => void }) {
   const [badge, label] = STATUS_BADGE[report.status];
   const [open, setOpen] = useState<string | null>(null);
@@ -215,11 +220,11 @@ function ReportCard({ report, history, current, onPick }: { report: Report; hist
           {report.formats.slice(0, 10).map((f, i) => <div key={i} className="small" style={{ marginBottom: 6 }}><span className="mono">{f.where}</span>
             <ul style={{ margin: "2px 0 0", paddingLeft: 18 }}>{f.errors.map((e, j) => <li key={j} className="mono">{e}</li>)}{f.more > 0 && <li>and {f.more} more</li>}</ul></div>)}
           {report.formats.length > 10 && <div className="small muted">and {report.formats.length - 10} more answers</div>}</div>}
-        <div><h3 className="small" style={{ margin: "0 0 6px" }}>Conformance checks (spec §9) · {report.summary.passed} passed, {report.summary.failed} failed</h3>
+        <div><h3 className="small" style={{ margin: "0 0 6px" }}>Conformance checks · {report.summary.passed} of {report.summary.passed + report.summary.failed} passed</h3>
           <div className="tblwrap" tabIndex={0} role="region" aria-label="Conformance checks (scrolls sideways)"><table className="tbl">
             <thead><tr><th scope="col">Check</th><th scope="col">Level</th><th scope="col">Result</th><th scope="col">What was found</th></tr></thead>
             <tbody>{[...failed, ...others].map(c => { const [b, l] = STATE_BADGE[c.status]; const isOpen = open === c.id; return (
-              <tr key={c.id}><td><Link className="mono" to={`/spec#check-${c.id}`}>{c.id}</Link> {c.title}</td><td>{c.level}</td><td><span className={`badge ${b}`}>{l}</span></td>
+              <tr key={c.id}><td>{c.title} <Link className="mono small muted" to={`/spec#check-${c.id}`} title="This check in the Metrics Spec">{c.id}</Link></td><td>{LEVEL[c.level] ?? c.level} <span className="small muted">{c.level}</span></td><td><span className={`badge ${b}`}>{l}</span></td>
                 <td className="small">{c.status === "fail" ? <>
                   {c.findings[0]}{(c.findings.length > 1 || c.more > 0) && <> <button className="btn btn--sm btn--ghost" type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : c.id)}>{isOpen ? "Less" : `${c.findings.length - 1 + c.more} more`}</button></>}
                   {isOpen && <ul style={{ margin: "4px 0", paddingLeft: 18 }}>{c.findings.slice(1).map((x, i) => <li key={i}>{x}</li>)}{c.more > 0 && <li>and {c.more} more</li>}</ul>}
