@@ -151,8 +151,9 @@ a.ov-need:hover { background:var(--hover-bg); }
 * { scrollbar-width:thin; scrollbar-color:var(--hairline-2) transparent; }
 html { scroll-behavior:smooth; }
 
-/* a page eases in; the global reduced-motion rule switches this off */
-.page { animation:pagein 260ms var(--ease) both; }
+/* a page eases in; the global reduced-motion rule switches this off. "backwards", not "both": a held end transform
+   would make .page the containing block of every position:fixed child (the replay alert opened off-screen) */
+.page { animation:pagein 260ms var(--ease) backwards; }
 @keyframes pagein { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
 
 /* surfaces: a soft two-layer shadow, a lift on anything clickable */

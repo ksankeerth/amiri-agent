@@ -1,0 +1,67 @@
+/* Showcase pages: Scenario Studio replay, Radar, Market series, Metrics Spec, Data connections.
+   Sizes stay on the type scale (12/13/14/16/20/28/32) except the replay's day counter, the one 40 px hero number. */
+
+/* ---- Replay: the run bar (controls + clock) ---- */
+.rn-bar { display:flex; align-items:center; gap:24px; padding:12px 24px; margin:4px 0 16px; flex-wrap:wrap; }
+.rn-ctl { display:flex; align-items:center; gap:8px; flex:none; }
+.rn-ctl .btn--lg { min-width:112px; }
+.rn-clock { display:flex; align-items:center; gap:24px; flex:1 1 480px; min-width:0; }
+.rn-day { display:flex; align-items:baseline; gap:8px; flex:none; font-variant-numeric:tabular-nums; }
+.rn-day b { font-size:40px; line-height:1; font-weight:700; letter-spacing:-.03em; color:var(--ink); }
+.rn-day span { font-size:var(--fs-xl); font-weight:600; color:var(--ink-2); }
+.rn-when { display:flex; flex-direction:column; gap:8px; flex:1; min-width:0; }
+.rn-date { font-size:var(--fs-lg); font-weight:600; color:var(--ink); }
+.rn-track { position:relative; height:12px; border-radius:99px; background:var(--sunken); border:1px solid var(--hairline-2); }
+.rn-fill { position:absolute; inset:0 auto 0 0; border-radius:99px; background:var(--accent); transition:width 400ms var(--ease); }
+.rn-tick { position:absolute; top:-5px; width:3px; height:20px; margin-left:-1.5px; border-radius:2px; background:var(--ink-2); }
+.rn-tick.ev { background:var(--critical); width:4px; margin-left:-2px; }
+.rn-legend { display:inline-flex; align-items:center; gap:8px; font-size:var(--fs-xs); color:var(--ink-3); white-space:nowrap; }
+.rn-tick.inl { position:static; display:inline-block; height:12px; margin:0 0 0 4px; vertical-align:middle; }
+.rn-legend .rn-tick.inl:first-child { margin-left:0; }
+.rn-pin.inl { display:inline-block; width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; border-bottom:8px solid var(--ink-2); }
+.rn-dot.inl { display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--high); margin-left:4px; }
+
+/* ---- Replay: the chain, readable from the back of the room ---- */
+.chain-n { font-size:var(--fs-3xl); }
+.chain-l { font-size:var(--fs-md); color:var(--ink); }
+.chain-s { font-size:var(--fs-sm); color:var(--ink-2); white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; min-height:2.8em; line-height:1.4; }
+
+/* ---- Replay: the alert moment, under the top bar where the eye is ---- */
+.moment { top:72px; bottom:auto; right:24px; width:min(480px, calc(100vw - 32px)); padding:16px 16px 16px 20px; border-left-width:6px;
+  animation:momentdown 420ms cubic-bezier(.2,.9,.25,1.15) both; }
+.moment b { font-size:var(--fs-xl); line-height:1.3; }
+.moment-k { font-size:var(--fs-sm); }
+.moment-s { font-size:var(--fs-sm); color:var(--ink-2); line-height:1.45; }
+.moment-ico { width:40px; height:40px; }
+.moment-ico svg { width:20px; height:20px; }
+@keyframes momentdown { from { opacity:0; transform:translateY(-16px) scale(.96); } to { opacity:1; transform:none; } }
+
+/* ---- Replay: the right column (scorecard over timeline) ---- */
+.rn-split { grid-template-columns:minmax(0,1fr) minmax(360px,440px); }
+.rn-score .li { align-items:center; gap:12px; font-size:var(--fs-md); }
+.rn-score .pill { flex:none; margin-top:1px; }
+.rn-score-n { font-size:var(--fs-sm); color:var(--ink-2); }
+.rn-score-n b { font-size:var(--fs-xl); color:var(--ink); margin-right:2px; }
+.rn-tl { max-height:640px; overflow:auto; }
+.tl { gap:12px; }
+.tl-ico { width:28px; height:28px; border-radius:8px; flex:none; display:inline-flex; align-items:center; justify-content:center; background:var(--sunken); color:var(--ink-3); }
+.tl-ico svg { width:16px; height:16px; }
+.tl-meta { font-size:var(--fs-xs); color:var(--ink-3); display:flex; align-items:center; gap:8px; }
+.tl-text { font-size:var(--fs-md); color:var(--ink); line-height:1.4; }
+.tl-new { font-size:var(--fs-xs); font-weight:700; color:var(--accent-ink); background:var(--accent-soft); border-radius:var(--r-badge); padding:0 6px; }
+.tl-headline .tl-text { color:var(--ink-2); }
+.tl-finding .tl-ico, .tl-move .tl-ico { background:var(--high-soft); color:var(--high-ink); }
+.tl-ev .tl-text { font-weight:700; }
+.tl-ev.t-bad .tl-ico { background:var(--critical-soft); color:var(--critical-ink); }
+.tl-ev.t-good .tl-ico { background:var(--accent-soft); color:var(--accent-ink); }
+.tl-ev.t-mixed .tl-ico { background:var(--medium-soft); color:var(--medium-ink); }
+.tl-development .tl-ico { background:var(--accent-soft); color:var(--accent-ink); }
+.tl-proc .tl-text { color:var(--ink-3); font-size:var(--fs-sm); }
+.tl.fresh { box-shadow:inset 3px 0 0 var(--accent); animation:tlfresh 2.4s var(--ease) both; }
+@keyframes tlfresh { 0%, 40% { background:var(--accent-soft); } 100% { background:transparent; } }
+
+/* chart labels drawn on the chart, not only on hover */
+.chart .mk-tag { font-size:var(--fs-xs); font-weight:700; }
+.chart .pin { fill:var(--ink-2); }
+@media (max-width: 1100px) { .rn-split { grid-template-columns:minmax(0,1fr); } }
+.rn-story { flex:1; min-width:0; }

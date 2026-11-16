@@ -96,6 +96,8 @@ export function StudioPage() {
     catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
   };
   const ready = (items ?? []).find(s => s.recorded);
+  // one primary per view: "Replay it" when there is a recording, otherwise the first template
+  const lead = ready && !current ? null : (templates ?? []).find(t => t.template_id !== "blank" && !t.unavailable)?.template_id;
   return (
     <div className="page">
       <PageHeader title="Scenario Studio" status="Try a what-if on your institution. Nothing touches your live data."
@@ -117,26 +119,26 @@ export function StudioPage() {
           <p className="small muted" style={{ margin: 0, flex: 1 }}>{t.summary}</p>
           <div className="row wrap" style={{ gap: 6 }}>{t.tags.map(x => <span key={x} className="chip">{TAG[x] ?? x}</span>)}</div>
           {t.unavailable ? <span className="small muted">Can't run here: {t.unavailable}.</span>
-            : <button className={`btn btn--sm ${t.template_id === "blank" ? "" : "btn--primary"}`} type="button" style={{ alignSelf: "flex-start" }} onClick={() => create(t)}>
+            : <button className={`btn btn--sm ${t.template_id === lead ? "btn--primary" : ""}`} type="button" style={{ alignSelf: "flex-start" }} onClick={() => create(t)}>
               <Icon name="plus" />{t.template_id === "blank" ? "Write your own" : "Use this template"}</button>}
         </div></div>))}
       </div>
       <h2 className="mt24">Your scenarios</h2>
       <div className="card mt12">{items === null ? <div className="bd small muted">…</div> : !items.length ? <Empty icon="studio" title="No scenarios yet">Start one above: from the template, or your own headlines.</Empty> : (
         <div className="tblwrap"><table className="tbl">
-          <thead><tr><th>Scenario</th><th>Headlines</th><th>Instant replay</th><th>Last run</th><th><span className="sr">Actions</span></th></tr></thead>
+          <thead><tr><th>Scenario</th><th>Headlines</th><th>Replay</th><th>Last run</th><th><span className="sr">Actions</span></th></tr></thead>
           <tbody>{items.map(s => (
             <tr key={s.scenario_id} className="click" onClick={() => nav(`/studio/${s.scenario_id}`)}>
               <td><Link className="strong" to={`/studio/${s.scenario_id}`} onClick={e => e.stopPropagation()}>{s.title}</Link>
                 <div className="sub">{s.template_id === "blank" ? "your own" : "from a template"} · made {dayTime(s.created_at)}</div></td>
               <td className="small">{s.template_id === "blank" ? "written by you" : s.custom?.headlines ? "edited" : "as written"}</td>
-              <td>{s.recorded ? <span className="badge b-ok">READY</span> : <span className="muted small">not saved yet</span>}</td>
+              <td className="small">{s.recorded ? <span className="row" style={{ gap: 4 }}><Icon name="check" className="ico16" />Ready to replay</span> : <span className="muted">not recorded yet</span>}</td>
               <td className="small">{s.last_run ? dayTime(s.last_run) : "never"}</td>
               <td onClick={e => e.stopPropagation()}><span className="row" style={{ gap: 6 }}>
                 {s.recorded
-                  ? <button className="btn btn--sm btn--primary" type="button" disabled={!!current} onClick={() => start(s.scenario_id, "replay")}><Icon name="play" />Replay</button>
-                  : <button className="btn btn--sm btn--primary" type="button" disabled={!!current} onClick={() => start(s.scenario_id, "live")}><Icon name="play" />Run</button>}
-                {s.recorded && <button className="btn btn--sm" type="button" disabled={!!current} onClick={() => start(s.scenario_id, "live")}>Run live</button>}
+                  ? <button className="btn btn--sm" type="button" disabled={!!current} onClick={() => start(s.scenario_id, "replay")}><Icon name="play" />Replay</button>
+                  : <button className="btn btn--sm" type="button" disabled={!!current} onClick={() => start(s.scenario_id, "live")}><Icon name="play" />Run</button>}
+                {s.recorded && <button className="btn btn--sm btn--ghost" type="button" disabled={!!current} onClick={() => start(s.scenario_id, "live")}>Run live</button>}
               </span></td>
             </tr>))}</tbody>
         </table></div>)}

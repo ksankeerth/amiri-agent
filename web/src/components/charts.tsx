@@ -16,7 +16,10 @@ export function Spark({ values, color = "var(--accent)", w = 140, h = 40 }: { va
 }
 
 export interface Point { t: string; v: number }
-export interface Mark { t: string; color: string; label: string }
+/** A flagged point: a dot and dashed line; `tag` is drawn next to it so it reads without hovering. */
+export interface Mark { t: string; color: string; label: string; tag?: string }
+/** Something that happened at a time (a headline): a small tick on the time axis, label on hover. */
+export interface Pin { t: string; label: string }
 
 /**
  * Price chart over trading time: points are spaced evenly, so weekends and
@@ -30,8 +33,8 @@ function chartSummary(points: Point[], marks: Mark[], fmtY: (v: number) => strin
   return `Price chart from ${fmtTip(first.t)} to ${fmtTip(last.t)}: started at ${fmtY(first.v)}, ended at ${fmtY(last.v)}, lowest ${fmtY(lo)}, highest ${fmtY(hi)}.${marks.length ? ` ${marks.length} unusual ${marks.length === 1 ? "move" : "moves"} flagged.` : ""}`;
 }
 
-export function PriceChart({ points, marks = [], height = 260, fmtX, fmtY, fmtTip }: {
-  points: Point[]; marks?: Mark[]; height?: number;
+export function PriceChart({ points, marks = [], pins = [], height = 260, fmtX, fmtY, fmtTip }: {
+  points: Point[]; marks?: Mark[]; pins?: Pin[]; height?: number;
   fmtX: (t: string) => string; fmtY: (v: number) => string; fmtTip: (t: string) => string;
 }) {
   const box = useRef<HTMLDivElement>(null);
@@ -94,10 +97,17 @@ export function PriceChart({ points, marks = [], height = 260, fmtX, fmtY, fmtTi
         {marks.map((m, k) => {
           const i = idxOf(m.t);
           if (i < 0) return null;
+          const right = X(i) > w * 0.7;
           return (
             <g key={k}><line x1={X(i)} x2={X(i)} y1={T} y2={h - B} stroke={m.color} strokeDasharray="3 3" />
-              <circle cx={X(i)} cy={Y(points[i].v)} r={4.5} fill={m.color} stroke="var(--surface)" strokeWidth={1.5}><title>{m.label}</title></circle></g>
+              <circle cx={X(i)} cy={Y(points[i].v)} r={5} fill={m.color} stroke="var(--surface)" strokeWidth={1.5}><title>{m.label}</title></circle>
+              {m.tag && <text className="mk-tag" x={X(i) + (right ? -8 : 8)} y={T + 12} textAnchor={right ? "end" : "start"} fill={m.color}>{m.tag}</text>}</g>
           );
+        })}
+        {pins.map((p, k) => {
+          const ms = new Date(p.t).getTime(), i = points.findIndex(q => new Date(q.t).getTime() >= ms);  // the close it fed into
+          if (i < 0) return null;
+          return <path key={`p${k}`} className="pin" d={`M${X(i).toFixed(1)},${h - B - 1}l-4.5,7h9z`}><title>{p.label}</title></path>;
         })}
         {hp && hover !== null && (
           <g><line x1={X(hover)} x2={X(hover)} y1={T} y2={h - B} stroke="var(--ink-3)" strokeWidth={1} />
