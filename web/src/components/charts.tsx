@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { niceTicks } from "./chartMath";
+import { niceTicks, tagGroups } from "./chartMath";
 
 export function Spark({ values, color = "var(--accent)", w = 140, h = 40 }: { values: number[]; color?: string; w?: number; h?: number }) {
   if (values.length < 2) return <svg className="spark" style={{ width: w, height: h }} />;
@@ -114,12 +114,15 @@ export function PriceChart({ points, marks = [], pins = [], height = 260, fmtX, 
         {marks.map((m, k) => {
           const i = idxOf(m.t);
           if (i < 0) return null;
-          const right = X(i) > w * 0.7;
           return (
             <g key={k}><line x1={X(i)} x2={X(i)} y1={T} y2={h - B} stroke={m.color} strokeDasharray="3 3" />
-              <circle cx={X(i)} cy={Y(points[i].v)} r={5} fill={m.color} stroke="var(--surface)" strokeWidth={1.5}><title>{m.label}</title></circle>
-              {m.tag && <text className="mk-tag" x={X(i) + (right ? -8 : 8)} y={T + 12} textAnchor={right ? "end" : "start"} fill={m.color}>{m.tag}</text>}</g>
+              <circle cx={X(i)} cy={Y(points[i].v)} r={5} fill={m.color} stroke="var(--surface)" strokeWidth={1.5}><title>{m.label}</title></circle></g>
           );
+        })}
+        {tagGroups(marks.map(m => ({ m, x: X(idxOf(m.t)), ok: idxOf(m.t) >= 0 }))).map(({ m, x, n }, k) => {
+          const right = x > w * 0.7;
+          return <text key={`t${k}`} className="mk-tag" x={x + (right ? -8 : 8)} y={T + 12} textAnchor={right ? "end" : "start"} fill={m.color}>
+            {n > 1 ? `${m.tag} ×${n}` : m.tag}</text>;
         })}
         {pins.map((p, k) => {
           const ms = new Date(p.t).getTime(), i = points.findIndex(q => new Date(q.t).getTime() >= ms);  // the close it fed into
