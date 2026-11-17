@@ -306,7 +306,8 @@ export function SetupChat({ institutionId, onTrack, onApplied, at, askKey = 0 }:
   const [showAll, setShowAll] = useState(false);
   useEffect(() => setShowAll(false), [here]);  // a new topic starts folded again
   // The page is the single source of "where": a step or tab clicked there sets the chat's topic, as picking it here would.
-  const atTrack = trackFor(defs, at ?? {})?.track ?? null;
+  // (a tab two topics share keeps the one the chat is on: Verification opens the overview, as Institution does)
+  const atTrack = trackFor(defs, at ?? {}, here)?.track ?? null;
   useEffect(() => {
     if (!atTrack || atTrack === (picked ?? current)) return;
     setPicked(atTrack); setHeld(null);

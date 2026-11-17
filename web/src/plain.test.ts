@@ -84,7 +84,8 @@ test("an alert queue: open first, then the most serious, then the latest", () =>
 
 test("a source's score reads as a signal strength in words", () => {
   assert.deepEqual(signalStrength(82), ["Strong signal", "blue"]);
-  assert.deepEqual(signalStrength(0.55), ["Moderate signal", "grey"]);
+  assert.deepEqual(signalStrength(55), ["Moderate signal", "grey"]);
+  assert.deepEqual(signalStrength(1), ["Weak signal", "grey"]);  // 1 of 100, not a fraction meaning 100 %
   assert.deepEqual(signalStrength(31), ["Weak signal", "grey"]);
   assert.equal(signalStrength(null), null);
 });

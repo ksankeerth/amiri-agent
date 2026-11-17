@@ -1,6 +1,7 @@
 // The setup chat's first-setup order: where ← and → go, which track comes next once one is applied,
 // and the short message that moves the chat on (an ordinary turn with the track picked, so the agent opens
 // the next track with its first question and the notes kept for it).
+import { cap, words } from "../plain.ts";
 
 export interface FlowTrack { track: string; label: string; order: number | null; read_only: boolean; shown: boolean; status?: string }
 
@@ -47,12 +48,16 @@ export const continuedTo = <T extends FlowTrack>(ts: T[], text: unknown): T | nu
 const STEP_SHARES: Record<string, string> = { products: "customers", flows: "where" };
 
 /** The track the chat should help with for the page's place: a guided-setup step or an Institution tab.
- *  The page is the single source of "where": the chat follows it. */
+ *  The page is the single source of "where": the chat follows it. Some tracks share a tab (Institution and
+ *  Verification both open the overview): `current`, the chat's topic, keeps its place when it fits the tab. */
 export function trackFor<T extends FlowTrack & { setup_step: string | null; tab: string | null }>(
-  ts: T[], at: { step?: string; tab?: string },
+  ts: T[], at: { step?: string; tab?: string }, current: string | null = null,
 ): T | null {
   if (at.step) { const s = STEP_SHARES[at.step] ?? at.step; return ts.find(t => t.setup_step === s && t.shown) ?? null; }
-  if (at.tab) return ts.find(t => t.tab === at.tab && t.shown) ?? null;
+  if (at.tab) {
+    const fits = ts.filter(t => t.tab === at.tab && t.shown);
+    return fits.find(t => t.track === current) ?? fits[0] ?? null;
+  }
   return null;
 }
 
@@ -73,8 +78,6 @@ export const STARTERS: Record<string, string[]> = {
 // ---------------------------------------------------------------- plain words for a profile change
 // Proposal cards and the History tab say what changes in words: names, not ids; field names, not keys.
 
-const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
-const words = (s: string) => s.replace(/[_-]+/g, " ").trim();
 
 export const SECTION_ONE: Record<string, string> = {
   institution: "institution details", footprint: "place in the footprint", "watch-places": "place to watch", segments: "customer group",
@@ -88,6 +91,9 @@ const SECTION_MANY: Record<string, string> = {
 /** "3 rivals", "1 place to watch", "6 places to watch". */
 export const countOf = (section: string, n: number) => `${n} ${n === 1 ? SECTION_ONE[section] ?? words(section) : SECTION_MANY[section] ?? `${words(section)}s`}`;
 export const FLOW_WORDS: Record<string, string> = { remittances_in: "remittances in", remittances_out: "remittances out", tourism: "tourist spending", services: "services income", exports: "exports", imports: "imports" };
+/** Whether a flow's money leaves the bank's place for the far end: paying for imports, or remittances sent out.
+ *  The money's way, not the goods': an export's goods go out and its payment comes in. */
+export const moneyGoesOut = (kind: string) => kind === "imports" || kind === "remittances_out";
 const FIELD: Record<string, string> = {
   name: "Name", legal_name: "Legal name", short_name: "Short name", institution_type: "Type", subtype: "Kind", islamic: "Islamic",
   lei: "LEI", home_country: "Home country", base_currency: "Base currency", time_zone: "Time zone",

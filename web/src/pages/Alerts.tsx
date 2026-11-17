@@ -125,15 +125,19 @@ export function AlertsPage() {
   const [err, setErr] = useState<unknown>(null);
   const load = useCallback(async () => {
     try {
-      // every status at once, so the filter can show how many sit at each step
-      const [s, xs] = await Promise.all([alertsApi.summary(), alertsApi.list({ owner: team || undefined })]);
+      // the list is the newest 100, so it's asked for one status at a time (older alerts to review still show);
+      // the filter's counts come from the summary, which counts them all
+      const [s, xs] = await Promise.all([alertsApi.summary(), alertsApi.list({ status: show === "all" ? undefined : show, owner: team || undefined })]);
       setSum(s); setItems(xs); setErr(null);
     } catch (e) { setErr(e); }
-  }, [team]);
+  }, [show, team]);
+  useEffect(() => setItems(null), [show, team]);  // another filter: wait for its list rather than filter the old one
   useEffect(() => { load(); const t = setInterval(load, 60_000); return () => clearInterval(t); }, [load]);
-  // each alert's next check is on its event: one request per event on the page
+  // an alert acted on here leaves a filter it no longer matches at once, before the next load
   const shown = useMemo(() => items && items.filter(a => show === "all" || a.status === show), [items, show]);
-  const nAt = (k: Show) => (items ?? []).filter(a => k === "all" || a.status === k).length;
+  const nAt = (k: Show) => sum?.by_team_status?.filter(r => (!team || r.owner === team) && (k === "all" || r.status === k))
+    .reduce((n, r) => n + r.n, 0);
+  // each alert's next check is on its event: one request per event on the page
   const eventIds = useMemo(() => [...new Set((shown ?? []).map(a => a.event_id))].sort().join(","), [shown]);
   useEffect(() => {
     if (!eventIds) return;
@@ -173,8 +177,8 @@ export function AlertsPage() {
       ]} />}
 
       {(items !== null || err == null) && <div className="filters">
-        <FlowFilter label="Which alerts" value={show} onChange={setShow} all={{ key: "all", label: "All", count: items ? nAt("all") : undefined }}
-          steps={([["new", "To review"], ["acknowledged", "Acknowledged"], ["resolved", "Resolved"]] as const).map(([key, label]) => ({ key, label, count: items ? nAt(key) : undefined }))} />
+        <FlowFilter label="Which alerts" value={show} onChange={setShow} all={{ key: "all", label: "All", count: nAt("all") }}
+          steps={([["new", "To review"], ["acknowledged", "Acknowledged"], ["resolved", "Resolved"]] as const).map(([key, label]) => ({ key, label, count: nAt(key) }))} />
         {s && s.all_teams.length > 1 && <ChipFilter label="Team" value={team} onChange={t => setTeam(t)}
           options={[{ key: "", label: "All teams" }, ...s.all_teams.map(t => ({ key: t, label: t, count: s.teams.find(x => x.owner === t)?.to_review }))]} />}
       </div>}

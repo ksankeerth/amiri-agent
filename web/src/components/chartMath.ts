@@ -36,3 +36,14 @@ export function tagGroups<M extends { tag?: string }>(items: { m: M; x: number; 
   }
   return out;
 }
+
+/** p mirrored around h at k (0.6: 60 % of the way back past h), [lon, lat] in degrees. A mirror image past the
+ *  edge of the map (|lon| > 179 or |lat| > 89) is pulled in along the same line, so it stays on the map and keeps
+ *  its direction: New Zealand mirrored against London would land at 275° E, 96° S, which wraps round and fits the
+ *  whole world. */
+export function mirrorAround(h: [number, number], p: [number, number], k = 0.6): [number, number] {
+  const dx = h[0] - p[0], dy = h[1] - p[1];
+  const room = (c: number, d: number, edge: number) => (d > 0 ? (edge - c) / d : d < 0 ? (-edge - c) / d : Infinity);
+  const t = Math.max(0, Math.min(k, room(h[0], dx, 179), room(h[1], dy, 89)));
+  return [h[0] + t * dx, h[1] + t * dy];
+}

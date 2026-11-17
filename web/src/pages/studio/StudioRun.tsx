@@ -9,8 +9,8 @@ import { StatusPill, TonePill } from "../../components/blocks";
 import { PriceChart, type Mark } from "../../components/charts";
 import { Icon } from "../../components/Icon";
 import { Banner, CountUp, LoadError, PageHead, useToast, PageSkeleton } from "../../components/ui";
-import { dayTime, plural } from "../../format";
-import { listText, themeLabel } from "../../plain";
+import { clockText, dayTime, plural } from "../../format";
+import { cap, listText, themeLabel, words } from "../../plain";
 import "../../styles/showcase.css";
 
 const PLAY_MS = 1200;
@@ -80,8 +80,7 @@ function AlertMoment({ a, onDone }: { a: Alert; onDone: () => void }) {
 
 /** The clock as the hero: big day count, the simulated date, and a track with a tick on each day that had news. */
 function Clock({ sim, timeline }: { sim: Simulation; timeline: TimelineItem[] }) {
-  const date = new Intl.DateTimeFormat("en-GB", { timeZone: sim.institution.time_zone, weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })
-    .format(new Date(sim.virtual_now)).replace(",", "").replace(/, (\d\d:\d\d)$/, " · $1");
+  const date = clockText(sim.virtual_now, sim.institution.time_zone);
   const days = (k: string) => [...new Set(timeline.filter(t => t.kind === k).map(t => t.step))];
   const pct = (d: number) => `${Math.min(100, (d / Math.max(1, sim.steps)) * 100)}%`;
   return (
@@ -216,7 +215,7 @@ export function StudioRunPage() {
             <button className="btn btn--danger btn--sm" type="button" onClick={stop}>Stop the run</button>
             <button className="btn btn--sm" type="button" onClick={() => setStopping(false)}>Keep it</button></span>
             : <button className="btn btn--ghost" type="button" onClick={() => setStopping(true)} title="End this run (Pause keeps it, Stop ends it)">Stop</button>}</>
-          : <StatusPill tone={sim.status === "finished" ? "green" : "grey"} icon={sim.status === "finished" ? "check" : undefined}>{sim.status === "finished" ? "Finished" : sim.status[0].toUpperCase() + sim.status.slice(1).replace(/_/g, " ")}</StatusPill>}</div>
+          : <StatusPill tone={sim.status === "finished" ? "green" : "grey"} icon={sim.status === "finished" ? "check" : undefined}>{sim.status === "finished" ? "Finished" : cap(words(sim.status))}</StatusPill>}</div>
         <Clock sim={sim} timeline={timeline} />
       </section>
       {moment && <AlertMoment a={moment} onDone={closeMoment} />}

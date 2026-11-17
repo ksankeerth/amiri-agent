@@ -43,9 +43,14 @@ function Chart({ s, findings }: { s: Series; findings: Finding[] }) {
   }, [s.series_id, range, lastBar, anchored, lastMs]);
   const marks: Mark[] = findings.filter(f => f.world === "live").map(f => ({ t: f.evidence?.signals?.[0]?.end_at ?? f.created_at, color: "var(--high)", label: f.title, tag: "Flagged move" }));
   const vs = (bars ?? []).map(b => b.close);
-  const spike = spikeIndex(vs);
-  if (bars && spike >= 0) marks.push({ t: bars[spike].ts, color: "var(--ink-3)", note: true, tag: `One-${range.interval === "1h" ? "hour" : "day"} spike, not flagged`,
-    label: "A single price far from its neighbours that came straight back: Amiri Agent looks at closes over whole days, so it doesn't count as a move." });
+  // A one-hour spike that came straight back never reaches a daily close, which is what Amiri Agent looks at, so it
+  // isn't flagged. Only said on the hourly charts: on the daily one a one-day spike *is* a daily close and may well be
+  // flagged, and the note is left off wherever a flagged move sits within a day of it.
+  const spike = range.interval === "1h" ? spikeIndex(vs) : -1;
+  const spikeAt = bars && spike >= 0 ? new Date(bars[spike].ts).getTime() : NaN;
+  if (bars && spike >= 0 && !marks.some(m => Math.abs(new Date(m.t).getTime() - spikeAt) < 86400_000))
+    marks.push({ t: bars[spike].ts, color: "var(--ink-3)", note: true, tag: "One-hour spike, not flagged",
+      label: "A single hourly price far from its neighbours that came straight back: Amiri Agent looks at closes over whole days, so it doesn't count as a move." });
   return (
     <div className="card">
       <div className="hd wrap"><h2>{bars && bars.length > 1 ? takeaway(s.name, vs, `${range.phrase}${anchored ? ` to ${day(bars[bars.length - 1].ts)}` : ""}`, s.latest?.typical_daily_move_pct) : "Price"}</h2>

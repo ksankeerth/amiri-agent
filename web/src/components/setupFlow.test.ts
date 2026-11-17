@@ -70,6 +70,9 @@ test("the chat follows the page: a setup step or a tab names its track", () => {
   assert.equal(trackFor(defs, { step: "flows" })?.track, "footprint_flows");
   assert.equal(trackFor(defs, { step: "review" })?.track, "verification");
   assert.equal(trackFor(defs, { tab: "overview" })?.track, "institution");           // the first one for a shared tab
+  assert.equal(trackFor(defs, { tab: "overview" }, "verification")?.track, "verification");  // ...unless the chat is already on the other one
+  assert.equal(trackFor(defs, { tab: "overview" }, "risks")?.track, "institution");  // a topic that doesn't fit the tab gives way
+  assert.equal(trackFor(defs, { step: "institution" }, "verification")?.track, "institution");  // a setup step is never shared
   assert.equal(trackFor(defs, { tab: "rules" }), null);                                // hidden tracks never
   assert.equal(trackFor(defs, {}), null);
 });

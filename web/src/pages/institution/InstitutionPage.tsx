@@ -11,6 +11,7 @@ import { changeWords, countOf, fieldWord, SECTION_ONE, valueText } from "../../c
 import { PageHeader, StatusPill } from "../../components/blocks";
 import { Banner, DEMOS, InlineSkeleton, LoadError, MenuButton, Modal, PageHead, ResetModal, useRole, useToast, PageSkeleton, StatusIcon } from "../../components/ui";
 import { dayTime, plural } from "../../format";
+import { cap, words } from "../../plain";
 import { PlaceName, useLoad } from "./fields";
 import { InstitutionFields, InstitutionModal, LABELS, splitErrors, useHiddenErrors, type Ctx } from "./forms";
 import { ProfileMap } from "./ProfileMap";
@@ -35,7 +36,9 @@ export function useInstitution() {
     } catch (e) { setError(e); }
   }, []);
   const reload = useCallback(async () => {
-    if (!id) { setProfile(null); return; }
+    // no institution chosen: nothing to load, so an old error (a failed list) goes too; "Try again" then
+    // loads the list afresh and sets it again only if that fails once more
+    if (!id) { setProfile(null); setError(null); return; }
     try {
       const [p, r] = await Promise.all([inst.profile(id), inst.readiness(id)]);
       setProfile(p); setReadiness(r); setError(null);
@@ -241,7 +244,7 @@ function whyParts(w: string, names: Record<string, string | null>): [tag: string
   const tag = m ? WHY_TAG[m[1].toLowerCase()] : "";
   let text = (m ? m[2] : w).replace(/\b([A-Z]{2}(?:-\w+)?)\b/g, c => names[c] ?? c);
   if (tag === "Footprint") text = text.replace(/^\((.*)\)$/, "$1");
-  return [tag, text ? text[0].toUpperCase() + text.slice(1) : text];
+  return [tag, cap(text)];
 }
 
 function AgentsView({ id, pv, names, regulators }: { id: string; pv: number; names: Record<string, string | null>; regulators: Item[] }) {
@@ -325,7 +328,7 @@ export function InstitutionPage() {
     <WithChat institutionId={i.institution_id} onTrack={follow} onApplied={applied} at={{ tab }}><div className="page">
       <PageHeader
         title={i.name} pills={<StatusBadge status={i.status} />}
-        status={<>{i.subtype ? `${i.subtype.replace(/_/g, " ")[0].toUpperCase()}${i.subtype.replace(/_/g, " ").slice(1)} ${i.institution_type === "bank" ? "bank" : "insurer"}` : i.institution_type === "bank" ? "Bank" : "Insurer"}{i.islamic ? " (Islamic)" : ""} in <PlaceName code={i.home_country} names={profile.place_names} /> · {i.base_currency}</>}
+        status={<>{i.subtype ? `${cap(words(i.subtype))} ${i.institution_type === "bank" ? "bank" : "insurer"}` : i.institution_type === "bank" ? "Bank" : "Insurer"}{i.islamic ? " (Islamic)" : ""} in <PlaceName code={i.home_country} names={profile.place_names} /> · {i.base_currency}</>}
         help={<div className="col" style={{ gap: 8 }}>{i.summary && <p className="ph-about">{i.summary}</p>}
           <p className="small muted">Time zone: {i.time_zone}. Amiri Agent reads this profile to decide what matters to you: where you operate, your customers and products, your flows, rules, rivals and risks.</p></div>}
         helpLabel="About this institution"

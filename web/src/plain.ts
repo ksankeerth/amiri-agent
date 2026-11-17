@@ -7,8 +7,10 @@ export type Tone = "red" | "amber" | "green" | "grey" | "blue";
 // red: bad for you / needs action · amber: watch / early signs · green: confirmed good / done · grey: neutral / waiting ·
 // blue: info / in progress
 
-const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
-const words = (s: string) => s.replace(/[_-]+/g, " ").trim();
+/** "finance company" → "Finance company". The one capitaliser: use it rather than writing another. */
+export const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+/** A code as words: "finance_company" → "finance company". */
+export const words = (s: string) => s.replace(/[_-]+/g, " ").trim();
 
 // ---------------------------------------------------------------- themes
 interface ThemeTag { theme: string; direction: string; item?: string; currency?: string }
@@ -205,11 +207,11 @@ export const SET_ASIDE_REASON: Record<string, string> = {
   merged_into_event: "joined another event",
   investigation_failed: "the investigation didn't finish",
 };
-/** How strong a source's signal was, in words (the score is 0–100; a 0–1 score is read as a fraction). */
+/** How strong a source's signal was, in words. The score is a whole number from 0 to 100 (the findings table checks
+ *  it), so 1 is a weak 1 %, not "1.0 = 100 %". */
 export function signalStrength(score: number | null | undefined): [string, Tone] | null {
   if (score === null || score === undefined || !Number.isFinite(score)) return null;
-  const s = score <= 1 ? score * 100 : score;
-  return s >= 70 ? ["Strong signal", "blue"] : s >= 40 ? ["Moderate signal", "grey"] : ["Weak signal", "grey"];
+  return score >= 70 ? ["Strong signal", "blue"] : score >= 40 ? ["Moderate signal", "grey"] : ["Weak signal", "grey"];
 }
 export const setAsideReason = (reason?: string | null) => (reason ? SET_ASIDE_REASON[reason] ?? words(reason) : "");
 /** Why an angle was considered and dropped for an event, in a few words. */

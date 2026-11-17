@@ -16,7 +16,8 @@ export interface AlertItem {
   event_title: string; event_status: string; event_anchor: string; places: string[]; top_finding: string | null; sources: string[] | null;
 }
 export interface AlertSummary { to_review: number; by_level: Record<Level, number>; acknowledged_week: number;
-  teams: { owner: string; to_review: number }[]; all_teams: string[] }
+  teams: { owner: string; to_review: number }[]; all_teams: string[];
+  by_team_status?: { owner: string; status: AlertItem["status"]; n: number }[] }  // every status's count, per team
 
 const B = "/api/v1/alerts";
 const enc = encodeURIComponent;

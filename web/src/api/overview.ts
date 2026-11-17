@@ -31,4 +31,9 @@ export interface Overview {
 }
 
 // A Platform Admin also gets Amiri Agent's own plumbing notes; a Risk Manager gets what they can act on.
-export const overviewApi = { get: (all = false) => api<Overview>(`/api/v1/overview${all ? "?audience=all" : ""}`) };
+/** Fired with every Overview answer, so the top bar's Live pill can use the Overview page's answer instead of asking again. */
+export const OVERVIEW_EVENT = "amiri:overview";
+export const overviewApi = {
+  get: (all = false) => api<Overview>(`/api/v1/overview${all ? "?audience=all" : ""}`)
+    .then(x => { window.dispatchEvent(new CustomEvent(OVERVIEW_EVENT, { detail: x })); return x; }),
+};

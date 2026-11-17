@@ -8,7 +8,8 @@ import { feature } from "topojson-client";
 import type { PlaceInfo, Profile } from "../../api/institutions";
 import { ref, type Hazard, type Route } from "../../api/reference";
 import { usdText, useLoad } from "./fields";
-import { FLOW_WORDS } from "./forms";
+import { mirrorAround } from "../../components/chartMath";
+import { FLOW_WORDS, moneyGoesOut } from "../../components/setupFlow";
 
 type World = FeatureCollection<Geometry, { name: string }>;
 const MIN_SPAN = 30;  // degrees: the smallest area the map zooms to (about Borneo with its neighbours)
@@ -95,7 +96,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
     // the full map keeps home in its middle third: each point gets a 60 % mirror image around home, so the fit leans
     // towards it (Sri Lanka sat in the bottom corner, under the zoom buttons, with the Gulf risks pulling the view north-west)
     const h0 = !compact && view === "home" ? at(home) : null;
-    if (h0) pts.push(...pts.map(([x, y]) => [h0[0] + 0.6 * (h0[0] - x), h0[1] + 0.6 * (h0[1] - y)] as [number, number]));
+    if (h0) pts.push(...pts.map(p => mirrorAround(h0, p)));
     const proj = geoNaturalEarth1();
     if (pts.length) {
       // pad a small area (one country, one point) to at least MIN_SPAN degrees, so the neighbours show
@@ -233,7 +234,8 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
         {on.has("flows") && S.flows.map(f => {
           const a = xy(at(f.local)), b = xy(at(f.counterpart));
           if (!a || !b) return null;
-          const [from, to] = ["exports", "remittances_out"].includes(f.kind) ? [a, b] : [b, a];
+          const out = moneyGoesOut(f.kind);  // the money's way, not the goods': an export's payment comes in
+          const [from, to] = out ? [a, b] : [b, a];
           const mx = (from[0] + to[0]) / 2, my = (from[1] + to[1]) / 2 - Math.hypot(to[0] - from[0], to[1] - from[1]) * 0.22;
           const share = Math.sqrt((f.value?.amount ?? 0) / maxFlow);
           const width = (compact ? 0.9 : 1) + (compact ? 2.4 : 4.5) * share;
@@ -242,7 +244,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           const ev = reached.get(f.id), quiet = reached.size > 0 && !ev;  // when an event reaches some flows, the rest step back
           const gap = Math.round(30 - 14 * share);  // bigger flows carry more particles
           return <g key={f.id} className={ev ? "mapflow is-hit" : quiet ? "mapflow is-quiet" : "mapflow"}
-            onMouseMove={e => show(e, `${FLOW_WORDS[f.kind]}${f.goods ? ` (${f.goods})` : ""}: ${P[f.counterpart]?.name ?? f.counterpart} ${["exports", "remittances_out"].includes(f.kind) ? "←" : "→"} ${P[f.local]?.name ?? f.local}${f.value ? ` · ${usdText(f.value.amount)} a year` : ""}${ev ? ` · reached by: ${ev.title}` : ""}`)} onMouseLeave={() => setTip(null)}>
+            onMouseMove={e => show(e, `${FLOW_WORDS[f.kind]}${f.goods ? ` (${f.goods})` : ""}: ${P[f.counterpart]?.name ?? f.counterpart} ${out ? "←" : "→"} ${P[f.local]?.name ?? f.local}${f.value ? ` · ${usdText(f.value.amount)} a year` : ""}${ev ? ` · reached by: ${ev.title}` : ""}`)} onMouseLeave={() => setTip(null)}>
             <path d={d} fill="none" stroke={FLOW_COLOR[f.kind]} strokeOpacity={quiet ? 0.28 : compact ? 0.75 : 0.85} strokeWidth={width} strokeLinecap="round" />
             {/* the direction: small particles travel from where the money starts to where it goes */}
             <path className="flowdots" d={d} fill="none" stroke="var(--map-particle)" strokeOpacity={quiet ? 0.3 : 0.9} strokeWidth={Math.max(2, width * 0.7)} strokeLinecap="round"

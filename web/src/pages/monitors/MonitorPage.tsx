@@ -15,7 +15,7 @@ import { ago, dayTime, plainError, when } from "../../format";
 import { eventTitle, everyText, longWhen, MONITOR_CHECK, setAsideReason } from "../../plain";
 import type { Installation } from "../../App";
 import { ChipsInput, Field, PlacesField } from "../institution/fields";
-import { FLOW_WORDS } from "../institution/forms";
+import { FLOW_WORDS } from "../../components/setupFlow";
 import { DraftFromProfile, LastCheck, MonitorActions, MonitorBanners, MonitorHelp, StatusBadge, useMonitorsStatus } from "./Monitors";
 
 const CHIP_TYPES: ChipType[] = ["organisation", "place", "region", "person", "sector", "regulation", "topic"];

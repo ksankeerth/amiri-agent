@@ -100,3 +100,12 @@ export function moveSize(size: { value: number; unit: string } | null | undefine
 
 /** "1 alert", "2 alerts": a count that reads right, never "alert(s)". */
 export const plural = (n: number, one: string, many?: string) => `${n} ${n === 1 ? one : many ?? one + "s"}`;
+
+/** The Studio clock in a time zone: "Tue 17 Nov · 09:20". Built from the parts, not by editing the formatted
+ *  string, so it doesn't depend on where a browser's locale data puts its commas. */
+export function clockText(iso: string, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone, weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .formatToParts(new Date(iso));
+  const p = (t: Intl.DateTimeFormatPartTypes) => parts.find(x => x.type === t)?.value ?? "";
+  return `${p("weekday")} ${p("day")} ${p("month")} · ${p("hour")}:${p("minute")}`;
+}

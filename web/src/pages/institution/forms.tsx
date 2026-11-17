@@ -13,6 +13,8 @@ import {
   ChipsInput, CountrySelect, CurrenciesField, CurrencySelect, Field, FlowValueField, KVField, MoneyField, MonthStrip,
   PlaceField, PlacesField, RefsField, SpecField, TimeZoneInput, Toggles, useFieldLabel, useLoad, useRoutes,
 } from "./fields";
+import { FLOW_WORDS } from "../../components/setupFlow";
+import { cap } from "../../plain";
 
 type Draft = Record<string, any>;
 type Errors = Record<string, string>;
@@ -56,10 +58,8 @@ export const LABELS: Record<SectionName, { one: string; many: string; nameKey: s
   "risk-exposures": { one: "risk exposure", many: "Risk exposures", nameKey: "title" },
 };
 
-const capFirst = (s: string) => s[0].toUpperCase() + s.slice(1);
-const opt = (xs: string[], words: Record<string, string> = {}) => xs.map(x => <option key={x} value={x}>{capFirst(words[x] ?? x.replace(/_/g, " "))}</option>);
+const opt = (xs: string[], words: Record<string, string> = {}) => xs.map(x => <option key={x} value={x}>{cap(words[x] ?? x.replace(/_/g, " "))}</option>);
 const ROLE_WORDS: Record<string, string> = { home: "home (headquarters country)", branches: "branches", subsidiary: "subsidiary", representative_office: "representative office", agents: "agents only", digital_only: "digital only" };
-export const FLOW_WORDS: Record<string, string> = { remittances_in: "remittances in", remittances_out: "remittances out", tourism: "tourist spending", services: "services income", exports: "exports", imports: "imports" };
 const INCOME: [string, string][] = [["salary", "salary"], ["remittances", "remittances"], ["business_income", "business income"], ["farm_income", "farm income"], ["pension", "pension"], ["government_transfers", "government transfers"], ["investment_income", "investment income"], ["other", "other"]];
 const RIVAL_TYPES = ["bank", "insurer", "takaful", "wallet", "fintech", "microfinance", "cooperative", "finance_company", "broker", "remittance_company", "other"];
 const CP_KINDS = ["correspondent_bank", "reinsurer", "payment_scheme", "clearing_house", "technology_provider", "distribution_partner", "outsourcer", "other"];

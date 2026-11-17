@@ -14,6 +14,7 @@ import { CreateInstitution, ReadinessList, StatusBadge, useInstitution } from ".
 import { ProfileMap } from "./ProfileMap";
 import { MonitorsStep } from "../monitors/Monitors";
 import { LinkGrid, SectionList, SuggestionPicker } from "./sections";
+import { cap, words } from "../../plain";
 
 const STEPS = [
   ["institution", "Institution", "Who you are"],
@@ -34,7 +35,7 @@ const RECOMMENDED_BY_STEP: Partial<Record<Step, string[]>> = { customers: ["segm
 /** "Commercial bank (Islamic)" rather than "bank · commercial". */
 const kindText = (i: { institution_type: string; subtype?: string | null; islamic?: boolean }) => {
   const kind = i.subtype ? `${i.subtype.replace(/_/g, " ")} ${i.institution_type === "bank" ? "bank" : "insurer"}` : i.institution_type;
-  return `${kind[0].toUpperCase()}${kind.slice(1)}${i.islamic ? " (Islamic)" : ""}`;
+  return `${cap(kind)}${i.islamic ? " (Islamic)" : ""}`;
 };
 const STATE_WORDS: Record<Status, string> = { done: "done", partial: "recommended part still open", required: "required, not done", open: "not started" };
 
@@ -133,7 +134,7 @@ export function SetupWizard() {
         <div className="card"><div className="hd"><h2>Add where you operate</h2></div><div className="bd grid2">
           <Field label="Place" hint="Countries, states, provinces or districts."><PlacePicker scope="iso" onPick={p => addFootprint(p.code)} placeholder="e.g. Kerala, Tamil Nadu, Singapore" /></Field>
           <Field label="As"><select className="input" value={role} onChange={e => setRole(e.target.value)}>
-            {["branches", "subsidiary", "representative_office", "agents", "digital_only", "home"].map(r => <option key={r} value={r}>{r === "home" ? "Home country" : `${r[0].toUpperCase()}${r.slice(1).replace(/_/g, " ")}`}</option>)}</select></Field>
+            {["branches", "subsidiary", "representative_office", "agents", "digital_only", "home"].map(r => <option key={r} value={r}>{r === "home" ? "Home country" : cap(words(r))}</option>)}</select></Field>
         </div></div>
         <div className="card"><div className="bd"><ProfileMap profile={profile} height={340} /></div></div>
         <SectionList section="footprint" ctx={ctx} reload={S.reload} />

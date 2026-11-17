@@ -7,16 +7,16 @@ import { dayTime, plural } from "../../format";
 import { Icon } from "../../components/Icon";
 import { Modal, useToast } from "../../components/ui";
 import { dimWord, monthsText, PlaceName, usdText, useRoutes, valueWord } from "./fields";
-import { AREA_WORDS, FLOW_WORDS, ItemModal, LABELS, splitErrors, type Ctx } from "./forms";
-import { productTypeLabel } from "../../plain";
+import { AREA_WORDS, ItemModal, LABELS, splitErrors, type Ctx } from "./forms";
+import { FLOW_WORDS } from "../../components/setupFlow";
+import { cap, productTypeLabel } from "../../plain";
 import "../../styles/polish-forms.css";
 
 const pn = (ctx: Ctx, c: string) => <PlaceName code={c} names={ctx.profile?.place_names} />;
 const join = (xs: ReactNode[]) => xs.reduce<ReactNode[]>((a, x, i) => (i ? [...a, ", ", x] : [x]), []);
 const byId = (ctx: Ctx, s: SectionName, id: string, key: string) => ctx.profile?.sections[s].find(x => x.id === id)?.[key] ?? id;
 /** An enum value as a word: "finance_company" → "Finance company". */
-const cw = (s: string) => (s ? s[0].toUpperCase() + s.slice(1).replace(/_/g, " ") : s);
-const capWord = (s?: string) => (s ? s[0].toUpperCase() + s.slice(1) : "");
+const cw = (s: string) => cap(s.replace(/_/g, " "));
 /** "US Treasury sanctions (OFAC)" stays as it is; "Central Bank of Sri Lanka" gets "(CBSL)". */
 const withShort = (name: string, short?: string | null) => (short && !name.includes(`(${short})`) ? `${name} (${short})` : name);
 
@@ -47,7 +47,7 @@ function describe(section: SectionName, it: Item, ctx: Ctx): { title: ReactNode;
           {!it.segments.length && <span className="badge b-warn">NO CUSTOMER GROUP</span>}
           {!it.data?.source_id && <span className="badge b-noeffect" title="Checks need its numbers from a data connection">NO DATA YET</span>}</> };
     case "flows":
-      return { title: <>{capWord(FLOW_WORDS[it.kind])} {it.goods ? `(${it.goods}) ` : ""}· {pn(ctx, it.local)} ↔ {pn(ctx, it.counterpart)}</>,
+      return { title: <>{cap(FLOW_WORDS[it.kind] ?? "")} {it.goods ? `(${it.goods}) ` : ""}· {pn(ctx, it.local)} ↔ {pn(ctx, it.counterpart)}</>,
         meta: keep([["Value", it.value ? `${usdText(it.value.amount)} a year (${it.value.year})` : "no figure"],
           ["Source", it.source.kind === "dataset" ? `${it.source.dataset}${it.source.sample ? " (sample figure)" : ""}`
             : it.source.original_amount != null ? `your figure (dataset said ${usdText(it.source.original_amount)}; changed by ${it.source.edited_by})` : "your figure"],

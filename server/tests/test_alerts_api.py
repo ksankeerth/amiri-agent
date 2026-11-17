@@ -42,6 +42,7 @@ async def test_an_event_raises_an_early_warning_for_the_owning_team(client, env,
     assert (await client.get(A, params={"event_id": "e-none"})).json()["items"] == []
     s = (await client.get(f"{A}:summary")).json()
     assert s["to_review"] == 1 and s["by_level"]["warning"] == 1 and s["teams"] == [{"owner": "Retail banking", "to_review": 1}]
+    assert s["by_team_status"] == [{"owner": "Retail banking", "status": "new", "n": 1}]
     o = (await client.get("/api/v1/overview")).json()
     assert any(x["kind"] == "alerts" and x["level"] == "warn" for x in o["attention"])
 

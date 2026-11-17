@@ -4,7 +4,8 @@ import { Icon } from "./components/Icon";
 import { Empty, isDown, PageHead, PageSkeleton, useNow, useRole, type Role } from "./components/ui";
 import { api, ME } from "./api/client";
 import { ago, fullNow, setZone, ZONE_LABEL } from "./format";
-import { overviewApi, type Overview } from "./api/overview";
+import { cap } from "./plain";
+import { OVERVIEW_EVENT, overviewApi, type Overview } from "./api/overview";
 import "./styles/shell.css";
 import { InstitutionPage, NewInstitutionPage } from "./pages/institution/InstitutionPage";
 import { SetupWizard } from "./pages/institution/SetupWizard";
@@ -209,10 +210,18 @@ function Frame({ inst }: { inst: Installation }) {
   const [ov, setOv] = useState<Overview | null>(null);
   const [down, setDown] = useState(false);
   useEffect(() => {  // the Live pill: the same one call the Overview makes, once a minute
-    const load = () => overviewApi.get().then(x => { setOv(x); setDown(false); }).catch(e => setDown(isDown(e)));
-    load(); const t = setInterval(load, 60_000);
+    let last = 0;  // when it last asked, or an answer came in from the Overview page
+    const got = (x: Overview) => { last = Date.now(); setOv(x); setDown(false); };
+    const load = () => { last = Date.now(); overviewApi.get().catch(e => setDown(isDown(e))); };  // the answer comes back through the event
+    // the Overview page already asks every minute: take its answer rather than ask a second time
+    const heard = (e: Event) => got((e as CustomEvent<Overview>).detail);
+    window.addEventListener(OVERVIEW_EVENT, heard);
     window.addEventListener("amiri:installation", load);  // "Try again" on a page checks again here too
-    return () => { clearInterval(t); window.removeEventListener("amiri:installation", load); };
+    // ask only when nothing has come in for over a minute: on the Overview page its own minute's answer always has
+    // (looking every 10 s, not every 60, so the two timers can't line up and both ask)
+    const t = setInterval(() => { if (Date.now() - last > 65_000) load(); }, 10_000);
+    load();
+    return () => { clearInterval(t); window.removeEventListener("amiri:installation", load); window.removeEventListener(OVERVIEW_EVENT, heard); };
   }, []);
   const live = pulse(ov, now, down);
   const [why, setWhy] = useState(false);
@@ -271,7 +280,7 @@ function Frame({ inst }: { inst: Installation }) {
           </nav>
           <div className="side-user" title={ME}>
             <span className="avatar" aria-hidden="true">{ME[0].toUpperCase()}</span>
-            <span className="col" style={{ gap: 0, minWidth: 0 }}><b>{ME.split("@")[0][0].toUpperCase() + ME.split("@")[0].slice(1)}</b>
+            <span className="col" style={{ gap: 0, minWidth: 0 }}><b>{cap(ME.split("@")[0])}</b>
               <span className="small muted">{role === "risk_manager" ? "Risk Manager" : "Platform Admin"}</span></span>
           </div>
           <div className="side-foot">

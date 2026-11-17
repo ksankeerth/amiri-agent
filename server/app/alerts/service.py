@@ -237,7 +237,12 @@ class Alerts:
         teams: dict[str, int] = {}
         for r in new:
             teams[r["owner"]] = teams.get(r["owner"], 0) + r["n"]
+        # every status, per team: the page's filter counts (the list itself is capped, so it can't count them)
+        by_team_status: dict[tuple[str, str], int] = {}
+        for r in rows:
+            by_team_status[(r["owner"], r["status"])] = by_team_status.get((r["owner"], r["status"]), 0) + r["n"]
         return {"to_review": sum(r["n"] for r in new),
+                "by_team_status": [{"owner": o, "status": s, "n": n} for (o, s), n in sorted(by_team_status.items())],
                 "by_level": {lv: sum(r["n"] for r in new if r["level"] == lv) for lv in ("warning", "developing", "adverse")},
                 "acknowledged_week": week,
                 "teams": [{"owner": k, "to_review": v} for k, v in sorted(teams.items(), key=lambda x: -x[1])],

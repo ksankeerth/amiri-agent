@@ -3,13 +3,12 @@
 // bank and insurer are switched on, and given conditions, here too.
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ApiError } from "../../api/client";
 import { connectApi, type CheckState, type CheckStatus, type Condition, type Connection, type Report, type Sample } from "../../api/connect";
 import { FillFromJson } from "../../components/FillFromJson";
 import type { Candidate } from "../../components/fillJson";
 import { Icon } from "../../components/Icon";
 import { PageHeader } from "../../components/blocks";
-import { Banner, Empty, ListSkeleton, LoadError, PageHead, useToast } from "../../components/ui";
+import { Banner, Empty, errText, ListSkeleton, LoadError, PageHead, useToast } from "../../components/ui";
 import { ago, dayTime, plural } from "../../format";
 import "../../styles/polish-forms.css";
 
@@ -21,8 +20,6 @@ const STATE_BADGE: Record<CheckState, [string, string]> = {
 };
 const STEP_ICON: Record<string, [string, string]> = { pass: ["check", "var(--accent)"], warn: ["warn", "var(--medium-ink)"], fail: ["x", "var(--critical-ink)"] };
 const SPEC = "1.0.0";
-
-function errText(e: unknown) { return e instanceof ApiError ? e.full : String(e); }
 
 function Switch({ on, label, disabled, onChange }: { on: boolean; label: string; disabled?: boolean; onChange: (v: boolean) => void }) {
   return <button type="button" className="switch" role="switch" aria-checked={on} aria-label={label} disabled={disabled}
