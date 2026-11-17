@@ -8,14 +8,19 @@ import { FactList, HowItWorks, ImpactMarker, ImpactRow, PageHeader, Places, Row,
 import { CheckPill, CheckSummary } from "../../components/checks";
 import { Icon } from "../../components/Icon";
 import { Markdown } from "../../components/markdown";
-import { Banner, Empty, PageSkeleton } from "../../components/ui";
+import { Empty, LoadError, PageSkeleton } from "../../components/ui";
+import "../../styles/daily.css";
+import "../../styles/polish-daily.css";
 import { dayTime } from "../../format";
 import {
-  ALERT_STATUS, checkMove, count, dateRange, earliest, impactText, LEVEL_LABEL, LEVEL_TONE, listText, longWhen, metricWords, onDay,
-  productAngle, relDay, SCREENING, sizeTiming, sourceInfo, splitCheckText, themeLabel, verdictWhy, type VerdictKey,
+  angleLabel, ALERT_STATUS, checkMove, count, dateRange, earliest, eventTitle, impactText, LEVEL_LABEL, LEVEL_TONE, listText, longWhen, metricWords, onDay,
+  productTypeLabel, relDay, SCREENING, sizeTiming, sourceInfo, splitCheckText, themeLabel, verdictWhy, type VerdictKey,
 } from "../../plain";
 
 type Task = EventDetail["tasks"][number];
+// what Amiri Agent inferred, labelled apart from the sourced facts (rule 7.2)
+const AI_CHIP = <span className="dl-ai-chip"><b aria-hidden="true">AI</b>Amiri Agent's assessment</span>;
+const AI_WROTE = <span className="dl-ai-chip"><b aria-hidden="true">AI</b>Written by Amiri Agent</span>;
 const TONE_PILL: Record<"bad" | "good" | "mixed" | "neutral", ReactNode> = {
   bad: <ImpactMarker adverse={true} />, good: <ImpactMarker adverse={false} />,
   mixed: <StatusPill tone="amber">Mixed for you</StatusPill>, neutral: <StatusPill tone="grey">Neutral for you</StatusPill>,
@@ -24,15 +29,16 @@ const TONE_PILL: Record<"bad" | "good" | "mixed" | "neutral", ReactNode> = {
 export function EventDetailPage() {
   const { id = "" } = useParams();
   const [e, setE] = useState<EventDetail | null>(null);
-  const [err, setErr] = useState<ApiError | string | null>(null);
+  const [err, setErr] = useState<unknown>(null);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
-  useEffect(() => { investigationApi.event(id).then(setE).catch(x => setErr(x instanceof ApiError ? x : String(x))); }, [id]);
+  const load = () => investigationApi.event(id).then(x => { setE(x); setErr(null); }).catch(setErr);
+  useEffect(() => { load(); }, [id]);  // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { alertsApi.list({ event_id: id }).then(setAlerts).catch(() => setAlerts([])); }, [id]);
   if (err instanceof ApiError && err.status === 404) return (
     <div className="page"><PageHeader title="Event not found" crumbs={<Link to="/events">Events</Link>} />
       <div className="card"><Empty icon="events" title="This event isn't here" actions={<Link className="btn" to="/events">See all events</Link>}>
         It may have been removed when the prototype was reset.</Empty></div></div>);
-  if (!e) return <div className="page">{err ? <Banner kind="crit" icon="warn">{err instanceof ApiError ? err.full : err}</Banner> : <PageSkeleton bare />}</div>;
+  if (!e) return <div className="page">{err != null ? <><PageHeader title="Event" crumbs={<Link to="/events">Events</Link>} /><LoadError error={err} onRetry={load} what="this event" /></> : <PageSkeleton bare />}</div>;
 
   const tasks = new Map(e.tasks.map(t => [t.hypothesis_id, t]));
   // the spec's metric name and whether the move is bad for you: from the alerts when they carry it, else from the task
@@ -52,11 +58,13 @@ export function EventDetailPage() {
   const next = earliest(e.tasks.filter(t => !t.check?.final).map(t => t.next_check_after ?? t.check?.next_check_after));
   const checked = checks.filter(c => c.verdict !== "not_yet").length;
   const nBad = e.hypotheses.filter(h => adverseOf(h) === true).length, nGood = e.hypotheses.filter(h => adverseOf(h) === false).length;
+  const allBad = e.hypotheses.length > 1 && nBad === e.hypotheses.length;  // then "Bad for you" is said once, not on every row
   const teams = [...new Set(alerts.map(a => a.owner))];
   const toReview = alerts.filter(a => a.status === "new").length;
   const lead = e.findings[0];
   const headline = lead?.evidence?.headlines?.[0];
   const src = lead ? sourceInfo(lead.source) : null;
+  const title = eventTitle(e);
 
   const steps: Step[] = [
     { label: "Noticed", detail: onDay(e.anchor.slice(0, 10)), state: "done", icon: "eye" },
@@ -69,9 +77,9 @@ export function EventDetailPage() {
   ];
 
   return (
-    <div className="page">
-      <PageHeader crumbs={<><Link to="/events">Events</Link><span aria-hidden="true">/</span><span>{e.title}</span></>}
-        title={e.title}
+    <div className="page pd-event">
+      <PageHeader crumbs={<><Link to="/events">Events</Link><span aria-hidden="true">/</span><span>{title}</span></>}
+        title={title}
         pills={<>{TONE_PILL[nBad && nGood ? "mixed" : nBad ? "bad" : nGood ? "good" : "neutral"]}{e.world !== "live" && <StatusPill tone="blue">Simulated</StatusPill>}
           <StatusPill tone={e.status === "open" ? "blue" : "grey"}>{e.status === "open" ? "Open" : "Closed"}</StatusPill></>}
         status={<>Noticed {longWhen(e.anchor)}{e.places.length ? <> · <Places codes={e.places} max={2} /></> : null}</>}
@@ -88,7 +96,7 @@ export function EventDetailPage() {
           {lead ? <>
             <p className="ev-head">{headline?.url ? <a href={headline.url} target="_blank" rel="noreferrer">{headline.title ?? lead.title}<Icon name="external" className="src-ext" /><span className="sr"> (opens the article)</span></a> : headline?.title ?? lead.title}</p>
             <p className="ev-meta">{src && <Icon name={src.icon} />}{[src?.label, headline?.outlet, onDay((headline?.published_at ?? lead.created_at).slice(0, 10))].filter(Boolean).join(" · ")}</p>
-          </> : <p className="ev-head">{e.title}</p>}
+          </> : <p className="ev-head">{title}</p>}
           {e.themes.length > 0 && <div className="ev-chips">{e.themes.map((t, i) => <span key={i} className="chip">{themeLabel(t)}</span>)}</div>}
         </section>
         <section className="card ev-card" aria-labelledby="ev-why">
@@ -109,20 +117,27 @@ export function EventDetailPage() {
         </section>
       </div>
 
-      <Section title="Possible impacts" count={e.hypotheses.length} flush id="ev-impacts">
-        {!e.hypotheses.length ? <p className="sec-line">None of your products is exposed to this event.</p> : <div className={`irs${same ? "" : " with-status"}`}>
+      <section className="card sec pd-imp" aria-labelledby="ev-impacts">
+        <div className="sec-hd"><h2 id="ev-impacts">Possible impacts</h2><span className="sec-n">{e.hypotheses.length}</span>{e.hypotheses.length > 0 && AI_CHIP}</div>
+        <div className="sec-bd flush">
+        {!e.hypotheses.length ? <p className="sec-line">None of your products is exposed to this event.</p> : <>
+        <p className="sec-line">Expectations, not facts yet: each is checked against your own figures as they're published.{allBad ? <span className="pd-allbad"> All of them would be <b className="dl-crit">bad for you</b>.</span> : ""}</p>
+        <div className={`irs${same ? "" : " with-status"}`}>
+          <div className="ir-row pd-ir-head" aria-hidden="true"><span>Product</span><span>What may happen</span><span>{allBad ? "How big, how soon" : "For you · how big, how soon"}</span>
+            <span>{same ? "" : "Your data so far"}</span><span /></div>
           {e.hypotheses.map(h => {
             const t = tasks.get(h.hypothesis_id), c = checkOf(h), m = t?.check ? checkMove(t.check.what) : null;
             return (
-              <ImpactRow key={h.hypothesis_id} product={h.product_name ?? h.product_id} kind={productAngle(h.product_type, h.angle)}
+              <ImpactRow key={h.hypothesis_id} product={h.product_name ?? h.product_id}
                 impact={<>{impactText(metricName(h), h.expected.direction)}{m && <span className="ir-move"><b>{m.move}</b> {m.against}</span>}</>}
-                adverse={adverseOf(h)} size={sizeTiming(h.expected.size, h.expected.timing)}
+                adverse={allBad ? undefined : adverseOf(h)} size={sizeTiming(h.expected.size, h.expected.timing)}
                 status={!same && c ? <CheckPill c={c} /> : undefined}>
                 <ImpactDetail h={h} t={t} metric={metricName(h)} />
               </ImpactRow>);
           })}
-        </div>}
-      </Section>
+        </div></>}
+        </div>
+      </section>
 
       <div className="ev-grid2">
         <div className="col gap16">
@@ -140,7 +155,7 @@ export function EventDetailPage() {
             <Section title="Considered, no impact" count={e.set_aside.length} flush>
               {e.set_aside.map((s, i) => (
                 <details key={i} className="ir aside">
-                  <summary className="lrow"><span className="row-main"><b className="row-l">{productAngle(s.product_type, s.angle)}</b></span>
+                  <summary className="lrow"><span className="row-main"><b className="row-l">{productTypeLabel(s.product_type)}<span className="dl-angle">{angleLabel(s.angle)}</span></b></span>
                     <span className="row-meta">{SCREENING[s.decision] ?? "No clear link"}</span><Icon name="chevron" className="row-go ir-chev" /></summary>
                   <p className="aside-why">{s.reason}</p>
                 </details>))}
@@ -161,7 +176,7 @@ export function EventDetailPage() {
       </div>
 
       <details className="card rep">
-        <summary><Icon name="book" /><span>Full investigation report</span><Icon name="chevron" className="ir-chev" /></summary>
+        <summary><Icon name="book" /><span>Full investigation report</span>{AI_WROTE}<Icon name="chevron" className="ir-chev" /></summary>
         <div className="rep-bd">{e.run.report ? <Markdown text={e.run.report} /> : <span className="muted small">No report.</span>}</div>
       </details>
       <div className="mt16"><TechnicalDetails>

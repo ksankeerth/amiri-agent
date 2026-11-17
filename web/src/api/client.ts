@@ -57,7 +57,9 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
   }
   if (r.status === 204) return undefined as T;
   const text = await r.text();
-  const data = text ? JSON.parse(text) : undefined;
+  let data: any;
+  try { data = text ? JSON.parse(text) : undefined; }
+  catch (e) { if (r.ok) throw e; }  // an error page from a proxy (HTML or plain text): the status below says what happened
   if (!r.ok) {
     const p: Problem = data && data.code ? data : { status: r.status, code: "http_" + r.status, detail: text || r.statusText };
     if (p.retry_after_seconds === undefined && r.headers.get("Retry-After")) p.retry_after_seconds = Number(r.headers.get("Retry-After"));

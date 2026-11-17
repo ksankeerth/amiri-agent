@@ -7,6 +7,7 @@ import { Fragment, useEffect, type ReactNode } from "react";
 import type { Spec, SpecCategory, SpecMetric } from "../../api/spec";
 import { Markdown } from "../../components/markdown";
 import { useSpec } from "./Spec";
+import { errText } from "../../components/ui";
 
 const PUBLISHER = "Amiri Agent";
 const SUBTITLE = "Aggregated metrics for banks and insurers";
@@ -226,7 +227,7 @@ function contents(s: Spec): { level: 1 | 2; title: string }[] {
 export function SpecPrintPage() {
   const [s, err] = useSpec();
   useEffect(() => { if (s) document.title = `${s.title} ${s.spec_version}`; }, [s]);
-  if (err) return <main className="sp-print"><p>{err}</p></main>;
+  if (err != null) return <main className="sp-print"><p>{errText(err)}</p></main>;
   if (!s) return <main className="sp-print"><p>Loading the spec…</p></main>;
   const f = files(s), v = s.spec_version;
   const revision = s.changelog.filter(c => c.date > s.published).sort((a, b) => b.date.localeCompare(a.date))[0];

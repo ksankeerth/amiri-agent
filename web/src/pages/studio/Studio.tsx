@@ -7,7 +7,7 @@ import { FillFromJson } from "../../components/FillFromJson";
 import { scenariosOf } from "../../components/fillJson";
 import { Icon } from "../../components/Icon";
 import { HowItWorks, PageHeader, TonePill } from "../../components/blocks";
-import { Banner, Empty, Modal, PageHead, PageSkeleton, useToast } from "../../components/ui";
+import { Banner, Empty, LoadError, Modal, PageHead, PageSkeleton, useToast } from "../../components/ui";
 import { dayTime, plural } from "../../format";
 
 const TAG: Record<string, string> = { fx: "currency" };  // a template's tags in words
@@ -32,6 +32,15 @@ function CurrentBanner({ sim }: { sim: Simulation | null }) {
   if (!sim) return null;
   return <Banner kind="info" icon="studio" action={<Link className="btn btn--sm" to={`/studio/run/${sim.sim_id}`}>Open it</Link>}>
     <b>{sim.title}</b> is running for {sim.institution.name}: day {sim.step} of {sim.steps}. One simulation runs at a time.
+  </Banner>;
+}
+
+/** Coming back to a scenario: its latest run, one click away (the full list stays in Runs, lower down). */
+function LastRunBanner({ m }: { m: Scenario["simulations"][number] }) {
+  const how = m.mode === "replay" ? "replay" : m.mode === "record" ? "live, saved" : "live";
+  const where = m.status === "completed" || m.status === "finished" ? "finished" : m.status === "stopped" ? `stopped on day ${m.step} of ${m.steps}` : `${m.status.replace(/_/g, " ")}, day ${m.step} of ${m.steps}`;
+  return <Banner kind="info" icon="studio" action={<Link className="btn btn--sm btn--primary" to={`/studio/run/${m.sim_id}`}>Open the run</Link>}>
+    Your last run ({how} · {dayTime(m.created_at)}) {where}. Its findings, events and alerts are still there.
   </Banner>;
 }
 
@@ -83,24 +92,26 @@ export function StudioPage() {
   const [templates, setTemplates] = useState<Template[] | null>(null);
   const [items, setItems] = useState<ScenarioRow[] | null>(null);
   const [current, setCurrent] = useState<Simulation | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState<unknown>(null);
   const [own, setOwn] = useState(false);
-  useEffect(() => {
-    Promise.all([studioApi.templates(), studioApi.scenarios(), studioApi.current()])
-      .then(([t, s, c]) => { setTemplates(t); setItems(s); setCurrent(c); })
-      .catch(e => setErr(e instanceof ApiError ? e.full : String(e)));
-  }, []);
+  const load = () => Promise.all([studioApi.templates(), studioApi.scenarios(), studioApi.current()])
+    .then(([t, s, c]) => { setTemplates(t); setItems(s); setCurrent(c); setErr(null); })
+    .catch(setErr);
+  useEffect(() => { load(); }, []);
   const create = async (t: Template) => {
     if (t.template_id === "blank") { setOwn(true); return; }
     try { const s = await studioApi.create(t.template_id); nav(`/studio/${s.scenario_id}`); }
     catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
   };
   const ready = (items ?? []).find(s => s.recorded);
+  // one primary per view: "Replay it" when there is a recording, otherwise the first template
+  const lead = ready && !current ? null : (templates ?? []).find(t => t.template_id !== "blank" && !t.unavailable)?.template_id;
   return (
     <div className="page">
       <PageHeader title="Scenario Studio" status="Try a what-if on your institution. Nothing touches your live data."
         help={<HowItWorks><p>A scenario plays out in a sandbox: headlines arrive and prices move, and Amiri Agent's monitors, market series and investigation respond as they would for real. You see the events it traces and the alerts each team would get.</p></HowItWorks>} />
-      <div className="banners">{err && <Banner kind="crit" icon="warn">{err}</Banner>}<CurrentBanner sim={current} /></div>
+      {err != null && templates === null ? <LoadError error={err} onRetry={load} what="the Scenario Studio" /> : <>
+      <div className="banners"><CurrentBanner sim={current} /></div>
       {ready && !current && <div className="card st-hero">
         <div className="col" style={{ gap: 4, flex: 1, minWidth: 260 }}>
           <span className="label">Watch it work</span>
@@ -117,30 +128,30 @@ export function StudioPage() {
           <p className="small muted" style={{ margin: 0, flex: 1 }}>{t.summary}</p>
           <div className="row wrap" style={{ gap: 6 }}>{t.tags.map(x => <span key={x} className="chip">{TAG[x] ?? x}</span>)}</div>
           {t.unavailable ? <span className="small muted">Can't run here: {t.unavailable}.</span>
-            : <button className={`btn btn--sm ${t.template_id === "blank" ? "" : "btn--primary"}`} type="button" style={{ alignSelf: "flex-start" }} onClick={() => create(t)}>
+            : <button className={`btn btn--sm ${t.template_id === lead ? "btn--primary" : ""}`} type="button" style={{ alignSelf: "flex-start" }} onClick={() => create(t)}>
               <Icon name="plus" />{t.template_id === "blank" ? "Write your own" : "Use this template"}</button>}
         </div></div>))}
       </div>
       <h2 className="mt24">Your scenarios</h2>
       <div className="card mt12">{items === null ? <div className="bd small muted">…</div> : !items.length ? <Empty icon="studio" title="No scenarios yet">Start one above: from the template, or your own headlines.</Empty> : (
         <div className="tblwrap"><table className="tbl">
-          <thead><tr><th>Scenario</th><th>Headlines</th><th>Instant replay</th><th>Last run</th><th><span className="sr">Actions</span></th></tr></thead>
+          <thead><tr><th>Scenario</th><th>Headlines</th><th>Replay</th><th>Last run</th><th><span className="sr">Actions</span></th></tr></thead>
           <tbody>{items.map(s => (
             <tr key={s.scenario_id} className="click" onClick={() => nav(`/studio/${s.scenario_id}`)}>
               <td><Link className="strong" to={`/studio/${s.scenario_id}`} onClick={e => e.stopPropagation()}>{s.title}</Link>
                 <div className="sub">{s.template_id === "blank" ? "your own" : "from a template"} · made {dayTime(s.created_at)}</div></td>
               <td className="small">{s.template_id === "blank" ? "written by you" : s.custom?.headlines ? "edited" : "as written"}</td>
-              <td>{s.recorded ? <span className="badge b-ok">READY</span> : <span className="muted small">not saved yet</span>}</td>
+              <td className="small">{s.recorded ? <span className="row" style={{ gap: 4 }}><Icon name="check" className="ico16" />Ready to replay</span> : <span className="muted">not recorded yet</span>}</td>
               <td className="small">{s.last_run ? dayTime(s.last_run) : "never"}</td>
               <td onClick={e => e.stopPropagation()}><span className="row" style={{ gap: 6 }}>
                 {s.recorded
-                  ? <button className="btn btn--sm btn--primary" type="button" disabled={!!current} onClick={() => start(s.scenario_id, "replay")}><Icon name="play" />Replay</button>
-                  : <button className="btn btn--sm btn--primary" type="button" disabled={!!current} onClick={() => start(s.scenario_id, "live")}><Icon name="play" />Run</button>}
-                {s.recorded && <button className="btn btn--sm" type="button" disabled={!!current} onClick={() => start(s.scenario_id, "live")}>Run live</button>}
+                  ? <button className="btn btn--sm" type="button" disabled={!!current} onClick={() => start(s.scenario_id, "replay")}><Icon name="play" />Replay</button>
+                  : <button className="btn btn--sm" type="button" disabled={!!current} onClick={() => start(s.scenario_id, "live")}><Icon name="play" />Run</button>}
+                {s.recorded && <button className="btn btn--sm btn--ghost" type="button" disabled={!!current} onClick={() => start(s.scenario_id, "live")}>Run live</button>}
               </span></td>
             </tr>))}</tbody>
         </table></div>)}
-      </div>
+      </div></>}
       {own && <NewOwnModal onClose={() => setOwn(false)} />}
     </div>
   );
@@ -197,11 +208,13 @@ function Headlines({ s, save, startOpen }: { s: Scenario; save: (body: { custom?
         ? <div key={h.id} className="li"><HeadlineForm value={{ id: h.id, title: h.title, day: h.day, time: h.time }} dayLabel={dayLabel} onSave={upsert} onCancel={() => setEditing(null)} /></div>
         : (
           <div key={h.id} className={`li st-head ${off.has(h.id) ? "off" : ""}`}>
-            <input type="checkbox" checked={!off.has(h.id)} onChange={() => toggle(h.id)} aria-label={`Include: ${h.title}`} />
-            <div className="col" style={{ gap: 2, flex: 1, minWidth: 0 }}>
-              <span className="small muted">Day {h.day} · {dayLabel(h.day)} {h.time}{h.story === "custom" && b.template_id !== "blank" ? " · added by you" : ""}</span>
-              <span className="st-title">{h.title}</span>
-            </div>
+            <label className="st-pick">{/* the whole headline is the checkbox's target, not 18 px of it */}
+              <input type="checkbox" checked={!off.has(h.id)} onChange={() => toggle(h.id)} aria-label={`Include: ${h.title}`} />
+              <span className="col" style={{ gap: 2, flex: 1, minWidth: 0 }}>
+                <span className="small muted">Day {h.day} · {dayLabel(h.day)} {h.time}{h.story === "custom" && b.template_id !== "blank" ? " · added by you" : ""}</span>
+                <span className="st-title">{h.title}</span>
+              </span>
+            </label>
             <button className="btn btn--sm btn--ghost btn--icon" type="button" aria-label={`Edit: ${h.title}`} onClick={() => setEditing(h.id)}><Icon name="edit" /></button>
             <button className="btn btn--sm btn--ghost btn--icon" type="button" aria-label={`Remove: ${h.title}`} onClick={() => remove(h.id)}><Icon name="trash" /></button>
           </div>))}
@@ -243,15 +256,15 @@ export function ScenarioPage() {
   const start = useStart();
   const [s, setS] = useState<Scenario | null>(null);
   const [current, setCurrent] = useState<Simulation | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState<unknown>(null);
   const [asking, setAsking] = useState(false);
   const [naming, setNaming] = useState<string | null>(null);
   const fresh = new URLSearchParams(window.location.search).has("new");
   const load = useCallback(() => Promise.all([studioApi.scenario(id), studioApi.current()])
     .then(([x, c]) => { setS(x); setCurrent(c); setErr(null); })
-    .catch(e => setErr(e instanceof ApiError ? e.full : String(e))), [id]);
+    .catch(setErr), [id]);
   useEffect(() => { load(); }, [load]);
-  if (!s) return <div className="page">{err ? <Banner kind="crit" icon="warn">{err}</Banner> : <PageSkeleton bare />}</div>;
+  if (!s) return <div className="page">{err != null ? <><PageHead title="Scenario" crumbs={<Link to="/studio">Scenario Studio</Link>} /><LoadError error={err} onRetry={load} what="this scenario" /></> : <PageSkeleton bare />}</div>;
   const b = s.built;
   const own = b.template_id === "blank";
   const save = async (body: { intensity?: string; switched_off?: string[]; title?: string; custom?: Custom }) => {
@@ -276,8 +289,9 @@ export function ScenarioPage() {
           <button className="btn btn--sm" type="button" onClick={() => setAsking(false)}>Keep it</button></span>
           : <button className="btn btn--ghost" type="button" onClick={() => setAsking(true)}><Icon name="trash" />Delete</button>} />
       <div className="banners">
-        {err && <Banner kind="crit" icon="warn">{err}</Banner>}
+        {err != null && <LoadError error={err} onRetry={load} what="this scenario" />}
         <CurrentBanner sim={current} />
+        {!current && s.simulations[0] && <LastRunBanner m={s.simulations[0]} />}
         <Banner kind="info">{own ? "Your headlines are marked simulated and never reach the live pages. Amiri Agent's monitor reads each one on its day; the investigation traces what it finds to your products."
           : "The headlines are written for this scenario and marked simulated; you can edit, add or remove them. Their figures come from the price path. Sizes are illustrative."}</Banner>
       </div>

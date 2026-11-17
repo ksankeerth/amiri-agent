@@ -3,7 +3,7 @@
 // (coordinates from the gazetteer, or a country's centre from its shape).
 import { geoCentroid, geoCircle, geoNaturalEarth1, geoPath } from "d3-geo";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { feature } from "topojson-client";
 import type { PlaceInfo, Profile } from "../../api/institutions";
 import { ref, type Hazard, type Route } from "../../api/reference";
@@ -28,11 +28,20 @@ export type Layer = (typeof LAYERS)[number][0];
 /** An event to mark on the map (the Overview): its places, coloured by what it means for the institution. */
 export interface MapEvent { event_id: string; title: string; tone: "good" | "bad" | "mixed" | "neutral"; places: string[] }
 const TONE_COLOR: Record<MapEvent["tone"], string> = { bad: "var(--critical)", good: "var(--accent)", mixed: "var(--high)", neutral: "var(--ink-3)" };
-const FLOW_COLOR: Record<string, string> = { remittances_in: "var(--accent)", remittances_out: "var(--accent)", tourism: "var(--info)", services: "var(--info)", exports: "var(--high)", imports: "var(--medium)" };
+/** The event's marker: a shape per tone as well as a colour, so it reads without colour (▲ bad, ● good, ◆ mixed, ■ neutral). */
+function ToneShape({ tone, s = 1, stroke = "var(--surface)", sw = 2 }: { tone: MapEvent["tone"]; s?: number; stroke?: string; sw?: number }) {
+  const p = { fill: TONE_COLOR[tone], stroke, strokeWidth: sw, strokeLinejoin: "round" as const };
+  if (tone === "bad") return <path d={`M0,${-8.5 * s}L${8 * s},${6 * s}L${-8 * s},${6 * s}Z`} {...p} />;
+  if (tone === "mixed") return <path d={`M0,${-8 * s}L${8 * s},0L0,${8 * s}L${-8 * s},0Z`} {...p} />;
+  if (tone === "neutral") return <rect x={-5.5 * s} y={-5.5 * s} width={11 * s} height={11 * s} rx={1} {...p} />;
+  return <circle r={6.5 * s} {...p} />;
+}
+const Key = ({ tone }: { tone: MapEvent["tone"] }) => <svg width={14} height={14} viewBox="-8 -9 16 16" aria-hidden="true" style={{ verticalAlign: -2 }}><ToneShape tone={tone} s={0.85} sw={0} /></svg>;
+const FLOW_COLOR: Record<string, string> = { remittances_in: "var(--accent)", remittances_out: "var(--accent)", tourism: "var(--info)", services: "var(--info)", exports: "var(--high)", imports: "var(--medium-stroke)" };
 
-export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {}, layers, compact = false, onEvent }: {
+export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {}, layers, compact = false, onEvent, title }: {
   profile: Profile; height?: number; events?: MapEvent[]; extraPlaces?: Record<string, PlaceInfo>; layers?: Layer[];
-  compact?: boolean; onEvent?: (eventId: string) => void;
+  compact?: boolean; onEvent?: (eventId: string) => void; title?: ReactNode;
 }) {
   const world = useLoad(loadWorld);
   const routes = useLoad(() => ref.routes()) ?? [];
@@ -83,6 +92,10 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
       S.rivals.forEach(r => r.places.forEach(add)); usedRoutes.forEach(r => r.points.forEach(([la, lo]) => pts.push([lo, la])));
     }
     if (!pts.length) add(home);
+    // the full map keeps home in its middle third: each point gets a 60 % mirror image around home, so the fit leans
+    // towards it (Sri Lanka sat in the bottom corner, under the zoom buttons, with the Gulf risks pulling the view north-west)
+    const h0 = !compact && view === "home" ? at(home) : null;
+    if (h0) pts.push(...pts.map(([x, y]) => [h0[0] + 0.6 * (h0[0] - x), h0[1] + 0.6 * (h0[1] - y)] as [number, number]));
     const proj = geoNaturalEarth1();
     if (pts.length) {
       // pad a small area (one country, one point) to at least MIN_SPAN degrees, so the neighbours show
@@ -146,18 +159,51 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
       <circle r={r} fill={ring ? "none" : color} stroke={ring ? color : "var(--surface)"} strokeWidth={ring ? 2 : 1.5} /></g>;
   };
   const maxFlow = Math.max(1, ...S.flows.map(f => f.value?.amount ?? 0));
+  // Which money flows an open event reaches: its place is the flow's far end (same country), or it sits in a risk zone
+  // from the profile whose exposure names that flow or its sea route. These light up and carry a pulse home.
+  const reached = useMemo(() => {
+    const country = (c: string) => P[c]?.country ?? c.split("-")[0];
+    const km = (a: [number, number], lat: number, lon: number) => {
+      const r = Math.PI / 180, dLat = (lat - a[1]) * r, dLon = (lon - a[0]) * r;
+      const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[1] * r) * Math.cos(lat * r) * Math.sin(dLon / 2) ** 2;
+      return 12742 * Math.asin(Math.sqrt(h));
+    };
+    const hit = new Map<string, MapEvent>();
+    for (const e of events.filter(x => x.tone !== "neutral")) for (const c of e.places) {  // a neutral event doesn't reach the bank
+      const pt = at(c), cc = country(c);
+      if (cc === home) continue;  // an event at home isn't carried in along a flow
+      for (const f of S.flows) if (country(f.counterpart) === cc && !hit.has(f.id)) hit.set(f.id, e);
+      for (const x of risks) {
+        const hz = hazards.find(h => h.hazard_id === x.hazard_id);
+        const inside = hz && ((hz.places ?? []).includes(cc) || (pt && hz.centre && km(pt, hz.centre[0], hz.centre[1]) <= (hz.radius_km ?? 100) * 1.5));
+        if (!inside) continue;
+        for (const f of S.flows) if ((x.touches.flows ?? []).includes(f.id) || (f.route_id && (x.touches.routes ?? []).includes(f.route_id))) if (!hit.has(f.id)) hit.set(f.id, e);
+      }
+    }
+    return hit;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, S.flows, risks.length, hazards.length, P, home]);
   const homeXY = xy(at(home));
+  // event symbols: small at the whole-picture view so they don't hide a country (Sri Lanka vanished under a square),
+  // growing as you zoom in, up to the full size
+  const ms = Math.min(1, Math.max(compact ? 0.55 : 0.7, (compact ? 0.55 : 0.7) * Math.sqrt(zoom.k)));
   const toggle = (l: Layer) => setOn(s => { const n = new Set(s); if (n.has(l)) n.delete(l); else n.add(l); return n; });
 
   return (
     <div ref={setBox} style={{ position: "relative" }}>
-      <div className="row wrap" style={{ gap: 6, marginBottom: 8, display: compact ? "none" : undefined }}>
+      {!compact && <div className="pmap-bar">
+        {title && <h2 className="pmap-title">{title}</h2>}
+        <span className="spacer" />
         <span className="seg"><button type="button" aria-pressed={view === "home"} onClick={() => setView("home")}>Your footprint</button>
           <button type="button" aria-pressed={view === "world"} onClick={() => setView("world")}>Everything</button></span>
-        <span className="spacer" />
-        {LAYERS.map(([k, label]) => <button key={k} type="button" className={`chip click ${on.has(k) ? "sel" : ""}`} onClick={() => toggle(k)}>{label}</button>)}
-      </div>
-      <div style={{ position: "relative" }}>
+        <details className="menu pmap-layers">
+          <summary className="btn btn--sm">Layers · {on.size} of {LAYERS.length}<span aria-hidden="true" className="caret">▾</span></summary>
+          <div className="menu-pop" role="group" aria-label="Map layers">
+            {LAYERS.map(([k, label]) => <label key={k} className="check"><input type="checkbox" checked={on.has(k)} onChange={() => toggle(k)} />{label}</label>)}
+          </div>
+        </details>
+      </div>}
+      <div style={{ position: "relative" }} className={compact ? undefined : "pmap-full"}>
       <svg ref={svgRef} width="100%" height={height} viewBox={`0 0 ${w} ${height}`} role="img" aria-label="Map of the institution profile"
         style={{ background: "var(--map-ocean)", borderRadius: 12, display: "block", cursor: drag.current ? "grabbing" : "grab", touchAction: "none" }}
         onPointerDown={e => { drag.current = { x: e.clientX, y: e.clientY }; }}
@@ -174,7 +220,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           const isHome = on.has("footprint") && iso === home;
           const inFp = on.has("footprint") && iso && fpCountries.has(iso);
           return <path key={String(f.id)} d={path(f) ?? ""} fill={isHome || (inFp && fpWhole.has(iso!)) ? "var(--map-home-fill)" : inFp ? "var(--accent-soft)" : "var(--map-land)"}
-            stroke={inFp ? "var(--map-home)" : "var(--map-border)"} strokeWidth={inFp ? 1 : 0.5} />;
+            stroke={inFp ? "var(--map-home)" : "var(--map-border)"} strokeWidth={inFp ? 1 : 0.75} />;
         })}</g>}
         {on.has("risks") && riskHazards.map(h => {
           const c = h.centre ? geoCircle().center([h.centre[1], h.centre[0]]).radius((h.radius_km ?? 100) / 111)() : null;
@@ -189,9 +235,27 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           if (!a || !b) return null;
           const [from, to] = ["exports", "remittances_out"].includes(f.kind) ? [a, b] : [b, a];
           const mx = (from[0] + to[0]) / 2, my = (from[1] + to[1]) / 2 - Math.hypot(to[0] - from[0], to[1] - from[1]) * 0.22;
-          const width = (compact ? 0.9 : 1) + (compact ? 2.4 : 4.5) * Math.sqrt((f.value?.amount ?? 0) / maxFlow);
-          return <path key={f.id} d={`M${from[0]},${from[1]} Q${mx},${my} ${to[0]},${to[1]}`} fill="none" stroke={FLOW_COLOR[f.kind]} strokeOpacity={compact ? 0.6 : 0.7} strokeWidth={width} strokeLinecap="round"
-            onMouseMove={e => show(e, `${FLOW_WORDS[f.kind]}${f.goods ? ` (${f.goods})` : ""}: ${P[f.counterpart]?.name ?? f.counterpart} ↔ ${P[f.local]?.name ?? f.local}${f.value ? ` · ${usdText(f.value.amount)} a year` : ""}`)} onMouseLeave={() => setTip(null)} />;
+          const share = Math.sqrt((f.value?.amount ?? 0) / maxFlow);
+          const width = (compact ? 0.9 : 1) + (compact ? 2.4 : 4.5) * share;
+          const d = `M${from[0]},${from[1]} Q${mx},${my} ${to[0]},${to[1]}`;
+          const inward = `M${b[0]},${b[1]} Q${mx},${my} ${a[0]},${a[1]}`;  // the event's pulse always runs from the far end to home
+          const ev = reached.get(f.id), quiet = reached.size > 0 && !ev;  // when an event reaches some flows, the rest step back
+          const gap = Math.round(30 - 14 * share);  // bigger flows carry more particles
+          return <g key={f.id} className={ev ? "mapflow is-hit" : quiet ? "mapflow is-quiet" : "mapflow"}
+            onMouseMove={e => show(e, `${FLOW_WORDS[f.kind]}${f.goods ? ` (${f.goods})` : ""}: ${P[f.counterpart]?.name ?? f.counterpart} ${["exports", "remittances_out"].includes(f.kind) ? "←" : "→"} ${P[f.local]?.name ?? f.local}${f.value ? ` · ${usdText(f.value.amount)} a year` : ""}${ev ? ` · reached by: ${ev.title}` : ""}`)} onMouseLeave={() => setTip(null)}>
+            <path d={d} fill="none" stroke={FLOW_COLOR[f.kind]} strokeOpacity={quiet ? 0.28 : compact ? 0.75 : 0.85} strokeWidth={width} strokeLinecap="round" />
+            {/* the direction: small particles travel from where the money starts to where it goes */}
+            <path className="flowdots" d={d} fill="none" stroke="var(--map-particle)" strokeOpacity={quiet ? 0.3 : 0.9} strokeWidth={Math.max(2, width * 0.7)} strokeLinecap="round"
+              strokeDasharray={`0.1 ${gap}`} style={{ ["--cycle" as string]: `${gap + 0.1}px` }} />
+            {/* an event on this flow: a pulse in the event's colour runs along it to the bank's home */}
+            {ev && <path className="flowpulse" d={inward} pathLength={100} fill="none" stroke={TONE_COLOR[ev.tone]} strokeWidth={width + 2.5} strokeLinecap="round" strokeDasharray="10 90" style={{ color: TONE_COLOR[ev.tone] }} />}
+          </g>;
+        })}
+        {/* the glow lands where the pulses arrive: each reached flow's own end in the bank's footprint (its home country, or a place in it) */}
+        {[...new Set(S.flows.filter(f => reached.has(f.id)).map(f => f.local))].map(code => {
+          const p = xy(at(code)), tones = S.flows.filter(f => f.local === code && reached.has(f.id)).map(f => reached.get(f.id)!.tone);
+          return p && <circle key={`glow${code}`} className="homeglow" cx={p[0]} cy={p[1]} r={16} fill="none" strokeWidth={2}
+            stroke={TONE_COLOR[tones.includes("bad") ? "bad" : tones.includes("mixed") ? "mixed" : tones[0]]} />;
         })}
         {on.has("regulators") && homeXY && S.regulators.filter(r => r.relation === "reach").map((r, i) => {
           const far = xy(at(r.short === "OFAC" ? "US" : r.short === "EU" ? "BE" : r.short === "OFSI" ? "GB" : r.country));
@@ -204,9 +268,10 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
         {on.has("regulators") && S.regulators.filter(r => r.country).map(r => {
           const p = xy(at(r.country));
           const n = S.regulators.filter(x => x.country === r.country).findIndex(x => x.id === r.id);  // stack labels per country
-          return p && <g key={`g${r.id}`} transform={`translate(${p[0] + 26},${p[1] - 12 - n * 19})`} onMouseMove={e => show(e, `${r.name} · ${r.relation}`)} onMouseLeave={() => setTip(null)}>
-            <rect x={-18} y={-9} width={36} height={16} rx={4} fill="var(--surface)" stroke="var(--hairline-2)" />
-            <text textAnchor="middle" y={3} fontSize={9} fontWeight={700} fill="var(--ink-2)">{(r.short ?? r.name).slice(0, 7)}</text></g>;
+          const t = (r.short ?? r.name).slice(0, 7), hw = 6 + t.length * 3.7;  // a 12 px label (the floor for a projector), kept inside the map
+          return p && <g key={`g${r.id}`} transform={`translate(${Math.min(p[0] + 30, w - hw - 4)},${p[1] - 12 - n * 22})`} onMouseMove={e => show(e, `${r.name} · ${r.relation}`)} onMouseLeave={() => setTip(null)}>
+            <rect x={-hw} y={-10} width={hw * 2} height={19} rx={4} fill="var(--surface)" stroke="var(--line-strong)" />
+            <text textAnchor="middle" y={4} fontSize={12} fontWeight={700} fill="var(--ink-2)">{t}</text></g>;
         })}
         {events.flatMap(e => e.places.map(c => {
           const p = xy(at(c));
@@ -214,8 +279,9 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           const color = TONE_COLOR[e.tone];
           return <g key={`e${e.event_id}${c}`} transform={`translate(${p[0]},${p[1]})`} style={{ cursor: onEvent ? "pointer" : "default" }}
             onClick={() => onEvent?.(e.event_id)} onMouseMove={ev => show(ev, `${e.title} · ${P[c]?.name ?? c}`)} onMouseLeave={() => setTip(null)}>
-            <circle r={13} fill={color} opacity={0.16} className="mappulse" />
-            <circle r={6.5} fill={color} stroke="var(--surface)" strokeWidth={2} /></g>;
+            {[0, 1].map(i => <circle key={i} r={9 * ms} fill="none" stroke={color} strokeWidth={1.25} className="mapripple" style={{ animationDelay: `${i * 1.3}s` }} />)}
+            <circle r={13 * ms} fill={color} opacity={0.16} />
+            <ToneShape tone={e.tone} s={ms} sw={1.5} /></g>;
         }))}
       </svg>
       <div className="mapzoom">
@@ -227,15 +293,18 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
       </div>
       {tip && <div className="maptip" style={{ left: Math.min(tip.x + 12, w - 250), top: tip.y + 12 }}>{tip.text}</div>}
       {compact ? <div className="row wrap small muted" style={{ gap: 14, marginTop: 8 }}>
-        <span><span className="statusdot" style={{ background: "var(--critical)" }} /> bad for you</span>
-        <span><span className="statusdot" style={{ background: "var(--accent)" }} /> good for you</span>
-        <span><span className="statusdot" style={{ background: "var(--high)" }} /> mixed</span>
-        <span><span className="statusdot" style={{ background: "var(--ink-3)" }} /> neutral</span>
+        <span><Key tone="bad" /> bad for you</span>
+        <span><Key tone="good" /> good for you</span>
+        <span><Key tone="mixed" /> mixed</span>
+        <span><Key tone="neutral" /> neutral</span>
         <span><span className="statusdot" style={{ background: "var(--map-home-fill)", outline: "1px solid var(--map-home)" }} /> where you operate</span>
+        {layers?.includes("risks") !== false && <span><svg width={14} height={14} aria-hidden="true" style={{ verticalAlign: -2 }}><circle cx={7} cy={7} r={5.5} fill="var(--critical-soft)" stroke="var(--critical)" strokeDasharray="3 2" /></svg> risk areas in your profile</span>}
+        {layers?.includes("flows") !== false && <span><svg width={16} height={10} aria-hidden="true"><path d="M1 8Q8 0 15 8" fill="none" stroke="var(--accent)" strokeWidth={2} /></svg> money flows, moving the way the money goes</span>}
+        {reached.size > 0 && <span><svg width={16} height={10} aria-hidden="true"><path d="M1 8Q8 0 15 8" fill="none" stroke="var(--critical)" strokeWidth={3} /></svg> flows an open event reaches</span>}
       </div> : <div className="row wrap small muted" style={{ gap: 14, marginTop: 6 }}>
         <span><span className="statusdot" style={{ background: "var(--accent)" }} /> customer groups · remittances</span>
         <span><span className="statusdot" style={{ background: "var(--high)" }} /> exports · rivals</span>
-        <span><span className="statusdot" style={{ background: "var(--medium)" }} /> imports</span>
+        <span><span className="statusdot" style={{ background: "var(--medium-stroke)" }} /> imports</span>
         <span><span className="statusdot" style={{ background: "var(--critical)" }} /> risk zones</span>
         <span>Line width: flow size · global standards are listed, not pinned</span>
       </div>}

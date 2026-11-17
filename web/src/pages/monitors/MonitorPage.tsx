@@ -10,9 +10,9 @@ import { FillFromJson } from "../../components/FillFromJson";
 import { monitorsOf } from "../../components/fillJson";
 import { FactList, PageHeader, Places, Row, Section, SourceCard, StatusPill, TechnicalDetails } from "../../components/blocks";
 import { Icon } from "../../components/Icon";
-import { Banner, useNow, useToast, PageSkeleton } from "../../components/ui";
+import { Banner, useNow, useToast, PageSkeleton, LoadError } from "../../components/ui";
 import { ago, dayTime, plainError, when } from "../../format";
-import { everyText, longWhen, MONITOR_CHECK, setAsideReason } from "../../plain";
+import { eventTitle, everyText, longWhen, MONITOR_CHECK, setAsideReason } from "../../plain";
 import type { Installation } from "../../App";
 import { ChipsInput, Field, PlacesField } from "../institution/fields";
 import { FLOW_WORDS } from "../institution/forms";
@@ -368,13 +368,13 @@ export function MonitorPage() {
   const [runs, setRuns] = useState<CheckRow[]>([]);
   const [findings, setFindings] = useState<MonitorFinding[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState<unknown>(null);
   const [checking, setChecking] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
   const [drafting, setDrafting] = useState(false);
   const [editing, setEditing] = useState<boolean | null>(null);  // null: the default for its state (a fresh draft opens in the form)
   const [eventTitles, setEventTitles] = useState<Record<string, string>>({});
-  useEffect(() => { if (findings.some(f => f.outcome?.event_id)) investigationApi.events().then(xs => setEventTitles(Object.fromEntries(xs.map(e => [e.event_id, e.title])))).catch(() => {}); }, [findings]);
+  useEffect(() => { if (findings.some(f => f.outcome?.event_id)) investigationApi.events().then(xs => setEventTitles(Object.fromEntries(xs.map(e => [e.event_id, eventTitle(e)])))).catch(() => {}); }, [findings]);
 
   const owner = m?.institution_id;
   useEffect(() => {  // the exposure chips come from the monitor's own institution (the installation's for a new one)
@@ -387,7 +387,7 @@ export function MonitorPage() {
     try {
       const [mm, r, f] = await Promise.all([monitorsApi.get(id), monitorsApi.runs(id), monitorsApi.findings(id)]);
       setM(mm); setRuns(r); setFindings(f); setErr(null);
-    } catch (e) { setErr(e instanceof ApiError ? e.full : String(e)); }
+    } catch (e) { setErr(e); }
   }, [id, isNew]);
   useEffect(() => { setM(null); load(); }, [load]);
 
@@ -415,7 +415,7 @@ export function MonitorPage() {
   const saved = (x: Monitor) => { setM(x); setFormKey(k => k + 1); setEditing(false); load(); };
   const editMode = isNew || editing || (m?.status === "draft" && editing !== false && !m.last_check);
 
-  if (!isNew && !m) return <div className="page">{err ? <Banner kind="crit" icon="warn">{err}</Banner> : <PageSkeleton bare />}</div>;
+  if (!isNew && !m) return <div className="page">{err != null ? <><PageHeader title="Monitor" crumbs={<Link to="/monitors">Monitors</Link>} /><LoadError error={err} onRetry={load} what="this monitor" /></> : <PageSkeleton bare />}</div>;
   const statusLine = m ? <>{everyText(m.spec.about.check_frequency)} · {m.spec.about.owner}
     {m.last_check ? <> · last check {ago(m.last_check.at, now)}</> : null}</>
     : "Say in plain words what to watch for. It runs once a Risk Manager approves it.";
@@ -427,7 +427,8 @@ export function MonitorPage() {
         actions={isNew ? <button className="btn" type="button" onClick={() => setDrafting(true)}><Icon name="bank" />Draft from the profile</button>
           : m && m.status !== "retired" && !editMode ? <button className="btn" type="button" onClick={() => setEditing(true)}><Icon name="edit" />Edit</button> : undefined}
         help={<MonitorHelp status={status} />} />
-      <div className="banners">{err && <Banner kind="crit" icon="warn">{err}</Banner>}<MonitorBanners status={status} /></div>
+      {err != null && <LoadError error={err} onRetry={load} what="this monitor" />}
+      <div className="banners"><MonitorBanners status={status} /></div>
       {editMode && m && m.drafted_fields.length > 0 && <Banner kind="info">Filled in for you from your profile. Check the marked fields before you submit.</Banner>}
       <div className="split mt12">
         {editMode ? <MonitorForm key={`${m?.monitor_id ?? "new"}-${formKey}`} m={m} profile={profile} status={status} onSaved={saved}
