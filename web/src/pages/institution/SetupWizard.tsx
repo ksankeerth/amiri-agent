@@ -5,8 +5,9 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "../../api/client";
 import { inst } from "../../api/institutions";
 import { Icon } from "../../components/Icon";
-import { WithChat } from "../../components/SetupChat";
-import { Banner, PageHead, useToast, PageSkeleton } from "../../components/ui";
+import { askSetupAgent, WithChat } from "../../components/SetupChat";
+import { Banner, LoadError, PageHead, useToast, PageSkeleton, StatusIcon, type Status } from "../../components/ui";
+import "../../styles/setup.css";
 import { CurrenciesField, Field, PlacePicker } from "./fields";
 import { InstitutionModal } from "./forms";
 import { CreateInstitution, ReadinessList, StatusBadge, useInstitution } from "./InstitutionPage";
@@ -30,6 +31,25 @@ type Step = (typeof STEPS)[number][0];
 const REQUIRED_BY_STEP: Partial<Record<Step, string[]>> = { institution: ["identity"], where: ["footprint_home"], customers: ["segments"], products: ["products"] };
 const RECOMMENDED_BY_STEP: Partial<Record<Step, string[]>> = { customers: ["segment_mapping"], products: ["product_segments"], flows: ["flows"], rules: ["regulators"], rivals: ["rivals"], risks: ["risk_exposures"] };
 
+/** "Commercial bank (Islamic)" rather than "bank · commercial". */
+const kindText = (i: { institution_type: string; subtype?: string | null; islamic?: boolean }) => {
+  const kind = i.subtype ? `${i.subtype.replace(/_/g, " ")} ${i.institution_type === "bank" ? "bank" : "insurer"}` : i.institution_type;
+  return `${kind[0].toUpperCase()}${kind.slice(1)}${i.islamic ? " (Islamic)" : ""}`;
+};
+const STATE_WORDS: Record<Status, string> = { done: "done", partial: "recommended part still open", required: "required, not done", open: "not started" };
+
+/** The two ways to answer a step, side by side: the form saves at once, the agent's changes wait for Apply. */
+function TwoWays() {
+  return (
+    <div className="twoway">
+      <span className="tw-opt"><Icon name="edit" /><span><b>Fill the form</b> · saved as you go</span></span>
+      <span className="tw-or">or</span>
+      <button type="button" className="tw-opt tw-ask" onClick={askSetupAgent}><Icon name="chat" />
+        <span><b>Ask the Setup agent</b> · its changes wait for your Apply</span></button>
+    </div>
+  );
+}
+
 export function SetupWizard() {
   const S = useInstitution();
   const { step = "institution" } = useParams();
@@ -47,19 +67,24 @@ export function SetupWizard() {
     if (p.kind === "create_institution" && p.result?.institution_id) { S.select(p.result.institution_id); S.reloadList(); }
     else S.reload();
   };
+  // a failed load is not "no institution yet": say the server didn't answer instead of offering to create one
+  if (S.error != null && !profile) return <div className="page"><PageHead title="Set up your institution" crumbs={<Link to="/institution">Institution</Link>} /><LoadError error={S.error} onRetry={S.reload} what="the institution" /></div>;
   if (S.list === null) return <PageSkeleton />;
   if (!S.list.length || !profile || !readiness) {
     return (
-      <WithChat institutionId={null} onTrack={follow} onApplied={applied}><div className="page">
-        <PageHead title="Set up your institution" sub="Step 1 of 9 · Who you are" crumbs={<Link to="/institution">Institution</Link>} />
+      <WithChat institutionId={null} onTrack={follow} onApplied={applied} at={{ step: "institution", label: `Step 1 · ${STEPS[0][1]}` }}><div className="page">
+        <PageHead title="Set up your institution" sub={`Step 1 of ${STEPS.length} · Who you are`} crumbs={<Link to="/institution">Institution</Link>} />
+        <TwoWays />
         <CreateInstitution onCreated={id => { S.select(id); S.reloadList(); nav("/institution/setup/where"); }} />
       </div></WithChat>
     );
   }
   const i = profile.institution;
   const ok = (ids: string[] | undefined) => (ids ?? []).every(id => readiness.checks.find(c => c.id === id)?.ok);
-  const stepState = (s: Step) => (s === "review" ? (readiness.ready ? "done" : "todo")
-    : !ok(REQUIRED_BY_STEP[s]) ? "todo" : ok(RECOMMENDED_BY_STEP[s]) ? "done" : "partial");
+  const stepState = (s: Step): Status => (s === "review" ? (readiness.ready ? "done" : "open")
+    : !ok(REQUIRED_BY_STEP[s]) ? (REQUIRED_BY_STEP[s] ? "required" : "open") : ok(RECOMMENDED_BY_STEP[s]) ? "done" : "partial");
+  const states = STEPS.map(([k]) => stepState(k));
+  const done = states.filter(x => x === "done").length;
   const next = STEPS[idx + 1]?.[0], prev = STEPS[idx - 1]?.[0];
   const addFootprint = async (code: string) => {
     try { await inst.create_item(i.institution_id, "footprint", { code, role }); toast("Added to the footprint."); S.reload(); }
@@ -75,23 +100,29 @@ export function SetupWizard() {
   };
 
   return (
-    <WithChat institutionId={i.institution_id} onTrack={follow} onApplied={applied}><div className="page">
+    <WithChat institutionId={i.institution_id} onTrack={follow} onApplied={applied} at={{ step: cur[0], label: `Step ${idx + 1} · ${cur[1]}` }}><div className="page">
       <PageHead crumbs={<><Link to="/institution">Institution</Link><span>/</span><span>Guided setup</span></>}
         title={<span className="row" style={{ gap: 10 }}>{cur[2]} <StatusBadge status={i.status} /></span>}
-        sub={`Step ${idx + 1} of ${STEPS.length} · ${i.name} · each change is saved as you make it`}
+        sub={`Step ${idx + 1} of ${STEPS.length} · ${i.name}`}
         actions={<Link className="btn" to="/institution">Leave setup</Link>} />
-      <div className="tabs" role="tablist">
-        {STEPS.map(([k, label], n) => {
-          const st = stepState(k);
-          return <button key={k} type="button" role="tab" aria-selected={k === step} onClick={() => nav(`/institution/setup/${k}`)}>
-            <span className={`statusdot ${st === "done" ? "sd-ok" : st === "partial" ? "sd-warn" : REQUIRED_BY_STEP[k] ? "sd-down" : "sd-off"}`} />{n + 1}. {label}</button>;
-        })}
-      </div>
+      <nav className="stepper" aria-label="Setup steps">
+        <div className="stepper-top">
+          <div className="stepper-bar" role="progressbar" aria-label="Steps done" aria-valuemin={0} aria-valuemax={STEPS.length} aria-valuenow={done}>
+            <span style={{ width: `${(done / STEPS.length) * 100}%` }} /></div>
+          <span className="small muted">{done} of {STEPS.length} done</span>
+        </div>
+        <ol>{STEPS.map(([k, label], n) => (
+          <li key={k}><button type="button" aria-current={k === step ? "step" : undefined} title={`Step ${n + 1} · ${label}: ${STATE_WORDS[states[n]]}`}
+            onClick={() => nav(`/institution/setup/${k}`)}>
+            <StatusIcon status={states[n]} label={`Step ${n + 1}, ${label}: ${STATE_WORDS[states[n]]}`} /><span className="lbl" aria-hidden="true">{label}</span></button></li>))}
+        </ol>
+      </nav>
+      <TwoWays />
 
       {step === "institution" && <div className="col gap16">
         <div className="card"><div className="hd"><h2>{i.name}</h2><span className="spacer" /><button className="btn btn--sm" type="button" onClick={() => setEditing(true)}><Icon name="edit" />Edit details</button></div>
           <div className="bd"><div className="kv">
-            <div className="k">Type</div><div className="v">{i.institution_type}{i.subtype ? ` · ${i.subtype}` : ""}{i.islamic ? " · Islamic" : ""}</div>
+            <div className="k">Type</div><div className="v">{kindText(i)}</div>
             <div className="k">Home</div><div className="v">{profile.place_names[i.home_country] ?? i.home_country} · {i.base_currency} · {i.time_zone}</div>
             <div className="k">Owns risk decisions</div><div className="v">{i.governance_body ?? "—"}</div>
             <div className="k">Summary</div><div className="v">{i.summary ?? "—"}</div>
@@ -102,7 +133,7 @@ export function SetupWizard() {
         <div className="card"><div className="hd"><h2>Add where you operate</h2></div><div className="bd grid2">
           <Field label="Place" hint="Countries, states, provinces or districts."><PlacePicker scope="iso" onPick={p => addFootprint(p.code)} placeholder="e.g. Kerala, Tamil Nadu, Singapore" /></Field>
           <Field label="As"><select className="input" value={role} onChange={e => setRole(e.target.value)}>
-            {["branches", "subsidiary", "representative_office", "agents", "digital_only", "home"].map(r => <option key={r} value={r}>{r.replace(/_/g, " ")}</option>)}</select></Field>
+            {["branches", "subsidiary", "representative_office", "agents", "digital_only", "home"].map(r => <option key={r} value={r}>{r === "home" ? "Home country" : `${r[0].toUpperCase()}${r.slice(1).replace(/_/g, " ")}`}</option>)}</select></Field>
         </div></div>
         <div className="card"><div className="bd"><ProfileMap profile={profile} height={340} /></div></div>
         <SectionList section="footprint" ctx={ctx} reload={S.reload} />
@@ -113,11 +144,11 @@ export function SetupWizard() {
         <div className="card"><div className="hd"><h2>Usual customer groups for {i.institution_type === "bank" ? "a bank" : "an insurer"}</h2></div>
           <div className="bd"><SuggestionPicker inline section="segments" ctx={ctx} onAdded={S.reload} /></div></div>
         <SectionList section="segments" ctx={ctx} reload={S.reload} />
-        <Banner kind="info">Edit each group to say where it is concentrated and how your data identifies it (a Metrics Spec value), so checks can look at just that group.</Banner>
+        <Banner kind="info">Edit each group to say where it is concentrated and how your data identifies it, so checks can look at just that group.</Banner>
       </div>}
 
       {step === "products" && <div className="col gap16">
-        <div className="card"><div className="hd"><h2>What do you offer? (Metrics Spec product types)</h2></div>
+        <div className="card"><div className="hd"><h2>What do you offer?</h2></div>
           <div className="bd"><SuggestionPicker inline section="products" ctx={ctx} onAdded={S.reload} /></div></div>
         <SectionList section="products" ctx={ctx} reload={S.reload} />
         <LinkGrid ctx={ctx} rows="products" cols="segments" field="segments" reload={S.reload} title="Who uses which product" />
@@ -153,7 +184,7 @@ export function SetupWizard() {
       {step === "monitors" && <MonitorsStep institutionId={i.institution_id} />}
 
       {step === "review" && <div className="col gap16">
-        <div className="card"><div className="bd"><ProfileMap profile={profile} /></div></div>
+        <div className="card"><div className="bd"><ProfileMap profile={profile} height={320} /></div></div>
         <div className="card"><div className="hd"><h2>Ready to go live?</h2><span className="spacer" />
           {i.status === "setup" && <button className="btn btn--primary" type="button" disabled={!readiness.ready} onClick={activate}>Activate</button>}
           {i.status === "active" && <span className="badge b-ok">ACTIVE</span>}</div>

@@ -5,6 +5,8 @@ import { ApiError } from "../../api/client";
 import { inst, type InstitutionType, type Item, type Profile, type SectionName } from "../../api/institutions";
 import { ref, type Category } from "../../api/reference";
 import { FillFromJson } from "../../components/FillFromJson";
+import { Icon } from "../../components/Icon";
+import { askSetupAgent } from "../../components/SetupChat";
 import { draftFrom, institutionsOf, itemsOf } from "../../components/fillJson";
 import { Modal, useToast } from "../../components/ui";
 import {
@@ -54,7 +56,8 @@ export const LABELS: Record<SectionName, { one: string; many: string; nameKey: s
   "risk-exposures": { one: "risk exposure", many: "Risk exposures", nameKey: "title" },
 };
 
-const opt = (xs: string[], words: Record<string, string> = {}) => xs.map(x => <option key={x} value={x}>{words[x] ?? x.replace(/_/g, " ")}</option>);
+const capFirst = (s: string) => s[0].toUpperCase() + s.slice(1);
+const opt = (xs: string[], words: Record<string, string> = {}) => xs.map(x => <option key={x} value={x}>{capFirst(words[x] ?? x.replace(/_/g, " "))}</option>);
 const ROLE_WORDS: Record<string, string> = { home: "home (headquarters country)", branches: "branches", subsidiary: "subsidiary", representative_office: "representative office", agents: "agents only", digital_only: "digital only" };
 export const FLOW_WORDS: Record<string, string> = { remittances_in: "remittances in", remittances_out: "remittances out", tourism: "tourist spending", services: "services income", exports: "exports", imports: "imports" };
 const INCOME: [string, string][] = [["salary", "salary"], ["remittances", "remittances"], ["business_income", "business income"], ["farm_income", "farm income"], ["pension", "pension"], ["government_transfers", "government transfers"], ["investment_income", "investment income"], ["other", "other"]];
@@ -62,7 +65,7 @@ const RIVAL_TYPES = ["bank", "insurer", "takaful", "wallet", "fintech", "microfi
 const CP_KINDS = ["correspondent_bank", "reinsurer", "payment_scheme", "clearing_house", "technology_provider", "distribution_partner", "outsourcer", "other"];
 const RISK_KINDS = ["conflict", "climate", "economic", "regulatory", "market", "health", "technology", "other"];
 const AREAS = ["banking", "insurance", "securities", "aml", "data_protection", "sanctions", "conduct", "standards", "other"];
-const AREA_WORDS: Record<string, string> = { aml: "anti-money-laundering", data_protection: "data protection" };
+export const AREA_WORDS: Record<string, string> = { aml: "Anti-money-laundering", data_protection: "Data protection", banking: "Banking", insurance: "Insurance", securities: "Securities", sanctions: "Sanctions", conduct: "Conduct", standards: "Global standards", other: "Other" };
 const RELATION_WORDS: Record<string, string> = { home: "home: your home country", host: "host: a country you operate in", reach: "reach: through a currency or market", standard: "standard: a global standard" };
 
 // ---------------------------------------------------------------- per-section form bodies
@@ -70,6 +73,8 @@ const RELATION_WORDS: Record<string, string> = { home: "home: your home country"
 type Body = (p: { d: Draft; set: (k: string, v: any) => void; err: Errors; ctx: Ctx; editing: Item | null }) => ReactNode;
 
 const names = (ctx: Ctx) => ctx.profile?.place_names ?? {};
+/** A heading that groups the fields under it, across both columns. */
+const Group = ({ children, first }: { children: ReactNode; first?: boolean }) => <h3 className={`pf-group${first ? " first" : ""}`}>{children}</h3>;
 const items = (ctx: Ctx, s: SectionName) => ctx.profile?.sections[s] ?? [];
 
 function ProductCategory({ d, set, err, ctx }: Parameters<Body>[0]) {
@@ -133,10 +138,13 @@ const BODIES: Record<SectionName, Body> = {
     <Field label="Why it matters" error={err.reason} full><textarea className="input" value={d.reason ?? ""} onChange={e => set("reason", e.target.value || null)} /></Field>
   </>),
   segments: ({ d, set, err, ctx }) => (<>
+    <Group first>The group</Group>
     <Field req label="Name of the group" error={err.label} hint="A category, never names of customers."><input className="input" value={d.label ?? ""} onChange={e => set("label", e.target.value)} /></Field>
     <Field label="Kind" error={err.kind}><select className="input" value={d.kind} onChange={e => set("kind", e.target.value)}>{opt(["individual", "business", "public_sector", "financial", "mixed"])}</select></Field>
+    <Group>Where they are and what they live on</Group>
     <Field label="Where they are concentrated" error={err.places} full><PlacesField value={d.places ?? []} names={names(ctx)} onChange={v => set("places", v)} /></Field>
     <Field label="Main income" error={err.income_sources} full><Toggles options={INCOME} value={d.income_sources ?? []} onChange={v => set("income_sources", v)} /></Field>
+    <Group>In your numbers</Group>
     <Field label="How your data identifies them (Metrics Spec)" error={err.spec_mapping} full hint="Lets checks look at just this group in your numbers.">
       <SpecField value={d.spec_mapping ?? []} onChange={v => set("spec_mapping", v)} /></Field>
     <Field label="Share of customers (%)" error={err.share_of_customers_pct}><input className="input" type="number" min={0} max={100} value={d.share_of_customers_pct ?? ""} onChange={e => set("share_of_customers_pct", e.target.value === "" ? null : Number(e.target.value))} /></Field>
@@ -145,15 +153,18 @@ const BODIES: Record<SectionName, Body> = {
   products: (p) => {
     const { d, set, err, ctx } = p;
     return (<>
+      <Group first>The product</Group>
       <Field req label="Name" error={err.name} full><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} placeholder="e.g. Migrant Family Savings" /></Field>
       <ProductCategory {...p} />
-      <Field label="Who uses it" error={err.segments} full><RefsField items={items(ctx, "segments")} labelKey="label" value={d.segments ?? []} onChange={v => set("segments", v)} empty="Add customer groups first." /></Field>
       <Field label="Owner (business unit)" error={err.owner}><input className="input" value={d.owner ?? ""} onChange={e => set("owner", e.target.value || null)} placeholder="e.g. Retail banking" /></Field>
       <Field label="Status" error={err.status}><select className="input" value={d.status} onChange={e => set("status", e.target.value)}>{opt(["active", "launching", "closing", "closed"])}</select></Field>
+      <Group>Who uses it and how big it is</Group>
+      <Field label="Who uses it" error={err.segments} full><RefsField items={items(ctx, "segments")} labelKey="label" value={d.segments ?? []} onChange={v => set("segments", v)} empty="Add customer groups first." /></Field>
       <Field label="Currencies" error={err.currencies} full><CurrenciesField value={d.currencies ?? []} onChange={v => set("currencies", v)} /></Field>
       <Field label="Book size" error={err.book_size} full><MoneyField value={d.book_size ?? null} onChange={v => set("book_size", v)} /></Field>
       <Field label="Islamic product" error={err.islamic}><label className="check"><input type="checkbox" checked={!!d.islamic} onChange={e => set("islamic", e.target.checked)} /> Islamic or takaful variant</label></Field>
       <Field label="Launched" error={err.launched_on}><input className="input" type="date" value={d.launched_on ?? ""} onChange={e => set("launched_on", e.target.value || null)} /></Field>
+      <Group>Its numbers</Group>
       <Field label="Data connection" error={err.data} full hint="Where its numbers come from (Data connections).">
         <div className="row" style={{ gap: 6 }}>
           <input className="input" value={d.data?.source_id ?? ""} placeholder="source id, e.g. ds-core" onChange={e => set("data", { ...(d.data ?? {}), source_id: e.target.value || null })} />
@@ -166,13 +177,16 @@ const BODIES: Record<SectionName, Body> = {
     </>);
   },
   flows: ({ d, set, err, ctx, editing }) => (<>
+    <Group first>The flow</Group>
     <Field req label="Kind" error={err.kind}><select className="input" value={d.kind} onChange={e => set("kind", e.target.value)}>{opt(Object.keys(FLOW_WORDS), FLOW_WORDS)}</select></Field>
     <Field label="Goods (trade only)" error={err.goods}><input className="input" value={d.goods ?? ""} onChange={e => set("goods", e.target.value || null)} placeholder="e.g. Garments" /></Field>
     <Field req label="Your end (in the footprint)" error={err.local}><PlaceField value={d.local ?? null} scope="iso" names={names(ctx)} onChange={v => set("local", v)} /></Field>
     <Field req label="The other end (country)" error={err.counterpart}><CountrySelect value={d.counterpart ?? null} onChange={v => set("counterpart", v)} /></Field>
+    <Group>Size and route</Group>
     <Field label="Figure" error={err.value} full hint={editing?.source?.kind === "dataset" ? `From ${editing.source.dataset} (${editing.source.dataset_year}). Changing it keeps the dataset's figure as the original.` : undefined}>
       <FlowValueField value={d.value ?? null} onChange={v => set("value", v)} /></Field>
     <Field label="Sea route (goods)" error={err.route_id} full><RouteSelect value={d.route_id ?? null} onChange={v => set("route_id", v)} /></Field>
+    <Group>Who it concerns</Group>
     <Field label="Customer groups it concerns" error={err.segments} full><RefsField items={items(ctx, "segments")} labelKey="label" value={d.segments ?? []} onChange={v => set("segments", v)} /></Field>
     <Field label="Status" error={err.status}><select className="input" value={d.status} onChange={e => set("status", e.target.value)}><option value="confirmed">confirmed</option><option value="suggested">suggested (not checked yet)</option></select></Field>
     <Field label="Note" error={err.note} full><textarea className="input" value={d.note ?? ""} onChange={e => set("note", e.target.value || null)} /></Field>
@@ -187,12 +201,15 @@ const BODIES: Record<SectionName, Body> = {
     <Field label="Note" error={err.note} full><textarea className="input" value={d.note ?? ""} onChange={e => set("note", e.target.value || null)} /></Field>
   </>),
   rivals: ({ d, set, err, ctx }) => (<>
+    <Group first>The rival</Group>
     <Field req label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} /></Field>
     <Field label="Type" error={err.type}><select className="input" value={d.type} onChange={e => set("type", e.target.value)}>{opt(RIVAL_TYPES)}</select></Field>
-    <Field label="Where they compete" error={err.places} full><PlacesField value={d.places ?? []} names={names(ctx)} onChange={v => set("places", v)} /></Field>
-    <Field label="Product lines where they compete" error={err.categories} full><RivalCategories value={d.categories ?? []} onChange={v => set("categories", v)} /></Field>
     <Field label="Overlap with you" error={err.overlap}><select className="input" value={d.overlap} onChange={e => set("overlap", e.target.value)}>{opt(["high", "medium", "low"])}</select></Field>
     <Field label="Website" error={err.website}><input className="input" value={d.website ?? ""} onChange={e => set("website", e.target.value || null)} placeholder="https://" /></Field>
+    <Group>Where they compete</Group>
+    <Field label="Where they compete" error={err.places} full><PlacesField value={d.places ?? []} names={names(ctx)} onChange={v => set("places", v)} /></Field>
+    <Field label="Product lines where they compete" error={err.categories} full><RivalCategories value={d.categories ?? []} onChange={v => set("categories", v)} /></Field>
+    <Group>In the news</Group>
     <Field label="Other names in the news" error={err.aliases} full><ChipsInput value={d.aliases ?? []} onChange={v => set("aliases", v)} /></Field>
     <Field label="Note" error={err.note} full><textarea className="input" value={d.note ?? ""} onChange={e => set("note", e.target.value || null)} /></Field>
   </>),
@@ -205,12 +222,13 @@ const BODIES: Record<SectionName, Body> = {
     <Field label="Note" error={err.note} full><textarea className="input" value={d.note ?? ""} onChange={e => set("note", e.target.value || null)} /></Field>
   </>),
   "risk-exposures": ({ d, set, err, ctx }) => (<>
+    <Group first>The risk</Group>
     <Field req label="Title" error={err.title} full><input className="input" value={d.title ?? ""} onChange={e => set("title", e.target.value)} placeholder="e.g. Gulf tension meets remittances" /></Field>
     <Field req label="Kind" error={err.kind}><select className="input" value={d.kind} onChange={e => set("kind", e.target.value)}>{opt(RISK_KINDS)}</select></Field>
     <Field label="Status" error={err.status}><select className="input" value={d.status} onChange={e => set("status", e.target.value)}><option value="active">active</option><option value="dismissed">dismissed (not relevant)</option></select></Field>
     <Field label="Where" error={err.places} full><PlacesField value={d.places ?? []} names={names(ctx)} onChange={v => set("places", v)} /></Field>
     <Field label="When in the year" error={err.months} full><MonthStrip value={d.months ?? []} onChange={v => set("months", v)} /></Field>
-    <div className="label" style={{ gridColumn: "1 / -1" }}>What it touches</div>
+    <Group>What it touches</Group>
     <Field label="Customer groups" error={err.touches} full><RefsField items={items(ctx, "segments")} labelKey="label" value={d.touches?.segments ?? []} onChange={v => set("touches", { ...d.touches, segments: v })} /></Field>
     <Field label="Products" full><RefsField items={items(ctx, "products")} labelKey="name" value={d.touches?.products ?? []} onChange={v => set("touches", { ...d.touches, products: v })} /></Field>
     <Field label="Flows" full><RefsField items={(items(ctx, "flows")).map(f => ({ ...f, _label: `${FLOW_WORDS[f.kind]} ${f.local} ↔ ${f.counterpart}${f.goods ? ` (${f.goods})` : ""}` }))} labelKey="_label" value={d.touches?.flows ?? []} onChange={v => set("touches", { ...d.touches, flows: v })} /></Field>
@@ -305,8 +323,6 @@ export function InstitutionFields({ d, set, err, creating, fill }: { d: Draft; s
   const t = (d.institution_type ?? "bank") as InstitutionType;
   return (
     <div className="grid2">
-      {fill && <FillFromJson what="the institution" read={institutionsOf} onFill={c => fill(c.data)}
-        example={'{"institution": {"name": "…", "institution_type": "bank", "home_country": "LK", …}}, or those fields on their own'} />}
       <Field req label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} placeholder="e.g. Serendib Commercial Bank" /></Field>
       <Field label="Legal name" error={err.legal_name}><input className="input" value={d.legal_name ?? ""} onChange={e => set("legal_name", e.target.value || null)} /></Field>
       <Field req label="Type" error={err.institution_type} hint={!creating ? "Can't change while products of this type exist." : undefined}>
@@ -323,12 +339,14 @@ export function InstitutionFields({ d, set, err, creating, fill }: { d: Draft; s
       <Field label="Currencies you settle in abroad" error={err.clearing_currencies} full hint="Decides which sanctions regimes reach you (USD → OFAC).">
         <CurrenciesField value={d.clearing_currencies ?? []} onChange={v => set("clearing_currencies", v)} /></Field>
       <Field label="Who owns risk decisions" error={err.governance_body}><input className="input" value={d.governance_body ?? ""} onChange={e => set("governance_body", e.target.value || null)} placeholder="e.g. Board Risk Committee" /></Field>
-      <Field label="Size" error={err.size_band}><select className="input" value={d.size_band ?? ""} onChange={e => set("size_band", e.target.value || null)}><option value="">—</option>{opt(["small", "mid", "large", "systemic"])}</select></Field>
+      <Field label="Size" error={err.size_band}><select className="input" value={d.size_band ?? ""} onChange={e => set("size_band", e.target.value || null)}><option value="">—</option>{opt(["small", "mid", "large", "systemic"], { mid: "mid-size", systemic: "systemically important" })}</select></Field>
       <Field label="Financial year starts in" error={err.fiscal_year_start_month}><select className="input" value={d.fiscal_year_start_month ?? 1} onChange={e => set("fiscal_year_start_month", Number(e.target.value))}>{MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select></Field>
       <Field label="LEI" error={err.lei}><input className="input mono" value={d.lei ?? ""} onChange={e => set("lei", e.target.value.toUpperCase() || null)} placeholder="20 characters" /></Field>
       <Field label="Short name" error={err.short_name}><input className="input" value={d.short_name ?? ""} onChange={e => set("short_name", e.target.value || null)} /></Field>
       <Field label="Website" error={err.website}><input className="input" value={d.website ?? ""} onChange={e => set("website", e.target.value || null)} placeholder="https://" /></Field>
       <Field label="In a few lines: what you do" error={err.summary} full><textarea className="input" value={d.summary ?? ""} onChange={e => set("summary", e.target.value || null)} /></Field>
+      {fill && <FillFromJson what="the institution" read={institutionsOf} onFill={c => fill(c.data)}
+        example={'{"institution": {"name": "…", "institution_type": "bank", "home_country": "LK", …}}, or those fields on their own'} />}
     </div>
   );
 }
@@ -351,7 +369,9 @@ export function InstitutionModal({ profile, onClose, onSaved }: { profile: Profi
   };
   return (
     <Modal wide title="Institution details" onClose={onClose} footer={<>
-      <span className="small muted" style={{ marginRight: "auto" }}><span className="req">*</span> required; the rest is optional</span>
+      <button className="btn btn--ghost" type="button" style={{ marginRight: "auto" }} title="Close this form and tell the Setup agent instead; its changes wait for your Apply"
+        onClick={() => { onClose(); askSetupAgent(); }}><Icon name="chat" />Ask the Setup agent instead</button>
+      <span className="small muted"><span className="req">*</span> required</span>
       <button className="btn" type="button" onClick={onClose}>Cancel</button><button className="btn btn--primary" type="button" onClick={save}>Save</button></>}>
       <div ref={box}><InstitutionFields d={d} set={(k, v) => setD(x => ({ ...x, [k]: v }))} err={err} creating={false}
         fill={data => { setErr({}); setGeneral([]); setD(x => ({ ...x, ...data })); }} /></div>

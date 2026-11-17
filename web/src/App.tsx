@@ -1,9 +1,11 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { Icon } from "./components/Icon";
-import { Empty, PageHead, PageSkeleton, useNow, useRole, type Role } from "./components/ui";
+import { Empty, isDown, PageHead, PageSkeleton, useNow, useRole, type Role } from "./components/ui";
 import { api, ME } from "./api/client";
-import { fullNow, setZone, ZONE_LABEL } from "./format";
+import { ago, fullNow, setZone, ZONE_LABEL } from "./format";
+import { overviewApi, type Overview } from "./api/overview";
+import "./styles/shell.css";
 import { InstitutionPage, NewInstitutionPage } from "./pages/institution/InstitutionPage";
 import { SetupWizard } from "./pages/institution/SetupWizard";
 import { EventDetailPage } from "./pages/events/EventDetail";
@@ -26,13 +28,13 @@ import { SpecPage } from "./pages/spec/Spec";
 import { SpecPrintPage } from "./pages/spec/SpecPrint";
 import { alertsApi, type AlertSummary } from "./api/alerts";
 
-// The menu follows the day: what needs me, what Amiri Agent watches, who I am, and the what-if tool.
+// The menu follows the day: what needs me, what Amiri Agent found, what it watches, who I am, and the what-if tool.
 const GROUPS: [string, string[]][] = [
   ["Today", ["/home", "/alerts"]],
-  ["What Amiri Agent watches", ["/findings", "/events", "/radar", "/monitors", "/series"]],
-  ["Your institution", ["/institution"]],
+  ["What it found", ["/events", "/findings"]],
+  ["What it watches", ["/radar", "/monitors", "/series"]],
+  ["Your institution", ["/institution", "/spec"]],
   ["Try it", ["/studio"]],
-  ["Reference", ["/spec"]],
 ];
 
 const NAV: Record<Role, [string, string, string][]> = {
@@ -53,6 +55,7 @@ export interface Installation {
   institution_id: string; profile: boolean; name: string | null; short_name?: string | null; home_country?: string;
   country_name?: string | null; base_currency?: string; time_zone: string; notes: string[];
   prototype_reset?: boolean;  // the server allows the prototype reset (PROTOTYPE_RESET)
+  unreachable?: boolean;  // UI only: the server didn't answer, so whether a profile exists is unknown
 }
 
 // what this installation serves; reloaded when an institution is created (event "amiri:installation")
@@ -62,7 +65,7 @@ export const useInstallation = () => useContext(InstallationCtx);
 /** Pages that need the institution say so before it exists, with the way to set it up (not a spinner or an error). */
 function NeedsInstitution({ title, what, children }: { title: string; what: string; children: ReactNode }) {
   const inst = useInstallation();
-  if (!inst || inst.profile) return <>{children}</>;
+  if (!inst || inst.profile || inst.unreachable) return <>{children}</>;  // unreachable: the page shows the load error
   return (
     <div className="page">
       <PageHead title={title} />
@@ -82,13 +85,25 @@ function useTheme() {
   useEffect(() => {
     if (theme) document.documentElement.dataset.theme = theme; else delete document.documentElement.dataset.theme;
   }, [theme]);
+  const dark = theme ? theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
   const toggle = () => {
-    const dark = theme ? theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
     const next = dark ? "light" : "dark";
     setTheme(next);
     try { localStorage.setItem("amiri.theme", next); } catch { /* private mode */ }
   };
-  return toggle;
+  return { dark, toggle };
+}
+
+/** The top bar's status, from what the Overview call already says: green only when updates run and prices are fresh. */
+function pulse(o: Overview | null, now: Date, down: boolean): { tone: "ok" | "warn" | "off"; word: string; why: string } | null {
+  if (down) return { tone: "off", word: "No answer", why: "Amiri Agent didn't answer the last check. It tries again every minute." };
+  if (!o) return null;
+  if (o.first_run || !o.services) return { tone: "off", word: "Not watching yet", why: "Set up an institution and Amiri Agent starts watching for it." };
+  const t = o.services.tick;
+  if (!t.ok) return { tone: "off", word: "Paused", why: t.last_at ? `Updates are late: they last ran ${ago(t.last_at, now)}.` : "Updates haven't run yet, so no news or prices arrive." };
+  const late = (o.markets ?? []).filter(m => m.state === "stale");
+  if (late.length) return { tone: "warn", word: "Prices late", why: `Updates run, but ${late.map(m => m.name).join(", ")} ${late.length === 1 ? "hasn't" : "haven't"} updated${late[0].state_reason ? `: ${late[0].state_reason.replace(/^No new bar since (.+?) \(.*$/, "no new price since $1")}` : ""}.` };
+  return { tone: "ok", word: "Live", why: `Updates ran ${t.last_at ? ago(t.last_at, now) : "recently"}; prices are up to date.` };
 }
 
 /** Each page's heading becomes the tab title; after a navigation focus moves to the page and a screen reader
@@ -155,12 +170,16 @@ export function App() {
   return <Installed />;
 }
 
+const NAME_KEY = "amiri.institution-name";
+const lastName = () => { try { return localStorage.getItem(NAME_KEY); } catch { return null; } };
+
 function Installed() {
   const [inst, setInst] = useState<Installation | null>(null);
   useEffect(() => {
     const load = () => api<Installation>("/api/v1/installation")
-      .then(i => { setZone(i.time_zone); setInst(i); })
-      .catch(() => setInst(x => x ?? { institution_id: "", profile: false, name: null, time_zone: "UTC", notes: ["The Amiri Agent server didn't answer. Try again in a moment."] }));
+      .then(i => { setZone(i.time_zone); setInst(i); try { if (i.name) localStorage.setItem(NAME_KEY, i.name); } catch { /* private mode */ } })
+      // not "no profile yet": the pages show the server didn't answer, and the bar keeps the last known name
+      .catch(() => setInst(x => x ?? { institution_id: "", profile: false, name: lastName(), time_zone: "UTC", notes: [], unreachable: true }));
     load();
     window.addEventListener("amiri:installation", load);  // an institution was created (forms or chat)
     return () => window.removeEventListener("amiri:installation", load);
@@ -171,7 +190,7 @@ function Installed() {
 
 function Frame({ inst }: { inst: Installation }) {
   const { role, setRole } = useRole();
-  const toggleTheme = useTheme();
+  const { dark, toggle: toggleTheme } = useTheme();
   const now = useNow(30_000);
   const nav = NAV[role].filter(([, , to]) => BUILT.has(to));  // a page that isn't built isn't offered
   const said = useRouteA11y();
@@ -184,6 +203,19 @@ function Frame({ inst }: { inst: Installation }) {
     window.addEventListener("keydown", k);
     return () => window.removeEventListener("keydown", k);
   }, [menu]);
+  useEffect(() => {  // an admin page is the Platform Admin's: show its menu, so the page is selected in it
+    if (pathname.startsWith("/admin/") && role !== "platform_admin") setRole("platform_admin");
+  }, [pathname]);  // eslint-disable-line react-hooks/exhaustive-deps
+  const [ov, setOv] = useState<Overview | null>(null);
+  const [down, setDown] = useState(false);
+  useEffect(() => {  // the Live pill: the same one call the Overview makes, once a minute
+    const load = () => overviewApi.get().then(x => { setOv(x); setDown(false); }).catch(e => setDown(isDown(e)));
+    load(); const t = setInterval(load, 60_000);
+    window.addEventListener("amiri:installation", load);  // "Try again" on a page checks again here too
+    return () => { clearInterval(t); window.removeEventListener("amiri:installation", load); };
+  }, []);
+  const live = pulse(ov, now, down);
+  const [why, setWhy] = useState(false);
   const [alerts, setAlerts] = useState<AlertSummary | null>(null);
   useEffect(() => {  // the menu badge: alerts to review
     const load = () => alertsApi.summary().then(setAlerts).catch(() => {});
@@ -201,21 +233,28 @@ function Frame({ inst }: { inst: Installation }) {
         <Link className="brand" to="/home" aria-label="Amiri Agent home">
           <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0F3D2E" /><path d="M9.2 25 15 7h2l5.8 18h-3.1L16 13.1 12.3 25z" fill="#F1F5EC" /><rect x="15.4" y="13.5" width="1.2" height="10" fill="#F05A28" /><rect x="14.2" y="16" width="3.6" height="5.2" fill="#F05A28" /></svg>
           <b>Amiri Agent</b>
-          <span className="inst">{inst.name ?? "No institution profile yet"}</span>
+          <span className="inst">{inst.name ?? (inst.unreachable ? "" : "No institution profile yet")}</span>
         </Link>
-        <span className="worldpill" title={`Live world · times in ${ZONE_LABEL}`}><span className="dot" /><span className="wtxt">Live · {fullNow(now)} {ZONE_LABEL}</span></span>
+        {/* why it says Paused or Prices late: a click, a tap or keyboard focus shows it, not a hover-only tooltip */}
+        <span className="worldwrap">
+          <button type="button" className={`worldpill${live ? ` is-${live.tone}` : ""}`} aria-expanded={why} aria-describedby="world-why"
+            onClick={() => setWhy(o => !o)} onBlur={() => setWhy(false)} onKeyDown={e => e.key === "Escape" && setWhy(false)}>
+            <span className="dot" aria-hidden="true" />{live && <b className="wword">{live.word}</b>}<span className="wtxt">{fullNow(now)} {ZONE_LABEL}</span>
+          </button>
+          <span id="world-why" className={`world-why${why ? " open" : ""}`}>{live ? `${live.why} ` : ""}Times in {ZONE_LABEL}.</span>
+        </span>
         <span className="spacer" />
         <span className="seg" role="group" aria-label="View as">
           <button type="button" aria-pressed={role === "risk_manager"} onClick={() => setRole("risk_manager")}>Risk Manager</button>
           <button type="button" aria-pressed={role === "platform_admin"} onClick={() => setRole("platform_admin")}>Platform Admin</button>
         </span>
-        <button className="btn btn--ghost btn--icon themebtn" type="button" aria-label="Switch between light and dark" onClick={toggleTheme}><Icon name="moon" /></button>
+        <button className="btn btn--ghost btn--icon themebtn" type="button" aria-label={dark ? "Switch to light" : "Switch to dark"} onClick={toggleTheme}><Icon name={dark ? "sun" : "moon"} /></button>
       </header>
       {menu && <div className="scrim" onClick={() => setMenu(false)} />}
       <div className="body">
         <aside className="side" id="sidenav" aria-label="Menu" data-open={menu}>
           <nav className="nav" aria-label="Main">
-            {role === "platform_admin" && <div className="grp label">Platform</div>}
+            {role === "platform_admin" && <div className="grp label">Platform Admin</div>}
             {(role === "risk_manager" ? GROUPS : [["", nav.map(n => n[2])] as [string, string[]]]).map(([group, paths]) => {
               const items = nav.filter(n => paths.includes(n[2]));
               return items.length === 0 ? null : (
@@ -241,7 +280,7 @@ function Frame({ inst }: { inst: Installation }) {
               <button type="button" aria-pressed={role === "risk_manager"} onClick={() => setRole("risk_manager")}>Risk Manager</button>
               <button type="button" aria-pressed={role === "platform_admin"} onClick={() => setRole("platform_admin")}>Platform Admin</button>
             </span>
-            <button className="btn btn--sm" type="button" onClick={toggleTheme}><Icon name="moon" />Light or dark</button>
+            <button className="btn btn--sm" type="button" onClick={toggleTheme}><Icon name={dark ? "sun" : "moon"} />{dark ? "Light theme" : "Dark theme"}</button>
           </div>
         </aside>
         <main className="main" id="main" tabIndex={-1}>

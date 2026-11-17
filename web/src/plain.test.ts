@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { placeName, placeOrder } from "./format.ts";
-import { checkMove, dateRange, impactText, listText, productAngle, relDay, sizeTiming, splitCheckText, themeLabel, verdictTone } from "./plain.ts";
+import { alertOrder, checkMove, dateRange, eventTitle, signalStrength, impactText, listText, productAngle, relDay, sizeTiming, splitCheckText, themeLabel, verdictTone } from "./plain.ts";
 
 test("themes read as short phrases, not machine text", () => {
   assert.equal(themeLabel({ theme: "commodities", direction: "up", item: "oil" }), "Oil prices up");
@@ -58,4 +58,33 @@ test("names in a sentence", () => {
   assert.equal(listText(["A"]), "A");
   assert.equal(listText(["A", "B"]), "A and B");
   assert.equal(listText(["A", "B", "C", "D", "E"]), "A, B and 3 more");
+});
+
+test("generic event titles become the theme in words plus the size; real titles stay", () => {
+  const oil = [{ theme: "commodities", direction: "up", item: "oil" }];
+  assert.equal(eventTitle({ title: "Oil rose", themes: oil, size: { value: 9, unit: "pct" } }), "Oil prices up 9%");
+  assert.equal(eventTitle({ title: "Oil rose (9%)", themes: oil, size: { value: 9, unit: "pct" } }), "Oil prices up 9%");
+  assert.equal(eventTitle({ title: "remittance (up) (5.6%)", themes: [{ theme: "remittance", direction: "up" }], size: null }), "Remittances up 5.6%");
+  assert.equal(eventTitle({ title: "Rates rose (25 bp)", themes: [{ theme: "rates", direction: "up" }] }), "Interest rates up 25 bp");
+  assert.equal(eventTitle({ title: "Oil rose", themes: oil, size: null }), "Oil prices up");
+  assert.equal(eventTitle({ title: "CBSL holds policy rate", themes: [{ theme: "rates", direction: "steady" }], size: { value: 9, unit: "pct" } }), "CBSL holds policy rate");
+  assert.equal(eventTitle({ title: "Oil rose", themes: [] }), "Oil rose");
+});
+
+test("an alert queue: open first, then the most serious, then the latest", () => {
+  const xs = [
+    { id: "w-new", level: "warning", status: "new", at: "2026-11-16T10:00:00Z" },
+    { id: "a-old", level: "adverse", status: "new", at: "2026-11-15T10:00:00Z" },
+    { id: "d", level: "developing", status: "acknowledged", at: "2026-11-16T09:00:00Z" },
+    { id: "a-res", level: "adverse", status: "resolved", at: "2026-11-16T11:00:00Z" },
+    { id: "w-later", level: "warning", status: "new", at: "2026-11-16T12:00:00Z" },
+  ];
+  assert.deepEqual([...xs].sort(alertOrder).map(x => x.id), ["a-old", "d", "w-later", "w-new", "a-res"]);
+});
+
+test("a source's score reads as a signal strength in words", () => {
+  assert.deepEqual(signalStrength(82), ["Strong signal", "blue"]);
+  assert.deepEqual(signalStrength(0.55), ["Moderate signal", "grey"]);
+  assert.deepEqual(signalStrength(31), ["Weak signal", "grey"]);
+  assert.equal(signalStrength(null), null);
 });

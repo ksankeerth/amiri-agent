@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../../api/client";
+import { alertsApi } from "../../api/alerts";
 import { investigationApi, type EventDetail, type EventRow, type InvestigationStatus, type Run, type Theme } from "../../api/investigation";
 import { HowItWorks, PageHeader, Places, StatTiles, TonePill } from "../../components/blocks";
 import { CheckBrief } from "../../components/checks";
+import { FlowFilter } from "../../components/FlowFilter";
 import { Icon } from "../../components/Icon";
-import { Banner, Empty, useNow, useRole, useToast, InlineSkeleton } from "../../components/ui";
+import { Banner, Empty, useNow, useRole, useToast, InlineSkeleton, LoadError } from "../../components/ui";
 import { ago, dayTime, until, plural } from "../../format";
-import { count, longWhen, sourceInfo, themeLabel } from "../../plain";
+import { count, eventTitle, longWhen, sourceInfo, themeLabel } from "../../plain";
 import { DAYS, useRecentFindings } from "../findings/recent";
 
 /** A theme tag in words ("Oil prices up"): the Overview and Radar use it too. */
@@ -55,7 +57,7 @@ export function InvestigateNowButton({ ids, onDone, small }: { ids?: string[]; o
     } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
     finally { setBusy(false); }
   };
-  return <button className={`btn${small ? " btn--sm" : " btn--primary"}`} type="button" onClick={go} disabled={busy}>
+  return <button className={`btn${small ? " btn--sm" : ""}`} type="button" onClick={go} disabled={busy} title="Skips the wait for the next batch">
     <Icon name={busy ? "refresh" : "play"} className={busy ? "spin" : undefined} />Investigate now</button>;
 }
 
@@ -113,25 +115,28 @@ export function EventsPage() {
   const { status, reload: reloadStatus } = useInvestigationStatus();
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [runs, setRuns] = useState<Run[]>([]);
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState<unknown>(null);
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const recent = useRecentFindings();
+  const [toReview, setToReview] = useState(0);
+  useEffect(() => { alertsApi.summary().then(x => setToReview(x.to_review)).catch(() => {}); }, []);
   const load = useCallback(async () => {
     try {
       const [e, r] = await Promise.all([investigationApi.events(), investigationApi.runs()]);
       setEvents(e); setRuns(r); setErr(null); setLoadedAt(new Date()); reloadStatus();
-    } catch (e) { setErr(e instanceof ApiError ? e.full : String(e)); }
+    } catch (e) { setErr(e); }
   }, [reloadStatus]);
   const refresh = () => { load(); recent.load(); };
   const inProgress = (recent.items ?? []).filter(f => f.status === "grouped");
   const noEvent = (recent.items ?? []).filter(f => f.status === "set_aside");
   useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t); }, [load]);
   const nSim = (events ?? []).filter(e => e.world !== "live").length;
+  const shown = (events ?? []).filter(e => sim || e.world === "live");  // what the status filter counts
   const rows = useMemo(() => (events ?? []).filter(e => (show === "all" || e.status === show) && (sim || e.world === "live"))
     .sort((a, b) => sort === "impacts" ? b.hypotheses - a.hypotheses || (a.anchor < b.anchor ? 1 : -1) : (a.anchor < b.anchor ? 1 : -1)), [events, show, sim, sort]);
   const ev = useEventDetails(rows.map(e => e.event_id));
   // the headline each event came from: its first finding, when it's among the recent ones
-  const lead = useMemo(() => new Map((recent.items ?? []).filter(f => f.outcome?.event_id).map(f => [f.outcome!.event_id!, f])), [recent.items]);
+  const byId = useMemo(() => new Map((recent.items ?? []).map(f => [f.finding_id, f])), [recent.items]);
   const live = (events ?? []).filter(e => e.world === "live");
   const open = live.filter(e => e.status === "open");
   const bad = open.filter(e => e.tone === "bad" || e.tone === "mixed").length;
@@ -143,17 +148,17 @@ export function EventsPage() {
           <span className="small muted">Updated {loadedAt ? ago(loadedAt.toISOString(), now) : ""}</span>
           <button className="btn" type="button" onClick={refresh}><Icon name="refresh" />Refresh</button>
           {sim && ((events ?? []).some(e => e.world === "sandbox") || runs.some(r => r.world === "sandbox")) ? <ClearSandbox onDone={load} /> : null}
-          {status && status.findings_waiting > 0 && status.connected ? <InvestigateNowButton onDone={refresh} /> : null}
+          {toReview > 0 && <Link className="btn btn--primary" to="/alerts"><Icon name="alert" />Review {count(toReview, "alert")}</Link>}
         </>}
         help={<HowItWorks><p>An event is something that happened in the world, traced to the products it could hit. It stays open while news about it keeps coming, then closes.</p></HowItWorks>} />
       <div className="banners">
-        {err && <Banner kind="crit" icon="warn">{err}</Banner>}
+        {err != null && <LoadError error={err} onRetry={refresh} what="the events" />}
         {admin && status?.notes.map(n => <Banner key={n} kind={status.connected ? "info" : "warn"} icon="info">{n}</Banner>)}
         {!admin && status && !status.connected && <Banner kind="warn" icon="warn">New findings can't be investigated right now. Your Platform Admin has been told.</Banner>}
         {status && status.findings_waiting > 0 && (
-          <Banner kind="info" icon="info">
+          <Banner kind="info" icon="info" action={status.connected ? <InvestigateNowButton onDone={refresh} small /> : undefined}>
             <b>{plural(status.findings_waiting, "finding")} waiting</b> to be investigated
-            {status.next_batch_at && status.connected ? <>, {new Date(status.next_batch_at) <= now ? "very soon" : `in ${until(status.next_batch_at, now)}`}. Investigate now skips the wait.</> : "."}
+            {status.next_batch_at && status.connected ? <>, {new Date(status.next_batch_at) <= now ? "very soon" : `in ${until(status.next_batch_at, now)}`}.</> : "."}
           </Banner>
         )}
       </div>
@@ -164,8 +169,8 @@ export function EventsPage() {
         { value: noEvent.length, label: "No impact found", sub: `last ${DAYS} days`, tone: "grey", icon: "check" },
       ]} />}
       <div className="filters">
-        <span className="seg" role="group" aria-label="Which events">{(["open", "closed", "all"] as const).map(x => (
-          <button key={x} type="button" aria-pressed={show === x} onClick={() => setShow(x)}>{x[0].toUpperCase() + x.slice(1)}</button>))}</span>
+        <FlowFilter label="Which events" value={show} onChange={setShow} all={{ key: "all", label: "All", count: shown.length }}
+          steps={[{ key: "open", label: "Open", count: shown.filter(e => e.status === "open").length }, { key: "closed", label: "Closed", count: shown.filter(e => e.status === "closed").length }]} />
         <label className="sortby small">Sort <select className="input" value={sort} onChange={e => setSort(e.target.value as Sort)}>
           <option value="newest">Newest first</option><option value="impacts">Most possible impacts</option></select></label>
         {nSim > 0 && <label className="check small"><input type="checkbox" checked={sim} onChange={e => setSim(e.target.checked)} /> Also show {plural(nSim, "simulated event")} (from tests; not real)</label>}
@@ -173,18 +178,18 @@ export function EventsPage() {
         {(inProgress.length > 0 || noEvent.length > 0) && <Link className="small" to="/findings">See all findings</Link>}
       </div>
       <div className="card mt12">
-        {events === null ? <InlineSkeleton /> : !rows.length ? (
+        {events === null ? (err == null && <InlineSkeleton />) : !rows.length ? (
           <Empty icon="events" title={show === "open" ? "No open events" : "No events here"} actions={<Link className="btn" to="/studio"><Icon name="studio" />Try a what-if in the Scenario Studio</Link>}>
             When Amiri Agent traces news or a price move to your products, the event appears here.</Empty>
         ) : (
           <ul className="evlist" aria-label="Events">{rows.map(e => {
-            const f = lead.get(e.event_id), si = f ? sourceInfo(f.source) : null;
+            const f0 = byId.get(e.finding_ids[0]), f = f0?.outcome?.event_id === e.event_id ? f0 : undefined, si = f ? sourceInfo(f.source) : null;
             return (
               <li key={e.event_id}>
                 <Link className="evrow" to={`/events/${e.event_id}`}>
                   <span className={`evrow-ico tone-${e.tone}`}><Icon name="events" /></span>
                   <span className="evrow-main">
-                    <span className="row-top"><b className="row-l">{e.title}</b><TonePill tone={e.tone} />
+                    <span className="row-top"><b className="row-l">{eventTitle(e)}</b><TonePill tone={e.tone} />
                       {e.world !== "live" && <span className="pill t-blue">Simulated</span>}
                       {e.status === "closed" && <span className="pill t-grey">Closed</span>}</span>
                     {f && <span className="evrow-src">{si && <Icon name={si.icon} />}<span>{f.title}</span></span>}

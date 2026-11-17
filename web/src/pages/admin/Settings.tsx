@@ -3,16 +3,19 @@ import { useEffect, useState } from "react";
 import type { Installation } from "../../App";
 import { api } from "../../api/client";
 import { Icon } from "../../components/Icon";
-import { Banner, PageHead, ResetModal } from "../../components/ui";
+import { Banner, LoadError, PageHead, ResetModal } from "../../components/ui";
 
 export function SettingsPage() {
   const [inst, setInst] = useState<Installation | null>(null);
-  useEffect(() => { api<Installation>("/api/v1/installation").then(setInst).catch(() => setInst(null)); }, []);
+  const [err, setErr] = useState<unknown>(null);
+  const load = () => api<Installation>("/api/v1/installation").then(x => { setInst(x); setErr(null); }).catch(setErr);
+  useEffect(() => { load(); }, []);
   const [resetting, setResetting] = useState(false);
   const allowed = inst ? inst.prototype_reset !== false : null;  // null: still loading
   return (
     <div className="page">
       <PageHead title="Settings" sub="What a Platform Admin controls for this installation." />
+      {err != null && <LoadError error={err} onRetry={load} what="the settings" />}
       <div className="card">
         <div className="hd"><h2>Start again</h2></div>
         <div className="bd col gap12">

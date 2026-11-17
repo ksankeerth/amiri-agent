@@ -1,6 +1,6 @@
 // Plain words for what the API returns in codes: themes, product types and angles, check results, alert levels,
 // monitor and series states, set-aside reasons, sizes and dates. Pure functions, so `npm test` runs them without a browser.
-import { day, TIME_ZONE } from "./format.ts";
+import { day, moveSize, TIME_ZONE } from "./format.ts";
 
 /** The five colours of a status pill, the same meaning everywhere. */
 export type Tone = "red" | "amber" | "green" | "grey" | "blue";
@@ -49,6 +49,19 @@ export function themeLabel(t: ThemeTag): string {
     case "disaster": return `${t.item ? ITEM[t.item] ?? cap(words(t.item)) : "Disaster"} ${d === "domestic" ? "at home" : d === "abroad" ? "abroad" : words(d)}`;
     default: return OTHER[t.theme]?.[d] ?? cap(`${words(t.theme)} ${words(d)}`);
   }
+}
+
+/** An event's title a person can read at a glance. The investigation names some events with a generic phrase ("Oil rose",
+ *  "remittance (up) (5.6%)"): those become the first theme in words plus the size ("Oil prices up 9%", "Remittances up 5.6%").
+ *  A real headline-like title stays as it is. */
+export function eventTitle(e: { title: string; themes?: ThemeTag[] | null; size?: { value: number; unit: string } | null }): string {
+  const m = e.title.trim().match(/^(.*?)\s*\((\d+(?:\.\d+)?)\s*(%|bp)\)$/);  // the size the server put at the end
+  const base = m ? m[1] : e.title.trim();
+  const raw = /^[a-z_]+ \([\w ]+\)$/.test(base) || base.split(/\s+/).length <= 2;
+  const t = e.themes?.[0];
+  if (!raw || !t) return e.title;
+  const size = m ? `${m[2]}${m[3] === "%" ? "%" : " bp"}` : moveSize(e.size);
+  return size ? `${themeLabel(t)} ${size}` : themeLabel(t);
 }
 
 // ---------------------------------------------------------------- products
@@ -143,6 +156,13 @@ export function verdictWhy(why: string | null | undefined): string {
 export type LevelKey = "warning" | "developing" | "adverse";
 export const LEVEL_LABEL: Record<LevelKey, string> = { warning: "Early warning", developing: "Showing early signs", adverse: "Confirmed by your data" };
 export const LEVEL_TONE: Record<LevelKey, Tone> = { warning: "amber", developing: "amber", adverse: "red" };
+const LEVEL_RANK: Record<string, number> = { adverse: 0, developing: 1, warning: 2 };
+const STATUS_RANK: Record<string, number> = { new: 0, acknowledged: 1, resolved: 2 };
+/** The order of an alert queue: still open before resolved, then the most serious level, then the latest. */
+export function alertOrder(a: { level: string; status: string; at: string }, b: { level: string; status: string; at: string }): number {
+  return (STATUS_RANK[a.status] === 2 ? 1 : 0) - (STATUS_RANK[b.status] === 2 ? 1 : 0)
+    || (LEVEL_RANK[a.level] ?? 3) - (LEVEL_RANK[b.level] ?? 3) || (a.at < b.at ? 1 : a.at > b.at ? -1 : 0);
+}
 export const ALERT_STATUS: Record<string, [string, Tone]> = {
   new: ["Waiting for review", "red"], acknowledged: ["Acknowledged", "blue"], resolved: ["Resolved", "green"],
 };
@@ -185,6 +205,12 @@ export const SET_ASIDE_REASON: Record<string, string> = {
   merged_into_event: "joined another event",
   investigation_failed: "the investigation didn't finish",
 };
+/** How strong a source's signal was, in words (the score is 0–100; a 0–1 score is read as a fraction). */
+export function signalStrength(score: number | null | undefined): [string, Tone] | null {
+  if (score === null || score === undefined || !Number.isFinite(score)) return null;
+  const s = score <= 1 ? score * 100 : score;
+  return s >= 70 ? ["Strong signal", "blue"] : s >= 40 ? ["Moderate signal", "grey"] : ["Weak signal", "grey"];
+}
 export const setAsideReason = (reason?: string | null) => (reason ? SET_ASIDE_REASON[reason] ?? words(reason) : "");
 /** Why an angle was considered and dropped for an event, in a few words. */
 export const SCREENING: Record<string, string> = { rejected: "No clear link", cut_by_cap: "Less likely than the others" };

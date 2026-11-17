@@ -2,6 +2,8 @@ import { createPortal } from "react-dom";
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Icon } from "./Icon";
 import { PageHeader } from "./blocks";
+import { ApiError } from "../api/client";
+import "../styles/fixe.css";
 
 /** Set by a page that has the setup agent beside it: PageHead puts the show/hide button with the page's buttons. */
 export const ChatToggleCtx = createContext<{ open: boolean; toggle: () => void } | null>(null);
@@ -16,6 +18,32 @@ export function PageHead({ title, sub, actions, crumbs }: { title: ReactNode; su
 
 export function Banner({ kind, icon = "info", children, action }: { kind: "info" | "warn" | "crit"; icon?: string; children: ReactNode; action?: ReactNode }) {
   return <div className={`banner ${kind}`}><Icon name={icon} /><div>{children}</div>{action && <div className="act">{action}</div>}</div>;
+}
+
+/** The server didn't answer (no connection, or a 5xx): not the user's fault, and not "no profile yet". */
+export const isDown = (e: unknown) => e instanceof ApiError && (e.code === "network" || e.status >= 500);
+export const errText = (e: unknown) => (e instanceof ApiError ? e.full : String(e));
+
+/** A load that failed: what happened, in plain words, and one way out. The one error block every page uses, instead of
+ *  a bare banner over a blank page or an endless skeleton. */
+export function LoadError({ error, onRetry, what = "this page" }: { error: unknown; onRetry: () => unknown; what?: string }) {
+  const [busy, setBusy] = useState(false);
+  const down = isDown(error);
+  const retry = async () => {
+    setBusy(true);
+    if (down) window.dispatchEvent(new Event("amiri:installation"));  // the app bar's institution comes back too
+    try { await onRetry(); } finally { setBusy(false); }
+  };
+  return (
+    <div className="card loaderr" role="alert"><div className="bd">
+      <Icon name="warn" />
+      <div className="col" style={{ gap: 4, flex: 1, minWidth: 0 }}>
+        <h2>{down ? "Amiri Agent didn't answer" : `Couldn't load ${what}`}</h2>
+        <p>{down ? "It may be starting up after a quiet spell, or the connection dropped. Nothing you saved is lost." : errText(error)}</p>
+      </div>
+      <button className="btn btn--primary" type="button" disabled={busy} onClick={retry}><Icon name="refresh" />{busy ? "Trying…" : "Try again"}</button>
+    </div></div>
+  );
 }
 
 /** A button that opens a short list of actions; closes on Escape, a click outside, or a choice. */
@@ -73,6 +101,15 @@ export function ResetModal({ onClose }: { onClose: () => void }) {
       {err && <div className="errtext">{err}</div>}
     </Modal>
   );
+}
+
+/** Status as a glyph and words, never colour alone: done ✓, partial ◐, required-and-open !, open ○. The words go to
+ *  screen readers (pass `label` to override), and the glyph's shape tells the states apart in greyscale. */
+export type Status = "done" | "partial" | "required" | "open";
+const STATUS: Record<Status, [icon: string, words: string]> = { done: ["good", "Done"], partial: ["half", "In progress"], required: ["bad", "Required, not done"], open: ["todo", "Open"] };
+export function StatusIcon({ status, label }: { status: Status; label?: string }) {
+  const [icon, words] = STATUS[status];
+  return <span className={`stat stat-${status}`} role="img" aria-label={label ?? words} title={label ?? words}><Icon name={icon} /></span>;
 }
 
 /** Placeholders shaped like what is loading, so the page doesn't jump and nothing says "Loading…". */

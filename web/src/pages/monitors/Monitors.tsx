@@ -6,7 +6,7 @@ import { ApiError } from "../../api/client";
 import { EVERY, monitorsApi, type Draftable, type MonitorRow, type MonitorsStatus, type MonitorStatus } from "../../api/monitors";
 import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
 import { Icon } from "../../components/Icon";
-import { Banner, Empty, Modal, useNow, useRole, useToast, InlineSkeleton } from "../../components/ui";
+import { Banner, Empty, Modal, useNow, useRole, useToast, InlineSkeleton, LoadError } from "../../components/ui";
 import { ago, due, when } from "../../format";
 import { count, everyText, MONITOR_CHECK, MONITOR_STATUS } from "../../plain";
 
@@ -98,8 +98,9 @@ export function DraftFromProfile({ onClose, only }: { onClose: () => void; only?
   const toast = useToast();
   const [items, setItems] = useState<Draftable[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [loadErr, setLoadErr] = useState<string | null>(null);
-  useEffect(() => { monitorsApi.draftable().then(setItems).catch(e => { setLoadErr(e instanceof ApiError ? e.full : String(e)); setItems([]); }); }, []);
+  const [loadErr, setLoadErr] = useState<unknown>(null);
+  const loadItems = () => monitorsApi.draftable().then(x => { setItems(x); setLoadErr(null); }).catch(setLoadErr);
+  useEffect(() => { loadItems(); }, []);
   const draft = async (d: { section: string; item_id: string }) => {
     setBusy(d.item_id);
     try { const m = await monitorsApi.draft(d.section, d.item_id); onClose(); nav(`/monitors/${m.monitor_id}`); }
@@ -111,7 +112,7 @@ export function DraftFromProfile({ onClose, only }: { onClose: () => void; only?
   return (
     <Modal title="Draft a monitor from the profile" onClose={onClose} wide>
       <p className="small muted">Pick something from your institution profile. Code drafts the name, the sentence, the "tell me if" lines, the chips, the places and the exposure from it; you check and edit them before submitting. Nothing runs until someone approves it.</p>
-      {loadErr ? <div className="errtext">{loadErr}</div> : items === null ? <div className="muted small">Loading…</div> : !groups.length ? <div className="muted small">The profile has no risks, regulators, rivals, flows or counterparties yet.</div> : groups.map(([s, xs]) => (
+      {loadErr != null ? <LoadError error={loadErr} onRetry={loadItems} what="what can be drafted" /> : items === null ? <div className="muted small">Loading…</div> : !groups.length ? <div className="muted small">The profile has no risks, regulators, rivals, flows or counterparties yet.</div> : groups.map(([s, xs]) => (
         <div key={s} className="col" style={{ gap: 6 }}>
           <span className="label">{SECTION_WORDS[s]}</span>
           <div className="row wrap" style={{ gap: 6 }}>{xs.map(i => (
@@ -124,18 +125,20 @@ export function DraftFromProfile({ onClose, only }: { onClose: () => void; only?
 
 export function MonitorsPage() {
   const now = useNow(30_000);
+  const { role } = useRole();
   const { status, reload: reloadStatus } = useMonitorsStatus();
   const [items, setItems] = useState<MonitorRow[] | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  const [err, setErr] = useState<unknown>(null);
   const [drafting, setDrafting] = useState(false);
   const load = useCallback(async () => {
     try { setItems(await monitorsApi.list()); setErr(null); reloadStatus(); }
-    catch (e) { setErr(e instanceof ApiError ? e.full : String(e)); }
+    catch (e) { setErr(e); }
   }, [reloadStatus]);
   useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t); }, [load]);
   const actions = <>
     <button className="btn" type="button" onClick={() => setDrafting(true)}><Icon name="bank" />Draft from the profile</button>
     <Link className="btn btn--primary" to="/monitors/new"><Icon name="plus" />New monitor</Link></>;
+  const empty = items !== null && !items.length;
   const live = (items ?? []).filter(m => m.status === "live").length;
   const waiting = (items ?? []).filter(m => m.status === "submitted" || m.pending?.status === "submitted").length;
   return (
@@ -143,12 +146,15 @@ export function MonitorsPage() {
       <PageHeader title="Monitors"
         status={items === null ? "" : <><b className="ink">{count(live, "live monitor")}</b>
           {status?.next_check_at ? `, next check ${due(status.next_check_at)}` : ""}{waiting ? ` · ${waiting} waiting for approval` : ""}</>}
-        actions={actions} help={<MonitorHelp status={status} />} />
-      <div className="banners">{err && <Banner kind="crit" icon="warn">{err}</Banner>}<MonitorBanners status={status} /></div>
+        actions={empty ? undefined : actions} help={<MonitorHelp status={status} />} />
+      {/* with no monitors yet, "can't check the news" changes nothing for a Risk Manager: the empty state says it calmly */}
+      {err != null && <LoadError error={err} onRetry={load} what="the monitors" />}
+      <div className="banners">{(!empty || role === "platform_admin") && <MonitorBanners status={status} />}</div>
       <div className="card">
-        {items === null ? <InlineSkeleton /> : !items.length ? (
+        {items === null ? (err == null && <InlineSkeleton />) : !items.length ? (
           <Empty icon="monitor" title="No monitors yet" actions={actions}>
             Monitors watch the news for what you care about: a rival's prices, a regulator's rules, jobs in a remittance corridor.
+            {status && !status.connected && <span className="small" style={{ display: "block", marginTop: 8 }}>News checks are paused right now; a monitor you add starts once they are back.</span>}
           </Empty>
         ) : (
           <ul className="evlist" aria-label="Monitors">{items.map(m => (
