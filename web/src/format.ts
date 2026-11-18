@@ -69,6 +69,10 @@ const PLACES: Record<string, string> = {
   "chk:suez": "Suez Canal", "chk:panama": "Panama Canal", "chk:bosporus": "Bosporus", "chk:gibraltar": "Strait of Gibraltar",
   "chk:taiwan": "Taiwan Strait", "chk:cape-of-good-hope": "Cape of Good Hope",
   "IN-TN": "Tamil Nadu", "IN-KL": "Kerala", "IN-MH": "Maharashtra", "IN-KA": "Karnataka", "IN-DL": "Delhi",
+  // the US pack's places (server/app/reference/gazetteer.json)
+  "US-TX": "Texas", "US-AZ": "Arizona", "US-UT": "Utah", "US-NV": "Nevada",
+  "city:dallas": "Dallas", "city:houston": "Houston", "city:fort-worth": "Fort Worth", "city:austin": "Austin",
+  "city:san-antonio": "San Antonio", "city:midland": "Midland",
 };
 const titleWords = (s: string) => s.replace(/[-_]+/g, " ").replace(/\b([a-z])/g, (_, c: string) => c.toUpperCase()).replace(/\b(Of|The|And|El)\b/g, w => w.toLowerCase());
 export function placeName(code: string): string {
