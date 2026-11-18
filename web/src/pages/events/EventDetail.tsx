@@ -11,7 +11,7 @@ import { Markdown } from "../../components/markdown";
 import { Empty, LoadError, PageSkeleton } from "../../components/ui";
 import "../../styles/daily.css";
 import "../../styles/polish-daily.css";
-import { dayTime } from "../../format";
+import { dayTime, person } from "../../format";
 import {
   angleLabel, ALERT_STATUS, checkMove, count, dateRange, earliest, eventTitle, impactText, LEVEL_LABEL, LEVEL_TONE, listText, longWhen, metricWords, onDay,
   productTypeLabel, relDay, SCREENING, sizeTiming, sourceInfo, splitCheckText, themeLabel, verdictWhy, type VerdictKey,
@@ -147,7 +147,7 @@ export function EventDetailPage() {
                 const [st] = ALERT_STATUS[a.status];
                 return <Row key={a.alert_id} to="/alerts" marker={<StatusPill tone={LEVEL_TONE[a.level]}>{LEVEL_LABEL[a.level]}</StatusPill>}
                   label={a.owner} detail={listText([...new Set(a.effects.map(x => x.product))])}
-                  meta={a.status === "acknowledged" && a.acknowledged_by ? `Taken on by ${a.acknowledged_by}` : st} />;
+                  meta={a.status === "acknowledged" && a.acknowledged_by ? `Taken on by ${person(a.acknowledged_by)}` : st} />;
               })}
             </Section>
           )}

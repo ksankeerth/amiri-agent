@@ -11,7 +11,7 @@ import { CheckPill } from "../components/checks";
 import { ChipFilter, FlowFilter } from "../components/FlowFilter";
 import { Icon } from "../components/Icon";
 import { Empty, ListSkeleton, LoadError, useNow, useToast } from "../components/ui";
-import { ago, dayTime } from "../format";
+import { ago, dayTime, person } from "../format";
 import {
   ACTION_MEANS, alertOrder, ALERT_STATUS, checkMove, count, earliest, eventTitle, impactText, LEVEL_LABEL, LEVEL_TONE, listText, longWhen, onDay, relDay, sizeTiming,
   sourceInfo, type VerdictKey,
@@ -75,8 +75,8 @@ function AlertCard({ a, next, ev, primary, onChange }: {
         {a.effects.length > 1 && <li><Icon name="bad" /><span>{bad === a.effects.length ? `${count(a.effects.length, "impact")}, all bad for you` : `${bad} of ${a.effects.length} impacts bad for you`}</span></li>}
         {next && <li><Icon name="calendar" /><span>{checks.some(c => c.verdict !== "not_yet") ? "Next check" : "First check"} <b>{onDay(next)}</b> <span className="muted">({relDay(next)})</span></span></li>}
       </ul>
-      {a.status === "acknowledged" && <div className="alc-note"><Icon name="check" /><span><b>{a.acknowledged_by}</b> is on it{a.acknowledged_at ? `, ${ago(a.acknowledged_at, now)}` : ""}{a.ack_note ? `: “${a.ack_note}”` : ""}</span></div>}
-      {a.status === "resolved" && <div className="alc-note"><Icon name="check" /><span>Resolved by <b>{a.resolved_by}</b>{a.resolved_at ? `, ${ago(a.resolved_at, now)}` : ""}{a.resolved_note ? `: “${a.resolved_note}”` : ""}</span></div>}
+      {a.status === "acknowledged" && <div className="alc-note"><Icon name="check" /><span><b>{person(a.acknowledged_by)}</b> is on it{a.acknowledged_at ? `, ${ago(a.acknowledged_at, now)}` : ""}{a.ack_note ? `: “${a.ack_note}”` : ""}</span></div>}
+      {a.status === "resolved" && <div className="alc-note"><Icon name="check" /><span>Resolved by <b>{person(a.resolved_by)}</b>{a.resolved_at ? `, ${ago(a.resolved_at, now)}` : ""}{a.resolved_note ? `: “${a.resolved_note}”` : ""}</span></div>}
       {asking ? (
         <div className="dl-alc-act">
           <input className="input" autoFocus aria-label={asking === "ack" ? "A note for your team (optional)" : "Why it's resolved (optional)"}
@@ -107,7 +107,7 @@ function AlertCard({ a, next, ev, primary, onChange }: {
             </div></details>
           <details className="tech dl-hist"><summary>History ({a.history.length})</summary>
             <div className="tech-bd"><ol className="alc-hist">{[...a.history].reverse().map((h, i) => (
-              <li key={i}><b>{CHANGE[h.change] ?? h.change}</b><span>{dayTime(h.at)}{h.by && h.by !== "Amiri Agent" ? ` · ${h.by}` : ""}</span></li>))}</ol></div></details>
+              <li key={i}><b>{CHANGE[h.change] ?? h.change}</b><span>{dayTime(h.at)}{h.by && h.by !== "Amiri Agent" ? ` · ${person(h.by)}` : ""}</span></li>))}</ol></div></details>
           <span className="spacer" />
           <Link className="dl-ev" to={`/events/${a.event_id}`}><span className="muted">From the event</span> <b>{title}</b>{a.event_status === "closed" && <span className="muted"> (closed)</span>}<Icon name="arrow" /></Link>
         </div>

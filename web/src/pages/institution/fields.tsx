@@ -171,7 +171,7 @@ export function TimeZoneInput({ value, onChange }: { value: string; onChange: (v
   const tz = useLoad(() => ref.timeZones());
   return (
     <>
-      <input className="input" list="amiri-tz" value={value} placeholder="e.g. Asia/Colombo" onChange={e => onChange(e.target.value)} />
+      <input className="input" list="amiri-tz" value={value} placeholder="e.g. Europe/London" onChange={e => onChange(e.target.value)} />
       <datalist id="amiri-tz">{(tz ?? []).map(z => <option key={z} value={z} />)}</datalist>
     </>
   );

@@ -9,7 +9,7 @@ import { ChipFilter } from "../../components/FlowFilter";
 import { Icon } from "../../components/Icon";
 import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
 import { Banner, Empty, useNow, useRole, useToast, ListSkeleton, LoadError } from "../../components/ui";
-import { ago, dayTime, placeName, placeOrder, when } from "../../format";
+import { ago, dayTime, person, placeName, placeOrder, when } from "../../format";
 import type { Tone } from "../../plain";
 import { themeText } from "../events/Events";
 import "../../styles/showcase.css";
@@ -62,9 +62,9 @@ function StoryCard({ s, names, onChange }: { s: RadarStory; names: Record<string
         {s.status === "sent" ? (s.event_id
           ? <><StatusPill tone="green">In an event</StatusPill><Link className="small" to={`/events/${s.event_id}`}>{s.event_title ?? "Open the event"}</Link></>
           : <><StatusPill tone="blue">{s.finding_status === "grouped" ? "Being investigated" : "Sent"}</StatusPill><span className="small muted">waiting to be investigated</span></>)
-          : s.status === "dismissed" ? <><StatusPill tone="grey">Dismissed</StatusPill><span className="small muted">by {s.dismissed_by} {s.dismissed_at ? ago(s.dismissed_at, now) : ""}</span></>
+          : s.status === "dismissed" ? <><StatusPill tone="grey">Dismissed</StatusPill><span className="small muted">by {person(s.dismissed_by)} {s.dismissed_at ? ago(s.dismissed_at, now) : ""}</span></>
           : <><StatusPill tone="grey">Not sent</StatusPill><span className="small muted">Radar judged it not important enough for you</span></>}
-        {s.status === "sent" && s.sent_by && s.sent_by !== "agent" && <span className="small muted">sent by {s.sent_by}</span>}
+        {s.status === "sent" && s.sent_by && s.sent_by !== "agent" && <span className="small muted">sent by {person(s.sent_by)}</span>}
         {s.development_of && <span className="small muted">continues an earlier story</span>}
         <span className="spacer" />
         {s.monitor_hint && <span className="small muted">Your monitor <Link to={`/monitors/${s.monitor_hint.monitor_id}`}>{s.monitor_hint.name}</Link> covers these places.</span>}

@@ -82,6 +82,14 @@ export function placeName(code: string): string {
   if (sub) return `${placeName(sub[1])} (${sub[2]})`;
   return titleWords(code.replace(/^[a-z]+:/, ""));
 }
+/** Who did something, as a person reads it: a name, never an email address. Actors are free text; older
+ *  records hold an email ("dilan@serendib.lk" → "Dilan", "assistant for dilan@serendib.lk" → "assistant for Dilan"). */
+export function person(actor: string | null | undefined): string {
+  return (actor ?? "").replace(/([A-Za-z0-9._%+-]+)@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+/g, (_, local: string) => {
+    const name = local.split(/[._+-]/)[0] || local;
+    return name[0].toUpperCase() + name.slice(1);
+  });
+}
 /** Seas, straits and regions before countries: they say more about where something happened. */
 export const placeOrder = (codes: string[]) => [...codes].sort((a, b) => Number(/^[A-Z]{2}$/.test(a)) - Number(/^[A-Z]{2}$/.test(b)));
 

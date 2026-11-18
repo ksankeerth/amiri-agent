@@ -1,7 +1,7 @@
 // Run with `npm test` (Node runs the TypeScript directly).
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { clockText, moveSize, placeName, zx } from "./format.ts";
+import { clockText, moveSize, person, placeName, zx } from "./format.ts";
 
 test("a move vs typical is rounded down, so one under the threshold never reads as it", () => {
   assert.equal(zx(-2.998), "2.9×");
@@ -33,4 +33,14 @@ test("the US pack's places read by name, and the others as before", () => {
   assert.equal(placeName("IN-KL"), "Kerala");
   assert.equal(placeName("chk:hormuz"), "Strait of Hormuz");
   assert.equal(placeName("sea:java-sea"), "Java Sea");
+});
+
+test("an actor reads as a name, never an email address", () => {
+  assert.equal(person("John"), "John");
+  assert.equal(person("dilan@serendib.lk"), "Dilan");
+  assert.equal(person("nadeesha.perera@serendib.lk"), "Nadeesha");
+  assert.equal(person("assistant for dilan@serendib.lk"), "assistant for Dilan");
+  assert.equal(person("Amiri Agent"), "Amiri Agent");
+  assert.equal(person(null), "");
+  assert.doesNotMatch(person("x.y@bank.example.com and a@b.io"), /@/);
 });

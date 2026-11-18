@@ -11,7 +11,7 @@ import { monitorsOf } from "../../components/fillJson";
 import { FactList, PageHeader, Places, Row, Section, SourceCard, StatusPill, TechnicalDetails } from "../../components/blocks";
 import { Icon } from "../../components/Icon";
 import { Banner, useNow, useToast, PageSkeleton, LoadError } from "../../components/ui";
-import { ago, dayTime, plainError, when } from "../../format";
+import { ago, dayTime, person, plainError, when } from "../../format";
 import { eventTitle, everyText, longWhen, MONITOR_CHECK, setAsideReason } from "../../plain";
 import type { Installation } from "../../App";
 import { ChipsInput, Field, PlacesField } from "../institution/fields";
@@ -19,7 +19,8 @@ import { FLOW_WORDS } from "../../components/setupFlow";
 import { DraftFromProfile, LastCheck, MonitorActions, MonitorBanners, MonitorHelp, StatusBadge, useMonitorsStatus } from "./Monitors";
 
 const CHIP_TYPES: ChipType[] = ["organisation", "place", "region", "person", "sector", "regulation", "topic"];
-const OWNERS = ["Risk management", "Treasury", "Retail banking", "Retail credit", "Business credit", "Pawning", "Cards", "Underwriting", "Claims"];
+const OWNERS = ["Risk management", "Treasury", "Retail banking", "Retail credit", "Business credit", "Pawning", "Cards", "Underwriting", "Claims",
+  "Commercial banking", "Energy lending"];
 
 function blank(): MonitorSpec {
   return {
@@ -80,11 +81,11 @@ function WatchField({ value, onChange }: { value: MonitorSpec["public"]["watch"]
           {w.name} <span className="muted">{w.type}</span>{w.other_forms?.length ? <span className="muted">+{w.other_forms.length}</span> : null}
           <button type="button" aria-label={`Remove ${w.name}`} onClick={() => onChange(value.filter((_, j) => j !== i))}>×</button></span>))}</div>}
       {value.length < 12 && <div className="row wrap" style={{ gap: 6 }}>
-        <input className="input" aria-label="A name to watch" style={{ flex: "1 1 220px", minWidth: 180, width: "auto" }} placeholder="A name: Saudi Arabia, Coastal Remit, migrant workers…" value={name} onChange={e => setName(e.target.value)}
+        <input className="input" aria-label="A name to watch" style={{ flex: "1 1 220px", minWidth: 180, width: "auto" }} placeholder="A name: a country, a rival, a group of customers…" value={name} onChange={e => setName(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
         <select className="input" aria-label="What kind of name" style={{ width: 140 }} value={type} onChange={e => setType(e.target.value as ChipType)}>
           {CHIP_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select>
-        <input className="input" style={{ flex: "1 1 160px", minWidth: 140, width: "auto" }} aria-label="Other forms of the name, separated by commas" placeholder="Also: KSA, UAE" value={forms} onChange={e => setForms(e.target.value)}
+        <input className="input" style={{ flex: "1 1 160px", minWidth: 140, width: "auto" }} aria-label="Other forms of the name, separated by commas" placeholder="Also: short forms, other spellings" value={forms} onChange={e => setForms(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
         <button className="btn btn--sm" type="button" onClick={add} disabled={!name.trim()}><Icon name="plus" />Add</button>
       </div>}
@@ -186,18 +187,18 @@ function MonitorForm({ m, profile, status, onSaved, onCancel }: { m: Monitor | n
         {err.general.length > 0 && <Banner kind="crit" icon="warn">{err.general.join(" ")}</Banner>}
         {Object.keys(E).length > 0 && <Banner kind="crit" icon="warn">Some fields need attention: see below.</Banner>}
         <Field label="Name" error={E["about.name"]}>
-          <input className={`input ${E["about.name"] ? "err" : ""}`} value={s.about.name} placeholder="e.g. Gulf jobs and security" onChange={e => up(x => { x.about.name = e.target.value; })} />
+          <input className={`input ${E["about.name"] ? "err" : ""}`} value={s.about.name} placeholder="e.g. Jobs at our borrowers' main employers" onChange={e => up(x => { x.about.name = e.target.value; })} />
         </Field>
         <div className="field"><span>In one sentence, what should Amiri Agent watch for?<Drafted on={drafted.has("public.in_one_sentence")} /></span>
           <textarea className={`input ${E["public.in_one_sentence"] ? "err" : ""}`} value={s.public.in_one_sentence}
-            placeholder="Events in the Gulf that could cut jobs or pay for our migrant-worker customers." onChange={e => up(x => { x.public.in_one_sentence = e.target.value; })} />
+            placeholder="Events that could cut jobs or pay for the customers of one of our products." onChange={e => up(x => { x.public.in_one_sentence = e.target.value; })} />
           {E["public.in_one_sentence"] ? <span className="errtext">{E["public.in_one_sentence"]}</span> : <span className="hint">Specific beats broad: name the places, people or markets.</span>}</div>
         <div className="field"><span>Watch<Drafted on={drafted.has("public.watch")} /></span>
           <WatchField value={s.public.watch} onChange={v => up(x => { x.public.watch = v; })} />
-          {E["public.watch"] ? <span className="errtext">{E["public.watch"]}</span> : <span className="hint">The names the news would use. Other forms catch abbreviations (KSA, UAE) and local spellings.</span>}</div>
+          {E["public.watch"] ? <span className="errtext">{E["public.watch"]}</span> : <span className="hint">The names the news would use. Other forms catch abbreviations and local spellings.</span>}</div>
         <div className="field"><span>Tell me if… (one condition per line)<Drafted on={drafted.has("public.tell_me_if")} /></span>
           <textarea className={`input ${E["public.tell_me_if"] ? "err" : ""}`} rows={4} value={tell} onChange={e => setTell(e.target.value)}
-            placeholder="A Gulf state announces job cuts, visa limits or wage controls for foreign workers" />
+            placeholder="A large employer where we lend announces job cuts or a plant closure" />
           {E["public.tell_me_if"] ? <span className="errtext">{E["public.tell_me_if"]}</span> : <span className="hint">A finding names the lines it meets.</span>}</div>
         <Field label="Ignore (optional, one per line)" error={E["public.ignore"]}>
           <textarea className="input" value={ignore} onChange={e => setIgnore(e.target.value)} placeholder="Routine labour statistics with no change" />
@@ -270,10 +271,10 @@ function Approval({ m, onChange }: { m: Monitor; onChange: () => void }) {
   const latest = m.versions[m.versions.length - 1];
   let text: ReactNode;
   if (m.status === "retired") text = "Retired: it isn't checked any more.";
-  else if (pending?.status === "submitted") text = <>A new version is waiting for approval (sent by {latest.submitted_by}). The current one keeps running until then.</>;
-  else if (m.status === "submitted") text = <>Waiting for approval (sent by {latest.submitted_by}{latest.submitted_at ? `, ${dayTime(latest.submitted_at)}` : ""}). It goes live within minutes of approval.</>;
+  else if (pending?.status === "submitted") text = <>A new version is waiting for approval (sent by {person(latest.submitted_by)}). The current one keeps running until then.</>;
+  else if (m.status === "submitted") text = <>Waiting for approval (sent by {person(latest.submitted_by)}{latest.submitted_at ? `, ${dayTime(latest.submitted_at)}` : ""}). It goes live within minutes of approval.</>;
   else if (pending) text = "You have unsaved changes in a new version. Submit them when ready; the current version keeps running.";
-  else if (m.status === "live") text = <>Live{latest.approved_by ? `, approved by ${latest.approved_by}` : ""}.</>;
+  else if (m.status === "live") text = <>Live{latest.approved_by ? `, approved by ${person(latest.approved_by)}` : ""}.</>;
   else if (m.status === "paused") text = "Paused: it isn't checked until you resume it.";
   else text = "A draft doesn't run on its own. Run a test to see what it would find, then submit it for approval.";
   const sentBack = latest.status === "draft" && latest.note && latest.submitted_at;
@@ -443,7 +444,7 @@ export function MonitorPage() {
           {editMode && <Checks m={m} runs={runs.slice(0, 3)} onRun={runNow} running={!!checking} />}
           <TechnicalDetails summary={`Versions (${m.versions.length})`}>
             <ol className="alc-hist">{[...m.versions].reverse().map(v => (
-              <li key={v.version}><b>Version {v.version}</b><span>{v.status}{v.version === m.live_version ? ", running" : ""} · by {v.created_by} {dayTime(v.created_at)}{v.approved_by ? ` · approved by ${v.approved_by}` : ""}{v.note ? ` · ${v.note}` : ""}</span></li>))}</ol>
+              <li key={v.version}><b>Version {v.version}</b><span>{v.status}{v.version === m.live_version ? ", running" : ""} · by {person(v.created_by)} {dayTime(v.created_at)}{v.approved_by ? ` · approved by ${person(v.approved_by)}` : ""}{v.note ? ` · ${v.note}` : ""}</span></li>))}</ol>
             <span>Monitor <span className="mono">{m.monitor_id}</span></span>
           </TechnicalDetails>
         </div>}

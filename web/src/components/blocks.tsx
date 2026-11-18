@@ -158,7 +158,7 @@ export function SourceCard({ icon, source, title, href, outlet, when, detail, to
 
 const HOW: { icon: string; t: string; d: string }[] = [
   { icon: "eye", t: "Watches", d: "News through your monitors, market prices and Radar." },
-  { icon: "search", t: "Notices", d: "A finding: something worth a closer look, like a strike on Gulf ports." },
+  { icon: "search", t: "Notices", d: "A finding: something worth a closer look, like a strike at a port your trade uses." },
   { icon: "events", t: "Investigates", d: "Links it to an event and works out which of your products it could hit." },
   { icon: "alert", t: "Alerts", d: "Tells the team that owns each product, so someone takes it on." },
   { icon: "data", t: "Checks", d: "Tests each possible impact against your own figures as they're published." },

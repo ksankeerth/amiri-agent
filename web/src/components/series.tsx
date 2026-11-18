@@ -145,7 +145,7 @@ export function AddSeriesModal({ onClose, onAdded, left }: { onClose: () => void
     setErr(null);
   };
   const add = async () => {
-    if (!symbol.trim()) { setErr("Choose a symbol from the search, or type one (e.g. USD/LKR)."); return; }
+    if (!symbol.trim()) { setErr("Choose a symbol from the search, or type one (e.g. EUR/USD)."); return; }
     setBusy(true); setErr(null);
     try {
       const s = await seriesApi.create({ symbol: symbol.trim(), name: name.trim() || undefined, places: parsePlaces(places),
@@ -163,11 +163,11 @@ export function AddSeriesModal({ onClose, onAdded, left }: { onClose: () => void
       <button className="btn btn--primary" type="button" onClick={add} disabled={busy || left <= 0}>
         {busy ? <><Icon name="refresh" className="spin" />Reading history…</> : "Add and read history"}</button></>}>
       <FillFromJson what="a series" read={seriesOf} onFill={c => fillFrom(c.data)}
-        example={'{"symbol": "USD/LKR", "name": "…", "places": ["LK"], "theme": {…}}, or a list of them'} />
+        example={'{"symbol": "EUR/USD", "name": "…", "places": ["DE"], "theme": {…}}, or a list of them'} />
       <p className="small muted">Amiri Agent reads about 2,000 hours of history from Twelve Data now (1 credit), then pulls new prices every hour. A move far outside normal becomes a finding. No model is involved.</p>
       <div className="row" style={{ alignItems: "flex-end" }}>
         <label className="field" style={{ flex: 1 }}><span>Find a symbol</span>
-          <input className="input" value={q} onChange={e => setQ(e.target.value)} placeholder="e.g. LKR, gold, Brent"
+          <input className="input" value={q} onChange={e => setQ(e.target.value)} placeholder="e.g. EUR, gold, Brent"
             onKeyDown={e => e.key === "Enter" && search()} /></label>
         <button className="btn" type="button" onClick={search} disabled={searching || !q.trim()}>
           <Icon name={searching ? "refresh" : "search"} className={searching ? "spin" : undefined} />Search</button>
@@ -182,7 +182,7 @@ export function AddSeriesModal({ onClose, onAdded, left }: { onClose: () => void
           </button>))}</div>
       ) : <div className="note">Nothing found for “{q}”.</div>)}
       <div className="grid2">
-        <label className="field"><span>Symbol</span><input className="input mono" value={symbol} onChange={e => setSymbol(e.target.value)} placeholder="USD/LKR" /></label>
+        <label className="field"><span>Symbol</span><input className="input mono" value={symbol} onChange={e => setSymbol(e.target.value)} placeholder="EUR/USD" /></label>
         <label className="field"><span>Name shown</span><input className="input" value={name} maxLength={60} onChange={e => setName(e.target.value)} placeholder="defaults to the symbol" /></label>
         <label className="field"><span>What a move means</span><select className="input" value={theme} onChange={e => setTheme(e.target.value)}>
           {!COMMODITY[symbol.trim().toUpperCase().split("/")[0]] && <option value={AUTO}>Set from the symbol (FX: the currency that moved; gold, oil, stock indices)</option>}
