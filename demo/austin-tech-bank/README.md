@@ -27,9 +27,27 @@ The deployment needs `SUPPORTED_REGION=us`. The default (`japac`) refuses a US h
 sample bank at a time, so the US bank runs in its own deployment. The platform must be empty (Settings › Reset the
 prototype… › Empty).
 
-To load it: import `institution` and `sections` (Institution › Import a whole profile), activate it, add the
+Load it with [`demo/load_bundle.py`](../load_bundle.py) (Python 3.10+, standard library only), against a running
+server:
+
+```bash
+python3 demo/load_bundle.py --file demo/austin-tech-bank/bundle.json --plan          # what it would do; writes nothing
+python3 demo/load_bundle.py --file demo/austin-tech-bank/bundle.json \
+    --base-url http://localhost:8000 --skip-after-load                                 # load, no model calls
+```
+
+It refuses unless the platform is empty. Then it imports the profile under the installation's own id
+(`INSTITUTION_ID`), activates it, adds the series (a symbol already watched is skipped), writes the monitors, and
+switches the sample bank on. Live monitors are submitted by `--actor` (default John) and approved by
+`--approver` (default the same person; the server allows that, so give a second name, for example
+`--approver Maya`, to record one). Without `--skip-after-load` it also starts one Radar run and checks every live
+monitor once. Those call Gemini, BigQuery and web search, so they cost money. Once the monitors are live, the
+deployment's tick checks them on their own schedule too.
+
+If a step fails, it stops and lists what it wrote; reset the prototype to "empty" and run it again.
+
+By hand instead: import `institution` and `sections` (Institution › Import a whole profile), activate it, add the
 series on Market series, enter the monitors (Monitors › New monitor), and switch the sample bank on (Data
-connections). Leave the after-load actions (a Radar run, one check per monitor) for when you mean to spend on
-Gemini, BigQuery and web search.
+connections).
 
 The US region pack is chosen from the home country. See [Region harnesses](../../README.md#region-harnesses).

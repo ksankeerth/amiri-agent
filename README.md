@@ -264,7 +264,8 @@ context. Another test fails if any migration or API contract changes.
    to it.
 5. Write tests for the pack, and leave the snapshot tests as they are.
 
-**A US bank:** Austin Tech Bank, [`demo/austin-tech-bank/`](demo/austin-tech-bank/), on a deployment with `SUPPORTED_REGION=us`. A
+**A US bank:** Austin Tech Bank, [`demo/austin-tech-bank/`](demo/austin-tech-bank/), on a deployment with `SUPPORTED_REGION=us`,
+loaded with `python3 demo/load_bundle.py --file demo/austin-tech-bank/bundle.json`. A
 deployment holds one sample bank at a time.
 
 ## Measured, not estimated
