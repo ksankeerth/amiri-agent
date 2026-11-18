@@ -36,8 +36,14 @@ def recalled(all_rows: list[dict], req: RadarRunRequest) -> list[dict]:
         t = (r.get("title") or "").lower()
         has = lambda pattern, text: bool(pattern) and bool(re.search(pattern, text))  # noqa: E731
         themes = ";".join(f"{c},0" for c in r["themes"].split(";") if c)
-        r_home = (has(v["home_names"], t) or home_n >= v["home_mentions"]
-                  or (r.get("outlet") or "").lower().endswith(v["home_domain"]))
+        if "home_adm1" in v:  # a region pack's query (queries.SQL_REGION)
+            adm1 = [b.split("#")[3] if len(b.split("#")) > 3 else "" for b in r["locations"].split(";") if b]
+            o = (r.get("outlet") or "").lower()
+            r_home = (has(v["home_names"], t) or sum(x in v["home_adm1"] for x in adm1) >= v["home_mentions"]
+                      or any(o == d or o.endswith("." + d) for d in v["home_outlets"]))
+        else:
+            r_home = (has(v["home_names"], t) or home_n >= v["home_mentions"]
+                      or (r.get("outlet") or "").lower().endswith(v["home_domain"]))
         r_foot = (has(v["foot_names"], t) or (share_n >= 2 and share_n >= v["share"] * len(locs))) and has(v["themes"], themes)
         r_place = has(v["place_names"], t)
         orgs = " ".join(o for o in r["orgs"].split(";") if o).lower()

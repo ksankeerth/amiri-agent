@@ -16,6 +16,8 @@ from pathlib import Path
 
 import pycountry
 
+from app.packs import pack_for
+
 REFERENCE = Path(__file__).parent / "reference"
 
 # ISO 3166-1 alpha-2 -> FIPS 10-4, as GDELT uses them. Same letters where not listed.
@@ -156,6 +158,10 @@ class Places:
     footprint_names: list[str] = field(default_factory=list)    # countries, cities and subdivisions
     named: dict[str, list[str]] = field(default_factory=dict)   # gazetteer code -> its names
     subdivisions: dict[str, list[str]] = field(default_factory=dict)
+    # A region pack that narrows home news to the footprint (app/packs/us.json); without one these stay empty.
+    region: str | None = None
+    home_adm1: list[str] = field(default_factory=list)          # GDELT ADM1 codes of the footprint states (USTX)
+    home_outlets: list[str] = field(default_factory=list)       # the pack's home outlets (domains)
 
     def codes_in_title(self, title: str) -> set[str]:
         """Scope codes whose names the title uses."""
@@ -197,4 +203,31 @@ def places(home: str, scope_places: list[str], why: dict[str, list[str]] | None 
     p.share_fips = list(dict.fromkeys(f for c in p.footprint if why is None or watched_closely(why.get(c, []))
                                       for f in fips(c)))
     p.footprint_names = list(dict.fromkeys([*p.footprint_names, *(n for c in p.footprint for n in country_names(c))]))
+    pack = pack_for(home)
+    if pack and pack.get("home_scope") == "footprint_regions":
+        _home_is_the_footprint(p, pack, scope_places)
     return p
+
+
+def _home_is_the_footprint(p: Places, pack: dict, scope_places: list[str]) -> None:
+    """A region pack's home: the footprint's states and cities, not the whole country. Its names are the
+    states', the pack's aliases for them and the scope's own cities in the home country; the country's
+    names ("united states", "u.s.") are dropped. Its GDELT ADM1 codes are the country's FIPS code and the
+    state's (US-TX -> USTX, as in V2Locations' fourth field)."""
+    regions = list(dict.fromkeys(c.upper() for c in scope_places if c.upper().startswith(p.home + "-")))
+    country = set(country_names(p.home))
+    aliases = [a.lower() for r in regions for a in pack.get("aliases", {}).get(r, [])]
+    cities = [n for code, ns in p.named.items() if gazetteer().get(code, {}).get("country") == p.home for n in ns]
+    p.home_names = list(dict.fromkeys([*(n for n in p.home_names if n not in country), *aliases, *cities]))
+    p.home_adm1 = [fips(p.home)[0] + r.split("-", 1)[1] for r in regions]
+    p.home_outlets = [o.lower() for o in pack.get("outlets", [])]
+    p.region = pack["region"]
+
+
+def is_home_outlet(outlet: str, p: Places) -> bool:
+    """An outlet that writes for the home market: on the home country's domain (ft.lk), or for a region
+    pack one of its outlets (dallasnews.com) or a part of one (www.dallasnews.com)."""
+    o = (outlet or "").lower()
+    if p.region:
+        return any(o == d or o.endswith("." + d) for d in p.home_outlets)
+    return o.endswith(home_domain(p.home))

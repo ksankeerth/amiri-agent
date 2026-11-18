@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from app import settings
-from app.geo import Places, fips_to_iso, home_domain
+from app.geo import Places, fips_to_iso, home_domain, is_home_outlet
 
 STOP = set("a an the of in on at to for and or but with by from as is are was were be been it its this that these "
            "those after before over under amid says said new more than into about up down out off vs via".split())
@@ -95,8 +95,15 @@ def from_row(row: dict, p: Places) -> Article | None:
     a.in_title = bool(named)
     a.places |= named
     share = settings.number("FOOTPRINT_SHARE")
-    a.about = named | {c for c, n in mentions.items() if n >= 2 and n >= share * len(blocks)}
-    if mentions.get(p.home, 0) >= settings.integer("HOME_MENTIONS") or a.outlet.endswith(home_domain(p.home)):
+    # with a region pack (app/packs/us.json) the home country's share of the mentions doesn't make it home news
+    a.about = named | {c for c, n in mentions.items() if n >= 2 and n >= share * len(blocks)
+                       and not (p.region and c == p.home)}
+    if p.region:  # as queries.SQL_REGION: a footprint state HOME_MENTIONS times, or one of the pack's outlets
+        state_n = sum(1 for parts in blocks if len(parts) > 3 and parts[3] in p.home_adm1)
+        if state_n >= settings.integer("HOME_MENTIONS") or is_home_outlet(a.outlet, p):
+            a.about.add(p.home)
+            a.places.add(p.home)
+    elif mentions.get(p.home, 0) >= settings.integer("HOME_MENTIONS") or a.outlet.endswith(home_domain(p.home)):
         a.about.add(p.home)
         a.places.add(p.home)
     a.themes = {t.split(",")[0] for t in (row.get("themes") or "").split(";") if t}

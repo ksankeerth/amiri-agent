@@ -15,6 +15,10 @@ the judge decide what matters. An article is kept when any of these holds:
 - actor: a rival, regulator or counterparty named in the organisations or the title, with a home or
   footprint country in the article.
 
+For an institution whose home country has a region pack (app/packs/us.json), home is narrower: the
+footprint's states and cities in the title, a footprint state HOME_MENTIONS times, or one of the pack's
+outlets (SQL_REGION). Every other country gets SQL as it is.
+
 Every value goes in as a query parameter, never into the SQL text (names come from people's
 profiles). The only table it may read is the partitioned GKG (bq.py refuses anything else).
 """
@@ -25,6 +29,7 @@ from datetime import UTC, date, datetime, timedelta
 from app import settings
 from app.contract import RadarRunRequest
 from app.geo import Places, home_domain, places, title_pattern
+from app.harness import PACK_VERSIONS
 
 TABLE = "gdelt-bq.gdeltv2.gkg_partitioned"
 MAX_DAYS = 2  # a cost guard: a run never reads more than two day partitions
@@ -85,6 +90,28 @@ LIMIT @row_limit
 """
 
 
+
+def _with(sql: str, old: str, new: str) -> str:
+    assert sql.count(old) == 1, old
+    return sql.replace(old, new)
+
+
+# A region pack's query (app/packs/us.json): the same rules, except home. Home news is an article whose title
+# names a footprint state or city (@home_names), whose locations name a footprint state (V2Locations' fourth
+# field, ADM1: USTX) HOME_MENTIONS times or more, or from one of the pack's outlets (or a part of one).
+# Country-level mentions alone don't make it home: for the US they'd fill the row limit with a few hours' news.
+SQL_REGION = _with(_with(
+    SQL,
+    "    (SELECT COUNTIF(x != '') FROM UNNEST(SPLIT(locations, ';')) AS x) AS all_n\n",
+    "    (SELECT COUNTIF(x != '') FROM UNNEST(SPLIT(locations, ';')) AS x) AS all_n,\n"
+    "    (SELECT COUNTIF(SPLIT(x, '#')[SAFE_OFFSET(3)] IN UNNEST(@home_adm1)) FROM UNNEST(SPLIT(locations, ';')) AS x) AS home_adm1_n\n"),
+    "    (@home_names != '' AND REGEXP_CONTAINS(t, @home_names)) OR home_n >= @home_mentions\n"
+    "      OR ENDS_WITH(LOWER(IFNULL(outlet, '')), @home_domain) AS r_home,\n",
+    "    (@home_names != '' AND REGEXP_CONTAINS(t, @home_names)) OR home_adm1_n >= @home_mentions\n"
+    "      OR EXISTS(SELECT 1 FROM UNNEST(@home_outlets) AS d\n"
+    "                WHERE LOWER(IFNULL(outlet, '')) = d OR ENDS_WITH(LOWER(IFNULL(outlet, '')), CONCAT('.', d))) AS r_home,\n")
+
+
 @dataclass
 class Plan:
     name: str
@@ -137,5 +164,13 @@ def plan(req: RadarRunRequest) -> tuple[Plan, Places]:
         "row_limit": ("INT64", settings.integer("BQ_ROW_LIMIT")),
     }
     days = [first + timedelta(days=d) for d in range((until.date() - first).days + 1)]
+    if p.region:  # a region pack: home is the footprint's states and cities, and the pack's outlets
+        del params["home_domain"]
+        params["home_adm1"] = ("ARRAY<STRING>", list(p.home_adm1))
+        params["home_outlets"] = ("ARRAY<STRING>", list(p.home_outlets))
+        return Plan("gkg-recall", f"English articles about the footprint's states and cities or from its home outlets "
+                    f"({p.region} pack {PACK_VERSIONS[p.region]}), the footprint (with a "
+                    f"{req.institution.institution_type}'s themes), named places and actors", SQL_REGION, params, days,
+                    clamped), p
     return Plan("gkg-recall", "English articles about the home country, the footprint (with a "
                 f"{req.institution.institution_type}'s themes), named places and actors", SQL, params, days, clamped), p

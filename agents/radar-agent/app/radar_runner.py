@@ -44,6 +44,9 @@ async def run_radar(req: RadarRunRequest, deps: Deps) -> RadarRunResult:
         articles = [from_provided(item, p) for item in req.provided_news]
     else:
         q, p = plan(req)
+        if p.region:  # the harness is recorded in the logs (the response contract has no field for it)
+            log.info("radar %s: %s region pack, home = %s and %d outlets", req.run_id, p.region,
+                     ", ".join(p.home_adm1) or "no footprint state", len(p.home_outlets))
         try:
             ran = await asyncio.to_thread(deps.bq.run, q.sql, q.params, cap(req.limits.max_bytes_per_query))
         except BudgetSpent as e:

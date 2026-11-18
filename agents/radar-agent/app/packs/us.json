@@ -1,0 +1,16 @@
+{
+  "_about": "Radar's US pack (app/packs/__init__.py), used only for an institution based in the US. The US is in so much of the world's news that country-level mentions would fill the query's row limit with a few hours of news, so for a US institution an article is home news only when its title names a footprint state or city (these aliases, plus the profile's own places), its locations name a footprint state HOME_MENTIONS times or more, or it is from one of these outlets. judge_rules is added to the judge's instruction.",
+  "version": "us-1",
+  "home_scope": "footprint_regions",
+  "outlets": [
+    "dallasnews.com", "houstonchronicle.com", "chron.com", "expressnews.com", "statesman.com", "star-telegram.com",
+    "texastribune.org", "mrt.com", "bizjournals.com", "reuters.com", "apnews.com", "cnbc.com", "bloomberg.com", "wsj.com"
+  ],
+  "aliases": {
+    "US-TX": ["texas", "dallas", "houston", "fort worth", "austin", "san antonio", "permian", "ercot"],
+    "US-AZ": ["arizona", "phoenix", "tucson", "scottsdale"],
+    "US-NV": ["nevada", "las vegas", "reno"],
+    "US-UT": ["utah", "salt lake city", "provo"]
+  },
+  "judge_rules": "Skip elections, campaigns and party politics; keep interest rates, regulation, credit, energy, power and data centers."
+}
