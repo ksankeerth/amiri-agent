@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: amiri-server
-  description: "Amiri Agent server API: the platform core behind the web app. Code\
+  description: "AMIRI Agent server API: the platform core behind the web app. Code\
     \ only, no model: it enumerates,\nscores, schedules and stores, and every number\
     \ a person reads comes from here.\n\n- **Institution profile** (bank or insurer):\
     \ footprint, customer groups, products, money flows,\n  regulators, rivals, counterparties\
@@ -6023,9 +6023,9 @@ paths:
     get:
       tags:
       - overview
-      summary: 'The Overview page: events, what needs you, markets, and Amiri Agent''s
+      summary: 'The Overview page: events, what needs you, markets, and AMIRI Agent''s
         own state'
-      description: '`audience=all` also lists Amiri Agent''s own plumbing notes (the
+      description: '`audience=all` also lists AMIRI Agent''s own plumbing notes (the
         Platform Admin''s); the default is what a Risk Manager can act on.'
       operationId: overview_api_v1_overview_get
       parameters:
@@ -6063,7 +6063,7 @@ paths:
     post:
       tags:
       - prototype
-      summary: Wipe the institution and all Amiri Agent made for it (prototype only)
+      summary: Wipe the institution and all AMIRI Agent made for it (prototype only)
       operationId: reset_api_v1_prototype_reset_post
       parameters:
       - name: X-Amiri-Actor

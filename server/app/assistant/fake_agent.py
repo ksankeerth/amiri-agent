@@ -105,7 +105,7 @@ def create_fake_agent() -> FastAPI:
 def contract_openapi() -> dict:
     """The contract as OpenAPI, with the event stream's schemas spelled out."""
     spec = create_fake_agent().openapi()
-    spec["info"] = {"title": "Amiri Agent setup agent contract", "version": contract.CONTRACT_VERSION,
+    spec["info"] = {"title": "AMIRI Agent setup agent contract", "version": contract.CONTRACT_VERSION,
                     "description": (contract.__doc__ or "").strip()}
     events = contract.EVENT.json_schema(ref_template="#/components/schemas/{model}")
     comps = spec.setdefault("components", {}).setdefault("schemas", {})

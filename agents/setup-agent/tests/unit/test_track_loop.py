@@ -192,10 +192,10 @@ async def test_a_question_then_its_answer(world):
 async def test_read_only_tracks_conclude_and_cannot_propose(world):
     client, server, llm = world
     llm.script = [[("propose", {"summary": "x", "operations": [], "institution": None, "monitors": None, "evidence": None})],
-                  [("conclude", {"summary": "Explained what Amiri Agent does with risks"})], "Radar and monitors watch them."]
+                  [("conclude", {"summary": "Explained what AMIRI Agent does with risks"})], "Radar and monitors watch them."]
     sid = await start(client)
     evs = await turn(client, sid, track="question", text="What happens to our risks?")
-    assert ("track_concluded", {"track": "question", "summary": "Explained what Amiri Agent does with risks"}) in evs
+    assert ("track_concluded", {"track": "question", "summary": "Explained what AMIRI Agent does with risks"}) in evs
     assert server.posted() == []
 
 

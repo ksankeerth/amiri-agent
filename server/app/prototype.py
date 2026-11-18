@@ -1,4 +1,4 @@
-"""Prototype reset: wipe the institution and everything Amiri Agent made for it, so the platform
+"""Prototype reset: wipe the institution and everything AMIRI Agent made for it, so the platform
 can be shown again from the start, as for a new institution. That includes the data connection (its approval
 and validation switch describe the old institution), its check reports, and the sample institutions' switches
 and conditions. Kept: market series and their prices (slow and costly to fetch again), the reference data, the
@@ -53,7 +53,7 @@ async def _load_demo(request: Request, kind: demo.Kind, actor: Actor) -> dict:
     return {"institution_id": created["institution_id"], "name": demo.DEMOS[kind]["name"], "kind": kind}
 
 
-@router.post("/prototype:reset", summary="Wipe the institution and all Amiri Agent made for it (prototype only)")
+@router.post("/prototype:reset", summary="Wipe the institution and all AMIRI Agent made for it (prototype only)")
 async def reset(request: Request, body: ResetIn, actor: Actor = None):
     if not settings.flag("PROTOTYPE_RESET"):
         raise Problem(403, "reset_off", "Reset is switched off on this server (PROTOTYPE_RESET).")

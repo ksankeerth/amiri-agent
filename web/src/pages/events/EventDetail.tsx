@@ -18,9 +18,9 @@ import {
 } from "../../plain";
 
 type Task = EventDetail["tasks"][number];
-// what Amiri Agent inferred, labelled apart from the sourced facts (rule 7.2)
-const AI_CHIP = <span className="dl-ai-chip"><b aria-hidden="true">AI</b>Amiri Agent's assessment</span>;
-const AI_WROTE = <span className="dl-ai-chip"><b aria-hidden="true">AI</b>Written by Amiri Agent</span>;
+// what AMIRI Agent inferred, labelled apart from the sourced facts (rule 7.2)
+const AI_CHIP = <span className="dl-ai-chip"><b aria-hidden="true">AI</b>AMIRI Agent's assessment</span>;
+const AI_WROTE = <span className="dl-ai-chip"><b aria-hidden="true">AI</b>Written by AMIRI Agent</span>;
 const TONE_PILL: Record<"bad" | "good" | "mixed" | "neutral", ReactNode> = {
   bad: <ImpactMarker adverse={true} />, good: <ImpactMarker adverse={false} />,
   mixed: <StatusPill tone="amber">Mixed for you</StatusPill>, neutral: <StatusPill tone="grey">Neutral for you</StatusPill>,
@@ -162,7 +162,7 @@ export function EventDetailPage() {
             </Section>
           )}
         </div>
-        <Section title="What Amiri Agent noticed" count={e.findings.length + e.developments.length} flush>
+        <Section title="What AMIRI Agent noticed" count={e.findings.length + e.developments.length} flush>
           {e.findings.map(f => {
             const h = f.evidence?.headlines?.[0], si = sourceInfo(f.source);
             const ref = f.source_ref ?? {};

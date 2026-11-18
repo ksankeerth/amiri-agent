@@ -90,7 +90,7 @@ def instruction(b: TurnBox, ctx: dict | None, readiness: dict | None, earlier: l
              + (f"; otherwise say that the next step is {TRACKS[nxt].label.lower()} (that track, even if the readiness "
                 f"list shows other open items)." if nxt else "."))
     parts = [
-        f"You are the setup agent of Amiri Agent, which watches the world for {_who(ctx)} and traces events to its "
+        f"You are the setup agent of AMIRI Agent, which watches the world for {_who(ctx)} and traces events to its "
         f"products and customers. You are in the {t.label} track of the setup chat.",
         f"This track changes: {g.writes}.",
         f"How to work:\n{g.steps}",

@@ -180,7 +180,7 @@ export function EventsPage() {
       <div className="card mt12">
         {events === null ? (err == null && <InlineSkeleton />) : !rows.length ? (
           <Empty icon="events" title={show === "open" ? "No open events" : "No events here"} actions={<Link className="btn" to="/studio"><Icon name="studio" />Try a what-if in the Scenario Studio</Link>}>
-            When Amiri Agent traces news or a price move to your products, the event appears here.</Empty>
+            When AMIRI Agent traces news or a price move to your products, the event appears here.</Empty>
         ) : (
           <ul className="evlist" aria-label="Events">{rows.map(e => {
             const f0 = byId.get(e.finding_ids[0]), f = f0?.outcome?.event_id === e.event_id ? f0 : undefined, si = f ? sourceInfo(f.source) : null;

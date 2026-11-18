@@ -66,7 +66,7 @@ export function FindingsPage() {
         </>}
         help={<HowItWorks><p>A finding is something a monitor, a market series or Radar noticed. Each one goes to the investigation, which links it to an event or finds no impact on your products. Findings from tests aren't shown.</p></HowItWorks>} />
       {err != null && (items === null ? <LoadError error={err} onRetry={refresh} what="the findings" />
-        : <Banner kind="warn" icon="warn">Couldn't refresh: {isDown(err) ? "Amiri Agent didn't answer" : errText(err)}. Showing what was loaded.</Banner>)}
+        : <Banner kind="warn" icon="warn">Couldn't refresh: {isDown(err) ? "AMIRI Agent didn't answer" : errText(err)}. Showing what was loaded.</Banner>)}
       {status && status.findings_waiting > 0 && status.connected && (
         <Banner kind="info" icon="info" action={<InvestigateNowButton onDone={refresh} small />}>
           <b>{count(status.findings_waiting, "finding")} waiting</b> to be investigated{nextBatch ? `: the next batch goes ${nextBatch}` : ""}.

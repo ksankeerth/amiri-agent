@@ -1,6 +1,6 @@
 # amiri-server
 
-The Amiri Agent server: the web app's API, the work tick, and the code components. A prototype: it
+The AMIRI Agent server: the web app's API, the work tick, and the code components. A prototype: it
 runs against a demo bank with sample data.
 
 What it does:

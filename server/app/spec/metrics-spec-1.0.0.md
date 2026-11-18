@@ -1,6 +1,6 @@
 # Metrics Spec 1.0.0: aggregated metrics for banks and insurers
 
-**Version** 1.0.0 · **Status** release for implementation feedback · **Published** 11 Oct 2026 · **Revised** 17 Oct 2026 (editorial) · **Publisher** Amiri Agent
+**Version** 1.0.0 · **Status** release for implementation feedback · **Published** 11 Oct 2026 · **Revised** 17 Oct 2026 (editorial) · **Publisher** AMIRI Agent
 
 **Files:**
 - `metrics-spec-1.0.0.pdf`: this guide

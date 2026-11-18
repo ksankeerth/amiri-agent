@@ -38,7 +38,7 @@ export function LoadError({ error, onRetry, what = "this page" }: { error: unkno
     <div className="card loaderr" role="alert"><div className="bd">
       <Icon name="warn" />
       <div className="col" style={{ gap: 4, flex: 1, minWidth: 0 }}>
-        <h2>{down ? "Amiri Agent didn't answer" : `Couldn't load ${what}`}</h2>
+        <h2>{down ? "AMIRI Agent didn't answer" : `Couldn't load ${what}`}</h2>
         <p>{down ? "It may be starting up after a quiet spell, or the connection dropped. Nothing you saved is lost." : errText(error)}</p>
       </div>
       <button className="btn btn--primary" type="button" disabled={busy} onClick={retry}><Icon name="refresh" />{busy ? "Trying…" : "Try again"}</button>
@@ -71,7 +71,7 @@ export const DEMOS = [
   { kind: "insurer", label: "Demo insurer", name: "Samudra Raya General Insurance", what: "A general insurer in Indonesia" },
 ] as const;
 
-/** The prototype reset: wipes the institution and everything Amiri Agent made for it; keeps market prices and reference data. */
+/** The prototype reset: wipes the institution and everything AMIRI Agent made for it; keeps market prices and reference data. */
 export function ResetModal({ onClose }: { onClose: () => void }) {
   const [then, setThen] = useState<"demo-bank" | "demo-insurer" | "empty">("demo-bank");
   const [typed, setTyped] = useState("");

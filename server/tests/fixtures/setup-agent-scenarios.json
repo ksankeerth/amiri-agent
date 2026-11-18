@@ -21,7 +21,7 @@
    "title": "A bank sets up from scratch, one step at a time",
    "turns": [
     {
-     "user": "Hi, I'd like to set up Amiri Agent for our bank.",
+     "user": "Hi, I'd like to set up AMIRI Agent for our bank.",
      "expect": {
       "track": "institution",
       "reply": {
@@ -771,10 +771,10 @@
    "id": "S25",
    "group": "questions",
    "start": "bank",
-   "title": "What can Amiri Agent do with this?",
+   "title": "What can AMIRI Agent do with this?",
    "turns": [
     {
-     "user": "What will Amiri Agent do with our risk exposures?",
+     "user": "What will AMIRI Agent do with our risk exposures?",
      "expect": {
       "track": "question",
       "reply": {
@@ -863,7 +863,7 @@
       },
       "reply": {
        "must": [
-        "explains Amiri Agent holds categories, never named customers or account numbers",
+        "explains AMIRI Agent holds categories, never named customers or account numbers",
         "suggests a category instead"
        ]
       }

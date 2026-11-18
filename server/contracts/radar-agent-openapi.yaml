@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Amiri Agent Radar agent contract
+  title: AMIRI Agent Radar agent contract
   description: "The contract between amiri-server and the Radar agent (agents/radar-agent),\
     \ version 2.1.\n\nThe single source: the server validates every answer against\
     \ these models, the fake agent\n(app/radar/fake_agent.py) implements them, and\

@@ -4,7 +4,7 @@ The agent is a service with four endpoints; whatever it uses inside (Google ADK,
 router and track agents) stays on its side:
 
     GET  /health                           liveness: {"status": "ok"}
-    GET  /health/details                   optional, as every Amiri Agent service
+    GET  /health/details                   optional, as every AMIRI Agent service
     POST /sessions                         AgentSessionIn  -> 201 AgentSessionOut
     POST /sessions/{agent_session_id}/turns  TurnIn -> 200 text/event-stream of Event
 

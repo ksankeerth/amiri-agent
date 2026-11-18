@@ -4,7 +4,7 @@ and nothing from the sandbox or the Studio."""
 from tests.test_investigation_api import bank as _bank
 from tests.test_investigation_api import sandbox_move
 
-OV = "/api/v1/overview?audience=all"  # with Amiri Agent's own plumbing notes, which a Risk Manager's default view leaves out
+OV = "/api/v1/overview?audience=all"  # with AMIRI Agent's own plumbing notes, which a Risk Manager's default view leaves out
 
 
 async def bank(client, env):

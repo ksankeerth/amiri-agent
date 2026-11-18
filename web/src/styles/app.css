@@ -1,4 +1,4 @@
-/* Amiri Agent design tokens and components. */
+/* AMIRI Agent design tokens and components. */
 :root {
   --paper:#F2F4F7; --surface:#FFFFFF; --surface-2:#FAFBFC; --sunken:#EEF0F3;
   --hairline:#DDE1E6; --hairline-2:#CDD2D9; --line-strong:#8A919B; /* line-strong: inputs and data marks, 3:1 on white */

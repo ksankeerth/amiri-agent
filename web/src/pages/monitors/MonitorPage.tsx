@@ -188,7 +188,7 @@ function MonitorForm({ m, profile, status, onSaved, onCancel }: { m: Monitor | n
         <Field label="Name" error={E["about.name"]}>
           <input className={`input ${E["about.name"] ? "err" : ""}`} value={s.about.name} placeholder="e.g. Gulf jobs and security" onChange={e => up(x => { x.about.name = e.target.value; })} />
         </Field>
-        <div className="field"><span>In one sentence, what should Amiri Agent watch for?<Drafted on={drafted.has("public.in_one_sentence")} /></span>
+        <div className="field"><span>In one sentence, what should AMIRI Agent watch for?<Drafted on={drafted.has("public.in_one_sentence")} /></span>
           <textarea className={`input ${E["public.in_one_sentence"] ? "err" : ""}`} value={s.public.in_one_sentence}
             placeholder="Events in the Gulf that could cut jobs or pay for our migrant-worker customers." onChange={e => up(x => { x.public.in_one_sentence = e.target.value; })} />
           {E["public.in_one_sentence"] ? <span className="errtext">{E["public.in_one_sentence"]}</span> : <span className="hint">Specific beats broad: name the places, people or markets.</span>}</div>

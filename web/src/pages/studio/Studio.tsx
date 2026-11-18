@@ -73,7 +73,7 @@ function NewOwnModal({ onClose }: { onClose: () => void }) {
     <Modal title="Write your own scenario" onClose={onClose} footer={<>
       <button className="btn" type="button" onClick={onClose}>Cancel</button>
       <button className="btn btn--primary" type="button" disabled={busy || !title.trim()} onClick={go}>Create</button></>}>
-      <p style={{ margin: 0 }}>Name it, then write the headlines that arrive day by day and, if you like, how the exchange rate moves. Amiri Agent's monitor reads your headlines and the investigation traces them to your products.</p>
+      <p style={{ margin: 0 }}>Name it, then write the headlines that arrive day by day and, if you like, how the exchange rate moves. AMIRI Agent's monitor reads your headlines and the investigation traces them to your products.</p>
       <FillFromJson what="a scenario" read={scenariosOf} onFill={c => fillFrom(c.data)}
         example={'{"title": "…", "headlines": [{"title": "…", "day": 1, "time": "09:00"}], "prices": {"direction": "weaker", "size_pct": 5, "ramp_days": 4}}'} />
       <label className="field"><span>Name</span>
@@ -109,14 +109,14 @@ export function StudioPage() {
   return (
     <div className="page">
       <PageHeader title="Scenario Studio" status="Try a what-if on your institution. Nothing touches your live data."
-        help={<HowItWorks><p>A scenario plays out in a sandbox: headlines arrive and prices move, and Amiri Agent's monitors, market series and investigation respond as they would for real. You see the events it traces and the alerts each team would get.</p></HowItWorks>} />
+        help={<HowItWorks><p>A scenario plays out in a sandbox: headlines arrive and prices move, and AMIRI Agent's monitors, market series and investigation respond as they would for real. You see the events it traces and the alerts each team would get.</p></HowItWorks>} />
       {err != null && templates === null ? <LoadError error={err} onRetry={load} what="the Scenario Studio" /> : <>
       <div className="banners"><CurrentBanner sim={current} /></div>
       {ready && !current && <div className="card st-hero">
         <div className="col" style={{ gap: 4, flex: 1, minWidth: 260 }}>
           <span className="label">Watch it work</span>
           <h2 style={{ fontSize: 19 }}>{ready.title}, in under a minute</h2>
-          <span className="small muted">A recorded run replays instantly: three weeks of headlines and prices, the events Amiri Agent traces to your products, and the alerts each team would get.</span>
+          <span className="small muted">A recorded run replays instantly: three weeks of headlines and prices, the events AMIRI Agent traces to your products, and the alerts each team would get.</span>
         </div>
         <button className="btn btn--primary btn--lg" type="button" onClick={() => start(ready.scenario_id, "replay")}><Icon name="play" />Replay it</button>
       </div>}
@@ -203,7 +203,7 @@ function Headlines({ s, save, startOpen }: { s: Scenario; save: (body: { custom?
     <div className="card"><div className="hd"><h2>Headlines</h2><span className="small muted">{plural(all.length - all.filter(h => off.has(h.id)).length, "headline")} in the run</span>
       <span className="spacer" />{editing !== "new" && all.length < 30 && <button className="btn btn--sm" type="button" onClick={() => setEditing("new")}><Icon name="plus" />Add a headline</button>}</div>
       {!all.length && editing !== "new" && <div className="bd"><Empty icon="edit" title="No headlines yet" actions={<button className="btn btn--primary" type="button" onClick={() => setEditing("new")}><Icon name="plus" />Write the first headline</button>}>
-        Write what happens and on which day. Amiri Agent's monitor reads each headline the day it is published.</Empty></div>}
+        Write what happens and on which day. AMIRI Agent's monitor reads each headline the day it is published.</Empty></div>}
       <div className="list">{all.map(h => editing === h.id
         ? <div key={h.id} className="li"><HeadlineForm value={{ id: h.id, title: h.title, day: h.day, time: h.time }} dayLabel={dayLabel} onSave={upsert} onCancel={() => setEditing(null)} /></div>
         : (
@@ -292,13 +292,13 @@ export function ScenarioPage() {
         {err != null && <LoadError error={err} onRetry={load} what="this scenario" />}
         <CurrentBanner sim={current} />
         {!current && s.simulations[0] && <LastRunBanner m={s.simulations[0]} />}
-        <Banner kind="info">{own ? "Your headlines are marked simulated and never reach the live pages. Amiri Agent's monitor reads each one on its day; the investigation traces what it finds to your products."
+        <Banner kind="info">{own ? "Your headlines are marked simulated and never reach the live pages. AMIRI Agent's monitor reads each one on its day; the investigation traces what it finds to your products."
           : "The headlines are written for this scenario and marked simulated; you can edit, add or remove them. Their figures come from the price path. Sizes are illustrative."}</Banner>
       </div>
       <div className="split mt12">
         <div className="col gap16">
           <Headlines s={s} save={save} startOpen={fresh} />
-          {!own && <div className="card"><div className="hd"><h2>What Amiri Agent should find</h2></div><div className="list">{b.stories.map(st => (
+          {!own && <div className="card"><div className="hd"><h2>What AMIRI Agent should find</h2></div><div className="list">{b.stories.map(st => (
             <div key={st.key} className="li"><div className="row" style={{ gap: 8, flex: 1 }}>
               <TonePill tone={st.tone} /><span style={{ flex: 1 }}>{st.label}</span>
               {!st.expected && <span className="small muted">not expected: its headlines are out</span>}</div></div>))}</div></div>}

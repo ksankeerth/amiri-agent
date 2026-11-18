@@ -34,8 +34,8 @@ TRACKS: dict[str, Track] = {t.id: t for t in [
           read_only=True),
     Track("agent_view", "What the agent can see", "what the agents read from the profile (the context, "
           "Radar's scope)", read_only=True),
-    Track("question", "Question", "a question about Amiri Agent or the setup that changes nothing", read_only=True),
-    Track("offtopic", "Off-topic", "anything unrelated to setting up Amiri Agent for this institution", read_only=True),
+    Track("question", "Question", "a question about AMIRI Agent or the setup that changes nothing", read_only=True),
+    Track("offtopic", "Off-topic", "anything unrelated to setting up AMIRI Agent for this institution", read_only=True),
 ]}
 FIRST_SETUP = [t.id for t in sorted((t for t in TRACKS.values() if t.order), key=lambda t: t.order)]
 

@@ -68,7 +68,7 @@ def is_short_reply(text: str | None) -> bool:
 
 def offtopic_reply(track: str | None) -> str:
     back = f" Back to {TRACKS[track].label.lower()}: " if track and track in TRACKS and track not in ("question",) else " "
-    return ("I can only help set up Amiri Agent for your institution: who you are, where you operate, your customers, "
+    return ("I can only help set up AMIRI Agent for your institution: who you are, where you operate, your customers, "
             f"products, flows, rules, rivals, risks and monitors.{back}what would you like to do next?")
 
 

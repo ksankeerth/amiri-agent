@@ -70,7 +70,7 @@ export function RefreshButton({ s, onDone, small = true }: { s: Series; onDone: 
 }
 
 // ---------------------------------------------------------------- theme presets
-// Theme ids are the Metrics Spec's; directions are Amiri Agent's (GET /api/v1/reference/themes).
+// Theme ids are the Metrics Spec's; directions are AMIRI Agent's (GET /api/v1/reference/themes).
 // An fx theme names the currency that moved, so its presets come from the symbol's two sides.
 type Preset = { id: string; label: string; theme: Theme | null };
 const FIXED: Preset[] = [
@@ -164,7 +164,7 @@ export function AddSeriesModal({ onClose, onAdded, left }: { onClose: () => void
         {busy ? <><Icon name="refresh" className="spin" />Reading history…</> : "Add and read history"}</button></>}>
       <FillFromJson what="a series" read={seriesOf} onFill={c => fillFrom(c.data)}
         example={'{"symbol": "USD/LKR", "name": "…", "places": ["LK"], "theme": {…}}, or a list of them'} />
-      <p className="small muted">Amiri Agent reads about 2,000 hours of history from Twelve Data now (1 credit), then pulls new prices every hour. A move far outside normal becomes a finding. No model is involved.</p>
+      <p className="small muted">AMIRI Agent reads about 2,000 hours of history from Twelve Data now (1 credit), then pulls new prices every hour. A move far outside normal becomes a finding. No model is involved.</p>
       <div className="row" style={{ alignItems: "flex-end" }}>
         <label className="field" style={{ flex: 1 }}><span>Find a symbol</span>
           <input className="input" value={q} onChange={e => setQ(e.target.value)} placeholder="e.g. LKR, gold, Brent"

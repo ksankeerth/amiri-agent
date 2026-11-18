@@ -8,7 +8,7 @@ the model's choices against these lists; nothing outside them is accepted.
 from typing import Literal, get_args
 
 # ------------------------------------------------------------------ themes
-# Theme ids are Metrics Spec v1.0's (vocabularies.themes); the directions are Amiri Agent's,
+# Theme ids are Metrics Spec v1.0's (vocabularies.themes); the directions are AMIRI Agent's,
 # in neutral words (amiri-server app/reference/themes.json).
 
 Theme = Literal[

@@ -205,7 +205,7 @@ async def openapi(request: Request, kind: str):
         return JSONResponse({"detail": f"The sample {kind} isn't switched on."}, status_code=404)
     doc = dict(spec.reference_openapi())
     doc["servers"] = [{"url": f"{str(request.base_url).rstrip('/')}/mock/{kind}",
-                       "description": f"The sample {kind} served by Amiri Agent."}]
+                       "description": f"The sample {kind} served by AMIRI Agent."}]
     return doc
 
 

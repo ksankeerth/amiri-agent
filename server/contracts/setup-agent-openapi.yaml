@@ -1,12 +1,12 @@
 openapi: 3.1.0
 info:
-  title: Amiri Agent setup agent contract
+  title: AMIRI Agent setup agent contract
   version: '1.0'
   description: "The contract between amiri-server and the setup agent (amiri-setup-agent),\
     \ version 1.0.\n\nThe agent is a service with four endpoints; whatever it uses\
     \ inside (Google ADK, a\nrouter and track agents) stays on its side:\n\n    GET\
     \  /health                           liveness: {\"status\": \"ok\"}\n    GET \
-    \ /health/details                   optional, as every Amiri Agent service\n \
+    \ /health/details                   optional, as every AMIRI Agent service\n \
     \   POST /sessions                         AgentSessionIn  -> 201 AgentSessionOut\n\
     \    POST /sessions/{agent_session_id}/turns  TurnIn -> 200 text/event-stream\
     \ of Event\n\nEvery request carries `X-Amiri-Contract: 1.0`; the agent answers\

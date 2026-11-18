@@ -1,6 +1,6 @@
 # radar-agent
 
-Radar for the Amiri Agent: it reads the world's news (GDELT 2.0 on BigQuery) for stories that
+Radar for the AMIRI Agent: it reads the world's news (GDELT 2.0 on BigQuery) for stories that
 touch one institution's footprint, groups the articles into stories, and judges each one for
 that institution: how much it matters, why, and whether to send it for investigation.
 Agent generated with `agents-cli` version `1.9.0`.

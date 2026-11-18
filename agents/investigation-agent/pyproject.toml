@@ -2,7 +2,7 @@
 name = "investigation-agent"
 version = "0.1.0"
 description = "Investigation agent: traces findings to the products an institution runs, using fixed investigation tracks."
-authors = [{name = "The Amiri Agent authors"}]
+authors = [{name = "The AMIRI Agent authors"}]
 license = { text = "Apache-2.0" }
 
 

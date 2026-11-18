@@ -161,7 +161,7 @@ def contract_openapi() -> dict:
     async def health():
         ...
 
-    spec = get_openapi(title="Amiri Agent Radar agent contract", version=c.CONTRACT_VERSION, routes=api.routes,
+    spec = get_openapi(title="AMIRI Agent Radar agent contract", version=c.CONTRACT_VERSION, routes=api.routes,
                        description=(c.__doc__ or "").strip())
     return spec
 

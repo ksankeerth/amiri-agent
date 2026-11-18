@@ -1,5 +1,5 @@
 // A simulation as it runs: the clock (play, pause, step), the price, the timeline, the events
-// Amiri Agent forms (good, bad, neutral) and how they compare with what the scenario expected.
+// AMIRI Agent forms (good, bad, neutral) and how they compare with what the scenario expected.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useParams } from "react-router-dom";
@@ -35,7 +35,7 @@ function line(t: TimelineItem): string {
 
 type Alert = Simulation["alerts"][number];
 
-/** The chain Amiri Agent runs, as it happens: what it read → what it found → what it means → who must act. */
+/** The chain AMIRI Agent runs, as it happens: what it read → what it found → what it means → who must act. */
 function Chain({ timeline, sim }: { timeline: TimelineItem[]; sim: Simulation }) {
   const heads = timeline.filter(t => t.kind === "headline");
   const finds = timeline.filter(t => t.kind === "finding");
@@ -49,7 +49,7 @@ function Chain({ timeline, sim }: { timeline: TimelineItem[]; sim: Simulation })
       sub: sim.alerts.length ? [...new Set(sim.alerts.map(a => a.owner))].join(", ") : "No product at risk yet" },
   ];
   return (
-    <div className="chain" role="group" aria-label="What Amiri Agent has done so far">{stages.map((st, i) => (
+    <div className="chain" role="group" aria-label="What AMIRI Agent has done so far">{stages.map((st, i) => (
       <div key={st.label} className={`chain-step ${st.n ? "on" : ""} ${st.hot ? "hot" : ""}`}>
         <div className="row" style={{ gap: 8 }}><span className="chain-ico"><Icon name={st.icon} /></span>
           <span className="chain-n" key={st.n}><CountUp value={st.n} /></span></div>
@@ -124,7 +124,7 @@ function Timeline({ timeline, sim, newFrom }: { timeline: TimelineItem[]; sim: S
   );
 }
 
-/** The proof for the audience: what the scenario expected and what Amiri Agent found, with a score. */
+/** The proof for the audience: what the scenario expected and what AMIRI Agent found, with a score. */
 function Scorecard({ sim, active }: { sim: Simulation; active: boolean }) {
   const exp = sim.summary.stories.filter(s => s.expected);
   const found = exp.filter(s => s.found).length;

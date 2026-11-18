@@ -1,4 +1,4 @@
-// Alerts: what Amiri Agent found for each team's products, and who has taken it on.
+// Alerts: what AMIRI Agent found for each team's products, and who has taken it on.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../api/client";
@@ -23,8 +23,8 @@ const CHANGE: Record<string, string> = {
   confirmed: "Confirmed by your data", withdrawn: "Withdrawn", checked: "Checked against your data",
 };
 
-// when Amiri Agent last raised or escalated it: a person acknowledging it doesn't move it on the page
-const changed = (a: AlertItem) => [...a.history].reverse().find(h => h.by === "Amiri Agent" && h.change !== "resolved")?.at ?? a.created_at;
+// when AMIRI Agent last raised or escalated it: a person acknowledging it doesn't move it on the page
+const changed = (a: AlertItem) => [...a.history].reverse().find(h => h.by === "AMIRI Agent" && h.change !== "resolved")?.at ?? a.created_at;
 /** The impact in a few words, with the move your data showed when it was checked. */
 function EffectImpact({ e }: { e: Effect }) {
   const m = e.check ? checkMove(e.check.what) : null;
@@ -91,9 +91,9 @@ function AlertCard({ a, next, ev, primary, onChange }: {
           {a.status !== "resolved" && <button className="btn btn--sm btn--ghost" type="button" title={ACTION_MEANS.resolve} onClick={() => setAsking("resolve")}>Resolve</button>}
           {a.status !== "new" && <button className="btn btn--sm btn--ghost" type="button" title={ACTION_MEANS.reopen} disabled={busy} onClick={() => act("reopen")}>Reopen</button>}
           <span className="pd-vr" aria-hidden="true" />
-          <details className="tech dl-why"><summary>Why Amiri Agent expects this</summary>
+          <details className="tech dl-why"><summary>Why AMIRI Agent expects this</summary>
             <div className="tech-bd col gap12">
-              <p className="dl-ai"><span className="dl-ai-chip"><b aria-hidden="true">AI</b>Amiri Agent's assessment</span>
+              <p className="dl-ai"><span className="dl-ai-chip"><b aria-hidden="true">AI</b>AMIRI Agent's assessment</span>
                 <span className="muted">Sizes and timing are estimates, checked against your own figures as they're published.</span></p>
               <div className={`alc-impacts irs${same ? "" : " with-status"}`}>{a.effects.map(e => (
                 <ImpactRow key={e.hypothesis_id} product={e.product} impact={<EffectImpact e={e} />} adverse={bad === a.effects.length ? undefined : e.adverse} size={sizeTiming(e.size, e.timing)}
@@ -107,7 +107,7 @@ function AlertCard({ a, next, ev, primary, onChange }: {
             </div></details>
           <details className="tech dl-hist"><summary>History ({a.history.length})</summary>
             <div className="tech-bd"><ol className="alc-hist">{[...a.history].reverse().map((h, i) => (
-              <li key={i}><b>{CHANGE[h.change] ?? h.change}</b><span>{dayTime(h.at)}{h.by && h.by !== "Amiri Agent" ? ` · ${h.by}` : ""}</span></li>))}</ol></div></details>
+              <li key={i}><b>{CHANGE[h.change] ?? h.change}</b><span>{dayTime(h.at)}{h.by && h.by !== "AMIRI Agent" ? ` · ${h.by}` : ""}</span></li>))}</ol></div></details>
           <span className="spacer" />
           <Link className="dl-ev" to={`/events/${a.event_id}`}><span className="muted">From the event</span> <b>{title}</b>{a.event_status === "closed" && <span className="muted"> (closed)</span>}<Icon name="arrow" /></Link>
         </div>
@@ -165,7 +165,7 @@ export function AlertsPage() {
         status={!s ? "" : s.to_review ? <><b className="ink">{count(s.to_review, "alert")} waiting for review</b>{s.by_level.adverse ? <>, <b className="dl-crit">{s.by_level.adverse} confirmed by your data</b></> : ""}. Most serious first.</> : "All caught up: nothing waiting for review"}
         help={<HowItWorks>
           <p>An alert goes to the team that owns each product an event could hit. Someone on that team acknowledges it, so everyone knows it's taken on. The most serious alert is at the top; work down the list.</p>
-          <div className="row wrap"><StatusPill tone="amber" icon="alert">Early warning</StatusPill><span>Amiri Agent expects an impact; your data can't tell yet.</span></div>
+          <div className="row wrap"><StatusPill tone="amber" icon="alert">Early warning</StatusPill><span>AMIRI Agent expects an impact; your data can't tell yet.</span></div>
           <div className="row wrap"><StatusPill tone="amber" icon="alert">Showing early signs</StatusPill><span>Your figures are starting to move the bad way.</span></div>
           <div className="row wrap"><StatusPill tone="red" icon="bad">Confirmed by your data</StatusPill><span>Your own figures show the impact.</span></div>
         </HowItWorks>} />

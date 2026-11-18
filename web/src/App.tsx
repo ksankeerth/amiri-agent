@@ -29,7 +29,7 @@ import { SpecPage } from "./pages/spec/Spec";
 import { SpecPrintPage } from "./pages/spec/SpecPrint";
 import { alertsApi, type AlertSummary } from "./api/alerts";
 
-// The menu follows the day: what needs me, what Amiri Agent found, what it watches, who I am, and the what-if tool.
+// The menu follows the day: what needs me, what AMIRI Agent found, what it watches, who I am, and the what-if tool.
 const GROUPS: [string, string[]][] = [
   ["Today", ["/home", "/alerts"]],
   ["What it found", ["/events", "/findings"]],
@@ -97,9 +97,9 @@ function useTheme() {
 
 /** The top bar's status, from what the Overview call already says: green only when updates run and prices are fresh. */
 function pulse(o: Overview | null, now: Date, down: boolean): { tone: "ok" | "warn" | "off"; word: string; why: string } | null {
-  if (down) return { tone: "off", word: "No answer", why: "Amiri Agent didn't answer the last check. It tries again every minute." };
+  if (down) return { tone: "off", word: "No answer", why: "AMIRI Agent didn't answer the last check. It tries again every minute." };
   if (!o) return null;
-  if (o.first_run || !o.services) return { tone: "off", word: "Not watching yet", why: "Set up an institution and Amiri Agent starts watching for it." };
+  if (o.first_run || !o.services) return { tone: "off", word: "Not watching yet", why: "Set up an institution and AMIRI Agent starts watching for it." };
   const t = o.services.tick;
   if (!t.ok) return { tone: "off", word: "Paused", why: t.last_at ? `Updates are late: they last ran ${ago(t.last_at, now)}.` : "Updates haven't run yet, so no news or prices arrive." };
   const late = (o.markets ?? []).filter(m => m.state === "stale");
@@ -124,7 +124,7 @@ function useRouteA11y(): string {
     const scrollers = () => document.querySelectorAll<HTMLElement>(".tblwrap").forEach(el => {
       if (el.scrollWidth > el.clientWidth) { el.tabIndex = 0; el.setAttribute("role", "region"); el.setAttribute("aria-label", "Table (scrolls sideways)"); }
     });
-    const set = () => { const n = name(); document.title = n ? `${n} · Amiri Agent` : "Amiri Agent"; return n; };
+    const set = () => { const n = name(); document.title = n ? `${n} · AMIRI Agent` : "AMIRI Agent"; return n; };
     const t1 = setTimeout(() => {
       const n = set();
       if (first.current) { first.current = false; return; }
@@ -239,9 +239,9 @@ function Frame({ inst }: { inst: Installation }) {
       <header className="appbar">
         <button className="btn btn--ghost btn--icon menubtn" type="button" aria-label="Menu" aria-expanded={menu} aria-controls="sidenav"
           onClick={() => setMenu(m => !m)}><Icon name={menu ? "x" : "menu"} /></button>
-        <Link className="brand" to="/home" aria-label="Amiri Agent home">
+        <Link className="brand" to="/home" aria-label="AMIRI Agent home">
           <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0F3D2E" /><path d="M9.2 25 15 7h2l5.8 18h-3.1L16 13.1 12.3 25z" fill="#F1F5EC" /><rect x="15.4" y="13.5" width="1.2" height="10" fill="#F05A28" /><rect x="14.2" y="16" width="3.6" height="5.2" fill="#F05A28" /></svg>
-          <b>Amiri Agent</b>
+          <b>AMIRI Agent</b>
           <span className="inst">{inst.name ?? (inst.unreachable ? "" : "No institution profile yet")}</span>
         </Link>
         {/* why it says Paused or Prices late: a click, a tap or keyboard focus shows it, not a hover-only tooltip */}

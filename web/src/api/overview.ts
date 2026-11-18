@@ -30,7 +30,7 @@ export interface Overview {
   map: { places: Record<string, PlaceInfo> };
 }
 
-// A Platform Admin also gets Amiri Agent's own plumbing notes; a Risk Manager gets what they can act on.
+// A Platform Admin also gets AMIRI Agent's own plumbing notes; a Risk Manager gets what they can act on.
 /** Fired with every Overview answer, so the top bar's Live pill can use the Overview page's answer instead of asking again. */
 export const OVERVIEW_EVENT = "amiri:overview";
 export const overviewApi = {
