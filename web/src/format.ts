@@ -72,7 +72,7 @@ const PLACES: Record<string, string> = {
   // the US pack's places (server/app/reference/gazetteer.json)
   "US-TX": "Texas", "US-AZ": "Arizona", "US-UT": "Utah", "US-NV": "Nevada",
   "city:dallas": "Dallas", "city:houston": "Houston", "city:fort-worth": "Fort Worth", "city:austin": "Austin",
-  "city:san-antonio": "San Antonio", "city:midland": "Midland",
+  "city:san-antonio": "San Antonio", "city:midland": "Midland", "US-CA": "California", "city:san-jose": "San Jose",
 };
 const titleWords = (s: string) => s.replace(/[-_]+/g, " ").replace(/\b([a-z])/g, (_, c: string) => c.toUpperCase()).replace(/\b(Of|The|And|El)\b/g, w => w.toLowerCase());
 export function placeName(code: string): string {

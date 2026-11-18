@@ -393,19 +393,23 @@ def evaluate(s: Scenario, result: dict) -> list[dict]:
     return checks
 
 
-# A synthetic Dallas commercial bank (the US pack's rules; coverage from tests/fixtures/profiles/us_bank.json).
+# Austin Tech Bank, the US demo bank (demo/austin-tech-bank/bundle.json; the US pack's rules; coverage from
+# tests/fixtures/profiles/us_bank.json, the same profile).
 US_BANK = {
-    "name": "TODO-NAME Bank", "institution_type": "bank", "country": "US", "country_name": "United States",
+    "name": "Austin Tech Bank", "institution_type": "bank", "country": "US", "country_name": "United States",
     "currency": "USD", "time_zone": "America/Chicago",
-    "summary": "Synthetic mid-size Dallas commercial bank, built from the public product mix of Texas lenders: "
-    "business loans to construction, oil and gas, manufacturing and tech firms, business deposits and credit lines.",
+    "summary": "Synthetic mid-size bank in Austin, Texas: deposits from startups and venture funds, venture debt and "
+    "capital-call lines, loans to data-center contractors, chip-industry suppliers and energy firms, and mortgages "
+    "for tech employees, many written near Austin's 2022 price peak.",
     "regulators": ["Federal Reserve", "FDIC", "Texas Department of Banking"],
 }  # fmt: skip
 US_PRODUCTS = [
-    {"product_id": "business-deposits", "name": "Business Deposits", "category": "savings", "product_type": "current_account"},
-    {"product_id": "credit-lines", "name": "Business Credit Lines", "category": "business_loan", "product_type": "working_capital"},
-    {"product_id": "business-loans", "name": "Business Term Loans", "category": "business_loan", "product_type": "term_loan"},
-    {"product_id": "cards", "name": "Business Cards", "category": "cards", "product_type": "credit_card"},
+    {"product_id": "startup-deposits", "name": "Startup Operating Accounts", "category": "savings", "product_type": "current_account"},
+    {"product_id": "employee-savings", "name": "Tech Employee Savings", "category": "savings", "product_type": "savings_account"},
+    {"product_id": "venture-debt", "name": "Venture Debt and Startup Credit Lines", "category": "business_loan", "product_type": "working_capital"},
+    {"product_id": "chip-supplier-lines", "name": "Chip-Supplier Credit Lines", "category": "business_loan", "product_type": "working_capital"},
+    {"product_id": "dc-contractor-loans", "name": "Data-Center Contractor Loans", "category": "business_loan", "product_type": "term_loan"},
+    {"product_id": "employee-mortgages", "name": "Founder and Employee Mortgages", "category": "retail_loan", "product_type": "housing_loan"},
 ]  # fmt: skip
 
 
@@ -415,11 +419,11 @@ def sector_shock(sector: str, **kw) -> dict:
     return r
 
 
-# The sector a credit-line task is cut by is the model's pick (offline: the first option), so only the metric
-# is required here; a live run should cut it by ISIC F (construction) or J (information and communication).
+# A sector-cut task's value is the model's pick (offline: the first option), so only the metric is required
+# here; a live run should cut it by ISIC F (construction) or J (information and communication).
 SCENARIOS += [
     Scenario(
-        "us_ai_buildout_pause", "AI build-out pause: Dallas data-center contractors draw harder on credit lines.",
+        "us_ai_buildout_pause", "AI build-out pause: data-center contractors miss payments; credit lines are drawn harder.",
         US_BANK, US_PRODUCTS,
         [finding("f-dc-pause", "Dallas-area data-center projects paused as AI build-out slows",
                  "Developers paused several data-center projects in the Dallas-Fort Worth area; contractors' "
@@ -428,11 +432,12 @@ SCENARIOS += [
                                      "2026-11-17T14:00:00Z", "Dallas Morning News")],
                  places=["US-TX"])],
         {"f-dc-pause": sector_shock("construction")},
-        tasks=[("credit-lines", "facility_utilization", {})],
+        tasks=[("dc-contractor-loans", ("installment_collection_rate", "returned_cheque_rate"), {}),
+               ("chip-supplier-lines", "facility_utilization", {})],
         coverage="us-bank",
     ),
     Scenario(
-        "us_ai_funding_cools", "AI funding cools: tech businesses burn cash and draw down their deposits.",
+        "us_ai_funding_cools", "AI funding cools: startups burn cash and draw down their deposits.",
         US_BANK, US_PRODUCTS,
         [finding("f-ai-funding", "Venture funding for AI start-ups falls for a second quarter",
                  "Funding rounds for AI and software start-ups shrank again; Texas tech firms are cutting spending.",
@@ -442,6 +447,18 @@ SCENARIOS += [
         {"f-ai-funding": sector_shock("information and communication")},
         # large_depositor_net_flow is the savings category's own metric (no breakdowns): one task for the category
         tasks=[("group-savings", "large_depositor_net_flow", {})],
+        coverage="us-bank",
+    ),
+    Scenario(
+        "us_tech_layoffs", "Tech layoffs in Austin: employees with mortgages miss payments (the lead story).",
+        US_BANK, US_PRODUCTS,
+        [finding("f-layoffs", "Tech employers cut jobs in Austin to fund AI spending",
+                 "Several technology companies with Austin offices announced job cuts, citing AI investment.",
+                 headlines=[headline("Austin tech workers hit by new round of layoffs as firms shift spending to AI",
+                                     "2026-11-18T13:00:00Z", "Austin American-Statesman")],
+                 places=["US-TX"])],
+        {"f-layoffs": sector_shock("information and communication")},
+        tasks=[("employee-mortgages", "installment_collection_rate", {})],
         coverage="us-bank",
     ),
 ]  # fmt: skip

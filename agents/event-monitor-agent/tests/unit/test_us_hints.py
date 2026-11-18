@@ -17,7 +17,7 @@ POLITICS = "Skip elections, campaigns and party politics"
 
 def us_request(country: str = "US") -> CheckRequest:
     body = copy.deepcopy(examples.REQUEST)
-    body["institution"].update(name="TODO-NAME Bank", country=country, country_name="United States", currency="USD",
+    body["institution"].update(name="Austin Tech Bank", country=country, country_name="United States", currency="USD",
                                time_zone="America/Chicago", summary="Synthetic mid-size Dallas commercial bank.")
     return CheckRequest.model_validate(body)
 

@@ -8,7 +8,7 @@ import pytest
 from app import reference, settings
 from tests.test_institutions_api import BANK, B, new
 
-US_BANK = {**BANK, "name": "TODO-NAME Bank", "home_country": "US", "base_currency": "USD",
+US_BANK = {**BANK, "name": "Austin Tech Bank", "home_country": "US", "base_currency": "USD",
            "time_zone": "America/Chicago", "clearing_currencies": ["USD"]}
 
 
@@ -47,7 +47,9 @@ def test_texas_places_are_in_the_gazetteer():
         info = reference.place_info(code)
         assert info["country"] == "US" and info["parent"] == parent and info["lat"] and info["kind"] == "city"
     assert "Permian Basin" in next(p for p in reference.gazetteer()["places"] if p["code"] == "city:midland")["aliases"]
-    for code in ("US-TX", "US-AZ", "US-UT", "US-NV"):
+    sj = reference.place_info("city:san-jose")
+    assert sj["parent"] == "US-CA" and sj["lat"] and reference.search_places("silicon valley")[0]["code"] == "city:san-jose"
+    for code in ("US-TX", "US-CA", "US-AZ", "US-UT", "US-NV"):
         assert reference.place_info(code)["lat"] is not None
     assert {h["code"] for h in reference.search_places("permian")} == {"city:midland"}
 

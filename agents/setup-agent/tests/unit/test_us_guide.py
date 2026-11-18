@@ -16,7 +16,7 @@ from app import engine, router, track_loop, turn_api
 from app.guides import REGION_GUIDES, region_guide
 from app.sessions import SessionStore
 
-US = {"institution_id": "us-bank", "name": "TODO-NAME Bank", "institution_type": "bank", "subtype": "commercial",
+US = {"institution_id": "us-bank", "name": "Austin Tech Bank", "institution_type": "bank", "subtype": "commercial",
       "country": "US", "currency": "USD", "time_zone": "America/Chicago", "summary": "", "footprint": [],
       "segments": [], "products": [], "flows": [], "regulators": [], "radar_scope": {"places": ["US"]}}
 GUIDE = (REGION_GUIDES / "us.txt").read_text().strip()
@@ -79,17 +79,17 @@ def messages(events) -> list[str]:
     return [d["text"] for e, d in events if e == "message"]
 
 
-async def test_a_dallas_bank_gets_the_us_guide_once_its_home_country_is_set(chat):
+async def test_an_austin_bank_gets_the_us_guide_once_its_home_country_is_set(chat):
     client, server, llm = chat
     sid = await start(client)
 
     # 1. no institution yet: the base guide; the model proposes the institution with home country US
-    llm.script = [[("propose", {"summary": "Create TODO-NAME Bank", "operations": None, "monitors": None, "evidence": None,
-                                "institution": {"name": "TODO-NAME Bank", "institution_type": "bank",
+    llm.script = [[("propose", {"summary": "Create Austin Tech Bank", "operations": None, "monitors": None, "evidence": None,
+                                "institution": {"name": "Austin Tech Bank", "institution_type": "bank",
                                                 "subtype": "commercial", "home_country": "US", "base_currency": "USD",
                                                 "time_zone": "America/Chicago"}})],
                   "Here's the bank as a card. Nothing changes until you apply it."]
-    ev = await say(client, sid, "We're a commercial bank in Dallas, Texas", "institution", None)
+    ev = await say(client, sid, "We're a tech bank in Austin, Texas", "institution", None)
     sent = server.posted()[0]
     assert sent["kind"] == "create_institution" and sent["institution"]["home_country"] == "US"
     assert GUIDE not in system_text(llm.requests[0]) and not any(SAID in m for m in messages(ev))

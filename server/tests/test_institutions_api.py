@@ -464,9 +464,9 @@ async def test_gazetteer_places_and_iso_only_footprint(client, env):
     prof = (await client.get(f"{B}/{iid}/profile")).json()
     assert prof["places"]["city:jaffna"]["lat"] == 9.66 and prof["places"]["chk:hormuz"]["kind"] == "chokepoint"
 
-    # a Dallas bank (the US region): Texas as its footprint, Dallas and Houston as places
+    # a US bank (the US region): Texas as its footprint, Dallas and Houston as places
     env.setenv("SUPPORTED_REGION", "us")
-    us = (await new(client, {**BANK, "name": "TODO-NAME Bank", "home_country": "US", "base_currency": "USD",
+    us = (await new(client, {**BANK, "name": "Austin Tech Bank", "home_country": "US", "base_currency": "USD",
                              "time_zone": "America/Chicago"}))["institution_id"]
     await add(client, us, "footprint", {"code": "US-TX"})
     seg = await add(client, us, "segments", {"label": "Dallas contractors", "kind": "business",

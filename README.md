@@ -247,7 +247,7 @@ existing `tracks_version` (`builtin-v2.4+us-1`); Radar and the event monitor not
 | Investigation | [`agents/investigation-agent/app/packs/us_tracks.py`](agents/investigation-agent/app/packs/us_tracks.py) | Three impact rules: deposits drawn down in a hit sector, contractors' credit lines, private-credit lenders' lines |
 | Event monitor | [`agents/event-monitor-agent/app/packs/us.json`](agents/event-monitor-agent/app/packs/us.json) | Prefer US sources and regulators (Fed, FDIC, OCC, ERCOT); skip politics |
 | Setup | [`server/app/assistant/region_guides/us.txt`](server/app/assistant/region_guides/us.txt), sent in the context pack as `region_guide`, and the agent's copy | A US setup guide for every track, once the home country is the US. The agent says once that it is using it. |
-| Reference data | [`server/app/reference/`](server/app/reference) | Texas, Arizona, Utah and Nevada, six Texas cities, the US regulators, and a `us` entry in `regions.json` |
+| Reference data | [`server/app/reference/`](server/app/reference) | Texas, California, Arizona, Utah and Nevada, six Texas cities and San Jose, the US regulators, and a `us` entry in `regions.json` |
 | Web | [`web/src/components/setupFlow.ts`](web/src/components/setupFlow.ts) | The setup chat's US starters |
 
 **Countries without a pack** (Sri Lanka, Indonesia and everywhere else) get the base alone, exactly as before.
@@ -264,7 +264,7 @@ context. Another test fails if any migration or API contract changes.
    to it.
 5. Write tests for the pack, and leave the snapshot tests as they are.
 
-**A US bank:** [`demo/us-texas-bank/`](demo/us-texas-bank/), on a deployment with `SUPPORTED_REGION=us`. A
+**A US bank:** Austin Tech Bank, [`demo/austin-tech-bank/`](demo/austin-tech-bank/), on a deployment with `SUPPORTED_REGION=us`. A
 deployment holds one sample bank at a time.
 
 ## Measured, not estimated

@@ -90,7 +90,7 @@ def test_a_construction_shock_lists_the_us_rules_for_a_us_bank_only():
 
 
 US_BANK = {
-    "name": "TODO-NAME Bank", "institution_type": "bank", "country": "US", "country_name": "United States",
+    "name": "Austin Tech Bank", "institution_type": "bank", "country": "US", "country_name": "United States",
     "currency": "USD", "time_zone": "America/Chicago",
     "summary": "Synthetic mid-size Dallas commercial bank, built from the public product mix of Texas lenders.",
 }

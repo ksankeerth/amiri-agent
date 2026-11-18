@@ -20,7 +20,7 @@ from tests.unit.test_snapshot_non_us import SNAPSHOTS, lk_request, plan_snapshot
 UNTIL = datetime(2026, 10, 17, 6, 0, tzinfo=UTC)
 US_BANK = {
     "run_id": "rad-us-1",
-    "institution": {"name": "TODO-NAME Bank", "institution_type": "bank", "country": "US",
+    "institution": {"name": "Austin Tech Bank", "institution_type": "bank", "country": "US",
                     "country_name": "United States", "currency": "USD", "time_zone": "America/Chicago",
                     "summary": "Synthetic mid-size Dallas commercial bank.",
                     "regulators": [{"id": "fed", "name": "Federal Reserve", "aliases": []}]},
