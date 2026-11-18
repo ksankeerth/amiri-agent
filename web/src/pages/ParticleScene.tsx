@@ -122,7 +122,7 @@ export function ParticleScene({ kind, data, label }: { kind: SceneKind; data: Sc
           dot(W / 2 + Math.cos(bl.a) * bl.r * R, H / 2 + Math.sin(bl.a) * bl.r * R, 7, "critical", Math.max(.06, 1 - s / 2.2)); }); }
       if (kind === "health") { dot(W / 2, H / 2, 16 + Math.sin(t / 12) * 3, data.late ? "high" : "accent", .95);
         agents().forEach(ag => { g.strokeStyle = ag.u ? pal.accent : pal.ink3; g.globalAlpha = ag.u ? .35 : .2; g.setLineDash(ag.u ? [] : [4, 6]); g.beginPath(); g.moveTo(W / 2, H / 2); g.lineTo(ag.x, ag.y); g.stroke(); g.setLineDash([]);
-          dot(ag.x, ag.y, ag.u ? 11 : 8, ag.u ? "accent" : "ink3", ag.u ? .95 : .5); }); agents().forEach((ag, i) => say(ag.x, ag.y + (ag.y > H / 2 ? 30 : -18), data.labels?.[i])); say(W / 2 + 26, H / 2 + 5, "AMIRI Agent", "left"); }
+          dot(ag.x, ag.y, ag.u ? 11 : 8, ag.u ? "accent" : "ink3", ag.u ? .95 : .5); }); agents().forEach((ag, i) => say(ag.x, ag.y + (ag.y < H / 2 - 1 ? -18 : 30), data.labels?.[i])); say(W / 2 + 16, H / 2 - 16, "AMIRI Agent", "left"); }  // up and right of the core, on the diagonal between two links, clear of both
     };
     const step = () => {
       t++; frame++;

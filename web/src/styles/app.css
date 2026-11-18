@@ -130,6 +130,10 @@ p { margin:0; }
 .nav a svg { width:18px; height:18px; flex:none; }
 .nav a .count { margin-left:auto; font-size:var(--fs-xs); font-weight:700; min-width:20px; height:20px; padding:0 8px; border-radius:var(--r-pill); display:inline-flex; align-items:center; justify-content:center; background:var(--sunken); color:var(--ink-2); }
 .nav a .count.hot { background:var(--critical); color:var(--surface); }
+/* the alerts count keeps flashing while alerts wait, so it can't be overlooked (the global reduced-motion rule stops it) */
+.nav a .count.hot { animation:navflash 1.4s ease-in-out infinite; }
+@keyframes navflash { 0%, 100% { opacity:1; box-shadow:0 0 0 0 color-mix(in srgb, var(--critical) 65%, transparent); }
+  50% { opacity:.4; box-shadow:0 0 0 6px transparent; } }
 /* the role switch lives at the foot of the sidebar: a demo setting, not the page's main control, and no longer an early
    Tab stop (it came third on every page); the header copy is hidden. On small screens the theme button joins it. */
 .side-foot { border-top:1px solid var(--hairline); padding:12px; display:flex; flex-direction:column; gap:8px; }

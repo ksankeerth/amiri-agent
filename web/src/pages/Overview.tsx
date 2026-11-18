@@ -157,7 +157,7 @@ export function OverviewPage() {
   const mapH = Math.min(520, Math.max(320, window.innerHeight - 500));
   const below = 5 + (o.markets.length > 0 ? 1 : 0);  // the sections under the first screen, for the scroll cue
 
-  const agents = [["Investigation", s.investigation.connected], ["News monitors", s.monitor.connected], ["Setup agent", s.assistant.connected], ["Radar", s.radar.connected]] as const;
+  const agents = [["Investigation", s.investigation.connected], ["Monitors", s.monitor.connected], ["Setup agent", s.assistant.connected], ["Radar", s.radar.connected]] as const;
   const needRow = (a: Attention, n: number) => {
     // the profile's recommendations: each one by name, with what it found and a link to fix it; the rest on the Institution page
     if (a.kind === "recommended" && recs.length) return <div key={n} className="ovt-row ovt-need" data-lv={a.level}>
