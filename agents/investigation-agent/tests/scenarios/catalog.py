@@ -391,3 +391,57 @@ def evaluate(s: Scenario, result: dict) -> list[dict]:
     checks.append({"check": "finished", "ok": result["stop_reason"] == "finished",
                    "detail": result["stop_reason"]})  # fmt: skip
     return checks
+
+
+# A synthetic Dallas commercial bank (the US pack's rules; coverage from tests/fixtures/profiles/us_bank.json).
+US_BANK = {
+    "name": "TODO-NAME Bank", "institution_type": "bank", "country": "US", "country_name": "United States",
+    "currency": "USD", "time_zone": "America/Chicago",
+    "summary": "Synthetic mid-size Dallas commercial bank, built from the public product mix of Texas lenders: "
+    "business loans to construction, oil and gas, manufacturing and tech firms, business deposits and credit lines.",
+    "regulators": ["Federal Reserve", "FDIC", "Texas Department of Banking"],
+}  # fmt: skip
+US_PRODUCTS = [
+    {"product_id": "business-deposits", "name": "Business Deposits", "category": "savings", "product_type": "current_account"},
+    {"product_id": "credit-lines", "name": "Business Credit Lines", "category": "business_loan", "product_type": "working_capital"},
+    {"product_id": "business-loans", "name": "Business Term Loans", "category": "business_loan", "product_type": "term_loan"},
+    {"product_id": "cards", "name": "Business Cards", "category": "cards", "product_type": "credit_card"},
+]  # fmt: skip
+
+
+def sector_shock(sector: str, **kw) -> dict:
+    r = reading("sector:shock", **kw)
+    r["themes"][0]["sector"] = sector
+    return r
+
+
+# The sector a credit-line task is cut by is the model's pick (offline: the first option), so only the metric
+# is required here; a live run should cut it by ISIC F (construction) or J (information and communication).
+SCENARIOS += [
+    Scenario(
+        "us_ai_buildout_pause", "AI build-out pause: Dallas data-center contractors draw harder on credit lines.",
+        US_BANK, US_PRODUCTS,
+        [finding("f-dc-pause", "Dallas-area data-center projects paused as AI build-out slows",
+                 "Developers paused several data-center projects in the Dallas-Fort Worth area; contractors' "
+                 "work was put on hold.",
+                 headlines=[headline("Data-center projects paused across Dallas-Fort Worth as AI spending slows",
+                                     "2026-11-17T14:00:00Z", "Dallas Morning News")],
+                 places=["US-TX"])],
+        {"f-dc-pause": sector_shock("construction")},
+        tasks=[("credit-lines", "facility_utilization", {})],
+        coverage="us-bank",
+    ),
+    Scenario(
+        "us_ai_funding_cools", "AI funding cools: tech businesses burn cash and draw down their deposits.",
+        US_BANK, US_PRODUCTS,
+        [finding("f-ai-funding", "Venture funding for AI start-ups falls for a second quarter",
+                 "Funding rounds for AI and software start-ups shrank again; Texas tech firms are cutting spending.",
+                 headlines=[headline("AI start-up funding cools for a second straight quarter",
+                                     "2026-11-16T15:00:00Z", "Reuters")],
+                 places=["US"])],
+        {"f-ai-funding": sector_shock("information and communication")},
+        # large_depositor_net_flow is the savings category's own metric (no breakdowns): one task for the category
+        tasks=[("group-savings", "large_depositor_net_flow", {})],
+        coverage="us-bank",
+    ),
+]  # fmt: skip

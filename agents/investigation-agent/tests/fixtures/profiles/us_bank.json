@@ -1,0 +1,12 @@
+{
+ "institution": {"institution_id": "us-bank", "name": "TODO-NAME Bank", "institution_type": "bank", "subtype": "commercial",
+                 "home_country": "US", "base_currency": "USD", "time_zone": "America/Chicago"},
+ "sections": {
+  "products": [
+   {"id": "business-deposits", "name": "Business Deposits", "category": "savings", "product_type": "current_account", "status": "active", "currencies": ["USD"]},
+   {"id": "credit-lines", "name": "Business Credit Lines", "category": "business_loan", "product_type": "working_capital", "status": "active"},
+   {"id": "business-loans", "name": "Business Term Loans", "category": "business_loan", "product_type": "term_loan", "status": "active"},
+   {"id": "cards", "name": "Business Cards", "category": "cards", "product_type": "credit_card", "status": "active"}
+  ]
+ }
+}

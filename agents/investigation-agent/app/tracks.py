@@ -425,11 +425,13 @@ def owner(product_type: str, angle: str) -> str:
     return INSURER_OWNER_BY_ANGLE.get(angle, "underwriting")
 
 
-def check() -> None:
-    """The tracks agree with the vocabulary (run by the tests)."""
-    for m in MECHANISMS:
+def check(mechanisms: list[Mechanism] | None = None) -> None:
+    """The tracks agree with the vocabulary (run by the tests); by default the built-in ones,
+    or a run's whole catalog (built-in plus a region pack, app/packs)."""
+    ms = MECHANISMS if mechanisms is None else mechanisms
+    for m in ms:
         assert m.angle in ANGLES[m.product_type], m.mechanism_id
         assert m.expect in ("rise", "fall") and m.timing in ("days", "weeks", "months")
         for t in m.triggers:
             assert t.direction in THEME_DIRECTIONS[t.theme], (m.mechanism_id, t)
-    assert len(BY_ID) == len(MECHANISMS), "duplicate mechanism ids"
+    assert len({m.mechanism_id for m in ms}) == len(ms), "duplicate mechanism ids"

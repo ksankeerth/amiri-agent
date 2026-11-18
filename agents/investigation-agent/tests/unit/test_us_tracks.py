@@ -1,0 +1,159 @@
+"""The US pack's impact rules: added for a US institution only, never for anyone else.
+
+A run's catalog is the built-in tracks plus the US pack when the institution's home country is the US
+(app/packs); every other country gets the built-in tracks and their version exactly as before
+(tests/fixtures/snapshots/investigation_catalog.json, pinned before the pack existed).
+"""
+
+import asyncio
+import copy
+import json
+from pathlib import Path
+
+import pytest
+
+from app import tracks
+from app.candidates import list_candidates
+from app.contract import Event, InvestigationRequest, Limits, ThemeTag
+from app.investigate import Investigation
+from app.packs import catalog_for
+from app.packs.us_tracks import MECHANISMS as US
+from tests.scenarios.catalog import finding, headline, reading
+from tests.unit.test_scenarios import CorrectModel
+
+FIXTURES = Path(__file__).parents[1] / "fixtures"
+PINNED = json.loads((FIXTURES / "snapshots" / "investigation_catalog.json").read_text())
+US_IDS = ["savings.flows.sector_burn", "business_loan.utilization.sector", "business_loan.utilization.nbfi_stress"]
+SPEC = json.loads((Path(__file__).parents[4] / "server" / "app" / "spec" / "metrics_spec_v1.json").read_text())
+
+
+@pytest.mark.parametrize("country", ["LK", "ID", "PH", None])
+def test_without_a_pack_the_catalog_and_version_are_the_pinned_ones(country):
+    c = catalog_for(country)
+    assert [m.mechanism_id for m in c.mechanisms] == PINNED["mechanism_ids"]
+    assert c.version == PINNED["tracks_version"] == "builtin-v2.4"
+    assert c.mechanisms is tracks.MECHANISMS  # the module's own list, untouched
+
+
+def test_a_us_catalog_is_the_built_in_one_plus_the_pack():
+    c = catalog_for("US")
+    ids = [m.mechanism_id for m in c.mechanisms]
+    assert ids == PINNED["mechanism_ids"] + US_IDS
+    assert c.version == "builtin-v2.4+us-1" and c.region == "us"
+    assert set(c.by_id) == set(ids)
+    assert [m.mechanism_id for m in tracks.MECHANISMS] == PINNED["mechanism_ids"]  # the base is not extended
+
+
+def test_check_passes_for_the_base_alone_and_with_the_us_pack():
+    tracks.check()
+    tracks.check(catalog_for("US").mechanisms)
+
+
+def test_the_pack_uses_the_metrics_specs_own_keys_and_segments():
+    metrics = {(cat, m["key"]): m for cat, ms in SPEC["metrics"].items() for m in ms}
+    segments = set(SPEC["dimensions"]["segment"]["values"])
+    spec_category = {"savings": "savings", "business_loan": "business_loan"}
+    for m in US:
+        for key in m.metrics:
+            assert (spec_category[m.product_type], key) in metrics, (m.mechanism_id, key)
+        if m.segment_value:
+            assert m.segment_value in segments
+        if m.segment_dim:
+            assert all(m.segment_dim in metrics[(spec_category[m.product_type], k)]["breakdowns"] for k in m.metrics)
+    # the options mirror the closest built-in rules
+    assert tracks.BY_ID["business_loan.repayment_stress.sector"].segment_dim == catalog_for("US").by_id[
+        "business_loan.utilization.sector"].segment_dim == "sector"
+
+
+# ---------------------------------------------------------------- a construction sector shock
+
+CONSTRUCTION = ThemeTag(theme="sector", direction="shock", sector="construction")
+PRODUCTS = {"contractor_lines": ("business_loan", 1.0, "working_capital"), "business_deposits": ("savings", 1.0, None)}
+NO_CAPS = Limits(max_types_per_event=13, max_angles_per_type=5)
+
+
+def event() -> Event:
+    return Event.model_validate({"event_id": "evt-1", "finding_ids": ["f-1"], "themes": [CONSTRUCTION.model_dump()],
+                                 "country": "home", "anchor": "2026-11-18T00:00:00Z",
+                                 "anchor_basis": "published_at"})
+
+
+def listed(country: str) -> set[str]:
+    listing = list_candidates(event(), PRODUCTS, NO_CAPS, mechanisms=catalog_for(country).mechanisms)
+    return {m.mechanism_id for c in listing.to_screen + listing.context for m in c.mechanisms}
+
+
+def test_a_construction_shock_lists_the_us_rules_for_a_us_bank_only():
+    assert {"business_loan.utilization.sector", "savings.flows.sector_burn"} <= listed("US")
+    assert not set(US_IDS) & listed("LK")
+    assert "business_loan.repayment_stress.sector" in listed("LK")  # the base still reacts as before
+
+
+US_BANK = {
+    "name": "TODO-NAME Bank", "institution_type": "bank", "country": "US", "country_name": "United States",
+    "currency": "USD", "time_zone": "America/Chicago",
+    "summary": "Synthetic mid-size Dallas commercial bank, built from the public product mix of Texas lenders.",
+}
+LK_BANK = {**US_BANK, "name": "Serendib Commercial Bank", "country": "LK", "country_name": "Sri Lanka",
+           "currency": "LKR", "time_zone": "Asia/Colombo", "summary": "A Sri Lankan commercial bank."}
+CATALOG = json.loads((FIXTURES / "catalog_bank.json").read_text())
+
+
+def _metric(product_id: str, metric: str, dims: dict) -> dict:
+    p = next(p for p in CATALOG["products"] if p["product_id"] == product_id)
+    return {**copy.deepcopy(next(m for m in p["metrics"] if m["metric"] == metric)), "dimensions": dims}
+
+
+class Coverage:
+    """amiri-server's coverage for a contractor credit line cut by ISIC sector and segment."""
+
+    async def coverage(self, req):
+        return {"data_source": {"data_source_id": "metrics-spec", "catalog_version": "test"}, "products": [
+            {"product_id": "contractor_lines", "source_product_id": "contractor_lines",
+             "book_size": {"value": 2.0e9, "unit": req.institution.currency},
+             "metrics": [_metric("sme_loan", "facility_utilization",
+                                 {"sector": ["C", "F", "J", "unknown"],
+                                  "segment": ["domestic_business", "non_bank_financial"]})]}]}
+
+    async def calendar(self, req, start, until):
+        from datetime import timedelta
+
+        from app.data_client import Calendar
+
+        days, d = [], start
+        while d < until:
+            if d.isoweekday() < 6:
+                days.append(d)
+            d += timedelta(days=1)
+        return Calendar(days, "weekdays")
+
+
+def investigate(institution: dict):
+    req = InvestigationRequest.model_validate({
+        "run_id": f"us-test-{institution['country'].lower()}", "institution_id": "bank", "server_url": "http://server",
+        "institution": institution,
+        "products": [{"product_id": "contractor_lines", "name": "Contractor credit lines", "category": "business_loan",
+                      "product_type": "working_capital"}],
+        "findings": [finding("f-dc", "Dallas data-center construction pauses as AI build-out slows",
+                             "Several Dallas-Fort Worth data-center projects were paused.",
+                             headlines=[headline("Dallas data-center construction pauses as AI build-out slows",
+                                                 "2026-11-17T14:00:00Z", "Dallas Morning News")])],
+    })
+    answer = reading("sector:shock")
+    answer["themes"][0]["sector"] = "construction"
+    return asyncio.run(Investigation(req, CorrectModel([answer]), Coverage()).run())
+
+
+def test_a_us_data_center_pause_yields_contractor_credit_line_stress():
+    r = investigate(US_BANK)
+    assert r.tracks_version == "builtin-v2.4+us-1"
+    listed_ids = {m for s in r.screening for m in s.mechanism_ids}
+    assert "business_loan.utilization.sector" in listed_ids
+    assert "business_loan.utilization.sector" in {h.mechanism_id for h in r.hypotheses}
+
+
+def test_the_same_event_for_a_sri_lankan_bank_has_no_us_rule():
+    r = investigate(LK_BANK)
+    assert r.tracks_version == "builtin-v2.4"
+    seen = {m for s in r.screening for m in s.mechanism_ids} | {h.mechanism_id for h in r.hypotheses}
+    assert not set(US_IDS) & seen

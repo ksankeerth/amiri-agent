@@ -38,6 +38,7 @@ from app.contract import (
 )
 from app.data_client import Calendar, Data, DataError
 from app.normalize import Reading, country_of, extend_into, normalize, where
+from app.packs import catalog_for
 from app.report import build_report
 from app.steps import (
     Llm,
@@ -53,7 +54,7 @@ from app.steps import (
     screen_schema,
 )
 from app.tasks import Choice, build_task, fixed_filter, local_date, pick_metric
-from app.tracks import TRACKS_VERSION, Mechanism
+from app.tracks import Mechanism
 
 STEP_TOOL = {
     "classify": "classify_finding",
@@ -284,7 +285,8 @@ class Investigation:
         }
         ext = self.req.extend
         previous = event.model_copy(update={"size": ext.previous_size}) if ext and ext.resize else None
-        listing = list_candidates(event, products, self.limits, self._sides(event), previous)
+        listing = list_candidates(event, products, self.limits, self._sides(event), previous,
+                                  catalog_for(self.req.institution.country).mechanisms)
         text = describe_event(event, self._findings(event))
         for c in listing.context:
             self._add_context(event, c)
@@ -654,7 +656,7 @@ class Investigation:
         model = self.models_used[-1] if self.models_used else "none"
         result = InvestigationResult(
             stop_reason=self.stop_reason,
-            tracks_version=TRACKS_VERSION,
+            tracks_version=catalog_for(self.req.institution.country).version,
             mode="tasks" if self.req.validation else "report_only",
             as_of=self.req.as_of,
             extended_event_id=self.req.extend.event_id if self.req.extend else None,
