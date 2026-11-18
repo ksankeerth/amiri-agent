@@ -1,12 +1,13 @@
 # Demo data
 
-Two demo institutions for trying Amiri Agent. Both are **invented**: no real bank or insurer has these names. Real
+Demo institutions for trying Amiri Agent. All are **invented**: no real bank or insurer has these names. Real
 firms appear only as their rivals, regulators and partners, by their public names.
 
 | Folder | Institution | Where | What it is |
 |---|---|---|---|
 | [`serendib-commercial-bank/`](serendib-commercial-bank/) | Serendib Commercial Bank | Sri Lanka only (172 branches, none abroad) | A mid-size commercial bank: deposits and pawning, SME lending, trade finance, cards, remittances from Gulf workers |
 | [`samudra-raya-general-insurance/`](samudra-raya-general-insurance/) | Samudra Raya General Insurance | Indonesia only (42 branches) | A mid-size general insurer: motor, property, marine, health, travel, with a sharia unit |
+| [`us-texas-bank/`](us-texas-bank/) | TODO-NAME Bank (name to be picked) | Texas, US | A synthetic mid-size Dallas commercial bank for the US region pack: business loans by sector, credit lines, business deposits, cards. Imported from its file, not a one-click demo ([its README](us-texas-bank/README.md)) |
 
 Each institution's `world.md` describes the real-world situation its monitors and scenarios are written for, with
 dates and sources.
