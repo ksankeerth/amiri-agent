@@ -1,4 +1,4 @@
-/* The shell (top bar status, menu) and the Overview's hero: one headline, one action, four numbers. */
+/* The shell (top bar status, menu) and the Overview's hero: one headline beside the map, one action, four numbers. */
 
 /* ---------- the honest Live pill: green when it runs, amber when prices are late, grey when paused */
 .worldpill .dot { background:var(--ink-3); box-shadow:none; }
@@ -11,7 +11,8 @@
 .worldpill.is-off .dot { background:transparent; box-shadow:inset 0 0 0 2px var(--ink-3); }  /* a hollow dot: off, not just grey */
 .worldpill { cursor:default; }
 
-/* ---------- Overview hero */
+/* ---------- Overview hero, "map first": the first screen of the scrolling .main is the headline beside the live map,
+   the four steps beneath as one line, and a scroll cue. No boxes. (FirstRun shares .ovx but not .ovx-hero.) */
 .ovx .ph { margin-bottom:24px; }
 .ovx .ph-title h1 { font-size:var(--fs-3xl); letter-spacing:-.025em; line-height:1.15; }
 .ovx .ph-status { font-size:var(--fs-lg); color:var(--ink-2); }
@@ -22,20 +23,105 @@
 .ovx-warn { display:inline-flex; align-items:baseline; gap:8px; color:var(--high-ink); font-weight:600; }
 .ovx-warn svg { width:18px; height:18px; flex:none; align-self:center; }
 
-/* four numbers that read left to right; only the one that needs someone stands out */
-.ovx-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
-.ovx-kpi { display:flex; flex-direction:column; padding:16px 20px; text-decoration:none; color:inherit; }
-.ovx-kpi:hover { text-decoration:none; box-shadow:var(--e-md); border-color:var(--hairline-2); }
+.page.ovx:has(> .ovx-hero) { max-width:1600px; }
+.ovx-hero { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.45fr); grid-template-rows:minmax(0,1fr) auto auto; column-gap:56px;
+  min-height:calc(100dvh - 56px - 20px); }  /* the app bar (56) and the page's top padding (20): exactly the first screen of .main */
+.ovx-hero > .ph { grid-column:1; grid-row:1; align-self:center; margin:0; }
+.ovx-hero .ph-title h1 { font-size:60px; line-height:1.02; letter-spacing:-.03em; }
+.ovx-hero .btn { border-radius:var(--r-pill); box-shadow:none; }
+.ovx-map { grid-column:2; grid-row:1; align-self:center; min-width:0; }
+.ovx-n { color:var(--critical); }
+/* the eyebrow carries a light: red and pulsing like an on-air light when alerts wait, a calm green dot otherwise */
+.ovx-hero .ph .label::before { content:""; display:inline-block; width:8px; height:8px; margin-right:10px; border-radius:50%; vertical-align:1px; background:var(--accent); }
+.ovx-hero[data-state="alert"] .ph .label::before { background:var(--critical); }
+/* the most serious concern gets a red underline that draws in once */
+.ovx-hero[data-state="alert"] .ph-status a b { background:linear-gradient(var(--critical), var(--critical)) no-repeat 0 100% / 100% 2px; padding-bottom:2px; }
+
+/* the four steps: one line under the hero, a rule that fills from step 1 to 4 */
+.ovx-kpis { grid-column:1 / -1; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); position:relative; margin-top:28px; padding-top:18px; }
+.ovx-kpis::before, .ovx-kpis::after { content:""; position:absolute; left:0; right:0; top:0; height:2px; }
+.ovx-kpis::before { background:var(--line); }
+.ovx-kpis::after { transform-origin:left; background:linear-gradient(90deg, var(--accent), var(--accent) 70%, var(--critical)); }
+.ovx-kpi { display:flex; flex-direction:column; padding:0 24px 0 0; text-decoration:none; color:inherit; position:relative; }
+.ovx-kpi:hover { text-decoration:none; }
+.ovx-kpi:hover .l { text-decoration:underline; text-underline-offset:3px; }
 .ovx-kpi .step { font-size:var(--fs-xs); font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin-bottom:8px; }
-.ovx-kpi .v { display:flex; align-items:center; gap:8px; font-size:var(--fs-3xl); font-weight:700; letter-spacing:-.03em; line-height:1.1; color:var(--ink); font-variant-numeric:tabular-nums; }
-.ovx-kpi .v svg { width:24px; height:24px; stroke-width:2.2; }
+.ovx-kpi .v { display:flex; align-items:center; gap:8px; font-size:52px; font-weight:700; letter-spacing:-.03em; line-height:1.1; color:var(--ink); font-variant-numeric:tabular-nums; }
+.ovx-kpi .v svg { width:28px; height:28px; stroke-width:2.2; }
 .ovx-kpi .l { font-size:var(--fs-md); font-weight:600; color:var(--ink-2); margin-top:4px; }
 .ovx-kpi .s { font-size:var(--fs-xs); color:var(--ink-3); margin-top:8px; }
-.ovx-kpi.hot { background:var(--critical-soft); border-color:var(--critical-line); }
 .ovx-kpi.hot .step, .ovx-kpi.hot .v, .ovx-kpi.hot .l, .ovx-kpi.hot .s { color:var(--critical-ink); }
-.ovx-kpi.hot:hover { border-color:var(--critical); }
-.ovx .ov-grid { margin-top:24px; }
-@media (max-width: 1100px) { .ovx-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.ovx-kpi.hot .v { color:var(--critical); }
+
+/* the cue at the foot of the first screen: a label and a line with a drop running down it */
+.ovx-cue { grid-column:1 / -1; justify-self:center; display:flex; flex-direction:column; align-items:center; gap:10px; padding:40px 0 4px;
+  font-size:12px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); pointer-events:none; }
+.ovx-cue::after { content:""; width:2px; height:34px; border-radius:2px;
+  background:linear-gradient(var(--accent), transparent) no-repeat 0 -14px / 2px 14px, var(--hairline-2); }
+
+@media (max-width: 1600px) { .ovx-hero { grid-template-columns:minmax(0,1fr) minmax(0,1.2fr); column-gap:40px; } .ovx-hero .ph-title h1 { font-size:52px; } }
+@media (max-height: 960px) { .ovx-kpis { margin-top:16px; } .ovx-cue { padding-top:16px; gap:6px; } .ovx-cue::after { height:24px; } }
+@media (max-width: 1100px) {
+  .ovx-hero { grid-template-columns:minmax(0,1fr); grid-template-rows:none; min-height:0; }
+  .ovx-hero > .ph, .ovx-map { grid-column:1; grid-row:auto; }
+  .ovx-map { margin-top:24px; }
+  .ovx-hero .ph-title h1 { font-size:var(--fs-3xl); }
+  .ovx-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); row-gap:24px; }
+  .ovx-cue { display:none; }
+}
+
+/* ---------- motion. The global prefers-reduced-motion rule in app.css stops all of it: everything shows at rest. */
+/* the opening, once, in reading order */
+.ovx-hero .ph .label { animation:ovup .6s .1s both; }
+.ovx-hero .ph-title { animation:ovup .7s .25s both; }
+.ovx-hero .ph-status { animation:ovup .6s .5s both; }
+.ovx-hero .ph-cta { animation:ovup .6s .7s both; }
+.ovx-hero .ph-actions { animation:ovfade .6s 1s both; }
+.ovx-map { animation:ovmap 1.1s .3s cubic-bezier(.2,.7,.2,1) both; }
+.ovx-kpis::after { animation:ovfill 2.4s 1s cubic-bezier(.3,.7,.2,1) both; }
+.ovx-kpi { --i:0; animation:ovup .6s calc(1.1s + var(--i) * .2s) both; }
+.ovx-kpi:nth-child(2) { --i:1; } .ovx-kpi:nth-child(3) { --i:2; } .ovx-kpi:nth-child(4) { --i:3; }
+.ovx-cue { animation:ovfade .6s 2.6s both; }
+.ovx-cue::after { animation:ovdrip 1.6s 2.6s ease-in-out infinite; }
+@keyframes ovup { from { opacity:0; transform:translateY(18px); } }
+@keyframes ovfade { from { opacity:0; } }
+@keyframes ovmap { from { opacity:0; transform:scale(.96); filter:blur(6px); } }
+@keyframes ovfill { from { transform:scaleX(0); } }
+@keyframes ovdrip { from { background-position:0 -14px, 0 0; } to { background-position:0 34px, 0 0; } }
+
+/* the headline when alerts wait: an on-air dot, the count breathing a red glow, the cause underlined once, the arrow nudging */
+.ovx-hero[data-state="alert"] .ph .label::before { animation:ovbeacon 1.8s ease-out infinite; }
+.ovx-hero .ovx-n { animation:ovglow 2.8s 1.2s ease-in-out infinite; }
+.ovx-hero[data-state="alert"] .ph-status a b { animation:ovline .9s 1.2s cubic-bezier(.3,.7,.2,1) both; }
+.ovx-hero[data-state="alert"] .ph-cta .btn svg { animation:ovnudge 3s 2s ease-in-out infinite; }
+@keyframes ovbeacon { from { box-shadow:0 0 0 0 color-mix(in srgb, var(--critical) 70%, transparent); } to { box-shadow:0 0 0 12px transparent; } }
+@keyframes ovglow { 0%,100% { text-shadow:0 0 0 transparent; } 50% { text-shadow:0 0 28px color-mix(in srgb, var(--critical) 70%, transparent); } }
+@keyframes ovline { from { background-size:0 2px; } }
+@keyframes ovnudge { 0%,30%,100% { transform:none; } 15% { transform:translateX(5px); } }
+
+/* the steps, "Relay": a light runs along the rule 1 → 4 every 5 s and wakes each number as it passes; step 4 answers in red */
+.ovx-kpi::before { content:""; position:absolute; top:-19px; left:0; width:40%; height:4px; border-radius:4px; opacity:0; pointer-events:none;
+  background:linear-gradient(90deg, transparent, var(--accent), transparent); filter:drop-shadow(0 0 6px var(--accent));
+  animation:ovrun 5s calc(2.6s + var(--i) * .7s) linear infinite; }
+.ovx-kpi.hot::before { background:linear-gradient(90deg, transparent, var(--critical), transparent); filter:drop-shadow(0 0 6px var(--critical)); }
+.ovx-kpi .v { animation:ovwake 5s calc(2.85s + var(--i) * .7s) ease-out infinite; }
+.ovx-kpi.hot .v { animation-name:ovwake-hot; transform-origin:left center; }
+@keyframes ovrun { 0% { opacity:0; transform:translateX(-20%); } 3%,14% { opacity:1; } 14% { transform:translateX(170%); } 16%,100% { opacity:0; transform:translateX(190%); } }
+@keyframes ovwake { 0%,14%,100% { text-shadow:none; } 5% { text-shadow:0 0 18px color-mix(in srgb, var(--accent) 80%, transparent); } }
+@keyframes ovwake-hot { 0%,24%,100% { text-shadow:none; transform:none; } 5% { text-shadow:0 0 22px var(--critical); transform:scale(1.06); } }
+
+/* scroll-driven: the cue goes once you scroll; below the fold each section rises in, its accent stroke draws, its rows slide in.
+   Only where the browser has scroll timelines; elsewhere all of it simply shows at rest. */
+@supports (animation-timeline: view()) {
+  .ovx-cue { animation:ovfade .6s 2.6s both, ovcue-out linear both; animation-timeline:auto, scroll(nearest); animation-range:normal, 0 160px; }
+  .ovx .ov-grid .card { animation:ovrise linear both; animation-timeline:view(); animation-range:entry 0% entry 70%; }
+  .ovx .ov-grid .card > .hd::before { animation:ovstroke linear both; animation-timeline:view(); animation-range:entry 20% entry 90%; }
+  .ovx .ov-grid :is(.ov-event, .ov-need, .ov-mkt, .li) { animation:ovrow linear both; animation-timeline:view(); animation-range:entry 10% entry 80%; }
+}
+@keyframes ovcue-out { to { opacity:0; visibility:hidden; } }
+@keyframes ovrise { from { opacity:0; transform:translateY(56px); } }
+@keyframes ovstroke { from { transform:scaleX(0); } }
+@keyframes ovrow { from { opacity:0; transform:translateX(-14px); } }
 
 /* ---------- first run: the one-click demo first, your own setup second */
 .ovx-demo { border-color:var(--accent-line); }

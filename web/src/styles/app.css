@@ -123,7 +123,9 @@ p { margin:0; }
 .nav { padding:12px 8px; display:flex; flex-direction:column; gap:2px; overflow:auto; flex:1; }
 .nav .grp { margin:16px 12px 8px; }
 .nav a { display:flex; align-items:center; gap:12px; height:34px; padding:0 12px; border-radius:var(--r-nav); color:var(--ink-2); font-weight:500; text-decoration:none; }
-.nav a:hover { background:var(--hover-bg); }
+/* hover: a green tint with a green label and icon (both themes); the current page keeps its own highlight */
+.nav a:not([aria-current="page"]):hover { background:color-mix(in srgb, var(--accent) 22%, transparent); color:var(--accent-ink); }
+.nav a:not([aria-current="page"]):hover svg { color:var(--accent); }
 .nav a[aria-current="page"] { background:var(--active-bg); color:var(--ink); font-weight:600; }
 .nav a svg { width:18px; height:18px; flex:none; }
 .nav a .count { margin-left:auto; font-size:var(--fs-xs); font-weight:700; min-width:20px; height:20px; padding:0 8px; border-radius:var(--r-pill); display:inline-flex; align-items:center; justify-content:center; background:var(--sunken); color:var(--ink-2); }

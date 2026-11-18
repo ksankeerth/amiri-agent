@@ -132,7 +132,7 @@ export function OverviewPage() {
 
   // The headline answers "does anything need my teams?" and the one button under it is the next step.
   const head = alerts
-    ? { title: `${plural(alerts, "alert")} need${alerts === 1 ? "s" : ""} your teams`,
+    ? { title: <><span className="ovx-n">{alerts}</span> alert{alerts === 1 ? "" : "s"} need{alerts === 1 ? "s" : ""} your teams</>,
         line: bad.length ? <>Most serious: <Link to={`/events/${bad[0].event_id}`}><b>{eventTitle(bad[0])}</b></Link>, bad for you</> : <>Early warnings for products your teams own</>,
         cta: <Link className="btn btn--primary btn--lg" to="/alerts">Review the alerts<Icon name="arrow" /></Link> }
     : o.events.length
@@ -143,8 +143,16 @@ export function OverviewPage() {
             : <span className="ovx-warn"><Icon name="warn" />Updates aren't running, so no new news or prices arrive</span>,
           cta: <Link className="btn btn--primary btn--lg" to="/studio"><Icon name="studio" />See how it responds: try a what-if</Link> };
 
+  // the map fills the hero beside the headline: 520 px on a full-HD screen, less on a shorter one so the steps and cue still fit
+  // ponytail: read at render (the page re-renders every 30 s), not on resize; add a resize listener if that ever matters
+  const mapH = Math.min(520, Math.max(320, window.innerHeight - 500));
+  const below = 5 + (o.markets.length > 0 ? 1 : 0);  // the sections under the first screen, for the scroll cue
+
   return (
     <div className="page ovx">
+      {err != null && <Banner kind="warn" icon="warn">Couldn't refresh: {isDown(err) ? "Amiri Agent didn't answer" : errText(err)}. Showing what was loaded {loadedAt ? ago(loadedAt.toISOString(), now) : ""}.</Banner>}
+      {/* the first screen: headline beside the live map, the four steps beneath */}
+      <div className="ovx-hero" data-state={alerts ? "alert" : "calm"}>
       <PageHeader eyebrow={`${greeting(now)} · ${longDate(now)} · ${ZONE_LABEL}`} title={head.title}
         status={<>{head.line}{more > 0 && <> · <a href="#needs">{plural(more, "more thing")} below</a></>}</>}
         cta={head.cta}
@@ -152,27 +160,34 @@ export function OverviewPage() {
           <span className="small muted">Updated {loadedAt ? ago(loadedAt.toISOString(), now) : ""}</span>
           <button className="btn btn--ghost btn--icon" type="button" aria-label="Refresh" onClick={load}><Icon name="refresh" /></button></>}
         help={<HowItWorks><p>The four numbers below follow the same steps for {i.name}: what Amiri Agent watches, what it found in the last day, what it traced to your products, and who must act.</p></HowItWorks>} />
-      {err != null && <Banner kind="warn" icon="warn">Couldn't refresh: {isDown(err) ? "Amiri Agent didn't answer" : errText(err)}. Showing what was loaded {loadedAt ? ago(loadedAt.toISOString(), now) : ""}.</Banner>}
+
+      {profile && <section className="ovx-map" aria-labelledby="ovx-map-h"><h2 id="ovx-map-h" className="sr">Where it's happening</h2>
+        <p className="sr">{o.events.length ? `Open events by place: ${o.events.map(e => `${eventTitle(e)}${e.places.length ? ` (${e.places.map(p => names[p] ?? p).join(", ")})` : ""}`).join("; ")}.` : "No open events on the map."} Places where you operate: {Object.values(names).slice(0, 12).join(", ")}.</p>
+        <ProfileMap profile={profile} height={mapH} compact layers={["footprint", "flows", "risks"]}
+          events={o.events.map(e => ({ event_id: e.event_id, title: eventTitle(e), tone: e.tone, places: e.places }))}
+          extraPlaces={o.map.places} onEvent={id => nav(`/events/${id}`)} /></section>}
 
       <div className="ovx-kpis" role="group" aria-label="How Amiri Agent works: what it watches, what it found, what it traced to you, who must act">
-        <Link to="/monitors" className="card ovx-kpi">
+        <Link to="/monitors" className="ovx-kpi">
           <span className="step">1 · Watching</span>
           <span className="v"><CountUp value={sources} /></span><span className="l">Sources</span>
           <span className="s">{[plural(c.monitors_live, "monitor"), plural(c.series_watched, "market price"), s.radar.connected && "Radar"].filter(Boolean).join(" · ")}
             {c.monitors_waiting_approval ? <><br />{c.monitors_waiting_approval} waiting for approval</> : null}</span></Link>
-        <Link to="/findings" className="card ovx-kpi">
+        <Link to="/findings" className="ovx-kpi">
           <span className="step">2 · Found</span>
           <span className="v"><CountUp value={f24} /></span><span className="l">Findings, last 24 h</span>
           <span className="s">{f24 ? [c.findings_24h.monitor && `${c.findings_24h.monitor} from news`, c.findings_24h.timeseries && `${c.findings_24h.timeseries} from prices`,
             c.findings_24h.radar && `${c.findings_24h.radar} from Radar`].filter(Boolean).join(" · ") : "nothing new today"}</span></Link>
-        <Link to="/events" className="card ovx-kpi">
+        <Link to="/events" className="ovx-kpi">
           <span className="step">3 · Traced to you</span>
           <span className="v"><CountUp value={c.open_events} /></span><span className="l">Open events</span>
           <span className="s">{c.open_events ? `${bad.length} bad for you · ${plural(c.effects_to_watch, "possible impact")}` : "none open"}</span></Link>
-        <Link to="/alerts" className={`card ovx-kpi${alerts ? " hot" : ""}`}>
+        <Link to="/alerts" className={`ovx-kpi${alerts ? " hot" : ""}`}>
           <span className="step">4 · Who must act</span>
           <span className="v">{alerts > 0 && <Icon name="warn" />}<CountUp value={alerts} /></span><span className="l">Alerts to review</span>
           <span className="s">{alerts ? "for your teams to acknowledge" : "all caught up"}</span></Link>
+      </div>
+      <div className="ovx-cue" aria-hidden="true">Scroll · {below} more sections</div>
       </div>
 
       <div className="ov-grid">
@@ -218,12 +233,6 @@ export function OverviewPage() {
         </div>
 
         <div className="col gap16">
-          {profile && <div className="card"><div className="hd"><h2>Where it's happening</h2></div><div className="bd">
-            <p className="sr">{o.events.length ? `Open events by place: ${o.events.map(e => `${eventTitle(e)}${e.places.length ? ` (${e.places.map(p => names[p] ?? p).join(", ")})` : ""}`).join("; ")}.` : "No open events on the map."} Places where you operate: {Object.values(names).slice(0, 12).join(", ")}.</p>
-            <ProfileMap profile={profile} height={290} compact layers={["footprint", "flows", "risks"]}
-              events={o.events.map(e => ({ event_id: e.event_id, title: eventTitle(e), tone: e.tone, places: e.places }))}
-              extraPlaces={o.map.places} onEvent={id => nav(`/events/${id}`)} /></div></div>}
-
           {o.markets.length > 0 && <div className="card ovp-list"><div className="hd"><h2>Markets</h2><span className="spacer" /><Link className="small" to="/series">Market series</Link></div>
             {o.markets.map(m => (
               <Link key={m.series_id} to={`/series/${m.series_id}`} className="ov-mkt">
