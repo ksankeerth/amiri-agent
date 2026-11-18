@@ -1,0 +1,211 @@
+You judge news stories for Serendib Commercial Bank, a bank in Sri Lanka, for its Risk Managers.
+
+About Serendib Commercial Bank: Mid-size commercial bank: retail deposits, SME and corporate lending, trade finance, pawning and cards; branches in Sri Lanka and in Tamil Nadu, Kerala and Karnataka.
+Customer groups: Migrant-worker families; Exporters, importers and SMEs; Farmers and estate workers; Salaried (IT, services, government)
+Products: Migrant Family Savings; FC Savings (NRFC/PFCA); Term Deposits; Pawning; Personal Loans; Vehicle Leasing; Credit Cards; SME Loans; Trade Finance; Inward Remittances
+Money and goods flows: remittances_in LK - SA; remittances_in LK - AE; remittances_in IN-KL - AE; exports LK - US; imports LK - AE
+
+For each story below decide:
+- relevance: "high" if it could move Serendib Commercial Bank's products or customers within weeks; "medium" if it
+  could later or a little; "low" if routine, far away or not about Serendib Commercial Bank's products or customers.
+  A story's watched_places say why Serendib Commercial Bank watches each place (its branches, a flow, an import route).
+  A change there (prices, routes, rules, a disruption) reaches Serendib Commercial Bank through that reason, so it is
+  never "far away" or routine: judge it by what the change does to that flow or customer group.
+- send: true only if an analyst should trace it to the products now. Never for routine news.
+- why: ONE line in your own words naming the link to Serendib Commercial Bank (the place, flow, customer group, product,
+  rival or regulator it touches, and how), or why it doesn't matter.
+- title: one neutral line in English. summary: 1-3 sentences, from the headlines only.
+- themes: only from the vocabulary below, and only for a change the headlines report: something
+  held, kept or unchanged has no direction, so leave it out. When unsure, an empty list.
+- same_as: the fingerprint of a remembered story only if this IS that story. continues: the fingerprint
+  of a remembered story only if this is a new development of it. Otherwise leave both empty.
+
+Never write numbers or facts that aren't in the headlines. Answer for every story, using its key.
+
+Theme vocabulary (theme: direction = meaning):
+- fx: weaker = the currency weakens; stronger = the currency strengthens
+- rates: up = rates rise; down = rates fall
+- prices: up = prices rise; down = prices fall
+- commodities: up = the commodity's price rises; down = the commodity's price falls
+- remittance: up = remittances rise; down = remittances fall
+- regulation: tax = a tax change; central_bank_direction = a central-bank direction or rule; central_bank_relief = central-bank relief: moratorium, concessions; insurance_regulator_rule = an insurance regulator's rule; import_control_tighter = import controls tightened; import_control_looser = import controls eased; tariff = a tariff change; sanctions = sanctions on a country, bank or payment channel; travel_tighter = travel rules tightened: visas, bans, pilgrimage quotas; travel_looser = travel rules eased
+- competitor: cheaper = a rival cuts its price; new_product = a rival launches a product; partner_switch = a partner switches to a rival
+- macro: worse = the economic outlook worsens; better = the economic outlook improves
+- sector: shock = a shock to one sector; boost = a boost to one sector
+- disaster: domestic = a disaster where the institution operates; abroad = a disaster abroad
+- trust: own = a trust event at this institution; rival = a trust event at a rival; system = a trust event in the whole system
+
+Stories:
+[
+ {
+  "key": "s2",
+  "watched_places": {
+   "AE": "place to watch: Remittances; fuel imports; flow: remittances in with IN-KL; flow: remittances in with LK; flow: imports (Crude oil) with LK; risk: Gulf tension meets remittances",
+   "BH": "risk: Gulf tension meets remittances",
+   "IR": "risk: Gulf tension meets remittances",
+   "KW": "place to watch: Remittances; risk: Gulf tension meets remittances",
+   "LK": "footprint (home)",
+   "OM": "risk: Gulf tension meets remittances",
+   "QA": "place to watch: Remittances; risk: Gulf tension meets remittances",
+   "SA": "place to watch: Remittances from migrant workers; flow: remittances in with LK; risk: Gulf tension meets remittances",
+   "US": "flow: exports (Garments) with LK",
+   "YE": "risk: Red Sea attacks meet exporters",
+   "chk:hormuz": "place to watch: Fuel imports; risk: Gulf tension meets remittances",
+   "sea:red-sea": "risk: Red Sea attacks meet exporters"
+  },
+  "headlines": [
+   {
+    "title": "Oil Tanker Explodes in Strait of Hormuz After It Hit Naval Mine",
+    "outlet": "sputnikglobe.com",
+    "published_at": "2026-10-17T05:30:00+00:00"
+   },
+   {
+    "title": "24 Indian sailors safe after tankers hit in Hormuz, Romania",
+    "outlet": "siasat.com",
+    "published_at": "2026-10-17T05:30:00+00:00"
+   },
+   {
+    "title": "Gulf cost edge keeps chemical buyers hooked despite Hormuz risks",
+    "outlet": "zawya.com",
+    "published_at": "2026-10-17T05:30:00+00:00"
+   },
+   {
+    "title": "'Supertanker' carrying 2 million barrels of oil struck by mine in Strait of Hormuz",
+    "outlet": "aol.co.uk",
+    "published_at": "2026-10-17T05:15:00+00:00"
+   },
+   {
+    "title": "Oil tanker carrying 2 million barrels hit in Strait of Hormuz as IRGC issues warning",
+    "outlet": "aol.co.uk",
+    "published_at": "2026-10-17T05:15:00+00:00"
+   },
+   {
+    "title": "Two Tankers Carrying 24 Indians Hit in Hormuz, Romania",
+    "outlet": "kashmirlife.net",
+    "published_at": "2026-10-17T04:45:00+00:00"
+   },
+   {
+    "title": "Strait of Hormuz tanker carrying 2 million barrels of oil hit by mine | World",
+    "outlet": "express.co.uk",
+    "published_at": "2026-10-17T04:15:00+00:00"
+   },
+   {
+    "title": "Two Ships Carrying 24 Indian Sailors Hit in Hormuz, Romania; All Safe",
+    "outlet": "deccanchronicle.com",
+    "published_at": "2026-10-17T04:00:00+00:00"
+   }
+  ],
+  "remembered": []
+ },
+ {
+  "key": "s21",
+  "watched_places": {
+   "LK": "footprint (home)",
+   "US": "flow: exports (Garments) with LK"
+  },
+  "headlines": [
+   {
+    "title": "US invests $ 17 m to digitalise Colombo Port",
+    "outlet": "ft.lk",
+    "published_at": "2026-10-16T21:45:00+00:00"
+   },
+   {
+    "title": "US announces $17 million to digitise Port of Colombo operations",
+    "outlet": "tamilguardian.com",
+    "published_at": "2026-10-16T21:15:00+00:00"
+   },
+   {
+    "title": "US Pledges $17 Million to Digitise Colombo Port Operations",
+    "outlet": "lankanewspapers.com",
+    "published_at": "2026-10-16T10:15:00+00:00"
+   },
+   {
+    "title": "US pledges $17 million for Colombo port digital overhaul amid renewed maritime cooperation",
+    "outlet": "slguardian.org",
+    "published_at": "2026-10-16T07:00:00+00:00"
+   }
+  ],
+  "remembered": []
+ },
+ {
+  "key": "s447",
+  "watched_places": {
+   "LK": "footprint (home)"
+  },
+  "headlines": [
+   {
+    "title": "TVK Party Official Nabbed in India Over Drug Smuggling Ring Allegedly Tied to Sri Lanka",
+    "outlet": "lankanewspapers.com",
+    "published_at": "2026-10-17T05:30:00+00:00"
+   },
+   {
+    "title": "Vijay's TVK official held as India probes drugs smuggling to Sri Lanka",
+    "outlet": "dailymirror.lk",
+    "published_at": "2026-10-17T04:30:00+00:00"
+   }
+  ],
+  "remembered": []
+ },
+ {
+  "key": "s323",
+  "watched_places": {
+   "IR": "risk: Gulf tension meets remittances",
+   "OM": "risk: Gulf tension meets remittances",
+   "SA": "place to watch: Remittances from migrant workers; flow: remittances in with LK; risk: Gulf tension meets remittances",
+   "YE": "risk: Red Sea attacks meet exporters"
+  },
+  "headlines": [
+   {
+    "title": "Iran Rejects Claims It Was Behind Houthi Attacks",
+    "outlet": "jowhar.com",
+    "published_at": "2026-10-17T05:30:00+00:00"
+   },
+   {
+    "title": "Iran denies Saudi accusation of involvement in Houthi attacks",
+    "outlet": "manilatimes.net",
+    "published_at": "2026-10-17T02:15:00+00:00"
+   },
+   {
+    "title": "Iran denies accusation of involvement in Houthi attacks",
+    "outlet": "rte.ie",
+    "published_at": "2026-10-17T01:45:00+00:00"
+   },
+   {
+    "title": "Iran Denies Saudi Arabia's Claim of Involvement in Houthi Attacks",
+    "outlet": "opinionnigeria.com",
+    "published_at": "2026-10-17T00:30:00+00:00"
+   },
+   {
+    "title": "Iran denies backing Houthi attacks on Saudi Arabia amid fresh missile, drone interceptions",
+    "outlet": "geo.tv",
+    "published_at": "2026-10-17T00:00:00+00:00"
+   },
+   {
+    "title": "Saudi Arabia says Houthi attacks violate terms of rapprochement with Iran",
+    "outlet": "middleeasteye.net",
+    "published_at": "2026-10-16T22:00:00+00:00"
+   },
+   {
+    "title": "Iran denies role in Houthi attacks on Saudi Arabia, offers mediation",
+    "outlet": "dailysabah.com",
+    "published_at": "2026-10-16T21:30:00+00:00"
+   }
+  ],
+  "remembered": []
+ },
+ {
+  "key": "s456",
+  "watched_places": {
+   "IR": "risk: Gulf tension meets remittances",
+   "LK": "footprint (home)"
+  },
+  "headlines": [
+   {
+    "title": "Sri Lankan government assures IMF it will present 2027 austerity budget",
+    "outlet": "wsws.org",
+    "published_at": "2026-10-17T05:30:00+00:00"
+   }
+  ],
+  "remembered": []
+ }
+]
