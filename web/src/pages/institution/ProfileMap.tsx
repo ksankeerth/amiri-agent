@@ -246,8 +246,9 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           return <g key={f.id} className={ev ? "mapflow is-hit" : quiet ? "mapflow is-quiet" : "mapflow"}
             onMouseMove={e => show(e, `${FLOW_WORDS[f.kind]}${f.goods ? ` (${f.goods})` : ""}: ${P[f.counterpart]?.name ?? f.counterpart} ${out ? "←" : "→"} ${P[f.local]?.name ?? f.local}${f.value ? ` · ${usdText(f.value.amount)} a year` : ""}${ev ? ` · reached by: ${ev.title}` : ""}`)} onMouseLeave={() => setTip(null)}>
             <path d={d} fill="none" stroke={FLOW_COLOR[f.kind]} strokeOpacity={quiet ? 0.28 : compact ? 0.75 : 0.85} strokeWidth={width} strokeLinecap="round" />
-            {/* the direction: small particles travel from where the money starts to where it goes */}
-            <path className="flowdots" d={d} fill="none" stroke="var(--map-particle)" strokeOpacity={quiet ? 0.3 : 0.9} strokeWidth={Math.max(2, width * 0.7)} strokeLinecap="round"
+            {/* the direction: small particles travel from where the money starts to where it goes (kept at full strength on a
+                faded flow, so which way the money moves never gets lost behind an event's pulse) */}
+            <path className="flowdots" d={d} fill="none" stroke="var(--map-particle)" strokeOpacity={0.9} strokeWidth={Math.max(2, width * 0.7)} strokeLinecap="round"
               strokeDasharray={`0.1 ${gap}`} style={{ ["--cycle" as string]: `${gap + 0.1}px` }} />
             {/* an event on this flow: a pulse in the event's colour runs along it to the bank's home */}
             {ev && <path className="flowpulse" d={inward} pathLength={100} fill="none" stroke={TONE_COLOR[ev.tone]} strokeWidth={width + 2.5} strokeLinecap="round" strokeDasharray="10 90" style={{ color: TONE_COLOR[ev.tone] }} />}
@@ -303,6 +304,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
         {layers?.includes("risks") !== false && <span><svg width={14} height={14} aria-hidden="true" style={{ verticalAlign: -2 }}><circle cx={7} cy={7} r={5.5} fill="var(--critical-soft)" stroke="var(--critical)" strokeDasharray="3 2" /></svg> risk areas in your profile</span>}
         {layers?.includes("flows") !== false && <span><svg width={16} height={10} aria-hidden="true"><path d="M1 8Q8 0 15 8" fill="none" stroke="var(--accent)" strokeWidth={2} /></svg> money flows, moving the way the money goes</span>}
         {reached.size > 0 && <span><svg width={16} height={10} aria-hidden="true"><path d="M1 8Q8 0 15 8" fill="none" stroke="var(--critical)" strokeWidth={3} /></svg> flows an open event reaches</span>}
+        {reached.size > 0 && <span><svg width={18} height={10} aria-hidden="true"><path d="M1 5H17" fill="none" stroke="var(--critical)" strokeWidth={3} strokeLinecap="round" strokeDasharray="5 13" /></svg> red pulse: the event's impact travelling to you</span>}
       </div> : <div className="row wrap small muted" style={{ gap: 14, marginTop: 6 }}>
         <span><span className="statusdot" style={{ background: "var(--accent)" }} /> customer groups · remittances</span>
         <span><span className="statusdot" style={{ background: "var(--high)" }} /> exports · rivals</span>

@@ -132,7 +132,7 @@ export function OverviewPage() {
 
   // The headline answers "does anything need my teams?" and the one button under it is the next step.
   const head = alerts
-    ? { title: <><span className="ovx-n">{alerts}</span> alert{alerts === 1 ? "" : "s"} need{alerts === 1 ? "s" : ""} your teams</>,
+    ? { title: <><span className="ovx-n">{alerts}</span> alert{alerts === 1 ? "" : "s"} need{alerts === 1 ? "s" : ""} your attention</>,
         line: bad.length ? <>Most serious: <Link to={`/events/${bad[0].event_id}`}><b>{eventTitle(bad[0])}</b></Link>, bad for you</> : <>Early warnings for products your teams own</>,
         cta: <Link className="btn btn--primary btn--lg" to="/alerts">Review the alerts<Icon name="arrow" /></Link> }
     : o.events.length
@@ -168,17 +168,17 @@ export function OverviewPage() {
           extraPlaces={o.map.places} onEvent={id => nav(`/events/${id}`)} /></section>}
 
       <div className="ovx-kpis" role="group" aria-label="How Amiri Agent works: what it watches, what it found, what it traced to you, who must act">
-        <Link to="/monitors" className="ovx-kpi">
+        <Link to="/monitors" className={`ovx-kpi${sources ? " live" : ""}`}>
           <span className="step">1 · Watching</span>
           <span className="v"><CountUp value={sources} /></span><span className="l">Sources</span>
           <span className="s">{[plural(c.monitors_live, "monitor"), plural(c.series_watched, "market price"), s.radar.connected && "Radar"].filter(Boolean).join(" · ")}
             {c.monitors_waiting_approval ? <><br />{c.monitors_waiting_approval} waiting for approval</> : null}</span></Link>
-        <Link to="/findings" className="ovx-kpi">
+        <Link to="/findings" className={`ovx-kpi${f24 ? " live" : ""}`}>
           <span className="step">2 · Found</span>
           <span className="v"><CountUp value={f24} /></span><span className="l">Findings, last 24 h</span>
           <span className="s">{f24 ? [c.findings_24h.monitor && `${c.findings_24h.monitor} from news`, c.findings_24h.timeseries && `${c.findings_24h.timeseries} from prices`,
             c.findings_24h.radar && `${c.findings_24h.radar} from Radar`].filter(Boolean).join(" · ") : "nothing new today"}</span></Link>
-        <Link to="/events" className="ovx-kpi">
+        <Link to="/events" className={`ovx-kpi${c.open_events ? " live" : ""}`}>
           <span className="step">3 · Traced to you</span>
           <span className="v"><CountUp value={c.open_events} /></span><span className="l">Open events</span>
           <span className="s">{c.open_events ? `${bad.length} bad for you · ${plural(c.effects_to_watch, "possible impact")}` : "none open"}</span></Link>

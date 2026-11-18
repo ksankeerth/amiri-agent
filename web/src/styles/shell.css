@@ -24,21 +24,21 @@
 .ovx-warn svg { width:18px; height:18px; flex:none; align-self:center; }
 
 .page.ovx:has(> .ovx-hero) { max-width:1600px; }
-.ovx-hero { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.45fr); grid-template-rows:minmax(0,1fr) auto auto; column-gap:56px;
+.ovx-hero { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.45fr); grid-template-rows:auto minmax(0,1fr) auto; column-gap:56px; position:relative;
   min-height:calc(100dvh - 56px - 20px); }  /* the app bar (56) and the page's top padding (20): exactly the first screen of .main */
-.ovx-hero > .ph { grid-column:1; grid-row:1; align-self:center; margin:0; }
+/* headline and map start near the top (the steps sit centred in the spare height above the scroll cue); "Updated" sits in the top-right corner above the map */
+.ovx-hero > .ph { grid-column:1; grid-row:1; align-self:start; margin:44px 0 0; }
+.ovx-hero .ph-actions { position:absolute; top:0; right:0; align-items:center; }
 .ovx-hero .ph-title h1 { font-size:60px; line-height:1.02; letter-spacing:-.03em; }
 .ovx-hero .btn { border-radius:var(--r-pill); box-shadow:none; }
-.ovx-map { grid-column:2; grid-row:1; align-self:center; min-width:0; }
+.ovx-map { grid-column:2; grid-row:1; align-self:start; min-width:0; margin-top:44px; }
 .ovx-n { color:var(--critical); }
-/* the eyebrow carries a light: red and pulsing like an on-air light when alerts wait, a calm green dot otherwise */
-.ovx-hero .ph .label::before { content:""; display:inline-block; width:8px; height:8px; margin-right:10px; border-radius:50%; vertical-align:1px; background:var(--accent); }
-.ovx-hero[data-state="alert"] .ph .label::before { background:var(--critical); }
-/* the most serious concern gets a red underline that draws in once */
+/* the most serious concern carries a red underline (it draws, glows and clears on a loop below); no hover underline on top of it */
 .ovx-hero[data-state="alert"] .ph-status a b { background:linear-gradient(var(--critical), var(--critical)) no-repeat 0 100% / 100% 2px; padding-bottom:2px; }
+.ovx-hero[data-state="alert"] .ph-status a:has(b) { text-decoration:none; }
 
 /* the four steps: one line under the hero, a rule that fills from step 1 to 4 */
-.ovx-kpis { grid-column:1 / -1; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); position:relative; margin-top:28px; padding-top:18px; }
+.ovx-kpis { grid-column:1 / -1; align-self:center; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); position:relative; margin-top:28px; padding-top:18px; }
 .ovx-kpis::before, .ovx-kpis::after { content:""; position:absolute; left:0; right:0; top:0; height:2px; }
 .ovx-kpis::before { background:var(--line); }
 .ovx-kpis::after { transform-origin:left; background:linear-gradient(90deg, var(--accent), var(--accent) 70%, var(--critical)); }
@@ -53,11 +53,12 @@
 .ovx-kpi.hot .step, .ovx-kpi.hot .v, .ovx-kpi.hot .l, .ovx-kpi.hot .s { color:var(--critical-ink); }
 .ovx-kpi.hot .v { color:var(--critical); }
 
-/* the cue at the foot of the first screen: a label and a line with a drop running down it */
-.ovx-cue { grid-column:1 / -1; justify-self:center; display:flex; flex-direction:column; align-items:center; gap:10px; padding:40px 0 4px;
-  font-size:12px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); pointer-events:none; }
-.ovx-cue::after { content:""; width:2px; height:34px; border-radius:2px;
-  background:linear-gradient(var(--accent), transparent) no-repeat 0 -14px / 2px 14px, var(--hairline-2); }
+/* the cue at the foot of the first screen: a green label that breathes, a line with a drop running down it, and a chevron bobbing below */
+.ovx-cue { grid-column:1 / -1; justify-self:center; align-self:end; display:flex; flex-direction:column; align-items:center; gap:8px; padding:28px 0 18px;
+  font-size:13px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink); pointer-events:none; }
+.ovx-cue::after { content:""; width:2px; height:26px; border-radius:2px;
+  background:linear-gradient(var(--accent), transparent) no-repeat 0 -14px / 2px 14px, color-mix(in srgb, var(--accent) 30%, transparent); }
+.ovx-cue::before { content:""; order:3; width:10px; height:10px; margin-top:-6px; border:solid var(--accent); border-width:0 2px 2px 0; transform:rotate(45deg); }
 
 @media (max-width: 1600px) { .ovx-hero { grid-template-columns:minmax(0,1fr) minmax(0,1.2fr); column-gap:40px; } .ovx-hero .ph-title h1 { font-size:52px; } }
 @media (max-height: 960px) { .ovx-kpis { margin-top:16px; } .ovx-cue { padding-top:16px; gap:6px; } .ovx-cue::after { height:24px; } }
@@ -83,32 +84,49 @@
 .ovx-kpi:nth-child(2) { --i:1; } .ovx-kpi:nth-child(3) { --i:2; } .ovx-kpi:nth-child(4) { --i:3; }
 .ovx-cue { animation:ovfade .6s 2.6s both; }
 .ovx-cue::after { animation:ovdrip 1.6s 2.6s ease-in-out infinite; }
+.ovx-cue::before { animation:ovbob 1.6s 2.6s ease-in-out infinite; }
+@keyframes ovbob { 0%,100% { transform:translateY(0) rotate(45deg); } 50% { transform:translateY(6px) rotate(45deg); } }
 @keyframes ovup { from { opacity:0; transform:translateY(18px); } }
 @keyframes ovfade { from { opacity:0; } }
 @keyframes ovmap { from { opacity:0; transform:scale(.96); filter:blur(6px); } }
 @keyframes ovfill { from { transform:scaleX(0); } }
-@keyframes ovdrip { from { background-position:0 -14px, 0 0; } to { background-position:0 34px, 0 0; } }
+@keyframes ovdrip { from { background-position:0 -14px, 0 0; } to { background-position:0 26px, 0 0; } }
 
-/* the headline when alerts wait: an on-air dot, the count breathing a red glow, the cause underlined once, the arrow nudging */
-.ovx-hero[data-state="alert"] .ph .label::before { animation:ovbeacon 1.8s ease-out infinite; }
-.ovx-hero .ovx-n { animation:ovglow 2.8s 1.2s ease-in-out infinite; }
-.ovx-hero[data-state="alert"] .ph-status a b { animation:ovline .9s 1.2s cubic-bezier(.3,.7,.2,1) both; }
-.ovx-hero[data-state="alert"] .ph-cta .btn svg { animation:ovnudge 3s 2s ease-in-out infinite; }
-@keyframes ovbeacon { from { box-shadow:0 0 0 0 color-mix(in srgb, var(--critical) 70%, transparent); } to { box-shadow:0 0 0 12px transparent; } }
-@keyframes ovglow { 0%,100% { text-shadow:0 0 0 transparent; } 50% { text-shadow:0 0 28px color-mix(in srgb, var(--critical) 70%, transparent); } }
-@keyframes ovline { from { background-size:0 2px; } }
-@keyframes ovnudge { 0%,30%,100% { transform:none; } 15% { transform:translateX(5px); } }
-
-/* the steps, "Relay": a light runs along the rule 1 → 4 every 5 s and wakes each number as it passes; step 4 answers in red */
+/* ---------- one beat (5 s) for the whole hero, set by the Relay light. It leaves step 1 at 2.6 s and reaches each next step 0.7 s
+   later; as it arrives, that step's dot flashes and its number glows. Step 4 is the climax (red flash, strong red glow, the icon
+   shakes once, the headline's count glows); then the cause's underline redraws and the button's arrow nudges, so the eye runs
+   Watch → Find → Trace → Act → Review once per beat. Between beats dots rest solidly lit: green when active, red when alerts
+   wait, grey when the step has nothing (the light passes those without a flash). */
+.ovx-hero { --beat:5s; --t0:2.6s; --t4:calc(var(--t0) + 2.1s); }
+.ovx-kpi { --c:var(--accent); --at:calc(var(--t0) + var(--i) * .7s); }
+.ovx-kpi.hot { --c:var(--critical); }
 .ovx-kpi::before { content:""; position:absolute; top:-19px; left:0; width:40%; height:4px; border-radius:4px; opacity:0; pointer-events:none;
   background:linear-gradient(90deg, transparent, var(--accent), transparent); filter:drop-shadow(0 0 6px var(--accent));
-  animation:ovrun 5s calc(2.6s + var(--i) * .7s) linear infinite; }
+  animation:ovrun var(--beat) var(--at) linear infinite; }
 .ovx-kpi.hot::before { background:linear-gradient(90deg, transparent, var(--critical), transparent); filter:drop-shadow(0 0 6px var(--critical)); }
-.ovx-kpi .v { animation:ovwake 5s calc(2.85s + var(--i) * .7s) ease-out infinite; }
-.ovx-kpi.hot .v { animation-name:ovwake-hot; transform-origin:left center; }
+.ovx-kpi .step::before { content:""; display:inline-block; width:7px; height:7px; margin-right:8px; border-radius:50%;
+  vertical-align:1px; background:var(--ink-3); opacity:.45; }
+.ovx-kpi:is(.live, .hot) .step::before { background:var(--c); opacity:1; animation:ovflash var(--beat) calc(var(--at) + .1s) ease-out infinite; }
+.ovx-kpi:is(.live, .hot) .v { animation:ovwake var(--beat) calc(var(--at) + .1s) ease-out infinite; }
+.ovx-kpi.hot .v svg { transform-origin:50% 90%; animation:ovshake var(--beat) calc(var(--at) + .1s) ease-in-out infinite; }
+/* the one ambient motion: Traced's dashed line flows like the map's money flows */
+.ovx-kpi.live:nth-child(3) .l { align-self:flex-start; padding-bottom:4px;
+  background:linear-gradient(90deg, var(--accent) 50%, transparent 0) repeat-x 0 100% / 8px 2px; animation:ovdash 1s linear infinite; }
+/* the headline on the same beat: the count glows with step 4, then the underline redraws and the arrow nudges.
+   (No fill-mode on the underline: until its first beat it simply shows, fully drawn.) */
+.ovx-hero .ovx-n { animation:ovwake var(--beat) calc(var(--t4) + .1s) ease-out infinite; --c:var(--critical); }
+.ovx-hero[data-state="alert"] .ph-status a b { animation:ovline var(--beat) calc(var(--t4) + .3s) ease-in-out infinite; }
+.ovx-hero[data-state="alert"] .ph-cta .btn svg { animation:ovnudge var(--beat) calc(var(--t4) + .9s) ease-in-out infinite; }
 @keyframes ovrun { 0% { opacity:0; transform:translateX(-20%); } 3%,14% { opacity:1; } 14% { transform:translateX(170%); } 16%,100% { opacity:0; transform:translateX(190%); } }
-@keyframes ovwake { 0%,14%,100% { text-shadow:none; } 5% { text-shadow:0 0 18px color-mix(in srgb, var(--accent) 80%, transparent); } }
-@keyframes ovwake-hot { 0%,24%,100% { text-shadow:none; transform:none; } 5% { text-shadow:0 0 22px var(--critical); transform:scale(1.06); } }
+@keyframes ovflash { 0%,14%,100% { transform:none; box-shadow:0 0 0 0 transparent; } 3% { transform:scale(1.7); box-shadow:0 0 10px 2px var(--c); } }
+@keyframes ovwake { 0%,18%,100% { text-shadow:0 0 0 transparent; }
+  4% { text-shadow:0 0 14px var(--c), 0 0 32px color-mix(in srgb, var(--c) 70%, transparent); } }
+@keyframes ovshake { 0%,11%,100% { transform:none; } 2% { transform:rotate(-14deg); } 4% { transform:rotate(12deg); } 6% { transform:rotate(-8deg); } 8% { transform:rotate(4deg); } }
+@keyframes ovdash { to { background-position:16px 100%; } }
+/* draw in from the left, flash thicker, hold, then clear off to the right */
+@keyframes ovline { 0% { background-size:0 2px; background-position:0 100%; } 12% { background-size:100% 2px; background-position:0 100%; }
+  18% { background-size:100% 4px; } 26%, 82% { background-size:100% 2px; background-position:100% 100%; } 94%, 100% { background-size:0 2px; background-position:100% 100%; } }
+@keyframes ovnudge { 0%,10%,100% { transform:none; } 5% { transform:translateX(6px); } }
 
 /* scroll-driven: the cue goes once you scroll; below the fold each section rises in, its accent stroke draws, its rows slide in.
    Only where the browser has scroll timelines; elsewhere all of it simply shows at rest. */
