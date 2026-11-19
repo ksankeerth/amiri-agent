@@ -19,6 +19,7 @@ from pydantic import ValidationError
 
 from app import reference, settings, spec
 from app.clock import Clock
+from app.harness import region_for
 from app.institutions import privacy, rivals, rules, store
 from app.institutions.rules import Item, State
 from app.institutions.schemas import (
@@ -695,8 +696,12 @@ class Institutions:
                     why[code].append(reason)
 
         S = state.section
+        # a region pack (US) is told which footprint places are only partly covered: Radar's US pack doesn't count a
+        # part-covered state by its mentions, only by the pack's names for the part (Silicon Valley for California)
+        pack = region_for(state.inst["fields"].get("home_country"))
         for it in S("footprint").values():
-            add(it.data["code"], f"footprint ({it.data['role'].replace('_', ' ')})")
+            part = ", part" if pack and it.data.get("scope") == "part" else ""
+            add(it.data["code"], f"footprint ({it.data['role'].replace('_', ' ')}{part})")
         for it in S("watch-places").values():
             add(it.data.get("code"), f"place to watch: {it.data.get('reason') or it.data['name']}")
         for d in flows:

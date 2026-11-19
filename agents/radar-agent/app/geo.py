@@ -162,6 +162,10 @@ class Places:
     region: str | None = None
     home_adm1: list[str] = field(default_factory=list)          # GDELT ADM1 codes of the footprint states (USTX)
     home_outlets: list[str] = field(default_factory=list)       # the pack's home outlets (domains)
+    relevant_outlets: list[str] = field(default_factory=list)   # home outlets for a relevant article only (stations)
+    home_themes: str = ""      # a pack's relevance themes (pattern over GKG codes): a name or state match needs one,
+    home_words: str = ""       # or one of its relevance words in the cleaned title (a pattern, as title_pattern)
+    politics_themes: str = ""  # with one of these themes (elections, parties) only the title's words count
 
     def codes_in_title(self, title: str) -> set[str]:
         """Scope codes whose names the title uses."""
@@ -205,23 +209,58 @@ def places(home: str, scope_places: list[str], why: dict[str, list[str]] | None 
     p.footprint_names = list(dict.fromkeys([*p.footprint_names, *(n for c in p.footprint for n in country_names(c))]))
     pack = pack_for(home)
     if pack and pack.get("home_scope") == "footprint_regions":
-        _home_is_the_footprint(p, pack, scope_places)
+        _home_is_the_footprint(p, pack, scope_places, why)
     return p
 
 
-def _home_is_the_footprint(p: Places, pack: dict, scope_places: list[str]) -> None:
+# the server marks a footprint place the institution covers only in part: "footprint (branches, part)"
+_PART = re.compile(r"^footprint \([^)]*, part\)$")
+
+
+def _home_is_the_footprint(p: Places, pack: dict, scope_places: list[str], why: dict[str, list[str]] | None) -> None:
     """A region pack's home: the footprint's states and cities, not the whole country. Its names are the
     states', the pack's aliases for them and the scope's own cities in the home country; the country's
     names ("united states", "u.s.") are dropped. Its GDELT ADM1 codes are the country's FIPS code and the
-    state's (US-TX -> USTX, as in V2Locations' fourth field)."""
+    state's (US-TX -> USTX, as in V2Locations' fourth field). A state covered only in part (California, for
+    a Silicon Valley office) counts by the pack's names for the part alone: not by its own name or mentions.
+    A name or state match counts only with one of the pack's relevance themes (home_themes)."""
     regions = list(dict.fromkeys(c.upper() for c in scope_places if c.upper().startswith(p.home + "-")))
+    part = {r for r in regions if any(_PART.match(w.strip()) for w in (why or {}).get(r, []))}
     country = set(country_names(p.home))
+    part_names = {n for r in part for n in subdivision_names(r)}
     aliases = [a.lower() for r in regions for a in pack.get("aliases", {}).get(r, [])]
     cities = [n for code, ns in p.named.items() if gazetteer().get(code, {}).get("country") == p.home for n in ns]
-    p.home_names = list(dict.fromkeys([*(n for n in p.home_names if n not in country), *aliases, *cities]))
-    p.home_adm1 = [fips(p.home)[0] + r.split("-", 1)[1] for r in regions]
+    p.home_names = list(dict.fromkeys([*(n for n in p.home_names if n not in country and n not in part_names),
+                                       *aliases, *cities]))
+    p.home_adm1 = [fips(p.home)[0] + r.split("-", 1)[1] for r in regions if r not in part]
     p.home_outlets = [o.lower() for o in pack.get("outlets", [])]
+    p.relevant_outlets = [o.lower() for o in pack.get("outlets_with_relevance", [])]
+    p.home_themes = theme_pattern(pack.get("relevance_themes", []))
+    p.home_words = title_pattern(pack.get("relevance_words", []))
+    p.politics_themes = theme_pattern(pack.get("politics_themes", []))
     p.region = pack["region"]
+
+
+def theme_pattern(codes: list[str]) -> str:
+    """An RE2 pattern for GKG theme codes in V2Themes ("CODE,offset;…" or "CODE;…"): a code ending in "_" is a
+    prefix (ECON_ is every ECON_ code), any other is the exact code. Empty: none."""
+    alts = sorted({re2_escape(c) + ("[A-Z0-9_]*" if c.endswith("_") else "") for c in codes if c})
+    return r"(^|;)(" + "|".join(alts) + r")(,|;|$)" if alts else ""
+
+
+def relevant(themes: set[str], title: str, p: Places) -> bool:
+    """articles.py's side of the same rule: one of the article's theme codes is in the pack's list, or one of its
+    relevance words is in the (cleaned) title."""
+    if not p.home_themes and not p.home_words:
+        return True
+    political = bool(p.politics_themes) and any(re.search(p.politics_themes, t) for t in themes)
+    by_theme = bool(p.home_themes) and not political and any(re.search(p.home_themes, t) for t in themes)
+    return by_theme or bool(p.home_words and re.search(p.home_words, title.lower()))
+
+
+def on_domains(outlet: str, domains: list[str]) -> bool:
+    o = (outlet or "").lower()
+    return any(o == d or o.endswith("." + d) for d in domains)
 
 
 def is_home_outlet(outlet: str, p: Places) -> bool:
