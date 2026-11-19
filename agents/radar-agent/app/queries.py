@@ -97,17 +97,28 @@ def _with(sql: str, old: str, new: str) -> str:
     return sql.replace(old, new)
 
 
-# Separators articles.clean_title sees after html.unescape (applied twice there, so twice here): the en and em
-# dash, the pipe, the hyphen and the no-break space; &amp; last, as unescape does.
+# What articles.clean_title decodes with html.unescape (twice there, so twice here) that matters for matching: the
+# separators (the en and em dash, the pipe, the hyphen, the no-break space) and the quotes and apostrophes, straight
+# and curly ("Fed&#39;s" must match "Fed's"); &amp; last, as unescape does.
 _ENTITIES = [("&#x2013;", "\u2013"), ("&#8211;", "\u2013"), ("&ndash;", "\u2013"), ("&#x2014;", "\u2014"),
              ("&#8212;", "\u2014"), ("&mdash;", "\u2014"), ("&#x7c;", "|"), ("&#x7C;", "|"), ("&#124;", "|"),
              ("&#x2d;", "-"), ("&#45;", "-"), ("&nbsp;", "\u00a0"), ("&#xa0;", "\u00a0"), ("&#160;", "\u00a0"),
+             ("&#39;", "'"), ("&#x27;", "'"), ("&apos;", "'"), ("&quot;", '"'), ("&#34;", '"'), ("&#x22;", '"'),
+             ("&#x2019;", "\u2019"), ("&#8217;", "\u2019"), ("&rsquo;", "\u2019"), ("&#x2018;", "\u2018"),
+             ("&#8216;", "\u2018"), ("&lsquo;", "\u2018"), ("&#x201c;", "\u201c"), ("&#x201C;", "\u201c"),
+             ("&#8220;", "\u201c"), ("&ldquo;", "\u201c"), ("&#x201d;", "\u201d"), ("&#x201D;", "\u201d"),
+             ("&#8221;", "\u201d"), ("&rdquo;", "\u201d"),
              ("&amp;", "&")]
+
+
+def _sql_string(text: str) -> str:
+    """A BigQuery single-quoted string literal."""
+    return "'" + text.replace("\\", "\\\\").replace("'", "\\'") + "'"
 
 
 def _decode(expr: str) -> str:
     for old, new in _ENTITIES:
-        expr = f"REPLACE({expr}, '{old}', '{new}')"
+        expr = f"REPLACE({expr}, {_sql_string(old)}, {_sql_string(new)})"
     return expr
 
 

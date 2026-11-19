@@ -173,13 +173,53 @@ def test_sql_and_articles_agree_on_a_real_day():
 
 
 def test_the_sql_cleaning_matches_articles_on_every_real_title():
+    """Every real title whose entities the SQL decodes (separators, quotes and apostrophes) cleans the same in SQL
+    and Python. Python's html.unescape decodes every entity; a title with another one is left out."""
     from app.articles import clean_title as clean
     from tests.fixtures.recall import sql_clean
 
+    entity = re.compile(r"&(#x?[0-9a-fA-F]+|[a-zA-Z]+);")
     titles = [r["title"] for r in rows("serendib-2026-10-16.jsonl.gz") if r.get("title")]
-    differ = [t for t in titles if sql_clean(t) != clean(t, outlet_hyphens=True).lower()
-              and "&#" not in t.replace("&#x2013;", "").replace("&#x2014;", "").replace("&#x7c;", "")]
-    assert not differ, differ[:5]
+    checked = [t for t in titles if not entity.search(sql_clean(t))]
+    assert len(checked) > 0.9 * len(titles)
+    differ = [t for t in checked if sql_clean(t) != clean(t, outlet_hyphens=True).lower()]
+    assert not differ, differ[:5]  # the day has no encoded apostrophes; the next test covers them
+
+
+def test_encoded_apostrophes_and_quotes_decode_in_sql_as_in_python():
+    from app.articles import clean_title as clean
+    from tests.fixtures.recall import sql_clean
+
+    for raw in ("Fed&#39;s Williams backs further rate hikes", "Fed&#x27;s Barr: higher rates needed",
+                "Fed&#x2019;s Waller sees a December hike", "Fed&amp;#39;s minutes point to a hike",
+                "&quot;Texas&quot; grid faces a tight winter | Dallas News", "&#x201c;ERCOT&#x201d; asks for conservation"):
+        assert sql_clean(raw) == clean(raw, outlet_hyphens=True).lower(), raw
+    req = us_request()
+    pattern = plan(req)[0].params["actor_names"][1]
+    for raw in ("Fed&#39;s Williams backs further rate hikes", "Fed&#x2019;s Waller sees a December hike"):
+        assert re.search(pattern, sql_clean(raw)), raw  # the actor matches in BigQuery as in Python
+    got = recalled([row("Fed&#39;s Williams backs further rate hikes", "example.com", US1, "u/fed")], req)
+    assert got and got[0]["r_actor"]
+
+
+def test_a_footprint_name_in_an_irrelevant_title_adds_no_place():
+    """An actor brings these in (the Fed is named), but the titles aren't relevant: Texas and California don't
+    become places the story is about. California, covered in part, never counts by its own name."""
+    p = us_places()
+    senate = from_row({**row("Texas Senate race tightens as the Fed watches", "example.com", US1, "u/a",
+                             "ELECTION;TAX_POLITICAL_PARTY_REPUBLICANS"), "r_actor": True}, p)
+    assert "US-TX" not in senate.about | senate.places and "US" not in senate.about and not senate.in_title
+    cal = from_row({**row("California lawmakers argue over a ballot measure", "example.com", US1, "u/b",
+                          "ELECTION"), "r_actor": True}, p)
+    assert "US-CA" not in cal.about | cal.places
+    cal_relevant = from_row(row("California home sales fall as mortgage rates rise", "example.com", US1, "u/c",
+                                "ECON_HOUSING_PRICES"), p)
+    assert "US-CA" not in cal_relevant.about  # by name: a part-covered state needs the pack's names
+    valley = from_row(row("Silicon Valley startups cut jobs", "example.com", US1, "u/d"), p)
+    assert "US-CA" in valley.about and "US" in valley.about
+    assert p.subdivisions["US-CA"][0] == "silicon valley" and "california" not in p.subdivisions["US-CA"]
+    texas = from_row(row("Texas grid operator warns of tight winter supply", "example.com", US1, "u/e"), p)
+    assert {"US-TX", "US"} <= texas.about
 
 
 def test_home_outlets_come_from_the_pack_for_the_us():
@@ -189,6 +229,20 @@ def test_home_outlets_come_from_the_pack_for_the_us():
     lk = places("LK", ["LK"])
     assert is_home_outlet("ft.lk", lk) and not is_home_outlet("dallasnews.com", lk)
     assert home_domain("LK") == ".lk"  # unchanged
+
+
+def test_outlets_follow_the_footprints_states():
+    """National outlets serve any US footprint; a state's papers and stations only a bank covering that state in
+    full. A bank in Arizona alone gets no Texas outlets as home."""
+    az = places("US", ["US", "US-AZ"], {"US-AZ": ["footprint (branches)"]})
+    assert is_home_outlet("reuters.com", az) and not is_home_outlet("dallasnews.com", az)
+    assert az.relevant_outlets == [] and az.home_adm1 == ["USAZ"]
+    tx = us_places()
+    assert {"dallasnews.com", "reuters.com"} <= set(tx.home_outlets) and "nbcdfw.com" in tx.relevant_outlets
+    part_tx = places("US", ["US", "US-TX"], {"US-TX": ["footprint (branches, part)"]})
+    assert not is_home_outlet("dallasnews.com", part_tx) and part_tx.relevant_outlets == []
+    q, _ = plan(us_request())
+    assert q.params["home_outlets"][1] == tx.home_outlets and q.params["relevant_outlets"][1] == tx.relevant_outlets
 
 
 def judge_state(req: RadarRunRequest) -> dict:

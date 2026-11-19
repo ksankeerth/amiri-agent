@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from app import settings
-from app.geo import Places, fips_to_iso, home_domain, is_home_outlet, on_domains, relevant
+from app.geo import Places, fips_to_iso, is_home_outlet, on_domains, relevant
 
 STOP = set("a an the of in on at to for and or but with by from as is are was were be been it its this that these "
            "those after before over under amid says said new more than into about up down out off vs via".split())
@@ -93,28 +93,32 @@ def from_row(row: dict, p: Places) -> Article | None:
         iso = codes.get(parts[2]) if len(parts) > 2 else None
         if iso in scope_countries:
             mentions[iso] = mentions.get(iso, 0) + 1
+    a.themes = {t.split(",")[0] for t in (row.get("themes") or "").split(";") if t}
     a.places = set(mentions)
     named = p.codes_in_title(title)
+    is_relevant = relevant(a.themes, title, p) if p.region else True
+    if p.region and not is_relevant:
+        # a region pack: a footprint state or city named in the title counts only for a relevant article (an
+        # actor's "Texas Senate race" gets no Texas); the country's names were dropped from the pack's home already
+        named -= {c for c in named if c in p.subdivisions or c in p.named or c == p.home}
     a.in_title = bool(named)
     a.places |= named
     share = settings.number("FOOTPRINT_SHARE")
     # with a region pack (app/packs/us.json) the home country's share of the mentions doesn't make it home news
     a.about = named | {c for c, n in mentions.items() if n >= 2 and n >= share * len(blocks)
                        and not (p.region and c == p.home)}
-    if p.region:  # as queries.SQL_REGION: a footprint name in the title or a footprint state HOME_MENTIONS times,
-        # with one of the pack's relevance themes; or one of the pack's outlets on its own
+    if p.region:  # as queries.SQL_REGION: a footprint name in the title, a footprint state HOME_MENTIONS times or a
+        # station of the pack, for a relevant article; or one of the pack's outlets on its own
         state_n = sum(1 for parts in blocks if len(parts) > 3 and parts[3] in p.home_adm1)
         named_home = p.home in named
         a.about.discard(p.home)
-        codes = {t.split(",")[0] for t in (row.get("themes") or "").split(";") if t}
         if ((named_home or state_n >= settings.integer("HOME_MENTIONS") or on_domains(a.outlet, p.relevant_outlets))
-                and relevant(codes, a.title, p)) or is_home_outlet(a.outlet, p):
+                and is_relevant) or is_home_outlet(a.outlet, p):
             a.about.add(p.home)
             a.places.add(p.home)
-    elif mentions.get(p.home, 0) >= settings.integer("HOME_MENTIONS") or a.outlet.endswith(home_domain(p.home)):
+    elif mentions.get(p.home, 0) >= settings.integer("HOME_MENTIONS") or is_home_outlet(a.outlet, p):
         a.about.add(p.home)
         a.places.add(p.home)
-    a.themes = {t.split(",")[0] for t in (row.get("themes") or "").split(";") if t}
     a.orgs = {o.split(",")[0].lower() for o in (row.get("orgs") or "").split(";") if o}
     a.rules = {r for r in ("home", "footprint", "place", "actor") if row.get(f"r_{r}")}
     return a

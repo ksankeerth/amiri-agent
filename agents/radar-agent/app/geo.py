@@ -223,18 +223,27 @@ def _home_is_the_footprint(p: Places, pack: dict, scope_places: list[str], why: 
     names ("united states", "u.s.") are dropped. Its GDELT ADM1 codes are the country's FIPS code and the
     state's (US-TX -> USTX, as in V2Locations' fourth field). A state covered only in part (California, for
     a Silicon Valley office) counts by the pack's names for the part alone: not by its own name or mentions.
-    A name or state match counts only with one of the pack's relevance themes (home_themes)."""
+    A name or state match counts only with one of the pack's relevance themes (home_themes). Home outlets are the
+    pack's national ones and those of the states covered in full."""
     regions = list(dict.fromkeys(c.upper() for c in scope_places if c.upper().startswith(p.home + "-")))
     part = {r for r in regions if any(_PART.match(w.strip()) for w in (why or {}).get(r, []))}
+    full = [r for r in regions if r not in part]
     country = set(country_names(p.home))
     part_names = {n for r in part for n in subdivision_names(r)}
     aliases = [a.lower() for r in regions for a in pack.get("aliases", {}).get(r, [])]
+    for r in part:  # a part-covered state is found in a title only by the pack's names for the part
+        part_aliases = [a.lower() for a in pack.get("aliases", {}).get(r, [])]
+        if part_aliases:
+            p.subdivisions[r] = part_aliases
+        else:
+            p.subdivisions.pop(r, None)
     cities = [n for code, ns in p.named.items() if gazetteer().get(code, {}).get("country") == p.home for n in ns]
     p.home_names = list(dict.fromkeys([*(n for n in p.home_names if n not in country and n not in part_names),
                                        *aliases, *cities]))
-    p.home_adm1 = [fips(p.home)[0] + r.split("-", 1)[1] for r in regions if r not in part]
-    p.home_outlets = [o.lower() for o in pack.get("outlets", [])]
-    p.relevant_outlets = [o.lower() for o in pack.get("outlets_with_relevance", [])]
+    p.home_adm1 = [fips(p.home)[0] + r.split("-", 1)[1] for r in full]
+    p.home_outlets = domains([*pack.get("national_outlets", []),
+                              *(o for r in full for o in pack.get("outlets", {}).get(r, []))])
+    p.relevant_outlets = domains([o for r in full for o in pack.get("outlets_with_relevance", {}).get(r, [])])
     p.home_themes = theme_pattern(pack.get("relevance_themes", []))
     p.home_words = title_pattern(pack.get("relevance_words", []))
     p.politics_themes = theme_pattern(pack.get("politics_themes", []))
@@ -258,15 +267,21 @@ def relevant(themes: set[str], title: str, p: Places) -> bool:
     return by_theme or bool(p.home_words and re.search(p.home_words, title.lower()))
 
 
-def on_domains(outlet: str, domains: list[str]) -> bool:
+def domains(names: list[str]) -> list[str]:
+    """Outlet domains as GDELT's SourceCommonName gives them (lower case, no repeats): the query's parameters
+    and on_domains use the same list."""
+    return list(dict.fromkeys(n.strip().lower() for n in names if n and n.strip()))
+
+
+def on_domains(outlet: str, names: list[str]) -> bool:
+    """The outlet is one of these domains or a part of one (www.dallasnews.com), as the query matches them."""
     o = (outlet or "").lower()
-    return any(o == d or o.endswith("." + d) for d in domains)
+    return any(o == d or o.endswith("." + d) for d in names)
 
 
 def is_home_outlet(outlet: str, p: Places) -> bool:
     """An outlet that writes for the home market: on the home country's domain (ft.lk), or for a region
-    pack one of its outlets (dallasnews.com) or a part of one (www.dallasnews.com)."""
-    o = (outlet or "").lower()
+    pack one of its home outlets."""
     if p.region:
-        return any(o == d or o.endswith("." + d) for d in p.home_outlets)
-    return o.endswith(home_domain(p.home))
+        return on_domains(outlet, p.home_outlets)
+    return (outlet or "").lower().endswith(home_domain(p.home))

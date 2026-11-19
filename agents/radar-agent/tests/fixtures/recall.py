@@ -22,10 +22,7 @@ def rows(name: str) -> list[dict]:
         return [json.loads(line) for line in f]
 
 
-ENTITIES = [("&#x2013;", "\u2013"), ("&#8211;", "\u2013"), ("&ndash;", "\u2013"), ("&#x2014;", "\u2014"),
-            ("&#8212;", "\u2014"), ("&mdash;", "\u2014"), ("&#x7c;", "|"), ("&#x7C;", "|"), ("&#124;", "|"),
-            ("&#x2d;", "-"), ("&#45;", "-"), ("&nbsp;", "\u00a0"), ("&#xa0;", "\u00a0"), ("&#160;", "\u00a0"),
-            ("&amp;", "&")]
+from app.queries import _ENTITIES as ENTITIES  # noqa: E402  (the SQL's own list)
 
 
 def sql_clean(raw: str | None) -> str:
