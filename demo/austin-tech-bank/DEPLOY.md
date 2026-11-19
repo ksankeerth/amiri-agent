@@ -67,14 +67,20 @@ deploy.
 Copy `infra/terraform/terraform.tfvars.example` to `terraform.tfvars` (git ignores it) and fill in
 `project_id`, `region`, `operator_email`, `recaptcha_site_key`. Then these:
 
-- [ ] **`SUPPORTED_REGION=us`.** The server default is `japac`, which refuses a US home country. `run.tf` has no
-      variable of its own for it. But `server_env` in `variables.tf` is merged into the server's settings, so this works:
+- [ ] **`SUPPORTED_REGION=japac,us`.** The server default is `japac`, which refuses a US home country. The
+      setting takes a comma list, so one deployment accepts both a Sri Lankan and a US bank (one at a time:
+      a deployment holds one institution). `run.tf` has no variable of its own for it. But `server_env` in
+      `variables.tf` is merged into the server's settings, so this works:
   ```
-  server_env = { SUPPORTED_REGION = "us" }
+  server_env = { SUPPORTED_REGION = "japac,us" }
   ```
-  Not in the repo today: a dedicated `supported_region` variable. The team lead may want one added on the branch.
-  Do not use `gcloud run services update ... --update-env-vars` instead: Terraform would revert it on the
-  next `deploy.sh`.
+  `us` alone also works, and refuses a Sri Lankan home country. An empty value means the default (`japac`),
+  not "anywhere". An id `regions.json` doesn't have is ignored, with a warning in the server's log.
+  **Changing it later** is a Cloud Run revision update, not a full deploy: edit `server_env`, run
+  `infra/scripts/deploy.sh`, and the plan shows one change, the server's environment. Applying it makes a new
+  server revision in about a minute. There is no rebuild (`build.sh` is not needed) and the database is
+  untouched. Do not use `gcloud run services update ... --update-env-vars` instead: Terraform would revert it
+  on the next `deploy.sh`.
 - [ ] **`INSTITUTION_ID`.** Terraform's variable is `institution_id`, default `serendib-bank`. Set:
   ```
   institution_id = "austin-tech-bank"
@@ -143,29 +149,30 @@ Follow [`infra/SETUP.md`](../../infra/SETUP.md) in order. Your own project, your
 
 The platform must be **empty** (no institution). A fresh deployment is. The script refuses otherwise.
 
-- [ ] **Let the script's calls through.** With `auth_mode = "prototype"` (the default), every `/api/` call
-      needs the browser cookie from the reCAPTCHA box, or a Google ID token. `demo/load_bundle.py` sends only
-      an `X-Amiri-Actor` header. So against a public URL it gets `401 signed_out`.
-      Not in the repo today: a token or cookie option on `load_bundle.py`. The way that works with what exists:
-  1. in `terraform.tfvars` set `auth_mode = "off"`, then `infra/scripts/deploy.sh`;
-  2. load the bank (below);
-  3. set `auth_mode = "prototype"` again, then `deploy.sh`.
+- [ ] **Let the script's calls through: the login window.** With `auth_mode = "prototype"` (the default),
+      every `/api/` call needs the browser cookie from the reCAPTCHA box, or a Google ID token.
+      `demo/load_bundle.py` sends only an `X-Amiri-Actor` header, so against a public URL it gets
+      `401 signed_out`. The team lead's decision: switch login off briefly, load, and switch it straight back on.
+      While it is `off` the URL has no bot check at all, so do not share it, and keep the window short.
+      Write the time down at each step:
 
-  While it is `off`, the URL has no bot check at all, so do not share it, and keep the window short.
-  **Open question for the team lead:** is that acceptable, or should the script get a token option? (The
-  alternative is to enter the bundle by hand in the app, as `README.md` in this folder describes.)
-- [ ] **Look first, writes nothing:**
-  ```bash
-  python3 demo/load_bundle.py --file demo/austin-tech-bank/bundle.json --base-url <deployed server URL> --actor John --plan
-  ```
-- [ ] **Load it.** Same command without `--plan`. Without `--skip-after-load` it also starts **one Radar run**
-      and **one check of each of the 7 live monitors**. Those call Gemini, BigQuery and web search, so they
-      cost a little. Use `--skip-after-load` to load without them. A second person to approve is optional:
-      add `--approver Maya`.
+  | Step | Time (UTC) |
+  |---|---|
+  | 1. In `terraform.tfvars` set `auth_mode = "off"`, then `infra/scripts/deploy.sh` and apply (a server revision, about a minute). `curl -s $URL/api/v1/auth/config` shows `"mode": "off"`. **Login is open from here.** |  |
+  | 2. Look first, writes nothing: `python3 demo/load_bundle.py --file demo/austin-tech-bank/bundle.json --base-url $URL --actor John --plan` |  |
+  | 3. Load it: the same command without `--plan` (below) |  |
+  | 4. Set `auth_mode = "prototype"` again, then `deploy.sh` and apply |  |
+  | 5. **Confirm the app asks for login again:** `curl -s $URL/api/v1/auth/config` shows `"mode": "prototype"`, `curl -s -o /dev/null -w '%{http_code}\n' $URL/api/v1/installation` prints `401`, and a private browser window on `$URL` shows the reCAPTCHA box. **Login is closed from here.** |  |
+  | **How long it was open (step 1 to step 5)** |  |
+
+- [ ] **The load (step 3).** Without `--skip-after-load` it also starts **one Radar run** and **one check of
+      each of the 7 live monitors**. Those call Gemini, BigQuery and web search, so they cost a little. Use
+      `--skip-after-load` to load without them, and keep the window shorter. A second person to approve is
+      optional: add `--approver Maya`.
 - [ ] Expect `Loaded: institution_id austin-tech-bank, series_added 4, monitors 7, monitors_live 7`.
       If a step fails, it stops and lists what it wrote. Reset the prototype to "empty" in the app (it needs
-      `prototype_reset = true`) and run it again.
-- [ ] Put `auth_mode` back to `"prototype"` and run `deploy.sh`.
+      `prototype_reset = true`) and run it again, still inside the window. If you have to stop, close the
+      window first (steps 4 and 5) and open it again later.
 - [ ] Open question: do QQQ, UNG, USO and IEF work on the free Twelve Data plan? Add them (the load does) and
       press Refresh on Market series. If a series stays `pending`, tell the team lead.
 
@@ -205,6 +212,14 @@ mark is 20) and 2 political titles. After the US recall was tightened, the 19 No
 none political, 3 stories sent. If your first runs look noisy again, tell the team lead, and **deploy anyway**:
 the lead story (tech layoffs → Austin mortgages) arrives through the monitors "Tech layoffs at our customers'
 employers" and "Austin housing and mortgage stress". They use web search and do not depend on Radar's recall.
+
+## 11a. Known limits of the US pack
+
+Recorded, not fixed. The US pack is tuned for **Texas and Silicon Valley**: its aliases, outlets and stations
+are those places'. A nationwide US bank, or a bank in a state with short names or names with a compass word
+(Ohio, Iowa, North Carolina), gets little home news by name: the pack has no aliases or outlets for them, and a
+part-covered state counts only through its aliases. Its Radar shortlist then leans on the national wires and the
+monitors. Tell the team lead before you demo such a bank.
 
 ## 12. Pause or roll back
 

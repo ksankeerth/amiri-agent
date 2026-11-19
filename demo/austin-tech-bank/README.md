@@ -23,9 +23,9 @@ with the server's own models. Change the source and rebuild; don't edit only thi
 
 ## How to load it
 
-The deployment needs `SUPPORTED_REGION=us`. The default (`japac`) refuses a US home country. A deployment holds one
-sample bank at a time, so the US bank runs in its own deployment. The platform must be empty (Settings › Reset the
-prototype… › Empty).
+The deployment needs `SUPPORTED_REGION=japac,us` (or `us` alone). The default (`japac`) refuses a US home country.
+A deployment holds one sample bank at a time, so the US bank runs in its own deployment, or replaces the Sri Lankan
+one after a reset. The platform must be empty (Settings › Reset the prototype… › Empty).
 
 Load it with [`demo/load_bundle.py`](../load_bundle.py) (Python 3.10+, standard library only), against a running
 server:
