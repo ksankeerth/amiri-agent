@@ -133,3 +133,41 @@ async def test_every_us_track_has_the_guide_and_no_lk_track_does(monkeypatch):
     assert not any("US setup guide" in p for p in lk.values())
     for track, text in us.items():  # the US prompt is the LK-style prompt plus the guide, nothing taken away
         assert text.count(GUIDE) == 1, track
+
+
+async def test_an_existing_us_bank_is_not_told_again_each_session(chat):
+    """The guide is in every turn, but the announcement is for the session where the home country becomes the US."""
+    client, server, llm = chat
+    server.institution = US
+    sid = await start(client)
+    for track, text in (("rules", "Hello."), ("customers_products", "Which products?")):
+        llm.script = ["Sure."]
+        ev = await say(client, sid, text, track, "us-bank")
+        assert GUIDE in system_text(llm.requests[-1]) and not any(SAID in m for m in messages(ev))
+
+
+async def test_a_home_country_changed_to_the_us_is_announced_once(chat):
+    client, server, llm = chat
+    server.institution = {**LK, "institution_id": "us-bank"}
+    sid = await start(client)
+    llm.script = ["Sure."]
+    ev = await say(client, sid, "Hello.", "institution", "us-bank")
+    assert GUIDE not in system_text(llm.requests[-1]) and not any(SAID in m for m in messages(ev))
+    server.institution = US  # the home country is now the US
+    for _ in range(2):
+        llm.script = ["Sure."]
+        ev = await say(client, sid, "And now?", "rules", "us-bank")
+        said = [m for m in messages(ev) if SAID in m]
+        assert GUIDE in system_text(llm.requests[-1])
+        if _ == 0:
+            assert said, messages(ev)
+        else:
+            assert not said
+
+
+def test_the_guide_file_is_read_once():
+    from app import guides
+
+    guides._guide_file.cache_clear()
+    region_guide(US), region_guide(US)
+    assert guides._guide_file.cache_info().misses == 1

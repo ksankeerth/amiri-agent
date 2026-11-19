@@ -116,3 +116,14 @@ def test_the_plan_writes_nothing_and_names_the_costs(capsys):
     assert "7 monitors; 7 live: submitted by John, approved by John" in out and "cost money" in out
     lb.main(["--file", str(ROOT / "demo" / "austin-tech-bank" / "bundle.json"), "--plan", "--skip-after-load"])
     assert "no after-load actions" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("sample, says", [({"enabled": True}, "switch on"), ({"enabled": False}, "switch off"),
+                                          (None, "unchanged")])
+def test_the_plan_says_what_happens_to_the_sample_data(sample, says):
+    lb = script()
+    bundle = {k: v for k, v in BUNDLE.items() if k != "sample_data"}
+    if sample is not None:
+        bundle["sample_data"] = sample
+    step6 = next(x for x in lb.plan(bundle, "John", "John", True) if x.startswith("6. "))
+    assert step6 == f"6. sample bank: {says}"

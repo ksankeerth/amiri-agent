@@ -2,7 +2,7 @@
 country has one (app/harness.py). Without a pack the run uses app/tracks.py's catalog as it is, and
 reports its version unchanged."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import cache
 
 from app import tracks
@@ -15,7 +15,6 @@ class Catalog:
     mechanisms: list[Mechanism]
     version: str
     region: str | None = None
-    by_id: dict[str, Mechanism] = field(default_factory=dict)
 
 
 def _pack(region: str) -> list[Mechanism]:
@@ -29,9 +28,9 @@ def _pack(region: str) -> list[Mechanism]:
 @cache
 def _catalog(region: str | None) -> Catalog:
     if region is None:
-        return Catalog(tracks.MECHANISMS, tracks.TRACKS_VERSION, None, tracks.BY_ID)
+        return Catalog(tracks.MECHANISMS, tracks.TRACKS_VERSION)
     ms = [*tracks.MECHANISMS, *_pack(region)]
-    return Catalog(ms, f"{tracks.TRACKS_VERSION}+{PACK_VERSIONS[region]}", region, {m.mechanism_id: m for m in ms})
+    return Catalog(ms, f"{tracks.TRACKS_VERSION}+{PACK_VERSIONS[region]}", region)
 
 
 def catalog_for(country: str | None) -> Catalog:

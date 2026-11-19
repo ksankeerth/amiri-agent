@@ -704,6 +704,7 @@
     "name": "Texas Department of Banking",
     "short": "Texas DOB",
     "area": "banking",
+    "subdivision": "US-TX",
     "for": [
      "bank"
     ],

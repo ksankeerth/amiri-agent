@@ -211,6 +211,13 @@ class Loader:
                 "sample_data": bool(self.b.get("sample_data", {}).get("enabled"))}
 
 
+def _sample_plan(sd: dict | None) -> str:
+    """What step 6 does: the bundle's sample_data is sent as it is (enabled false switches it off)."""
+    if not sd:
+        return "unchanged"
+    return "switch on" if sd.get("enabled") else "switch off"
+
+
 def plan(bundle: dict, actor: str, approver: str, after_load: bool) -> list[str]:
     check_bundle(bundle)
     i, s = bundle["institution"], bundle["sections"]
@@ -224,7 +231,7 @@ def plan(bundle: dict, actor: str, approver: str, after_load: bool) -> list[str]
         f"4. add {len(bundle.get('series', []))} market series: "
         + ", ".join(x["symbol"] for x in bundle.get("series", [])) + " (a symbol already watched is skipped)",
         f"5. write {len(bundle.get('monitors', []))} monitors; {live} live: submitted by {actor}, approved by {approver}",
-        f"6. sample {i['institution_type']}: " + ("on" if bundle.get("sample_data", {}).get("enabled") else "unchanged"),
+        f"6. sample {i['institution_type']}: " + _sample_plan(bundle.get("sample_data")),
     ]
     if after_load and (a.get("run_radar") or a.get("check_monitors")):
         out.append("7. " + " and ".join(x for x in (

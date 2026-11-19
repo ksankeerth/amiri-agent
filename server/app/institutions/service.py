@@ -845,8 +845,10 @@ class Institutions:
 
         rows = reference.regulator_rows()
         home = f["home_country"]
+        fp_codes = set(state.footprint_codes())
         for r in rows:
-            if r.get("country") == home:
+            # a state regulator (its subdivision) only for a footprint in that state: Texas DOB for a bank in Texas
+            if r.get("country") == home and (not r.get("subdivision") or r["subdivision"] in fp_codes):
                 add(r, "home", f"home country {reference.place_name(home)}")
         for c in sorted(state.footprint_countries() - {home}):
             for r in rows:

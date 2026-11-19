@@ -3,6 +3,7 @@ covers, how it gathers and concludes, and its tools. Written for a bank or an in
 the data that differs (taxonomy, templates, the rule table) comes from the server."""
 
 from dataclasses import dataclass, field
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -156,4 +157,9 @@ def region_guide(ctx: dict | None, context_pack: dict | None = None) -> tuple[st
         return None
     sent = (context_pack or {}).get("region_guide") or {}
     text = sent.get("text") if sent.get("region") == region else None
-    return region, text or (REGION_GUIDES / f"{region}.txt").read_text().strip()
+    return region, text or _guide_file(region)
+
+
+@cache
+def _guide_file(region: str) -> str:
+    return (REGION_GUIDES / f"{region}.txt").read_text().strip()

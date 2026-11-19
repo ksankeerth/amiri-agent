@@ -40,7 +40,6 @@ def test_a_us_catalog_is_the_built_in_one_plus_the_pack():
     ids = [m.mechanism_id for m in c.mechanisms]
     assert ids == PINNED["mechanism_ids"] + US_IDS
     assert c.version == "builtin-v2.4+us-1" and c.region == "us"
-    assert set(c.by_id) == set(ids)
     assert [m.mechanism_id for m in tracks.MECHANISMS] == PINNED["mechanism_ids"]  # the base is not extended
 
 
@@ -61,7 +60,8 @@ def test_the_pack_uses_the_metrics_specs_own_keys_and_segments():
         if m.segment_dim:
             assert all(m.segment_dim in metrics[(spec_category[m.product_type], k)]["breakdowns"] for k in m.metrics)
     # the options mirror the closest built-in rules
-    assert tracks.BY_ID["business_loan.repayment_stress.sector"].segment_dim == catalog_for("US").by_id[
+    pack = {m.mechanism_id: m for m in US}
+    assert tracks.BY_ID["business_loan.repayment_stress.sector"].segment_dim == pack[
         "business_loan.utilization.sector"].segment_dim == "sector"
 
 
@@ -157,3 +157,66 @@ def test_the_same_event_for_a_sri_lankan_bank_has_no_us_rule():
     assert r.tracks_version == "builtin-v2.4"
     seen = {m for s in r.screening for m in s.mechanism_ids} | {h.mechanism_id for h in r.hypotheses}
     assert not set(US_IDS) & seen
+
+
+# ------------------------------------------------- each US rule, end to end: owner and label resolve
+
+class Choosing(CorrectModel):
+    """As CorrectModel, but chooses this mechanism when it is offered."""
+
+    def __init__(self, answers: list[dict], mechanism_id: str):
+        super().__init__(answers)
+        self.mechanism_id = mechanism_id
+
+    async def __call__(self, step, prompt, schema):
+        props = schema["properties"]
+        if step == "choose" and "mechanism_id" in props and self.mechanism_id in props["mechanism_id"]["enum"]:
+            return {"mechanism_id": self.mechanism_id}, "correct-model"
+        return await super().__call__(step, prompt, schema)
+
+
+class BothProducts(Coverage):
+    """Contractor credit lines by sector and segment, and business deposits by segment."""
+
+    async def coverage(self, req):
+        got = await super().coverage(req)
+        got["products"].append(
+            {"product_id": "business_deposits", "source_product_id": "business_deposits",
+             "book_size": {"value": 3.0e9, "unit": req.institution.currency},
+             "metrics": [_metric("youth_savings", "withdrawals", {"segment": ["domestic_business", "retail"]})]})
+        return got
+
+
+US_RUNS = {
+    "savings.flows.sector_burn": ("sector:shock", "business_deposits", "retail_banking"),
+    "business_loan.utilization.sector": ("sector:shock", "contractor_lines", "business_credit"),
+    "business_loan.utilization.nbfi_stress": ("trust:rival", "contractor_lines", "business_credit"),
+}
+
+
+@pytest.mark.parametrize("mechanism_id", US_IDS)
+def test_each_us_rule_gives_a_hypothesis_and_task_with_its_owner_and_label(mechanism_id):
+    reading_theme, product_id, owner = US_RUNS[mechanism_id]
+    req = InvestigationRequest.model_validate({
+        "run_id": "us-test-owner", "institution_id": "bank", "server_url": "http://server", "institution": US_BANK,
+        "products": [{"product_id": "contractor_lines", "name": "Contractor credit lines", "category": "business_loan",
+                      "product_type": "working_capital"},
+                     {"product_id": "business_deposits", "name": "Business deposits", "category": "savings",
+                      "product_type": "current_account"}],
+        "findings": [finding("f-us", "Dallas data-center construction pauses; a private-credit lender halts withdrawals",
+                             "Several Dallas-Fort Worth projects were paused.",
+                             headlines=[headline("Dallas data-center construction pauses", "2026-11-17T14:00:00Z",
+                                                 "Dallas Morning News")])],
+    })
+    answer = reading(reading_theme)
+    if reading_theme == "sector:shock":
+        answer["themes"][0]["sector"] = "construction"
+    r = asyncio.run(Investigation(req, Choosing([answer], mechanism_id), BothProducts()).run())
+    hyps = [h for h in r.hypotheses if h.mechanism_id == mechanism_id]
+    assert hyps, [h.mechanism_id for h in r.hypotheses]
+    m = next(m for m in US if m.mechanism_id == mechanism_id)
+    for h in hyps:
+        assert h.product_id == product_id and h.chain_label == m.text[0].upper() + m.text[1:]
+        task = next(t for t in r.tasks if t.hypothesis_id == h.hypothesis_id)
+        assert task.owner == owner
+    assert hyps[0].chain_label in r.report  # the report shows the rule's label

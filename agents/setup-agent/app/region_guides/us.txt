@@ -7,7 +7,7 @@ US setup guide (the institution is based in the United States):
   non-bank lenders. Use the taxonomy's own categories and types; only what the user says the bank offers.
 - Customer groups: businesses map to the Metrics Spec segment domestic_business, private-credit and other non-bank
   lenders to non_bank_financial (get_reference segment-dimensions), only when the user's words mean that.
-- Rules: get_suggestions("regulators") has the US federal regulators (Federal Reserve, OCC, FDIC, CFPB) and the
-  Texas Department of Banking; OFAC follows USD clearing. Propose those as they are.
+- Rules: get_suggestions("regulators") has the US federal regulators (Federal Reserve, OCC, FDIC, CFPB), and the
+  Texas Department of Banking once the footprint has Texas; OFAC follows USD clearing. Propose those as they are.
 - Monitors: things that reach the bank's borrowers and depositors (Federal Reserve rates, ERCOT power and large-load
   rules, oil and gas activity, data-center projects). Never elections, campaigns or party politics.

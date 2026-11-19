@@ -6,7 +6,7 @@ import json
 import pytest
 
 from app import reference, settings
-from tests.test_institutions_api import BANK, B, new
+from tests.test_institutions_api import BANK, B, add, new
 
 US_BANK = {**BANK, "name": "Austin Tech Bank", "home_country": "US", "base_currency": "USD",
            "time_zone": "America/Chicago", "clearing_currencies": ["USD"]}
@@ -15,6 +15,7 @@ US_BANK = {**BANK, "name": "Austin Tech Bank", "home_country": "US", "base_curre
 async def test_us_regulators_are_suggested_for_a_us_bank(client, env):
     env.setenv("SUPPORTED_REGION", "us")
     iid = (await new(client, US_BANK))["institution_id"]
+    await add(client, iid, "footprint", {"code": "US-TX", "role": "branches"})
     items = (await client.get(f"{B}/{iid}/suggestions/regulators")).json()["items"]
     home = {x["item"]["short"]: x for x in items if x["item"]["relation"] == "home"}
     assert set(home) == {"Fed", "OCC", "FDIC", "CFPB", "Texas DOB"}
@@ -22,6 +23,19 @@ async def test_us_regulators_are_suggested_for_a_us_bank(client, env):
     ofac = [x for x in items if x["item"]["regulator_id"] == "sanctions-ofac"]  # the existing entry, reused
     assert len(ofac) == 1 and ofac[0]["item"]["relation"] == "reach"
     assert not any(x["item"]["short"] == "CBSL" for x in items)
+
+
+async def test_texas_dob_only_for_a_footprint_in_texas(client, env):
+    """The federal regulators for every US bank; a state's regulator only when the footprint has that state."""
+    env.setenv("SUPPORTED_REGION", "us")
+    iid = (await new(client, US_BANK))["institution_id"]
+    await add(client, iid, "footprint", {"code": "US-AZ", "role": "branches"})
+    items = (await client.get(f"{B}/{iid}/suggestions/regulators")).json()["items"]
+    home = {x["item"]["short"] for x in items if x["item"]["relation"] == "home"}
+    assert home == {"Fed", "OCC", "FDIC", "CFPB"}
+    bare = (await new(client, {**US_BANK, "name": "Phoenix Example Bank"}))["institution_id"]  # the US alone
+    items = (await client.get(f"{B}/{bare}/suggestions/regulators")).json()["items"]
+    assert "Texas DOB" not in {x["item"]["short"] for x in items}
 
 
 async def test_a_sri_lankan_bank_gets_no_us_regulator(client):
