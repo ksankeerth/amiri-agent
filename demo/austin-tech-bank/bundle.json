@@ -323,6 +323,24 @@
         }
       },
       {
+        "id": "dc-contractor-lines",
+        "name": "Data-Center Contractor Credit Lines",
+        "category": "business_loan",
+        "product_type": "working_capital",
+        "segments": [
+          "dc-contractors"
+        ],
+        "owner": "Commercial banking",
+        "currencies": [
+          "USD"
+        ],
+        "book_size": {
+          "amount": 900000000,
+          "currency": "USD"
+        },
+        "note": "Revolving lines contractors draw on while they wait to be paid; they draw harder when projects stall."
+      },
+      {
         "id": "chip-supplier-lines",
         "name": "Chip-Supplier Credit Lines",
         "category": "business_loan",
@@ -789,6 +807,10 @@
             {
               "id": "product:dc-contractor-loans",
               "how_it_reaches_us": "contractors wait longer to be paid and draw harder on credit"
+            },
+            {
+              "id": "product:dc-contractor-lines",
+              "how_it_reaches_us": "contractors draw harder on their credit lines as projects stall"
             },
             {
               "id": "segment:dc-contractors"

@@ -409,6 +409,7 @@ US_PRODUCTS = [
     {"product_id": "venture-debt", "name": "Venture Debt and Startup Credit Lines", "category": "business_loan", "product_type": "working_capital"},
     {"product_id": "chip-supplier-lines", "name": "Chip-Supplier Credit Lines", "category": "business_loan", "product_type": "working_capital"},
     {"product_id": "dc-contractor-loans", "name": "Data-Center Contractor Loans", "category": "business_loan", "product_type": "term_loan"},
+    {"product_id": "dc-contractor-lines", "name": "Data-Center Contractor Credit Lines", "category": "business_loan", "product_type": "working_capital"},
     {"product_id": "employee-mortgages", "name": "Founder and Employee Mortgages", "category": "retail_loan", "product_type": "housing_loan"},
 ]  # fmt: skip
 
@@ -423,7 +424,7 @@ def sector_shock(sector: str, **kw) -> dict:
 # here; a live run should cut it by ISIC F (construction) or J (information and communication).
 SCENARIOS += [
     Scenario(
-        "us_ai_buildout_pause", "AI build-out pause: data-center contractors miss payments; credit lines are drawn harder.",
+        "us_ai_buildout_pause", "AI build-out pause: data-center contractors draw harder on their credit lines.",
         US_BANK, US_PRODUCTS,
         [finding("f-dc-pause", "Dallas-area data-center projects paused as AI build-out slows",
                  "Developers paused several data-center projects in the Dallas-Fort Worth area; contractors' "
@@ -432,8 +433,8 @@ SCENARIOS += [
                                      "2026-11-17T14:00:00Z", "Dallas Morning News")],
                  places=["US-TX"])],
         {"f-dc-pause": sector_shock("construction")},
-        tasks=[("dc-contractor-loans", ("installment_collection_rate", "returned_cheque_rate"), {}),
-               ("chip-supplier-lines", "facility_utilization", {})],
+        # business_loan.utilization.sector on the contractors' credit lines (term loans have no facility_utilization)
+        tasks=[("dc-contractor-lines", "facility_utilization", {})],
         coverage="us-bank",
     ),
     Scenario(

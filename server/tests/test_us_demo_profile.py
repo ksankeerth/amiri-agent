@@ -28,7 +28,7 @@ async def test_the_austin_bank_imports_and_reads_in_us_places(client, env):
     i = await load(client, env)
     assert i["name"] == "Austin Tech Bank" and i["home_country"] == "US" and i["base_currency"] == "USD"
     assert i["time_zone"] == "America/Chicago" and i["subtype"] == "commercial" and i["size_band"] == "mid"
-    assert i["counts"] == {"footprint": 3, "watch-places": 4, "segments": 6, "products": 11, "flows": 0, "regulators": 6,
+    assert i["counts"] == {"footprint": 3, "watch-places": 4, "segments": 6, "products": 12, "flows": 0, "regulators": 6,
                            "rivals": 0, "counterparties": 2, "risk-exposures": 0}
     prof = (await client.get(f"{B}/austin-tech-bank/profile")).json()
     assert prof["readiness"]["ready"] is True

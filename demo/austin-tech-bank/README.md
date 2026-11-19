@@ -12,7 +12,7 @@ One file with everything a platform needs:
 
 | Part | What |
 |---|---|
-| `institution`, `sections` | The profile, as `POST /api/v1/institutions:import` takes it. Footprint: the US home market, Texas and part of California. Watch places: Silicon Valley (San Jose), Austin, Dallas-Fort Worth, the Permian Basin (Midland). Six customer groups and eleven products. The US regulators from the rule table, plus FinCEN. |
+| `institution`, `sections` | The profile, as `POST /api/v1/institutions:import` takes it. Footprint: the US home market, Texas and part of California. Watch places: Silicon Valley (San Jose), Austin, Dallas-Fort Worth, the Permian Basin (Midland). Six customer groups and twelve products. The US regulators from the rule table, plus FinCEN. |
 | `series` | Four market series: Nasdaq-100, natural gas, oil and 7-10 year Treasury funds (no single stocks). |
 | `monitors` | Seven live monitors: tech layoffs, Austin housing, bank-level evidence, data centers, Texas power, fund stress, startup funding. None watches elections or party politics. |
 | `sample_data` | Switches the sample bank on, so Verification has figures to compare. |
