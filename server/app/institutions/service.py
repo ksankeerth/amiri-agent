@@ -80,7 +80,8 @@ def create_errors(fields: dict) -> list[dict]:
 
 
 def region_errors(fields: dict) -> list[dict]:
-    """The prototype is tested in one region (SUPPORTED_REGION): the home country and base currency must be in it."""
+    """The prototype is tested in some regions (SUPPORTED_REGION): the home country and base currency must be in
+    one of them."""
     r = reference.region()
     if not r:
         return []

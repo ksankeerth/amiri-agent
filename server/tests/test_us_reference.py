@@ -75,3 +75,60 @@ def test_radars_gazetteer_is_an_exact_copy_of_the_servers():
     server = settings.PROJECT / "app" / "reference" / "gazetteer.json"
     assert radar.read_bytes() == server.read_bytes()
     json.loads(server.read_text())
+
+
+# ------------------------------------------------- SUPPORTED_REGION as a list
+
+def _snapshot() -> dict:
+    from pathlib import Path
+
+    return json.loads((Path(__file__).parent / "fixtures" / "snapshots" / "region_japac.json").read_text())
+
+
+@pytest.mark.parametrize("value", [None, "", "japac", " JAPAC "])
+async def test_japac_alone_is_as_it_was(client, env, value):
+    """The default, an empty variable (the default too) and japac itself: the region of the commit before lists."""
+    if value is None:
+        env.delenv("SUPPORTED_REGION", raising=False)
+    else:
+        env.setenv("SUPPORTED_REGION", value)
+    snap = _snapshot()
+    assert reference.region() == snap["region"]
+    homes = (await client.get("/api/v1/reference/countries", params={"scope": "home"})).json()
+    assert [c["code"] for c in homes["items"]] == snap["countries_home"]
+    assert homes["region"] == {"id": "japac", "label": "Japan and Asia-Pacific (JAPAC)"}
+
+
+async def test_us_alone(client, env):
+    env.setenv("SUPPORTED_REGION", "us")
+    r = reference.region()
+    assert (r["id"], r["label"], r["countries"], r["currencies"]) == ("us", "United States", ["US"], ["USD"])
+    assert (await client.post(B, json=BANK)).status_code == 422
+
+
+async def test_japac_and_us_allow_both_home_countries_and_currencies(client, env):
+    env.setenv("SUPPORTED_REGION", "japac,us")
+    r = reference.region()
+    assert r["id"] == "japac,us" and r["label"] == "Japan and Asia-Pacific (JAPAC) and United States"
+    assert {"LK", "US"} <= set(r["countries"]) and {"LKR", "USD"} <= set(r["currencies"])
+    assert r["countries"] == _snapshot()["region"]["countries"] + ["US"]
+    homes = (await client.get("/api/v1/reference/countries", params={"scope": "home"})).json()
+    assert {"LK", "US"} <= {c["code"] for c in homes["items"]}
+    cur = (await client.get("/api/v1/reference/currencies", params={"scope": "home"})).json()
+    assert {"LKR", "USD"} <= {c["code"] for c in cur["items"]}
+    assert (await client.post(B, json=BANK)).status_code == 201  # Sri Lanka
+
+
+async def test_a_us_home_under_japac_and_us(client, env):
+    env.setenv("SUPPORTED_REGION", "us,japac")
+    assert reference.region()["id"] == "us,japac"
+    assert (await client.post(B, json=US_BANK)).status_code == 201
+
+
+def test_an_unknown_region_is_ignored_with_a_warning(env, caplog):
+    env.setenv("SUPPORTED_REGION", "japac,emea")
+    with caplog.at_level("WARNING"):
+        assert reference.region() == _snapshot()["region"]
+    assert any("emea" in m and "ignored" in m for m in caplog.messages)
+    env.setenv("SUPPORTED_REGION", "emea")  # nothing known: anywhere, as an unknown id always was
+    assert reference.region() is None

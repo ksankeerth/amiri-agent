@@ -245,8 +245,9 @@ SETTINGS: dict[str, Setting] = {
         Setting("DATA_SECRET_KEY", "", "Empty (the prototype): data connections have no authorization. Set it (32+ "
                 "random characters) to let a connection send a key or token, stored encrypted with it; changing it "
                 "means entering the key again.", secret=True),
-        Setting("SUPPORTED_REGION", "japac", "The region the prototype is tested for: an institution's home country and "
-                "base currency must be in it (app/reference/regions.json). Empty: anywhere."),
+        Setting("SUPPORTED_REGION", "japac", "The regions the prototype is tested for, a comma list of "
+                "app/reference/regions.json ids (japac, us, or japac,us): an institution's home country and base "
+                "currency must be in one of them. An unknown id is ignored (logged). Empty is the default, japac."),
         Setting("SINGLE_INSTITUTION", "true", "One institution per platform (a deployment serves one bank or insurer); "
                 "a second can't be created until the prototype is reset."),
         Setting("MONITOR_RETRY_MINUTES", "60", "After a check fails, try again this many minutes later (not the whole frequency): a "
