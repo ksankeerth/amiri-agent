@@ -56,13 +56,6 @@ a.ovt-row:hover, .ovt-ev:hover { background:color-mix(in srgb, var(--accent) 15%
 .ovt-tbl th a { color:var(--ink); font-weight:600; }
 .ovt-tbl td.r { text-align:right; color:var(--ink); font-variant-numeric:tabular-nums; }
 .ovt-warnw { color:var(--high-ink); }
-.ovt-sys { display:flex; flex-direction:column; align-items:stretch; gap:10px; padding:0; font-size:16px; color:var(--ink-2); }
-.ovs .ovt-sys > span { display:flex; align-items:center; gap:10px; padding:16px 20px; border-radius:14px; font-size:17px; font-weight:500; color:var(--ink);
-  background:color-mix(in srgb, var(--accent) 9%, var(--paper)); border:1px solid color-mix(in srgb, var(--accent) 28%, transparent);
-  box-shadow:inset 3px 0 0 var(--accent); }  /* the same bulletin card as the other sections; the edge says the state */
-.ovs .ovt-sys > span:has(.sd-down) { box-shadow:inset 3px 0 0 var(--critical); }
-.ovs .ovt-sys > span:has(.sd-warn) { box-shadow:inset 3px 0 0 var(--high); }
-.ovs .ovt-sys > span:has(.sd-off) { box-shadow:inset 3px 0 0 var(--ink-3); }
 
 /* cards rise in one by one as the section scrolls into view (only where the browser has scroll timelines) */
 @supports (animation-timeline: view()) {

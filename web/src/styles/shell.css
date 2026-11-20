@@ -38,7 +38,9 @@
 .ovx-hero[data-state="alert"] .ph-status a:has(b) { text-decoration:none; }
 
 /* the four steps: one line under the hero, a rule that fills from step 1 to 4 */
-.ovx-kpis { grid-column:1 / -1; align-self:center; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); position:relative; margin-top:28px; padding-top:18px; }
+/* overflow-x:clip keeps the Relay light inside the strip: between runs it rests just past its column's right edge, and in
+   the last column that pushed the page wider than the screen, so a sideways scrollbar came and went on every beat */
+.ovx-kpis { overflow-x:clip; grid-column:1 / -1; align-self:center; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); position:relative; margin-top:28px; padding-top:18px; }
 .ovx-kpis::before, .ovx-kpis::after { content:""; position:absolute; left:0; right:0; top:0; height:2px; }
 .ovx-kpis::before { background:var(--line); }
 .ovx-kpis::after { transform-origin:left; background:linear-gradient(90deg, var(--accent), var(--accent) 70%, var(--critical)); }

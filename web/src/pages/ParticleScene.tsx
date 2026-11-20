@@ -1,10 +1,10 @@
 // Glowing-particle scenes beside each Overview section. Each one shows what its section is about, drawn from the
-// section's own numbers: events travelling to the bank, a radar sweep, agents linked to a core. Canvas 2D, one sprite
+// section's own numbers: events travelling to the bank, a radar sweep, findings pulled out of the noise. Canvas 2D, one sprite
 // per colour; it runs only while on screen, and under reduced motion it draws one still frame.
 import { useEffect, useRef } from "react";
 
-export type SceneKind = "needs" | "events" | "findings" | "markets" | "radar" | "health";
-export type SceneData = { n?: number; tones?: string[]; up?: boolean[]; late?: boolean; line?: number[]; labels?: string[]; home?: string };
+export type SceneKind = "needs" | "events" | "findings" | "markets" | "radar";
+export type SceneData = { n?: number; tones?: string[]; line?: number[]; labels?: string[]; home?: string };
 type P = { x: number; y: number; vx: number; vy: number; life: number; max: number; c: string; s: number; k?: number; a?: number };
 type Pal = Record<"accent" | "critical" | "high" | "ink3" | "ink", string>;
 
@@ -59,7 +59,6 @@ export function ParticleScene({ kind, data, label }: { kind: SceneKind; data: Sc
     const tones = data.tones?.length ? data.tones : ["neutral"];
     const src = (i: number) => ({ x: W * (.1 + .08 * (i % 3)), y: H * (.22 + (i * .27) % .56) });  // each event where its news is, home on the right
     const nodes = () => { const n = Math.max(1, data.n ?? 1); return Array.from({ length: n }, (_, i) => ({ x: W * .66, y: H * (n === 1 ? .5 : .2 + .6 * i / (n - 1)) })); };
-    const agents = () => (data.up ?? []).map((u, i, a) => { const ang = -Math.PI / 2 + i * 2 * Math.PI / a.length; return { x: W / 2 + Math.cos(ang) * H * .34, y: H / 2 + Math.sin(ang) * H * .34, u }; });
     const line = () => { const v = data.line?.length ? data.line : Array.from({ length: 24 }, (_, i) => Math.sin(i / 3) + i / 12);
       const lo = Math.min(...v), hi = Math.max(...v) || 1; return v.map((y, i) => ({ x: W * (.08 + .84 * i / (v.length - 1)), y: H * (.78 - .56 * (y - lo) / (hi - lo || 1)) })); };
 
@@ -71,7 +70,6 @@ export function ParticleScene({ kind, data, label }: { kind: SceneKind; data: Sc
       else if (kind === "findings") { for (let j = 0; j < 3; j++) ps.push({ x: rnd(0, W), y: rnd(0, H), vx: rnd(-.3, .3), vy: rnd(-.3, .3), life: 0, max: rnd(120, 260), c: "ink3", s: rnd(1.5, 3), k: Math.random() < .08 ? 1 : 0 }); }
       else if (kind === "markets") { if (Math.random() < .8) ps.push({ x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 200, c: "accent", s: rnd(2, 4), a: rnd(-4, 4) }); }
       else if (kind === "radar") { if (ps.length < 160) ps.push({ x: W / 2 + Math.cos(rnd(0, 7)) * rnd(10, H * .44), y: 0, vx: 0, vy: 0, life: 0, max: 1e9, c: "accent", s: rnd(1.5, 3), a: rnd(0, Math.PI * 2), k: rnd(10, H * .44) }); }
-      else if (kind === "health") agents().forEach((ag, i) => { if (ag.u && Math.random() < .35) ps.push({ x: W / 2, y: H / 2, vx: 0, vy: 0, life: 0, max: 90, c: "accent", s: rnd(2, 3.5), k: i, a: Math.random() < .5 ? 1 : -1 }); });
     };
     const move = (p: P) => {
       p.life++;
@@ -85,7 +83,6 @@ export function ParticleScene({ kind, data, label }: { kind: SceneKind; data: Sc
       else if (kind === "markets") { const L = line(), u = f * (L.length - 1), i = Math.min(L.length - 2, Math.floor(u)), r = u - i;
         p.x = L[i].x + (L[i + 1].x - L[i].x) * r; p.y = L[i].y + (L[i + 1].y - L[i].y) * r + p.a!; }
       else if (kind === "radar") { p.x = W / 2 + Math.cos(p.a!) * p.k!; p.y = H / 2 + Math.sin(p.a!) * p.k!; }
-      else if (kind === "health") { const ag = agents()[p.k!], e = p.a! > 0 ? f : 1 - f; p.x = W / 2 + (ag.x - W / 2) * e; p.y = H / 2 + (ag.y - H / 2) * e; }
     };
     const say = (x: number, y: number, text: string | undefined, align: CanvasTextAlign = "center") => { if (!text) return;  // a plain label, so the motion reads
       g.globalCompositeOperation = "source-over"; g.globalAlpha = .95; g.fillStyle = pal.ink; g.font = `500 14px ${css("--font-ui") || "sans-serif"}`; g.textAlign = align; g.fillText(text, x, y);
@@ -120,9 +117,6 @@ export function ParticleScene({ kind, data, label }: { kind: SceneKind; data: Sc
           if (s > Math.PI && !bl.moved) { blips[i] = { ...blip(i, nb, R, others(i)), moved: true }; return; }
           if (s < 1) bl.moved = false;
           dot(W / 2 + Math.cos(bl.a) * bl.r * R, H / 2 + Math.sin(bl.a) * bl.r * R, 7, "critical", Math.max(.06, 1 - s / 2.2)); }); }
-      if (kind === "health") { dot(W / 2, H / 2, 16 + Math.sin(t / 12) * 3, data.late ? "high" : "accent", .95);
-        agents().forEach(ag => { g.strokeStyle = ag.u ? pal.accent : pal.ink3; g.globalAlpha = ag.u ? .35 : .2; g.setLineDash(ag.u ? [] : [4, 6]); g.beginPath(); g.moveTo(W / 2, H / 2); g.lineTo(ag.x, ag.y); g.stroke(); g.setLineDash([]);
-          dot(ag.x, ag.y, ag.u ? 11 : 8, ag.u ? "accent" : "ink3", ag.u ? .95 : .5); }); agents().forEach((ag, i) => say(ag.x, ag.y + (ag.y < H / 2 - 1 ? -18 : 30), data.labels?.[i])); say(W / 2 + 16, H / 2 - 16, "AMIRI Agent", "left"); }  // up and right of the core, on the diagonal between two links, clear of both
     };
     const step = () => {
       t++; frame++;

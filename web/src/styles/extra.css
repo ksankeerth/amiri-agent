@@ -186,6 +186,8 @@ a.card:hover, .card.click:hover { box-shadow:var(--e-md); border-color:var(--lin
 /* sidebar: groups, a person at the bottom */
 .navgroup + .navgroup { margin-top:8px; }
 .navgroup > .grp { margin:12px 12px 4px; font-size:var(--fs-xs); letter-spacing:.04em; }
+/* a shorter screen: slightly tighter menu rows, so the whole menu (with the System status) fits without a scrollbar */
+@media (max-height: 900px) { .nav { padding-top:8px; } .nav a { height:30px; } .navgroup > .grp { margin:10px 12px 2px; } }
 .nav a { transition:background var(--d-fast), color var(--d-fast); position:relative; }
 .nav a[aria-current="page"]::before { content:""; position:absolute; left:-8px; top:7px; bottom:7px; width:3px; border-radius:0 3px 3px 0; background:var(--ink); }
 .side-user { display:flex; align-items:center; gap:12px; padding:12px 16px; border-top:1px solid var(--hairline); }

@@ -1,0 +1,19 @@
+/* "Is AMIRI Agent working?" in the side bar (SystemStatus.tsx): a tinted box, green when all is well, amber otherwise. */
+.sbs { margin-top:0; }  /* the group gap above is enough; every pixel counts for the menu to fit without scrolling */
+.sbs-box { display:flex; align-items:center; gap:10px; width:calc(100% - 8px); margin:4px 4px 0; padding:8px 10px; border-radius:var(--r-nav);
+  font:inherit; text-align:left; color:var(--ink-2); cursor:pointer;
+  background:color-mix(in srgb, var(--accent) 6%, transparent); border:1px solid color-mix(in srgb, var(--accent) 20%, transparent); }
+.sbs[data-state="warn"] .sbs-box { background:color-mix(in srgb, var(--high) 7%, transparent); border-color:color-mix(in srgb, var(--high) 28%, transparent); }
+.sbs-box:hover { background:color-mix(in srgb, var(--accent) 14%, transparent); }
+.sbs[data-state="warn"] .sbs-box:hover { background:color-mix(in srgb, var(--high) 13%, transparent); }
+.sbs-orbit { flex:none; display:block; }
+.sbs-txt { display:flex; flex-direction:column; gap:1px; min-width:0; font-size:13px; line-height:1.35; }
+.sbs-txt b { font-size:14px; font-weight:600; color:var(--ink); }
+.sbs-word { color:var(--accent-ink); font-weight:600; }
+.sbs[data-state="warn"] .sbs-word { color:var(--high-ink); }
+.sbs-upd { color:var(--ink-3); }
+.sbs-upd.late { color:var(--high-ink); }
+.sbs-detail { list-style:none; margin:6px 4px 0; padding:8px 10px; display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--ink-2);
+  border-left:2px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+.sbs[data-state="warn"] .sbs-detail { border-left-color:color-mix(in srgb, var(--high) 45%, transparent); }
+.sbs-detail li { display:flex; align-items:center; gap:8px; }

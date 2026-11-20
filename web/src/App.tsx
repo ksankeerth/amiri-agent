@@ -6,6 +6,7 @@ import { api, ME } from "./api/client";
 import { ago, fullNow, setZone, ZONE_LABEL } from "./format";
 import { cap } from "./plain";
 import { OVERVIEW_EVENT, overviewApi, type Overview } from "./api/overview";
+import { SystemStatus } from "./components/SystemStatus";
 import "./styles/shell.css";
 import { InstitutionPage, NewInstitutionPage } from "./pages/institution/InstitutionPage";
 import { SetupWizard } from "./pages/institution/SetupWizard";
@@ -277,6 +278,7 @@ function Frame({ inst }: { inst: Installation }) {
             ))}
               </div>);
             })}
+            <SystemStatus o={ov} now={now} />
           </nav>
           <div className="side-user" title={ME}>
             <span className="avatar" aria-hidden="true">{ME[0].toUpperCase()}</span>

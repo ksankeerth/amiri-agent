@@ -155,9 +155,8 @@ export function OverviewPage() {
   // the map fills the hero beside the headline: 520 px on a full-HD screen, less on a shorter one so the steps and cue still fit
   // ponytail: read at render (the page re-renders every 30 s), not on resize; add a resize listener if that ever matters
   const mapH = Math.min(520, Math.max(320, window.innerHeight - 500));
-  const below = 5 + (o.markets.length > 0 ? 1 : 0);  // the sections under the first screen, for the scroll cue
+  const below = 4 + (o.markets.length > 0 ? 1 : 0);  // the sections under the first screen, for the scroll cue
 
-  const agents = [["Investigation", s.investigation.connected], ["Monitors", s.monitor.connected], ["Setup agent", s.assistant.connected], ["Radar", s.radar.connected]] as const;
   const needRow = (a: Attention, n: number) => {
     // the profile's recommendations: each one by name, with what it found and a link to fix it; the rest on the Institution page
     if (a.kind === "recommended" && recs.length) return <div key={n} className="ovt-row ovt-need" data-lv={a.level}>
@@ -260,14 +259,6 @@ export function OverviewPage() {
                 <span className="ovt-tt2">{r.title}{admin && <b className="ovt-score" title="Radar score">{r.score}</b>}</span>
                 <span className="ovt-m">{ago(r.last_seen_at, now)} · {plural(r.publishers, "publisher")} · {r.status === "sent" ? (r.event_id ? "in an event" : "sent for investigation") : r.status === "below" ? "not important enough" : "dismissed"}</span></Link>))}
           <Link className="ovt-all" to="/radar">Open Radar →</Link></> },
-        { id: "system", label: "Is AMIRI Agent working?", warn: !s.tick.ok || agents.some(([, up]) => !up), scene: { kind: "health", data: { up: agents.map(([, up]) => up), late: !s.tick.ok, labels: agents.map(([n]) => n) }, label: "AMIRI Agent's core linked to its agents; connected ones exchange green particles, disconnected ones stay grey" }, body: <>
-          <p className="ovt-sum">{agents.filter(([, up]) => up).length} of {agents.length} agents connected</p>
-          <div className="ov-sys ovt-sys">
-            <span><span className={`statusdot ${s.tick.ok ? "sd-ok" : "sd-down"}`} aria-hidden="true" />Updates: {s.tick.last_at ? <>{s.tick.ok ? "last ran" : "late; last ran"} {ago(s.tick.last_at, now)}</> : "haven't run yet"}</span>
-            {agents.map(([n, up]) => (
-              <span key={n}><span className={`statusdot ${up ? "sd-ok" : "sd-off"}`} aria-hidden="true" />{n}: {up ? "working" : "not connected"}</span>))}
-            {o.studio && <span><span className="statusdot sd-warn" /><Link to={`/studio/run/${o.studio.sim_id}`}>Studio: {o.studio.title}, day {o.studio.step} of {o.studio.steps}</Link></span>}
-          </div></> },
       ]} />
     </div>
   );
