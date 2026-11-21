@@ -14,6 +14,8 @@ import { FLOW_WORDS, moneyGoesOut } from "../../components/setupFlow";
 type World = FeatureCollection<Geometry, { name: string }>;
 const MIN_SPAN = 30;  // degrees: the smallest area the map zooms to (about Borneo with its neighbours)
 const ZOOM_MIN = 0.5, ZOOM_MAX = 16, ZOOM_STEP = 1.6;
+const LABEL_K = ZOOM_STEP;  // names appear from the first zoom in; the whole picture stays clean
+type Zoom = { k: number; x: number; y: number };
 let worldP: Promise<World> | null = null;
 function loadWorld(): Promise<World> {
   worldP ??= import("world-atlas/countries-50m.json").then(m => {
@@ -29,6 +31,7 @@ export type Layer = (typeof LAYERS)[number][0];
 /** An event to mark on the map (the Overview): its places, coloured by what it means for the institution. */
 export interface MapEvent { event_id: string; title: string; tone: "good" | "bad" | "mixed" | "neutral"; places: string[] }
 const TONE_COLOR: Record<MapEvent["tone"], string> = { bad: "var(--critical)", good: "var(--accent)", mixed: "var(--high)", neutral: "var(--ink-3)" };
+const TONE_WORD: Record<MapEvent["tone"], string> = { bad: "bad for you", good: "good for you", mixed: "mixed for you", neutral: "neutral" };
 /** The event's marker: a shape per tone as well as a colour, so it reads without colour (▲ bad, ● good, ◆ mixed, ■ neutral). */
 function ToneShape({ tone, s = 1, stroke = "var(--surface)", sw = 2 }: { tone: MapEvent["tone"]; s?: number; stroke?: string; sw?: number }) {
   const p = { fill: TONE_COLOR[tone], stroke, strokeWidth: sw, strokeLinejoin: "round" as const };
@@ -49,7 +52,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
   const hazards = useLoad(() => ref.hazards()) ?? [];
   const [on, setOn] = useState<Set<Layer>>(new Set(layers ?? ["footprint", "segments", "flows", "routes", "regulators", "rivals", "watch", "risks"]));
   const [view, setView] = useState<"home" | "world">("home");
-  const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
+  const [tip, setTip] = useState<{ x: number; y: number; text: string; key: string } | null>(null);
   const [w, setW] = useState(900);
   const [box, setBox] = useState<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -117,7 +120,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
   }, [world, w, height, view, profile.institution.profile_version, routes.length, events.length, compact]);
   // The person's pan and zoom on top of the fit: k scales about the view's centre, x/y move it (screen pixels).
   // Applied to the projection, not as an SVG transform, so pins, labels and line widths keep their size.
-  const [zoom, setZoom] = useState({ k: 1, x: 0, y: 0 });
+  const [zoom, setZoom] = useState<Zoom>({ k: 1, x: 0, y: 0 });
   useEffect(() => setZoom({ k: 1, x: 0, y: 0 }), [projection]);  // a new fit starts from the whole picture
   const view0 = [w / 2, height / 2];
   const zoomed = useMemo(() => {
@@ -126,38 +129,90 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
       .translate([tx * zoom.k + (1 - zoom.k) * view0[0] + zoom.x, ty * zoom.k + (1 - zoom.k) * view0[1] + zoom.y]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projection, zoom, w, height]);
-  /** Zoom to k, keeping the screen point q (default: the view's centre) where it is. */
-  const zoomTo = (k: number, q: number[] = view0) => setZoom(z => {
+  /** Keep at least 35 % of the fitted picture (home, events, risks) in view, so the world can't be dragged away. */
+  const clamp = (z: Zoom): Zoom => {
+    const lim = (v: number, size: number, c: number) =>
+      Math.min(size * 0.65 - (1 - z.k) * c, Math.max(size * 0.35 - z.k * size - (1 - z.k) * c, v));
+    return { k: z.k, x: lim(z.x, w, view0[0]), y: lim(z.y, height, view0[1]) };
+  };
+  /** Zoom from z to k, keeping the screen point q (default: the view's centre) where it is. */
+  const zoomAt = (z: Zoom, k: number, q: number[] = view0): Zoom => {
     const k2 = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, k));
     const p0 = [0, 1].map(i => (q[i] - (1 - z.k) * view0[i] - (i ? z.y : z.x)) / z.k);
     const [x, y] = [0, 1].map(i => q[i] - k2 * p0[i] - (1 - k2) * view0[i]);
-    return { k: k2, x, y };
-  });
+    return clamp({ k: k2, x, y });
+  };
+  const zoomTo = (k: number, q?: number[]) => setZoom(z => zoomAt(z, k, q));
   const svgRef = useRef<SVGSVGElement>(null);
   const drag = useRef<{ x: number; y: number } | null>(null);
-  useEffect(() => {  // pinch on a trackpad, or ctrl/⌘ + scroll; a plain scroll still scrolls the page
+  const touch = useRef(false);  // the last press was a finger: tooltips open on tap instead of hover
+  const [hint, setHint] = useState(false);
+  const hintT = useRef(0);
+  useEffect(() => {
     const el = svgRef.current;
     if (!el) return;
+    // pinch on a trackpad, or ctrl/⌘ + scroll; a plain scroll still scrolls the page
     const onWheel = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
       const r = el.getBoundingClientRect();
       zoomTo(zoomRef.current.k * Math.exp(-e.deltaY * 0.01), [e.clientX - r.left, e.clientY - r.top]);
     };
+    // on a phone one finger scrolls the page (the map fills the screen there) and two fingers move and zoom the map
+    let pinch: { d: number; m: number[]; z: Zoom } | null = null;
+    const two = (t: TouchList) => {
+      const r = el.getBoundingClientRect(), [a, b] = [t[0], t[1]];
+      return { d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1, m: [(a.clientX + b.clientX) / 2 - r.left, (a.clientY + b.clientY) / 2 - r.top] };
+    };
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length !== 2) return;
+      e.preventDefault(); pinch = { ...two(e.touches), z: zoomRef.current }; setHint(false);
+    };
+    const onMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && pinch) {
+        e.preventDefault();
+        const { d, m } = two(e.touches), p = pinch, z = zoomAt(p.z, p.z.k * d / p.d, p.m);
+        setZoom(clamp({ ...z, x: z.x + m[0] - p.m[0], y: z.y + m[1] - p.m[1] }));
+      } else if (e.touches.length === 1 && !pinch) {
+        setHint(true); clearTimeout(hintT.current); hintT.current = window.setTimeout(() => setHint(false), 1500);
+      }
+    };
+    const onEnd = (e: TouchEvent) => { if (e.touches.length < 2) pinch = null; };
     el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
+    el.addEventListener("touchstart", onStart, { passive: false });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    el.addEventListener("touchcancel", onEnd);
+    return () => {
+      el.removeEventListener("wheel", onWheel); el.removeEventListener("touchstart", onStart); el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd); el.removeEventListener("touchcancel", onEnd); clearTimeout(hintT.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [w, height]);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
   const path = geoPath(zoomed);
   const xy = (c: [number, number] | null) => (c ? zoomed(c) : null);
-  const show = (e: React.MouseEvent, text: string) => { const r = box!.getBoundingClientRect(); setTip({ x: e.clientX - r.left, y: e.clientY - r.top, text }); };
-  const pin = (key: string, code: string, color: string, label: string, r = 5, ring = false) => {
+  const show = (e: React.MouseEvent, text: string, key: string) => { const r = box!.getBoundingClientRect(); setTip({ x: e.clientX - r.left, y: e.clientY - r.top, text, key }); };
+  /** A tooltip on hover with a mouse, on tap with a finger. With `open`, a click opens it (a finger: the second tap). */
+  const tipOn = (key: string, text: string, open?: () => void) => {
+    const full = () => open ? `${text}\n${touch.current ? "Tap again to open" : "Click to open"}` : text;
+    return {
+      onMouseMove: (e: React.MouseEvent) => { if (!touch.current) show(e, full(), key); },
+      onMouseLeave: () => { if (!touch.current) setTip(null); },
+      onClick: (e: React.MouseEvent) => {
+        if (touch.current && tip?.key !== key) { e.stopPropagation(); show(e, full(), key); }
+        else if (open) { e.stopPropagation(); open(); }
+      },
+    };
+  };
+  const named = zoom.k >= LABEL_K;
+  const pin = (key: string, code: string, color: string, label: string, r = 5, ring = false, name?: string) => {
     const p = xy(at(code));
     if (!p) return null;
-    return <g key={key} transform={`translate(${p[0]},${p[1]})`} onMouseMove={e => show(e, label)} onMouseLeave={() => setTip(null)} style={{ cursor: "default" }}>
-      <circle r={r} fill={ring ? "none" : color} stroke={ring ? color : "var(--surface)"} strokeWidth={ring ? 2 : 1.5} /></g>;
+    return <g key={key} transform={`translate(${p[0]},${p[1]})`} {...tipOn(key, label)} style={{ cursor: "default" }}>
+      <circle r={r} fill={ring ? "none" : color} stroke={ring ? color : "var(--surface)"} strokeWidth={ring ? 2 : 1.5} />
+      {named && name && <text className="mapplace" y={r + 13} textAnchor="middle">{name}</text>}</g>;
   };
   const maxFlow = Math.max(1, ...S.flows.map(f => f.value?.amount ?? 0));
   // Which money flows an open event reaches: its place is the flow's far end (same country), or it sits in a risk zone
@@ -206,16 +261,20 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
       </div>}
       <div style={{ position: "relative" }} className={compact ? undefined : "pmap-full"}>
       <svg ref={svgRef} width="100%" height={height} viewBox={`0 0 ${w} ${height}`} role="img" aria-label="Map of the institution profile"
-        style={{ background: "var(--map-ocean)", borderRadius: 12, display: "block", cursor: drag.current ? "grabbing" : "grab", touchAction: "none" }}
-        onPointerDown={e => { drag.current = { x: e.clientX, y: e.clientY }; }}
+        style={{ background: "var(--map-ocean)", borderRadius: 12, display: "block", cursor: drag.current ? "grabbing" : "grab", touchAction: "pan-x pan-y" }}
+        onPointerDown={e => {  // a mouse or pen drags the map; a finger is handled by the touch listeners above
+          touch.current = e.pointerType === "touch";
+          drag.current = touch.current ? null : { x: e.clientX, y: e.clientY };
+        }}
         onPointerMove={e => {
           const d = drag.current;
           if (!d || !e.buttons) { drag.current = null; return; }
           const [dx, dy] = [e.clientX - d.x, e.clientY - d.y];
           drag.current = { x: e.clientX, y: e.clientY };
-          setZoom(z => ({ ...z, x: z.x + dx, y: z.y + dy }));
+          setZoom(z => clamp({ ...z, x: z.x + dx, y: z.y + dy }));
         }}
-        onPointerUp={() => { drag.current = null; }} onPointerLeave={() => { drag.current = null; }}>
+        onPointerUp={() => { drag.current = null; }} onPointerLeave={() => { drag.current = null; }}
+        onClick={() => { if (touch.current) setTip(null); }}>
         {world && <g>{world.features.map(f => {
           const iso = Object.values(P).find(p => p.numeric && String(Number(p.numeric)) === String(Number(f.id)))?.code;
           const isHome = on.has("footprint") && iso === home;
@@ -226,11 +285,11 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
         {on.has("risks") && riskHazards.map(h => {
           const c = h.centre ? geoCircle().center([h.centre[1], h.centre[0]]).radius((h.radius_km ?? 100) / 111)() : null;
           return c && <path key={h.hazard_id} d={path(c) ?? ""} fill="var(--critical-soft)" stroke="var(--critical)" strokeDasharray="4 3" strokeWidth={1}
-            onMouseMove={e => show(e, `Risk: ${risks.find(x => x.hazard_id === h.hazard_id)?.title}`)} onMouseLeave={() => setTip(null)} />;
+            {...tipOn(`k${h.hazard_id}`, `Risk: ${risks.find(x => x.hazard_id === h.hazard_id)?.title}`)} />;
         })}
         {on.has("routes") && usedRoutes.map(r => (
           <path key={r.route_id} d={path({ type: "LineString", coordinates: r.points.map(([la, lo]) => [lo, la]) }) ?? ""} fill="none" stroke="var(--low)" strokeWidth={1.5} strokeDasharray="1 5" strokeLinecap="round"
-            onMouseMove={e => show(e, `Sea route: ${r.name}`)} onMouseLeave={() => setTip(null)} />))}
+            {...tipOn(`o${r.route_id}`, `Sea route: ${r.name}`)} />))}
         {on.has("flows") && S.flows.map(f => {
           const a = xy(at(f.local)), b = xy(at(f.counterpart));
           if (!a || !b) return null;
@@ -244,7 +303,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           const ev = reached.get(f.id), quiet = reached.size > 0 && !ev;  // when an event reaches some flows, the rest step back
           const gap = Math.round(30 - 14 * share);  // bigger flows carry more particles
           return <g key={f.id} className={ev ? "mapflow is-hit" : quiet ? "mapflow is-quiet" : "mapflow"}
-            onMouseMove={e => show(e, `${FLOW_WORDS[f.kind]}${f.goods ? ` (${f.goods})` : ""}: ${P[f.counterpart]?.name ?? f.counterpart} ${out ? "←" : "→"} ${P[f.local]?.name ?? f.local}${f.value ? ` · ${usdText(f.value.amount)} a year` : ""}${ev ? ` · reached by: ${ev.title}` : ""}`)} onMouseLeave={() => setTip(null)}>
+            {...tipOn(`f${f.id}`, `${FLOW_WORDS[f.kind]}${f.goods ? ` (${f.goods})` : ""}: ${P[f.counterpart]?.name ?? f.counterpart} ${out ? "←" : "→"} ${P[f.local]?.name ?? f.local}${f.value ? ` · ${usdText(f.value.amount)} a year` : ""}${ev ? `\nReached by: ${ev.title} (${TONE_WORD[ev.tone]})` : ""}`)}>
             <path d={d} fill="none" stroke={FLOW_COLOR[f.kind]} strokeOpacity={quiet ? 0.28 : compact ? 0.75 : 0.85} strokeWidth={width} strokeLinecap="round" />
             {/* the direction: small particles travel from where the money starts to where it goes (kept at full strength on a
                 faded flow, so which way the money moves never gets lost behind an event's pulse) */}
@@ -260,11 +319,17 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           return p && <circle key={`glow${code}`} className="homeglow" cx={p[0]} cy={p[1]} r={16} fill="none" strokeWidth={2}
             stroke={TONE_COLOR[tones.includes("bad") ? "bad" : tones.includes("mixed") ? "mixed" : tones[0]]} />;
         })}
+        {/* country names from the first zoom in: only where the name fits inside its country and the country is in view */}
+        {world && named && <g className="maplabels" aria-hidden="true">{world.features.map(f => {
+          const [[x0], [x1]] = path.bounds(f), [cx, cy] = path.centroid(f), name = f.properties.name;
+          if (!name || x1 - x0 < name.length * 7 + 8 || cx < 0 || cx > w || cy < 0 || cy > height) return null;
+          return <text key={`n${f.id}`} x={cx} y={cy} textAnchor="middle">{name}</text>;
+        })}</g>}
         {on.has("regulators") && homeXY && S.regulators.filter(r => r.relation === "reach").map((r, i) => {
           const far = xy(at(r.short === "OFAC" ? "US" : r.short === "EU" ? "BE" : r.short === "OFSI" ? "GB" : r.country));
           return far && <line key={`t${i}`} x1={homeXY[0]} y1={homeXY[1]} x2={far[0]} y2={far[1]} stroke="var(--ink-3)" strokeDasharray="2 3" />;
         })}
-        {on.has("footprint") && S.footprint.filter(f => f.code.includes("-")).map(f => pin(`fp${f.id}`, f.code, "var(--map-home)", `Footprint: ${P[f.code]?.name} (${f.role})`, 6, true))}
+        {on.has("footprint") && S.footprint.filter(f => f.code.includes("-")).map(f => pin(`fp${f.id}`, f.code, "var(--map-home)", `Footprint: ${P[f.code]?.name} (${f.role})`, 6, true, P[f.code]?.name ?? undefined))}
         {on.has("watch") && S["watch-places"].filter(x => x.code).map(x => pin(`w${x.id}`, x.code, "var(--info)", `Watch: ${x.name}${x.reason ? ` · ${x.reason}` : ""}`, 4.5, true))}
         {on.has("segments") && S.segments.flatMap(s => s.places.map((c: string) => pin(`s${s.id}${c}`, c, "var(--accent)", `${s.label} · ${P[c]?.name ?? c}`, 5)))}
         {on.has("rivals") && S.rivals.flatMap(r => r.places.map((c: string) => pin(`r${r.id}${c}`, c, "var(--high)", `Rival: ${r.name} (${r.overlap} overlap) · ${P[c]?.name ?? c}`, 4)))}
@@ -272,7 +337,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           const p = xy(at(r.country));
           const n = S.regulators.filter(x => x.country === r.country).findIndex(x => x.id === r.id);  // stack labels per country
           const t = (r.short ?? r.name).slice(0, 7), hw = 6 + t.length * 3.7;  // a 12 px label (the floor for a projector), kept inside the map
-          return p && <g key={`g${r.id}`} transform={`translate(${Math.min(p[0] + 30, w - hw - 4)},${p[1] - 12 - n * 22})`} onMouseMove={e => show(e, `${r.name} · ${r.relation}`)} onMouseLeave={() => setTip(null)}>
+          return p && <g key={`g${r.id}`} transform={`translate(${Math.min(p[0] + 30, w - hw - 4)},${p[1] - 12 - n * 22})`} {...tipOn(`g${r.id}`, `${r.name} · ${r.relation}`)}>
             <rect x={-hw} y={-10} width={hw * 2} height={19} rx={4} fill="var(--surface)" stroke="var(--line-strong)" />
             <text textAnchor="middle" y={4} fontSize={12} fontWeight={700} fill="var(--ink-2)">{t}</text></g>;
         })}
@@ -281,10 +346,11 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           if (!p) return null;
           const color = TONE_COLOR[e.tone];
           return <g key={`e${e.event_id}${c}`} transform={`translate(${p[0]},${p[1]})`} style={{ cursor: onEvent ? "pointer" : "default" }}
-            onClick={() => onEvent?.(e.event_id)} onMouseMove={ev => show(ev, `${e.title} · ${P[c]?.name ?? c}`)} onMouseLeave={() => setTip(null)}>
+            {...tipOn(`e${e.event_id}${c}`, `${e.title}\n${TONE_WORD[e.tone][0].toUpperCase()}${TONE_WORD[e.tone].slice(1)} · ${P[c]?.name ?? c}`, onEvent && (() => onEvent(e.event_id)))}>
             {[0, 1].map(i => <circle key={i} r={9 * ms} fill="none" stroke={color} strokeWidth={1.25} className="mapripple" style={{ animationDelay: `${i * 1.3}s` }} />)}
             <circle r={13 * ms} fill={color} opacity={0.16} />
-            <ToneShape tone={e.tone} s={ms} sw={1.5} /></g>;
+            <ToneShape tone={e.tone} s={ms} sw={1.5} />
+            {named && P[c]?.lat != null && <text className="mapplace" y={13 * ms + 13} textAnchor="middle">{P[c].name}</text>}</g>;
         }))}
       </svg>
       <div className="mapzoom">
@@ -293,6 +359,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
         <button type="button" title="Back to the whole picture" onClick={() => setZoom({ k: 1, x: 0, y: 0 })}
           disabled={zoom.k === 1 && !zoom.x && !zoom.y}>Reset</button>
       </div>
+      <div className={`maphint${hint ? " on" : ""}`} aria-hidden="true">Use two fingers to move the map</div>
       </div>
       {tip && <div className="maptip" style={{ left: Math.min(tip.x + 12, w - 250), top: tip.y + 12 }}>{tip.text}</div>}
       {compact ? <div className="row wrap small muted" style={{ gap: 14, marginTop: 8 }}>

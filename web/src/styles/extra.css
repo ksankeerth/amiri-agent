@@ -743,6 +743,15 @@ a.evrow:hover .row-l, a.lrow:hover .row-l { text-decoration:underline !important
 .mapzoom button:last-child { font-size:var(--fs-xs); }
 .mapzoom button:hover:not(:disabled) { color:var(--ink); }
 .mapzoom button:disabled { opacity:.45; cursor:default; }
+/* names once zoomed in: countries quiet on the land, places (events, footprint) stronger; 12 px is the projector floor */
+.maplabels text { font-size:12px; fill:var(--ink-3); paint-order:stroke; stroke:var(--map-land); stroke-width:3px; stroke-linejoin:round; pointer-events:none; }
+.mapplace { font-size:12px; font-weight:600; fill:var(--ink); paint-order:stroke; stroke:var(--map-ocean); stroke-width:3px; stroke-linejoin:round; pointer-events:none; }
+.maptip { white-space:pre-line; }
+.maplabels, .mapplace { user-select:none; -webkit-user-select:none; }  /* dragging the map mustn't select the names */
+/* a phone: one finger scrolls the page, so a one-finger swipe on the map says how to move it */
+.maphint { position:absolute; inset:0; display:grid; place-items:center; padding:16px; text-align:center; border-radius:12px; pointer-events:none;
+  background:color-mix(in srgb, var(--paper) 72%, transparent); color:var(--ink); font-weight:600; opacity:0; transition:opacity .2s; z-index:3; }
+.maphint.on { opacity:1; }
 
 /* ---------- The map in motion: money flows show their direction, an event ripples where it happens and, when it
    sits on a flow, a pulse carries it to the bank's home. Each motion means something; nothing moves on a quiet day
