@@ -68,7 +68,8 @@ def test_the_pack_uses_the_metrics_specs_own_keys_and_segments():
 # ---------------------------------------------------------------- a construction sector shock
 
 CONSTRUCTION = ThemeTag(theme="sector", direction="shock", sector="construction")
-PRODUCTS = {"contractor_lines": ("business_loan", 1.0, "working_capital"), "business_deposits": ("savings", 1.0, None)}
+PRODUCTS = {"contractor_lines": ("business_loan", 1.0, "working_capital"),
+            "business_deposits": ("savings", 1.0, "current_account")}
 NO_CAPS = Limits(max_types_per_event=13, max_angles_per_type=5)
 
 
@@ -89,6 +90,23 @@ def test_a_construction_shock_lists_the_us_rules_for_a_us_bank_only():
     assert "business_loan.repayment_stress.sector" in listed("LK")  # the base still reacts as before
 
 
+def test_every_metric_of_a_us_rule_moves_the_rules_way():
+    adverse = {m["key"]: m.get("adverse") or [] for ms in SPEC["metrics"].values() for m in ms}
+    for m in US:
+        for key in m.metrics:  # a fallback metric inherits the rule's direction
+            assert adverse[key] == [m.expect], (m.mechanism_id, key, adverse[key])
+
+
+def test_sector_burn_reads_falling_balances_on_business_accounts_only():
+    m = next(m for m in US if m.mechanism_id == "savings.flows.sector_burn")
+    assert m.metrics == ("large_depositor_net_flow", "balance") and m.expect == "fall"  # cash burn
+    assert m.only_spec_types == ("current_account",) and m.segment_value == "domestic_business"
+    staff_savings = {"employee_savings": ("savings", 1.0, "savings_account")}
+    listing = list_candidates(event(), staff_savings, NO_CAPS, mechanisms=catalog_for("US").mechanisms)
+    assert "savings.flows.sector_burn" not in {m.mechanism_id for c in listing.to_screen + listing.context
+                                               for m in c.mechanisms}
+
+
 US_BANK = {
     "name": "Austin Tech Bank", "institution_type": "bank", "country": "US", "country_name": "United States",
     "currency": "USD", "time_zone": "America/Chicago",
@@ -101,6 +119,14 @@ CATALOG = json.loads((FIXTURES / "catalog_bank.json").read_text())
 
 def _metric(product_id: str, metric: str, dims: dict) -> dict:
     p = next(p for p in CATALOG["products"] if p["product_id"] == product_id)
+    return {**copy.deepcopy(next(m for m in p["metrics"] if m["metric"] == metric)), "dimensions": dims}
+
+
+US_COVERAGE = json.loads((FIXTURES / "coverage_us_bank.json").read_text())
+
+
+def _us_metric(product_id: str, metric: str, dims: dict) -> dict:
+    p = next(p for p in US_COVERAGE["products"] if p["product_id"] == product_id)
     return {**copy.deepcopy(next(m for m in p["metrics"] if m["metric"] == metric)), "dimensions": dims}
 
 
@@ -183,7 +209,7 @@ class BothProducts(Coverage):
         got["products"].append(
             {"product_id": "business_deposits", "source_product_id": "business_deposits",
              "book_size": {"value": 3.0e9, "unit": req.institution.currency},
-             "metrics": [_metric("youth_savings", "withdrawals", {"segment": ["domestic_business", "retail"]})]})
+             "metrics": [_us_metric("startup-deposits", "balance", {"segment": ["domestic_business", "retail"]})]})
         return got
 
 
@@ -219,4 +245,6 @@ def test_each_us_rule_gives_a_hypothesis_and_task_with_its_owner_and_label(mecha
         assert h.product_id == product_id and h.chain_label == m.text[0].upper() + m.text[1:]
         task = next(t for t in r.tasks if t.hypothesis_id == h.hypothesis_id)
         assert task.owner == owner
+        if mechanism_id == "savings.flows.sector_burn":
+            assert (h.expected.metric, h.expected.direction) == ("balance", "fall")
     assert hyps[0].chain_label in r.report  # the report shows the rule's label
