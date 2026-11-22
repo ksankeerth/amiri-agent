@@ -87,9 +87,22 @@ class CallLimit(Exception):
     pass
 
 
+def _named(lead) -> str | None:
+    """A plainer title where the theme names what moved: the item of a price or a disaster, the sector hit."""
+    if lead.theme == "prices" and lead.item and lead.item != "general":
+        return f"{lead.item.capitalize()} prices {'rose' if lead.direction == 'up' else 'fell'}"
+    if lead.theme == "disaster" and lead.item:
+        article = "An" if lead.item[0] in "aeiou" else "A"
+        return f"{article} {lead.item} hit" + (" abroad" if lead.direction == "abroad" else "")
+    if lead.theme == "sector" and lead.direction in ("shock", "boost"):
+        who = f"The {lead.sector} sector" if lead.sector else "A sector"
+        return f"{who} {'was hit' if lead.direction == 'shock' else 'got a boost'}"
+    return None
+
+
 def phrase(event: Event, currency: str) -> str:
     lead = event.themes[0]
-    text = PHRASES.get(
+    text = _named(lead) or PHRASES.get(
         (lead.theme, lead.direction),
         f"{lead.theme} ({lead.direction.replace('_', ' ')})",
     ).format(

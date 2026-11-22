@@ -28,7 +28,7 @@ from datetime import datetime, timedelta
 from psycopg.types.json import Jsonb
 from psycopg_pool import AsyncConnectionPool
 
-from app import settings
+from app import reference, settings
 from app.alerts import service as alerts
 from app.clock import Clock
 from app.institutions.service import Institutions
@@ -40,6 +40,16 @@ from app.text import plural
 from app.validation import explain
 
 log = logging.getLogger("amiri.investigation")
+
+
+def _place_names(title: str, places: list[str]) -> str:
+    """The agent writes place codes into a title ("A drought hit in US-TX"); a reader sees their names (Texas).
+    Whole codes only, so a currency such as LKR is never touched."""
+    for code in sorted(places or [], key=len, reverse=True):
+        name = reference.place_name(code)
+        if name and name != code:
+            title = re.sub(rf"(?<![A-Za-z0-9-]){re.escape(code)}(?![A-Za-z0-9-])", name, title)
+    return title
 
 
 def _lead(theme: dict) -> dict:
@@ -458,7 +468,8 @@ class Investigations:
                      country_code, anchor, anchor_basis, size, places, regions, finding_ids, created_at, open_until)
                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                 (ev[e["event_id"]], run["run_id"], run["institution_id"], run["world"],
-                 e.get("title") or ", ".join(f"{t['theme']} {t['direction']}" for t in e["themes"]),
+                 _place_names(e.get("title") or ", ".join(f"{t['theme']} {t['direction']}" for t in e["themes"]),
+                              e.get("places", [])),
                  Jsonb(e["themes"]), e["country"], e.get("country_code"), e["anchor"], e["anchor_basis"],
                  Jsonb(e["size"]) if e.get("size") else None, e.get("places", []), e.get("regions", []),
                  e["finding_ids"], now, now + timedelta(days=settings.integer("EVENT_OPEN_DAYS"))))
