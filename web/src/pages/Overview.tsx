@@ -168,6 +168,8 @@ export function OverviewPage() {
     return a.link ? <Link key={n} to={a.link} className="ovt-row ovt-need" data-lv={a.level}>{body}</Link>
       : <div key={n} className="ovt-row ovt-need" data-lv={a.level}>{body}</div>;
   };
+  // Radar's blips are labelled with where each story is: its sea or strait first, else its first country
+  const radarAt = o.radar.stories.map(r => { const p = placeOrder(r.places)[0]; return p ? names[p] ?? placeName(p) : ""; });
   const late2 = o.markets.filter(m => m.state !== "normal").length;
   const big = [...o.markets].sort((x, y) => Math.abs(y.change_1d_pct ?? 0) - Math.abs(x.change_1d_pct ?? 0))[0];
   const marketsLine = [plural(o.markets.length, "price"), late2 ? `${late2} not updated` : null, big ? `biggest move today ${big.name} ${pct(big.change_1d_pct)}` : null].filter(Boolean).join(" · ");
@@ -251,7 +253,7 @@ export function OverviewPage() {
               <td><Spark values={m.spark} w={80} h={24} color={m.state === "moved" ? "var(--high)" : "var(--ink-3)"} /></td>
               <td className="r">{pct(m.change_1d_pct)}</td></tr>))}</tbody></table>
           <Link className="ovt-all" to="/series">See market series →</Link></> }] : []),
-        { id: "radar", label: "Latest from Radar", count: o.radar.stories.length, scene: { kind: "radar", data: { n: o.radar.stories.length }, label: "A radar sweep; each story is a bright blip" }, body: <>
+        { id: "radar", label: "Latest from Radar", count: o.radar.stories.length, scene: { kind: "radar", data: { n: o.radar.stories.length, labels: radarAt, ids: o.radar.stories.map(r => r.story_id), scores: o.radar.stories.map(r => r.score) }, label: `A radar sweep; each story is a bright blip, the most important nearest the centre${radarAt.some(Boolean) ? `: ${radarAt.filter(Boolean).join(", ")}` : ""}` }, body: <>
           {s.radar.connected && <p className="ovt-sum">Prototype: {scheduleText(o.radar.every_minutes, o.radar.run_at)}, Check now {o.radar.run_now_limit} times a day.</p>}
           {!o.radar.stories.length ? <p className="ovt-empty">{s.radar.connected ? "No stories yet." : "Radar isn't connected yet."}</p>
             : o.radar.stories.map(r => (

@@ -4,7 +4,7 @@
 import { useEffect, useRef } from "react";
 
 export type SceneKind = "needs" | "events" | "findings" | "markets" | "radar";
-export type SceneData = { n?: number; tones?: string[]; line?: number[]; labels?: string[]; home?: string };
+export type SceneData = { n?: number; tones?: string[]; line?: number[]; labels?: string[]; home?: string; ids?: string[]; scores?: number[] };
 type P = { x: number; y: number; vx: number; vy: number; life: number; max: number; c: string; s: number; k?: number; a?: number };
 type Pal = Record<"accent" | "critical" | "high" | "ink3" | "ink", string>;
 
@@ -37,18 +37,17 @@ export function ParticleScene({ kind, data, label }: { kind: SceneKind; data: Sc
     };
     readPal();
     let W = 0, H = 0, ps: P[] = [], t = 0, raf = 0, on = false, frame = 0;
-    // radar story blips, random but by two rules: (1) each story owns an equal slice of the full circle (a third each for 3),
-    // and lands somewhere inside it, away from the slice's edges, so the blips spread around the dish instead of bunching;
-    // (2) its distance falls inside one of the three bands between the rings, kept clear of the ring lines by a margin;
-    // (3) no two blips share a band while there are bands free: one in the inner band means the others take the middle and outer
-    let blips: { a: number; r: number; band: number; moved: boolean }[] = [];
-    const turn = rnd(0, Math.PI * 2);  // where the slices start, so the pattern isn't the same on every page
+    // radar story blips, fixed so a story's place label stays put: (1) each story owns an equal slice of the circle, starting at
+    // the top, and sits inside it away from the slice's edges, so the labels don't pile up; (2) its ring is how important it is,
+    // by Radar score: the top third on the inner ring, the next on the middle, the rest on the outer; (3) where inside its slice and
+    // ring comes from the story's id, so it lands in the same spot after every refresh
     const RINGS = [.12, .33, .66, 1];  // the centre gap, then the three rings, as a share of the outer radius
-    const blip = (i: number, n: number, R: number, taken: number[]) => {
-      const slice = Math.PI * 2 / n, pad = Math.min(.35, slice / 4), m = 12 / R;  // 12 px clear of a ring: the blip's glow plus a gap
-      const free = [0, 1, 2].filter(b => !taken.includes(b)), pick = free.length ? free : [0, 1, 2];  // more than 3 stories: bands repeat
-      const band = pick[Math.floor(rnd(0, pick.length))], lo = RINGS[band] + (band ? m : 0), hi = RINGS[band + 1] - m;
-      return { a: turn + i * slice + rnd(pad, slice - pad), r: rnd(lo, Math.max(lo, hi)), band, moved: false };
+    const hash = (id: string, k: number) => { let h = 2166136261 ^ k; for (const ch of id) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return (h >>> 0) / 4294967296; };
+    const blip = (i: number, n: number, R: number) => {
+      const id = data.ids?.[i] ?? String(i), sc = data.scores ?? [], rank = sc.filter(v => v > (sc[i] ?? 0)).length;
+      const band = Math.min(2, Math.floor(rank * 3 / n)), slice = Math.PI * 2 / n, pad = Math.min(.35, slice / 4), m = 12 / R;  // 12 px clear of a ring
+      const lo = RINGS[band] + (band ? m : 0), hi = Math.max(lo, RINGS[band + 1] - m);
+      return { a: -Math.PI / 2 + i * slice + pad + hash(id, 1) * (slice - 2 * pad), r: lo + hash(id, 2) * (hi - lo) };
     };
     const fit = () => { const r = cv.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1);
       W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; g.setTransform(d, 0, 0, d, 0, 0); };
@@ -84,8 +83,8 @@ export function ParticleScene({ kind, data, label }: { kind: SceneKind; data: Sc
         p.x = L[i].x + (L[i + 1].x - L[i].x) * r; p.y = L[i].y + (L[i + 1].y - L[i].y) * r + p.a!; }
       else if (kind === "radar") { p.x = W / 2 + Math.cos(p.a!) * p.k!; p.y = H / 2 + Math.sin(p.a!) * p.k!; }
     };
-    const say = (x: number, y: number, text: string | undefined, align: CanvasTextAlign = "center") => { if (!text) return;  // a plain label, so the motion reads
-      g.globalCompositeOperation = "source-over"; g.globalAlpha = .95; g.fillStyle = pal.ink; g.font = `500 14px ${css("--font-ui") || "sans-serif"}`; g.textAlign = align; g.fillText(text, x, y);
+    const say = (x: number, y: number, text: string | undefined, align: CanvasTextAlign = "center", alpha = .95) => { if (!text) return;  // a plain label, so the motion reads
+      g.globalCompositeOperation = "source-over"; g.globalAlpha = alpha; g.fillStyle = pal.ink; g.font = `500 14px ${css("--font-ui") || "sans-serif"}`; g.textAlign = align; g.fillText(text, x, y);
       g.globalCompositeOperation = dark ? "lighter" : "source-over"; };
     const extra = () => {
       g.globalAlpha = 1;
@@ -107,16 +106,12 @@ export function ParticleScene({ kind, data, label }: { kind: SceneKind; data: Sc
         g.strokeStyle = beam; g.lineWidth = 1.5; g.beginPath(); g.moveTo(W / 2, H / 2); g.lineTo(bx, by); g.stroke();
         const since = (ang: number) => ((a - ang) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
         ps.forEach(p => dot(p.x, p.y, p.s, "accent", .7 * Math.max(.08, 1 - since(p.a!) / 2.2)));
-        // one red blip per story, anywhere inside the outer ring; each moves somewhere new once the beam has left it and it
-        // has faded, so a story turns up in a different place on the next pass
+        // one red blip per story, labelled with its place, lit as the beam passes and fading after it
         const nb = data.n ?? 3;
-        const others = (i: number) => blips.filter((_, j) => j !== i).map(b => b.band);
-        while (blips.length < nb) blips.push(blip(blips.length, nb, R, blips.map(b => b.band)));
-        blips.length = nb;
-        blips.forEach((bl, i) => { const s = since(bl.a);
-          if (s > Math.PI && !bl.moved) { blips[i] = { ...blip(i, nb, R, others(i)), moved: true }; return; }
-          if (s < 1) bl.moved = false;
-          dot(W / 2 + Math.cos(bl.a) * bl.r * R, H / 2 + Math.sin(bl.a) * bl.r * R, 7, "critical", Math.max(.06, 1 - s / 2.2)); }); }
+        Array.from({ length: nb }, (_, i) => blip(i, nb, R)).forEach((bl, i) => { const s = since(bl.a);
+          const x = W / 2 + Math.cos(bl.a) * bl.r * R, y = H / 2 + Math.sin(bl.a) * bl.r * R, lit = Math.max(.06, 1 - s / 2.2);
+          dot(x, y, 7, "critical", lit);
+          say(x, y + 24, data.labels?.[i], "center", Math.max(.85, lit)); }); }  // where the story is, fading with its blip but always readable
     };
     const step = () => {
       t++; frame++;
