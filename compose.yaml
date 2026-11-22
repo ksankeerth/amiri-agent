@@ -1,4 +1,4 @@
-# Local development services for Amiri Agent.
+# Local development services for AMIRI Agent.
 #
 #   docker compose up -d postgres            # the database (data kept in the amiri-pgdata volume)
 #   docker compose --profile ticker up -d    # also call the server's /internal/tick every 15 min,

@@ -1,6 +1,6 @@
 # First deploy, step by step
 
-From nothing to Amiri Agent running in your own Google Cloud project. About an hour, mostly waiting.
+From nothing to AMIRI Agent running in your own Google Cloud project. About an hour, mostly waiting.
 Replace `<…>` with your own values. Run everything from the repository root.
 
 **Never paste a secret into a chat, an issue or a file.** `secrets.sh` asks for each one in your terminal.
@@ -20,7 +20,7 @@ A warning about "no quota project" here is expected; step 2 sets it.
 ## 2. Project and billing
 
 ```bash
-gcloud projects create <project-id> --name="Amiri Agent"
+gcloud projects create <project-id> --name="AMIRI Agent"
 gcloud billing accounts list                                   # note the ACCOUNT_ID
 gcloud billing projects link <project-id> --billing-account=<ACCOUNT_ID>
 gcloud config set project <project-id>
@@ -136,7 +136,7 @@ echo $URL
 ```
 
 Open that URL in a normal browser window. **Use exactly this URL:** the bot check checks the hostname. There's
-no login: tick "I'm not a robot" and Amiri Agent opens.
+no login: tick "I'm not a robot" and AMIRI Agent opens.
 
 ## 11. First use
 

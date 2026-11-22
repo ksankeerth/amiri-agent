@@ -1,6 +1,6 @@
 # Demo data
 
-Two demo institutions for trying Amiri Agent. Both are **invented**: no real bank or insurer has these names. Real
+Two demo institutions for trying AMIRI Agent. Both are **invented**: no real bank or insurer has these names. Real
 firms appear only as their rivals, regulators and partners, by their public names.
 
 | Folder | Institution | Where | What it is |
@@ -33,7 +33,7 @@ to load them. Later sections refer to earlier ones by `id`, so keep the order.
 ```
 serendib-commercial-bank/                       (samudra-raya-general-insurance/ is laid out the same way)
 ├── world.md                                    the real-world situation the monitors and scenarios are written for
-├── 01 Tell Amiri Agent about your institution/
+├── 01 Tell AMIRI Agent about your institution/
 │   ├── profile.json                            the whole profile: steps 01 to 10 in one file
 │   └── institution.json                        the institution's own fields only
 ├── 02 Edit place in the footprint/footprint.json
@@ -53,7 +53,7 @@ serendib-commercial-bank/                       (samudra-raya-general-insurance/
 
 | Folder | Where in the app | Do this |
 |---|---|---|
-| `01 Tell Amiri Agent about your institution` | **Institution** (with no institution yet) | **Import a whole profile (creates everything)** and choose `profile.json`. This does steps 01 to 10; skip to 11. Or, to go file by file: **Fill from a JSON file** with `institution.json`, then **Create and continue**. |
+| `01 Tell AMIRI Agent about your institution` | **Institution** (with no institution yet) | **Import a whole profile (creates everything)** and choose `profile.json`. This does steps 01 to 10; skip to 11. Or, to go file by file: **Fill from a JSON file** with `institution.json`, then **Create and continue**. |
 | `02 Edit place in the footprint` | **Institution › Footprint and flows › Footprint**, the home country's **Edit** | **Fill from a JSON file** with `footprint.json`, then **Save**. The home country is added when the institution is created; this sets its branch count. |
 | `03` to `10`, `Import …` | **Institution**, the tab with that list: *Footprint and flows* (places to watch, flows), *Customers and products* (customer groups, products), *Rules* (regulators), *Rivals and partners* (rivals, firms you depend on), *Risks* (risk exposures) | The list's **Import** button, choose the file. The dialog of the same name checks every item first, then **Import** adds them all together. |
 | (after 01 or 10) | **Institution** | **Activate**: the agents use the profile only once it is live. |
