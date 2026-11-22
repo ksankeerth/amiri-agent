@@ -60,7 +60,8 @@ export function SymbolFinder({ picked, onPick }: { picked: string; onPick: (i: L
   // search once typing stops (each new search is 1 credit; the same search is free for a day)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);  // the pending search; Enter runs it now instead
   useEffect(() => {
-    if (term.length < 2 || results) return;
+    if (results) { last.current++; setSearching(false); return; }  // already answered: a search still running can't spin or error here
+    if (term.length < 2) return;
     timer.current = setTimeout(() => search(term), 600);
     return () => clearTimeout(timer.current);
   }, [term]);  // eslint-disable-line react-hooks/exhaustive-deps

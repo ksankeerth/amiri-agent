@@ -793,7 +793,7 @@ a.evrow:hover .row-l, a.lrow:hover .row-l { text-decoration:underline !important
 .sf-chips { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
 .sf-chip { font:inherit; font-size:13px; padding:4px 12px; border-radius:999px; border:1px solid var(--hairline); background:transparent; color:var(--ink-2); cursor:pointer; }
 .sf-chip span { color:var(--ink-3); margin-left:4px; }
-.sf-chip[aria-pressed="true"] { background:var(--accent); border-color:var(--accent); color:var(--paper); }
+.sf-chip[aria-pressed="true"] { background:var(--accent-strong); border-color:var(--accent-strong); color:var(--on-accent); }  /* the primary button's pair: 4.5:1+ in both themes */
 .sf-chip[aria-pressed="true"] span { color:inherit; }
 .sf-chips .sf-country { width:auto; flex:none; margin-left:auto; padding:4px 10px; font-size:13px; height:auto; }
 .sf-status { display:flex; gap:6px; align-items:center; margin-top:-8px; }
