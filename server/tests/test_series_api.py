@@ -495,10 +495,17 @@ async def test_lookup_without_the_catalog_answers_and_tries_again(client, fake, 
     assert r.status_code == 200 and [i["symbol"] for i in r.json()["items"]] == ["GOLD"]
     calls = await sql("SELECT endpoint FROM signals.provider_calls ORDER BY call_id")
     assert [c["endpoint"] for c in calls] == ["symbol_search"]
-    # that answer wasn't kept for the day: the next search fetches the lists and finds the gold price
-    env.setenv("TWELVEDATA_CREDITS_PER_MINUTE", "8")
+    # that answer wasn't kept for the day: the next search gets the commodities, but the pairs are refused
+    env.setenv("TWELVEDATA_CREDITS_PER_MINUTE", "3")
     r = await client.get("/api/v1/series:lookup", params={"q": "gold"})
     assert r.json()["cached"] is False and r.json()["items"][0]["symbol"] == "XAU/USD"
+    # the commodities paid for are kept: the next try fetches only the pairs, and then the answer is kept
+    env.setenv("TWELVEDATA_CREDITS_PER_MINUTE", "8")
+    await client.get("/api/v1/series:lookup", params={"q": "gold"})
+    assert (await client.get("/api/v1/series:lookup", params={"q": "gold"})).json()["cached"] is True
+    calls = await sql("SELECT endpoint FROM signals.provider_calls ORDER BY call_id")
+    assert [c["endpoint"] for c in calls] == ["symbol_search", "symbol_search", "commodities", "symbol_search",
+                                             "forex_pairs"]
 
 
 async def test_catalog_hit_keeps_the_plan_the_search_knows(client, fake):

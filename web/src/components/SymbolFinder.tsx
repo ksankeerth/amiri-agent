@@ -58,11 +58,13 @@ export function SymbolFinder({ picked, onPick }: { picked: string; onPick: (i: L
     finally { if (id === last.current) setSearching(false); }
   };
   // search once typing stops (each new search is 1 credit; the same search is free for a day)
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);  // the pending search; Enter runs it now instead
   useEffect(() => {
     if (term.length < 2 || results) return;
-    const t = setTimeout(() => search(term), 600);
-    return () => clearTimeout(t);
+    timer.current = setTimeout(() => search(term), 600);
+    return () => clearTimeout(timer.current);
   }, [term]);  // eslint-disable-line react-hooks/exhaustive-deps
+  const searchNow = () => { clearTimeout(timer.current); search(term); };
 
   // a share's listing country, and for a commodity or pair (no country) the countries of its currencies
   const countries = useMemo(() => [...new Set((results ?? []).flatMap(i => i.country ? [i.country]
@@ -87,7 +89,7 @@ export function SymbolFinder({ picked, onPick }: { picked: string; onPick: (i: L
   return <div className="sf">
     <label className="field"><span>Find a market price</span>
       <span className="sf-box"><input className="input" value={q} onChange={e => setQ(e.target.value)} placeholder="e.g. gold, oil, rupee, or a code like XAU/USD"
-        onKeyDown={e => e.key === "Enter" && search(term)} />{searching && <span className="sf-ring" aria-hidden="true" />}</span></label>
+        onKeyDown={e => e.key === "Enter" && searchNow()} />{searching && <span className="sf-ring" aria-hidden="true" />}</span></label>
     {/* while searching: grey chips and rows where the results will be, so the dialog doesn't jump when they come */}
     {searching && !results && <div className="sf-group" role="status" aria-label="Searching Twelve Data">
       <div className="sf-chips" aria-hidden="true">{[56, 104, 74].map(w => <span key={w} className="sf-sk" style={{ width: w, height: 26 }} />)}</div>

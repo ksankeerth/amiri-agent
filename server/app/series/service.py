@@ -115,7 +115,7 @@ class MarketSeries:
     def __init__(self, pool: AsyncConnectionPool, provider: TwelveDataClient, clock: Clock):
         self.pool, self.provider, self.clock = pool, provider, clock
         self._lookup_cache: dict[str, tuple[datetime, list[dict]]] = {}
-        self._catalog_cache: tuple[datetime, list[dict]] | None = None
+        self._catalog_cache: dict[str, tuple[datetime, list[dict]]] = {}  # per list, so one paid for is kept
         self._catalog_lock = asyncio.Lock()  # one cold fill at a time, so concurrent searches don't pay twice
 
     # ------------------------------------------------ credit budget
@@ -576,43 +576,47 @@ class MarketSeries:
                           for i in items]}
 
     async def _catalog(self) -> tuple[list[dict], bool]:
-        """Twelve Data's commodity and currency-pair lists, fetched once a day (1 credit each).
+        """Twelve Data's commodity and currency-pair lists, each fetched once a day (1 credit each).
         The bool is False when a list couldn't be had now (refused, or no credits left): the search
-        still answers without it, and the lists are tried again next time."""
-        if self._catalog_cache and self._catalog_cache[0] > self.clock.now():
-            return self._catalog_cache[1], True
-        async with self._catalog_lock:
-            now = self.clock.now()
-            if self._catalog_cache and self._catalog_cache[0] > now:  # filled while this one waited
-                return self._catalog_cache[1], True
-            items: list[dict] = []
-            for path in ("/commodities", "/forex_pairs"):
-                try:
-                    call_id = await self._reserve(path[1:], None, "lookup")
-                except Problem as e:  # the budget is used up: no call made
-                    log.info("twelvedata %s skipped: %s", path, e.detail)
-                    return items, False
-                started = self.clock.now()
-                try:
-                    data, credits = await self.provider.catalog(path)
-                except ProviderError as e:
-                    await self._finish_call(call_id, started, "error", credits=e.credits, error=e)
-                    log.warning("twelvedata %s failed: %s", path, e)
-                    return items, False
-                await self._finish_call(call_id, started, "ok", credits=credits, received=len(data))
-                for d in data:
-                    sym = d.get("symbol")
-                    if not sym:
-                        continue
-                    if path == "/commodities":
-                        name, words = d.get("name") or sym, f"{d.get('name') or ''} {d.get('category') or ''}"
-                        items.append(catalog_item(sym, name, "Commodity", words))
-                    else:
-                        base, quote = d.get("currency_base") or "", d.get("currency_quote") or ""
-                        items.append(catalog_item(sym, f"{base} / {quote}" if base and quote else sym,
-                                                  "Physical Currency", f"{base} {quote}"))
-            self._catalog_cache = (now + LOOKUP_TTL, items)
-            return items, True
+        still answers without it, and only the missing list is tried again next time."""
+        paths = ("/commodities", "/forex_pairs")
+        fresh = lambda p: p in self._catalog_cache and self._catalog_cache[p][0] > self.clock.now()  # noqa: E731
+        if not all(fresh(p) for p in paths):
+            async with self._catalog_lock:  # one fill at a time; a list filled while this one waited is reused
+                for path in paths:
+                    if not fresh(path) and not await self._fetch_catalog(path):
+                        break
+        items = [i for p in paths if fresh(p) for i in self._catalog_cache[p][1]]
+        return items, all(fresh(p) for p in paths)
+
+    async def _fetch_catalog(self, path: str) -> bool:
+        try:
+            call_id = await self._reserve(path[1:], None, "lookup")
+        except Problem as e:  # the budget is used up: no call made
+            log.info("twelvedata %s skipped: %s", path, e.detail)
+            return False
+        started = self.clock.now()
+        try:
+            data, credits = await self.provider.catalog(path)
+        except ProviderError as e:
+            await self._finish_call(call_id, started, "error", credits=e.credits, error=e)
+            log.warning("twelvedata %s failed: %s", path, e)
+            return False
+        await self._finish_call(call_id, started, "ok", credits=credits, received=len(data))
+        items = []
+        for d in data:
+            sym = d.get("symbol")
+            if not sym:
+                continue
+            if path == "/commodities":
+                name, words = d.get("name") or sym, f"{d.get('name') or ''} {d.get('category') or ''}"
+                items.append(catalog_item(sym, name, "Commodity", words))
+            else:
+                base, quote = d.get("currency_base") or "", d.get("currency_quote") or ""
+                items.append(catalog_item(sym, f"{base} / {quote}" if base and quote else sym,
+                                          "Physical Currency", f"{base} {quote}"))
+        self._catalog_cache[path] = (self.clock.now() + LOOKUP_TTL, items)
+        return True
 
     # ------------------------------------------------ the tick step
 
