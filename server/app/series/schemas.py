@@ -262,6 +262,7 @@ class LookupItem(BaseModel):
     currency: str | None
     plan: str | None = Field(None, description="Twelve Data plan needed, when it says.")
     watched: bool
+    on_plan: bool = Field(True, description="Whether the plan in use (TWELVEDATA_PLAN) includes it.")
 
 
 class LookupResult(BaseModel):

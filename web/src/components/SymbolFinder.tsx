@@ -2,7 +2,7 @@
 // company shares, crypto). The server adds the commodities and currency pairs whose names match, so "gold" and "rupee"
 // find the gold price and the rupee pairs. Chips and a country list narrow the list with no new search; a typed word
 // that names a kind ("stock gold") switches its chip on. An exact code comes first; the institution's currency leads.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "../api/client";
 import { overviewApi } from "../api/overview";
 import { seriesApi, type LookupItem } from "../api/series";
@@ -48,12 +48,14 @@ export function SymbolFinder({ picked, onPick }: { picked: string; onPick: (i: L
   useEffect(() => { setKinds(null); }, [typedKinds[0]]);  // a kind word typed or removed sets the chip again
   const active = kinds ?? typedKinds;
 
+  const last = useRef(0);  // only the newest search may show its answer, error or end the wait
   const search = async (t: string) => {
     if (t.length < 2) return;
+    const id = ++last.current;
     setSearching(true); setErr(null);
-    try { const r = await seriesApi.lookup(t); setFound({ term: t, items: r.items }); }
-    catch (e) { setErr(e instanceof ApiError ? e.full : String(e)); }
-    finally { setSearching(false); }
+    try { const r = await seriesApi.lookup(t); if (id === last.current) setFound({ term: t, items: r.items }); }
+    catch (e) { if (id === last.current) setErr(e instanceof ApiError ? e.full : String(e)); }
+    finally { if (id === last.current) setSearching(false); }
   };
   // search once typing stops (each new search is 1 credit; the same search is free for a day)
   useEffect(() => {
@@ -62,7 +64,9 @@ export function SymbolFinder({ picked, onPick }: { picked: string; onPick: (i: L
     return () => clearTimeout(t);
   }, [term]);  // eslint-disable-line react-hooks/exhaustive-deps
 
-  const countries = useMemo(() => [...new Set((results ?? []).map(i => i.country).filter(Boolean) as string[])].sort(), [results]);
+  // a share's listing country, and for a commodity or pair (no country) the countries of its currencies
+  const countries = useMemo(() => [...new Set((results ?? []).flatMap(i => i.country ? [i.country]
+    : Object.keys(COUNTRY_CCY).filter(c => i.symbol.toUpperCase().split("/").includes(COUNTRY_CCY[c]))))].sort(), [results]);
   const mine = (i: LookupItem) => !!home && i.symbol.toUpperCase().split("/").includes(home);
   const asCode = term.includes("/") || (term === term.toUpperCase() && /[A-Z]/.test(term));  // "gold" is a word, "GOLD" a code
   const exact = asCode ? (results ?? []).filter(i => i.symbol.toUpperCase() === term.toUpperCase()) : [];

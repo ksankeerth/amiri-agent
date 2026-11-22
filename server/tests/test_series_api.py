@@ -486,6 +486,31 @@ async def test_lookup_finds_commodities_and_pairs_by_name(client, fake, sql):
     assert [i["symbol"] for i in items] == ["USD/LKR"]
 
 
+async def test_lookup_without_the_catalog_answers_and_tries_again(client, fake, sql, env):
+    fake.commodities = [{"symbol": "XAU/USD", "name": "Gold Spot", "category": "Precious Metal"}]
+    fake.add("GOLD", [], type_="Common Stock")
+    # one credit this minute: the search gets it, the lists are skipped (no call, no error)
+    env.setenv("TWELVEDATA_CREDITS_PER_MINUTE", "1")
+    r = await client.get("/api/v1/series:lookup", params={"q": "gold"})
+    assert r.status_code == 200 and [i["symbol"] for i in r.json()["items"]] == ["GOLD"]
+    calls = await sql("SELECT endpoint FROM signals.provider_calls ORDER BY call_id")
+    assert [c["endpoint"] for c in calls] == ["symbol_search"]
+    # that answer wasn't kept for the day: the next search fetches the lists and finds the gold price
+    env.setenv("TWELVEDATA_CREDITS_PER_MINUTE", "8")
+    r = await client.get("/api/v1/series:lookup", params={"q": "gold"})
+    assert r.json()["cached"] is False and r.json()["items"][0]["symbol"] == "XAU/USD"
+
+
+async def test_catalog_hit_keeps_the_plan_the_search_knows(client, fake):
+    # XBR/USD needs the Grow plan (conftest): found by the catalog too, it still says so
+    fake.commodities = [{"symbol": "XBR/USD", "name": "Brent Crude Oil", "category": "Energy"}]
+    fake.symbols["XBR/USD"]["type"] = "Commodity"  # so the fake doesn't list it as a currency pair too
+    items = (await client.get("/api/v1/series:lookup", params={"q": "XBR"})).json()["items"]
+    x = [i for i in items if i["symbol"] == "XBR/USD"]
+    assert len(x) == 1 and x[0]["type"] == "Commodity" and x[0]["name"] == "Brent Crude Oil"
+    assert x[0]["plan"] == "Grow" and x[0]["on_plan"] is False
+
+
 def test_catalog_keeps_the_home_currency_when_cut():
     from app.series.service import CATALOG_HITS, catalog_item, catalog_matches
     cat = [catalog_item(f"A{n:02d}/USD", "", "Physical Currency", "") for n in range(CATALOG_HITS)]

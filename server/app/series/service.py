@@ -11,6 +11,7 @@ the call under an advisory lock, so concurrent requests can't overspend the
 per-minute or per-day budget.
 """
 
+import asyncio
 import logging
 import math
 import re
@@ -115,6 +116,7 @@ class MarketSeries:
         self.pool, self.provider, self.clock = pool, provider, clock
         self._lookup_cache: dict[str, tuple[datetime, list[dict]]] = {}
         self._catalog_cache: tuple[datetime, list[dict]] | None = None
+        self._catalog_lock = asyncio.Lock()  # one cold fill at a time, so concurrent searches don't pay twice
 
     # ------------------------------------------------ credit budget
 
@@ -556,10 +558,15 @@ class MarketSeries:
             # XAU/USD or USD/LKR: add the commodities and currency pairs whose names match the words
             async with self.pool.connection() as conn:
                 home = await self._home_currency(conn)
-            hits = catalog_matches(await self._catalog(), q, home)
+            catalog, complete = await self._catalog()
+            hits = catalog_matches(catalog, q, home)
+            # a pair found both ways shows once, as the catalog names it, with the plan the search knows
+            plans = {i["symbol"].upper(): i["plan"] for i in found if i["plan"]}
+            hits = [{**h, "plan": plans.get(h["symbol"].upper(), h["plan"])} for h in hits]
             seen = {h["symbol"].upper() for h in hits}
             items = hits + [i for i in found if i["symbol"].upper() not in seen]
-            self._lookup_cache[key] = (now + LOOKUP_TTL, items)
+            if complete:  # without the lists, "gold" would miss the gold price for a day
+                self._lookup_cache[key] = (now + LOOKUP_TTL, items)
             hit = False
         async with self.pool.connection() as conn:
             cur = await conn.execute("SELECT symbol FROM signals.series WHERE world = 'live'")
@@ -568,35 +575,44 @@ class MarketSeries:
                 "items": [{**i, "watched": (i["symbol"] or "").upper() in watched, "on_plan": on_plan(i.get("plan"))}
                           for i in items]}
 
-    async def _catalog(self) -> list[dict]:
-        """Twelve Data's commodity and currency-pair lists, fetched once a day (1 credit each)."""
-        now = self.clock.now()
-        if self._catalog_cache and self._catalog_cache[0] > now:
-            return self._catalog_cache[1]
-        items: list[dict] = []
-        for path in ("/commodities", "/forex_pairs"):
-            call_id = await self._reserve(path[1:], None, "lookup")
-            started = self.clock.now()
-            try:
-                data, credits = await self.provider.catalog(path)
-            except ProviderError as e:  # the search still works without it; try again next time
-                await self._finish_call(call_id, started, "error", credits=e.credits, error=e)
-                log.warning("twelvedata %s failed: %s", path, e)
-                return items
-            await self._finish_call(call_id, started, "ok", credits=credits, received=len(data))
-            for d in data:
-                sym = d.get("symbol")
-                if not sym:
-                    continue
-                if path == "/commodities":
-                    name, words = d.get("name") or sym, f"{d.get('name') or ''} {d.get('category') or ''}"
-                    items.append(catalog_item(sym, name, "Commodity", words))
-                else:
-                    base, quote = d.get("currency_base") or "", d.get("currency_quote") or ""
-                    items.append(catalog_item(sym, f"{base} / {quote}" if base and quote else sym, "Physical Currency",
-                                              f"{base} {quote}"))
-        self._catalog_cache = (now + LOOKUP_TTL, items)
-        return items
+    async def _catalog(self) -> tuple[list[dict], bool]:
+        """Twelve Data's commodity and currency-pair lists, fetched once a day (1 credit each).
+        The bool is False when a list couldn't be had now (refused, or no credits left): the search
+        still answers without it, and the lists are tried again next time."""
+        if self._catalog_cache and self._catalog_cache[0] > self.clock.now():
+            return self._catalog_cache[1], True
+        async with self._catalog_lock:
+            now = self.clock.now()
+            if self._catalog_cache and self._catalog_cache[0] > now:  # filled while this one waited
+                return self._catalog_cache[1], True
+            items: list[dict] = []
+            for path in ("/commodities", "/forex_pairs"):
+                try:
+                    call_id = await self._reserve(path[1:], None, "lookup")
+                except Problem as e:  # the budget is used up: no call made
+                    log.info("twelvedata %s skipped: %s", path, e.detail)
+                    return items, False
+                started = self.clock.now()
+                try:
+                    data, credits = await self.provider.catalog(path)
+                except ProviderError as e:
+                    await self._finish_call(call_id, started, "error", credits=e.credits, error=e)
+                    log.warning("twelvedata %s failed: %s", path, e)
+                    return items, False
+                await self._finish_call(call_id, started, "ok", credits=credits, received=len(data))
+                for d in data:
+                    sym = d.get("symbol")
+                    if not sym:
+                        continue
+                    if path == "/commodities":
+                        name, words = d.get("name") or sym, f"{d.get('name') or ''} {d.get('category') or ''}"
+                        items.append(catalog_item(sym, name, "Commodity", words))
+                    else:
+                        base, quote = d.get("currency_base") or "", d.get("currency_quote") or ""
+                        items.append(catalog_item(sym, f"{base} / {quote}" if base and quote else sym,
+                                                  "Physical Currency", f"{base} {quote}"))
+            self._catalog_cache = (now + LOOKUP_TTL, items)
+            return items, True
 
     # ------------------------------------------------ the tick step
 

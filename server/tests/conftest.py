@@ -84,7 +84,8 @@ class FakeTwelveData:
             return httpx.Response(200, json={"data": data, "status": "ok"})
         if request.url.path == "/symbol_search":
             data = [{"symbol": s, "instrument_name": s, "instrument_type": v["type"], "exchange": "PHYSICAL CURRENCY",
-                     "country": "", "currency": s.split("/")[-1], "access": {"plan": "Basic"}}
+                     "country": "", "currency": s.split("/")[-1],
+                     "access": {"plan": "Grow" if v["restricted"] else "Basic"}}
                     for s, v in self.symbols.items() if q["symbol"].upper() in s]
             return httpx.Response(200, json={"data": data, "status": "ok"})
         sym = q["symbol"]
