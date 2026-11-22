@@ -83,7 +83,7 @@ async def runs(request: Request, limit: Annotated[int, Query(ge=1, le=200)] = 50
 
 @router.get("/investigations/{run_id}", summary="One run: request, result and the readable report")
 async def run(request: Request, run_id: str):
-    return await svc(request).run(run_id)
+    return await svc(request).check(run_id)
 
 
 @router.post("/investigations/{run_id}:collect", summary="Ask the agent for a running run's result now")

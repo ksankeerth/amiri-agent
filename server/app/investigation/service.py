@@ -538,12 +538,49 @@ class Investigations:
             return await cur.fetchall()
 
     async def finding(self, finding_id: str) -> dict:
+        """A finding; while a run that holds it is running, the agent is asked for that run's result first, so a
+        page polling the finding sees its event as soon as the agent is done (not on the next tick)."""
+        row = await self._finding(finding_id)
+        if row["status"] in ("grouped", "linked") and row["world"] != "studio" and self.client.connected():
+            async with self.pool.connection() as conn:
+                cur = await conn.execute(
+                    """SELECT run_id FROM cases.investigations WHERE status = 'running' AND finding_ids @> %s::text[]
+                       ORDER BY created_at""", ([finding_id],))
+                running = [r["run_id"] for r in await cur.fetchall()]
+            for run_id in running:
+                await self.collect(run_id)
+            if running:
+                row = await self._finding(finding_id)
+        return row
+
+    async def _finding(self, finding_id: str) -> dict:
         async with self.pool.connection() as conn:
             cur = await conn.execute("SELECT * FROM signals.findings WHERE finding_id = %s", (finding_id,))
             row = await cur.fetchone()
         if not row:
             raise Problem(404, "not_found", f"No finding {finding_id}.")
         return row
+
+    async def check(self, run_id: str) -> dict:
+        """A run; a running one is asked for its result first (a page polling it doesn't wait for the tick).
+        Studio runs are left to the Studio's own steps, which keep its clock."""
+        row = await self.run(run_id)
+        if row["status"] == "running" and row["world"] != "studio" and self.client.connected():
+            await self.collect(run_id)
+            row = await self.run(run_id)
+        return row
+
+    async def investigate_now(self, finding_ids: list[str]) -> list[str]:
+        """Findings a person asked for (a monitor's or Radar's Check now, Investigate anyway) skip the batch wait.
+        Never raises: whatever can't start here is investigated by the tick, as before."""
+        if not finding_ids or not self.client.connected():
+            return []
+        try:
+            out = await self.start_now(finding_ids, None)
+        except Problem as e:
+            log.info("investigate now for %s: %s", ", ".join(finding_ids), e.detail)
+            return []
+        return [r["run_id"] for r in out["items"]]
 
     async def runs(self, limit: int, world: str | None = None) -> list[dict]:
         async with self.pool.connection() as conn:
