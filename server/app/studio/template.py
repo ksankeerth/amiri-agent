@@ -5,8 +5,10 @@ price moves, the monitor that watches for it, and the stories it expects Amiri A
 it for an institution fills in that institution's currency, country, central bank and products;
 numbers in headlines come from the price path, so they match the chart. No model is used.
 
-Templates: currency depreciation (headlines and a price move written for the institution) and a blank
-scenario (the person writes the headlines and chooses the price move). Either can be edited: a scenario's
+Templates: currency depreciation (headlines and a price move written for the institution), a blank
+scenario (the person writes the headlines and chooses the price move), and, for a US institution with
+Texas in its footprint only, a Texas winter storm (a freeze, a power-price spike, data centers ordered
+off the grid, chip plants stopped, homes damaged). Either can be edited: a scenario's
 `custom` holds its own headline list and, for the blank one, its price move. Cyclone Ditwah (real headlines,
 verified by hand) comes later.
 """
@@ -36,6 +38,14 @@ TEMPLATES = {
                    "struggle, the central bank steps in, fuel prices rise, while remittances and exporters gain.",
         "tags": ["fx", "importers", "remittances", "exporters"],
     },
+    "us-texas-winter-storm": {
+        "title": "US · Texas winter storm and the grid",
+        "summary": "An Arctic freeze knocks out Texas power plants. Wholesale power prices spike, the grid operator "
+                   "orders data centers to cut power, chip plants stop and homes are damaged.",
+        "tags": ["storm", "power prices", "data centers", "chip plants"],
+        "region": "us",
+        "start_day": date(2027, 2, 8),  # a February freeze, as in 2021
+    },
     "blank": {
         "title": "Your own scenario",
         "summary": "Write the headlines yourself and choose how the exchange rate moves, if at all. Amiri Agent's monitor "
@@ -50,11 +60,23 @@ def currency_name(code: str) -> str:
     return next((c["name"] for c in reference.currencies() if c["code"] == code), code)
 
 
+def offered(template_id: str, ctx: dict) -> bool:
+    """Whether the template is listed for this institution: a region's template only for that region's banks."""
+    region = TEMPLATES[template_id].get("region")
+    return region is None or (region == "us" and ctx.get("country") == "US")
+
+
 def available(template_id: str, ctx: dict) -> str | None:
     """None if the template can run for this institution, else why not."""
     if template_id not in TEMPLATES:
         return f"no template {template_id}"
     if template_id == "blank":
+        return None
+    if template_id == "us-texas-winter-storm":
+        if ctx.get("country") != "US":
+            return "it's a US template, and the institution's home country isn't the United States"
+        if "US-TX" not in _footprint(ctx):
+            return "it's a Texas grid scenario, and the institution has no branches or customers in Texas"
         return None
     if ctx.get("currency") == "USD":
         return "the institution's base currency is the US dollar: there's no USD rate to move"
@@ -164,13 +186,14 @@ def _custom_headlines(custom: dict, at, given: list[dict]) -> list[dict]:
 
 
 def build(template_id: str, ctx: dict, intensity: str, switched_off: list[str], custom: dict | None = None,
-          title: str | None = None, start_day: date = date(2027, 3, 1)) -> dict:
+          title: str | None = None, start_day: date | None = None) -> dict:
     """The scenario for this institution: clock, headlines, price path, monitor, expected stories."""
     why = available(template_id, ctx)
     if why:
         raise Problem(422, "template_unavailable", f"This template can't run here: {why}.")
     k = INTENSITY[intensity]
     custom = custom or {}
+    start_day = start_day or TEMPLATES[template_id].get("start_day") or date(2027, 3, 1)
     cur, home = ctx["currency"], ctx["country"]
     cur_name, country = currency_name(cur), reference.place_name(home) or home
     bank = _central_bank(ctx)
@@ -187,6 +210,8 @@ def build(template_id: str, ctx: dict, intensity: str, switched_off: list[str], 
     has = lambda kind: any(f.get("kind") == kind for f in ctx.get("flows") or [])  # noqa: E731
     if template_id == "blank":
         return _build_blank(ctx, custom, title, at, cur, cur_name, country, bank, home, start_day, switched_off)
+    if template_id == "us-texas-winter-storm":
+        return _build_texas_storm(ctx, k, intensity, custom, title, at, switched_off)
     headlines = [
         {"id": "h1", "story": "fx", "at": at(1, 10, 30),
          "title": f"{cur_name} falls {moved(1)}% against the dollar as importers rush for cover"},
@@ -269,4 +294,110 @@ def _build_blank(ctx: dict, custom: dict, title: str | None, at, cur: str, cur_n
         "monitor": {"key": "blank", "spec": _blank_monitor(ctx, cur_name, country, bank)},
         "stories": [],
         "expected_findings": {"timeseries": 0 if move["direction"] == "none" else 1, "monitor": 1 if heads else 0},
+    }
+
+
+# ---------------------------------------------------------------- US · Texas winter storm
+
+STORM_LEVEL = 40.0  # $/MWh, a calm winter day's wholesale price; the shock is what matters
+STORM_SPIKE_PCT = 600.0  # at medium intensity, over two business days (low 300%, high 900%)
+
+
+def _footprint(ctx: dict) -> set[str]:
+    return {f["code"] for f in ctx.get("footprint") or []}
+
+
+def _texas_city(ctx: dict) -> str:
+    """The first Texas city the institution watches (Austin for the demo bank), else "Texas"."""
+    for code in (ctx.get("radar_scope") or {}).get("places") or []:
+        if code.startswith("city:") and reference.parent_region(code) == "US-TX":
+            return reference.place_name(code) or "Texas"
+    return "Texas"
+
+
+def _storm_monitor(ctx: dict) -> dict:
+    """The template's monitor: the Texas grid and storm, pointed at the loans and deposits it reaches."""
+    products = ctx.get("products") or []
+    order = ("business_loan", "retail_loan", "savings")
+    exposed = sorted((p for p in products if p.get("category") in order), key=lambda p: order.index(p["category"]))[:6]
+    return {
+        "about": {"name": "Texas grid, storm and our borrowers", "owner": "Risk management", "check_frequency": 60,
+                  "kind": "events"},
+        "public": {
+            "watch": [{"name": "Texas", "type": "place", "other_forms": [], "not_confused_with": []},
+                      {"name": "Electric Reliability Council of Texas", "type": "organisation",
+                       "other_forms": ["ERCOT", "Texas grid operator"], "not_confused_with": []},
+                      {"name": "Winter storm", "type": "topic", "other_forms": ["freeze", "Arctic blast"],
+                       "not_confused_with": []},
+                      {"name": "Power prices", "type": "topic", "other_forms": ["wholesale power", "electricity prices"],
+                       "not_confused_with": []},
+                      {"name": "Data centers", "type": "sector", "other_forms": ["data centres"], "not_confused_with": []}],
+            "in_one_sentence": "A Texas freeze and what it does to the grid, power prices, data centers, plants and "
+                               "homes where our borrowers and depositors are.",
+            "tell_me_if": ["A freeze or storm causes blackouts or damage in Texas",
+                           "Wholesale power prices in Texas spike",
+                           "The grid operator orders data centers or other large users to cut power",
+                           "Plants, data centers or construction sites in Texas stop because of the storm"],
+            "ignore": ["Routine weather forecasts with no outages or damage"],
+            "places": ["US", "US-TX"], "languages": ["en"],
+        },
+        "private": {"exposure": [{"id": f"product:{p['id']}", "how_it_reaches_us": ""} for p in exposed]},
+        "alert_level": 6,
+    }
+
+
+def _build_texas_storm(ctx: dict, k: float, intensity: str, custom: dict, title: str | None, at,
+                       switched_off: list[str]) -> dict:
+    """A Texas freeze: headlines written for the institution's Texas city, and a wholesale power-price spike."""
+    city = _texas_city(ctx)
+    size, ramp = STORM_SPIKE_PCT * k, 2
+    headlines = [
+        {"id": "h1", "story": "storm", "day": 1, "time": "09:00",
+         "title": "Arctic blast heads for Texas; the grid operator warns data-center demand could push power use to a record"},
+        {"id": "h2", "story": "power", "day": 2, "time": "07:30",
+         "title": f"Rolling blackouts across Texas as power plants freeze; wholesale power prices jump {size:g}%"},
+        {"id": "h3", "story": "industry", "day": 2, "time": "14:00",
+         "title": "Texas grid operator orders data centers to cut power under its emergency rules for large users"},
+        {"id": "h4", "story": "industry", "day": 3, "time": "10:00",
+         "title": f"{city} chip plants halt production as power and water are cut"},
+        {"id": "h5", "story": "storm", "day": 3, "time": "16:00",
+         "title": f"Burst pipes damage thousands of {city} homes; insurers brace for claims"},
+        {"id": "h6", "story": "industry", "day": 5, "time": "11:00",
+         "title": "Texas data-center builders stop work as sites lose power; projects slip by weeks"},
+        {"id": "h7", "story": "power", "day": 7, "time": "12:00",
+         "title": "Texas businesses face record power bills after the freeze"},
+    ]
+    headlines = [{**h, "at": at(h["day"], *(int(x) for x in h["time"].split(":")))} for h in headlines]
+    stories = [
+        {"key": "storm", "label": "A winter storm hits Texas", "tone": "bad",
+         "themes": [{"theme": "disaster", "direction": "domestic"}]},
+        {"key": "power", "label": "Power prices spike", "tone": "bad",
+         "themes": [{"theme": "prices", "direction": "up", "item": "electricity"}]},
+        {"key": "industry", "label": "Data centers and chip plants stop", "tone": "bad",
+         "themes": [{"theme": "sector", "direction": "shock"}]},
+    ]
+    if custom.get("headlines") is not None:
+        headlines = _custom_headlines(custom, at, headlines)
+    every = sorted(headlines, key=lambda h: h["at"])
+    off = set(switched_off)
+    headlines = [h for h in every if h["id"] not in off and h["story"] not in off]
+    kept = {h["story"] for h in headlines} | (set() if "prices" in off else {"power"})
+    stories = [{**s, "expected": s["key"] in kept} for s in stories]
+    return {
+        "template_id": "us-texas-winter-storm", "title": title or TEMPLATES["us-texas-winter-storm"]["title"],
+        "intensity": intensity,
+        "institution": {"institution_id": ctx["institution_id"], "name": ctx["name"], "country": ctx["country"],
+                        "currency": ctx["currency"], "time_zone": ctx.get("time_zone") or "UTC"},
+        "clock": {"start_at": at(1, 0), "steps": STEPS, "step_hours": 24, "step_time": "18:00",
+                  "first_step_at": at(1, 18)},
+        "headlines": [{**h, "outlet": OUTLET} for h in headlines],
+        "all_headlines": [{**h, "outlet": OUTLET} for h in every],
+        "prices": {"symbol": "TX-POWER", "name": "Texas wholesale power (simulated)", "level": STORM_LEVEL,
+                   "sigma_daily_pct": 4.0, "seed": 20270208, "base_days": 90,
+                   "shock": {"shape": "ramp", "size_pct": size, "start_day": 1, "ramp_business_days": ramp},
+                   "theme": {"theme": "prices", "direction_up": "up", "direction_down": "down", "item": "electricity"},
+                   "places": ["US-TX"], "off": "prices" in off},
+        "monitor": {"key": "texas-grid", "spec": _storm_monitor(ctx)},
+        "stories": stories,
+        "expected_findings": {"timeseries": 0 if "prices" in off else 1, "monitor": 1 if headlines else 0},
     }
