@@ -468,6 +468,31 @@ async def test_status_and_lookup(client, fake):
     assert r.json()["cached"] is True and len(fake.calls) == n
 
 
+async def test_lookup_finds_commodities_and_pairs_by_name(client, fake, sql):
+    # "gold" is not a ticker of the gold price: the commodity list finds it by its name
+    fake.commodities = [{"symbol": "XAU/USD", "name": "Gold Spot", "category": "Precious Metal"},
+                        {"symbol": "XAG/USD", "name": "Silver Spot", "category": "Precious Metal"}]
+    fake.add("GOLD", [], type_="Common Stock")
+    items = (await client.get("/api/v1/series:lookup", params={"q": "gold"})).json()["items"]
+    assert [(i["symbol"], i["type"]) for i in items] == [("XAU/USD", "Commodity"), ("GOLD", "Common Stock")]
+    # the lists are fetched once a day, not per search
+    await client.get("/api/v1/series:lookup", params={"q": "silver"})
+    calls = await sql("SELECT endpoint FROM signals.provider_calls ORDER BY call_id")
+    assert [c["endpoint"] for c in calls] == ["symbol_search", "commodities", "forex_pairs", "symbol_search"]
+    # an exact code comes first, and a pair found both ways shows once
+    for s in ("USD/LKR", "LKR/JPY"):
+        fake.add(s, [])
+    items = (await client.get("/api/v1/series:lookup", params={"q": "usd/lkr"})).json()["items"]
+    assert [i["symbol"] for i in items] == ["USD/LKR"]
+
+
+def test_catalog_keeps_the_home_currency_when_cut():
+    from app.series.service import CATALOG_HITS, catalog_item, catalog_matches
+    cat = [catalog_item(f"A{n:02d}/USD", "", "Physical Currency", "") for n in range(CATALOG_HITS)]
+    cat.append(catalog_item("USD/LKR", "US Dollar / Sri Lankan Rupee", "Physical Currency", "US Dollar Sri Lankan Rupee"))
+    assert "USD/LKR" not in [i["symbol"] for i in catalog_matches(cat, "usd")]
+    assert catalog_matches(cat, "usd", "LKR")[0]["symbol"] == "USD/LKR"
+
 async def test_health(client, env):
     d = (await client.get("/health/details")).json()
     # no profile for INSTITUTION_ID (bank-a) yet: findings can't be investigated

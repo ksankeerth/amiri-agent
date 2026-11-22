@@ -20,7 +20,7 @@ logger = logging.getLogger("amiri.twelvedata")
 
 # What one call costs. Twelve Data's `api-credits-used` header is the running total for the
 # current minute (across every client of the key), not this call's cost, so it is only logged.
-CREDITS = {"/time_series": 1, "/symbol_search": 1}
+CREDITS = {"/time_series": 1, "/symbol_search": 1, "/commodities": 1, "/forex_pairs": 1}
 
 
 @dataclass(frozen=True)
@@ -157,4 +157,9 @@ class TwelveDataClient:
         body, credits, _ = await self._get(
             "/symbol_search", {"symbol": query, "outputsize": 20, "show_plan": "true"}
         )
+        return list(body.get("data") or []), credits
+
+    async def catalog(self, path: str) -> tuple[list[dict[str, Any]], int]:
+        """A whole reference list: /commodities or /forex_pairs."""
+        body, credits, _ = await self._get(path, {})
         return list(body.get("data") or []), credits
