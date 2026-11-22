@@ -21,7 +21,8 @@ function Orbit({ up, good }: { up: boolean[]; good: boolean }) {
     const css = (n: string) => getComputedStyle(cv).getPropertyValue(n).trim();
     const dot = (x: number, y: number, r: number, c: string, a: number) => { const g = ctx.createRadialGradient(x, y, 0, x, y, r);
       g.addColorStop(0, rgba(c, a)); g.addColorStop(.35, rgba(c, a * .8)); g.addColorStop(1, rgba(c, 0)); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); };
-    let raf = 0, t = 0;
+    let raf = 0, t = 0;  // t in seconds, so the speed is the same on a 60 Hz projector and a 120 Hz laptop
+    const t0 = performance.now();
     const draw = () => {
       const G = css("--accent"), Y = css("--high"), K = css("--ink-3"), dark = getComputedStyle(document.documentElement).colorScheme.includes("dark");
       const c = S / 2, R = 19;
@@ -29,12 +30,13 @@ function Orbit({ up, good }: { up: boolean[]; good: boolean }) {
       up.forEach((u, i) => {  // Investigation at the top, then Monitors, Setup agent and Radar clockwise
         const a0 = -Math.PI * .75 + i * Math.PI / 2 + .14, a1 = a0 + Math.PI / 2 - .28;
         ctx.strokeStyle = rgba(u ? G : K, u ? .6 : .35); ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.beginPath(); ctx.arc(c, c, R, a0, a1); ctx.stroke();
-        if (u) { const a = a0 + (a1 - a0) * ((t / 60 + i * .25) % 1); dot(c + Math.cos(a) * R, c + Math.sin(a) * R, 4, G, .95); }
+        // a dot glides along its arc once every 4 s, fading in at the start and out at the end, so it never snaps back
+        if (u) { const f = (t / 4 + i * .25) % 1, a = a0 + (a1 - a0) * f; dot(c + Math.cos(a) * R, c + Math.sin(a) * R, 4, G, .95 * Math.sin(Math.PI * f)); }
       });
-      dot(c, c, 8 + Math.sin(t / 14) * 1.5, good ? G : Y, .95);
+      dot(c, c, 8 + Math.sin(t * Math.PI * 2 / 3) * 1.5, good ? G : Y, .95);
       ctx.globalCompositeOperation = "source-over";
     };
-    const loop = () => { if (!document.hidden) { t++; draw(); } raf = requestAnimationFrame(loop); };
+    const loop = () => { if (!document.hidden) { t = (performance.now() - t0) / 1000; draw(); } raf = requestAnimationFrame(loop); };
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) draw(); else loop();
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
