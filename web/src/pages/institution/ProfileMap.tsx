@@ -146,6 +146,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
   const svgRef = useRef<SVGSVGElement>(null);
   const drag = useRef<{ x: number; y: number } | null>(null);
   const touch = useRef(false);  // the last press was a finger: tooltips open on tap instead of hover
+  const tipByTouch = useRef(false);  // the tooltip showing was opened by a tap (a mouse hover's tip isn't a first tap)
   const [hint, setHint] = useState(false);
   const hintT = useRef(0);
   useEffect(() => {
@@ -193,7 +194,8 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
   zoomRef.current = zoom;
   const path = geoPath(zoomed);
   const xy = (c: [number, number] | null) => (c ? zoomed(c) : null);
-  const show = (e: React.MouseEvent, text: string, key: string) => { const r = box!.getBoundingClientRect(); setTip({ x: e.clientX - r.left, y: e.clientY - r.top, text, key }); };
+  const show = (e: React.MouseEvent, text: string, key: string) => { const r = box!.getBoundingClientRect();
+    tipByTouch.current = touch.current; setTip({ x: e.clientX - r.left, y: e.clientY - r.top, text, key }); };
   /** A tooltip on hover with a mouse, on tap with a finger. With `open`, a click opens it (a finger: the second tap). */
   const tipOn = (key: string, text: string, open?: () => void) => {
     const full = () => open ? `${text}\n${touch.current ? "Tap again to open" : "Click to open"}` : text;
@@ -201,7 +203,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
       onMouseMove: (e: React.MouseEvent) => { if (!touch.current) show(e, full(), key); },
       onMouseLeave: () => { if (!touch.current) setTip(null); },
       onClick: (e: React.MouseEvent) => {
-        if (touch.current && tip?.key !== key) { e.stopPropagation(); show(e, full(), key); }
+        if (touch.current && (tip?.key !== key || !tipByTouch.current)) { e.stopPropagation(); show(e, full(), key); }
         else if (open) { e.stopPropagation(); open(); }
       },
     };
@@ -267,6 +269,9 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           drag.current = touch.current ? null : { x: e.clientX, y: e.clientY };
         }}
         onPointerMove={e => {
+          // a real mouse moving again (a touch laptop, after a tap): back to tooltips on hover. A finger's own events
+          // come as pointerType "touch", so a tap doesn't switch it back
+          if (e.pointerType === "mouse") touch.current = false;
           const d = drag.current;
           if (!d || !e.buttons) { drag.current = null; return; }
           const [dx, dy] = [e.clientX - d.x, e.clientY - d.y];

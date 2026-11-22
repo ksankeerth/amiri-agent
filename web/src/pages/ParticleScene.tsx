@@ -58,7 +58,8 @@ export function ParticleScene({ kind, data, label }: { kind: SceneKind; data: Sc
     const tones = data.tones?.length ? data.tones : ["neutral"];
     const src = (i: number) => ({ x: W * (.1 + .08 * (i % 3)), y: H * (.22 + (i * .27) % .56) });  // each event where its news is, home on the right
     const nodes = () => { const n = Math.max(1, data.n ?? 1); return Array.from({ length: n }, (_, i) => ({ x: W * .66, y: H * (n === 1 ? .5 : .2 + .6 * i / (n - 1)) })); };
-    const line = () => { const v = data.line?.length ? data.line : Array.from({ length: 24 }, (_, i) => Math.sin(i / 3) + i / 12);
+    // one price so far (a new series): a flat line at it, not a made-up curve and not a 1-point path (no neighbour to run to)
+    const line = () => { const d = data.line ?? [], v = d.length > 1 ? d : d.length ? [d[0], d[0]] : Array.from({ length: 24 }, (_, i) => Math.sin(i / 3) + i / 12);
       const lo = Math.min(...v), hi = Math.max(...v) || 1; return v.map((y, i) => ({ x: W * (.08 + .84 * i / (v.length - 1)), y: H * (.78 - .56 * (y - lo) / (hi - lo || 1)) })); };
 
     const spawn = () => {

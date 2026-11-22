@@ -23,8 +23,11 @@ const CHANGE: Record<string, string> = {
   confirmed: "Confirmed by your data", withdrawn: "Withdrawn", checked: "Checked against your data",
 };
 
+// the agent's own entries: alerts saved before the rename say "Amiri Agent", so both spellings count
+const AGENT = "AMIRI Agent";
+const isAgent = (by: string | null | undefined) => (by ?? "").toLowerCase() === AGENT.toLowerCase();
 // when AMIRI Agent last raised or escalated it: a person acknowledging it doesn't move it on the page
-const changed = (a: AlertItem) => [...a.history].reverse().find(h => h.by === "AMIRI Agent" && h.change !== "resolved")?.at ?? a.created_at;
+const changed = (a: AlertItem) => [...a.history].reverse().find(h => isAgent(h.by) && h.change !== "resolved")?.at ?? a.created_at;
 /** The impact in a few words, with the move your data showed when it was checked. */
 function EffectImpact({ e }: { e: Effect }) {
   const m = e.check ? checkMove(e.check.what) : null;
@@ -76,7 +79,7 @@ function AlertCard({ a, next, ev, primary, onChange }: {
         {next && <li><Icon name="calendar" /><span>{checks.some(c => c.verdict !== "not_yet") ? "Next check" : "First check"} <b>{onDay(next)}</b> <span className="muted">({relDay(next)})</span></span></li>}
       </ul>
       {a.status === "acknowledged" && <div className="alc-note"><Icon name="check" /><span><b>{a.acknowledged_by}</b> is on it{a.acknowledged_at ? `, ${ago(a.acknowledged_at, now)}` : ""}{a.ack_note ? `: “${a.ack_note}”` : ""}</span></div>}
-      {a.status === "resolved" && <div className="alc-note"><Icon name="check" /><span>Resolved by <b>{a.resolved_by}</b>{a.resolved_at ? `, ${ago(a.resolved_at, now)}` : ""}{a.resolved_note ? `: “${a.resolved_note}”` : ""}</span></div>}
+      {a.status === "resolved" && <div className="alc-note"><Icon name="check" /><span>Resolved by <b>{isAgent(a.resolved_by) ? AGENT : a.resolved_by}</b>{a.resolved_at ? `, ${ago(a.resolved_at, now)}` : ""}{a.resolved_note ? `: “${a.resolved_note}”` : ""}</span></div>}
       {asking ? (
         <div className="dl-alc-act">
           <input className="input" autoFocus aria-label={asking === "ack" ? "A note for your team (optional)" : "Why it's resolved (optional)"}
@@ -107,7 +110,7 @@ function AlertCard({ a, next, ev, primary, onChange }: {
             </div></details>
           <details className="tech dl-hist"><summary>History ({a.history.length})</summary>
             <div className="tech-bd"><ol className="alc-hist">{[...a.history].reverse().map((h, i) => (
-              <li key={i}><b>{CHANGE[h.change] ?? h.change}</b><span>{dayTime(h.at)}{h.by && h.by !== "AMIRI Agent" ? ` · ${h.by}` : ""}</span></li>))}</ol></div></details>
+              <li key={i}><b>{CHANGE[h.change] ?? h.change}</b><span>{dayTime(h.at)}{h.by && !isAgent(h.by) ? ` · ${h.by}` : ""}</span></li>))}</ol></div></details>
           <span className="spacer" />
           <Link className="dl-ev" to={`/events/${a.event_id}`}><span className="muted">From the event</span> <b>{title}</b>{a.event_status === "closed" && <span className="muted"> (closed)</span>}<Icon name="arrow" /></Link>
         </div>

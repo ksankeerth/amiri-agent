@@ -44,23 +44,27 @@ function Orbit({ up, good }: { up: boolean[]; good: boolean }) {
   return <canvas ref={ref} className="sbs-orbit" style={{ width: 52, height: 52 }} aria-hidden="true" />;
 }
 
-export function SystemStatus({ o, now }: { o: Overview | null; now: Date }) {
+/** `down`: the last check got no answer, so `o` is only the last known state and is shown as that, not as "All working". */
+export function SystemStatus({ o, now, down = false }: { o: Overview | null; now: Date; down?: boolean }) {
   const [open, setOpen] = useState(false);
   if (!o || o.first_run || !o.services) return null;
   const s = o.services;
   const agents = [["Investigation", s.investigation.connected], ["Monitors", s.monitor.connected], ["Setup agent", s.assistant.connected], ["Radar", s.radar.connected]] as const;
-  const up = agents.filter(([, u]) => u).length, good = s.tick.ok && up === agents.length;
-  const state = good ? "All working" : up === agents.length ? "Updates late" : `${up} of ${agents.length} connected`;
+  const up = agents.filter(([, u]) => u).length, good = !down && s.tick.ok && up === agents.length;
+  const state = down ? "No answer" : good ? "All working" : up === agents.length ? "Updates late" : `${up} of ${agents.length} connected`;
   const when = s.tick.last_at ? ago(s.tick.last_at, now) : null;
-  const upd = !when ? "Updates haven't run yet" : s.tick.ok ? `Updated ${when}` : `Updates late · last ran ${when}`;
+  const upd = down ? "Didn't answer the last check"
+    : !when ? "Updates haven't run yet" : s.tick.ok ? `Updated ${when}` : `Updates late · last ran ${when}`;
   return (
     <div className="navgroup sbs" data-state={good ? "ok" : "warn"}>
       <div className="grp label">System</div>
       <button type="button" className="sbs-box" aria-expanded={open} aria-controls="sbs-detail" onClick={() => setOpen(x => !x)}
         aria-label={`Is AMIRI Agent working? ${state}. ${upd}. Show the detail.`}>
         <Orbit up={agents.map(([, u]) => u)} good={good} />
-        <span className="sbs-txt"><b>AMIRI Agent</b><span className="sbs-word">{state}</span><span className={`sbs-upd${s.tick.ok ? "" : " late"}`}>{upd}</span></span>
+        <span className="sbs-txt"><b>AMIRI Agent</b><span className="sbs-word">{state}</span><span className={`sbs-upd${s.tick.ok && !down ? "" : " late"}`}>{upd}</span></span>
       </button>
+      {/* a screen reader hears when the state changes ("Updates late"), not the minutes ticking by */}
+      <span className="sr" role="status">{`AMIRI Agent: ${state}`}</span>
       {open && <ul className="sbs-detail" id="sbs-detail">
         <li><span className={`statusdot ${s.tick.ok ? "sd-ok" : "sd-down"}`} aria-hidden="true" />Updates: {when ? `${s.tick.ok ? "last ran" : "late; last ran"} ${when}` : "haven't run yet"}</li>
         {agents.map(([n, u]) => <li key={n}><span className={`statusdot ${u ? "sd-ok" : "sd-off"}`} aria-hidden="true" />{n}: {u ? "working" : "not connected"}</li>)}

@@ -278,7 +278,7 @@ function Frame({ inst }: { inst: Installation }) {
             ))}
               </div>);
             })}
-            <SystemStatus o={ov} now={now} />
+            <SystemStatus o={ov} now={now} down={down} />
           </nav>
           <div className="side-user" title={ME}>
             <span className="avatar" aria-hidden="true">{ME[0].toUpperCase()}</span>

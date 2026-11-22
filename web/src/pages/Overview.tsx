@@ -170,7 +170,7 @@ export function OverviewPage() {
   };
   // Radar's blips are labelled with where each story is: its sea or strait first, else its first country
   const radarAt = o.radar.stories.map(r => { const p = placeOrder(r.places)[0]; return p ? names[p] ?? placeName(p) : ""; });
-  const late2 = o.markets.filter(m => m.state !== "normal").length;
+  const late2 = o.markets.filter(m => m.state === "stale").length;  // prices that stopped updating; an unusual move is not one
   const big = [...o.markets].sort((x, y) => Math.abs(y.change_1d_pct ?? 0) - Math.abs(x.change_1d_pct ?? 0))[0];
   const marketsLine = [plural(o.markets.length, "price"), late2 ? `${late2} not updated` : null, big ? `biggest move today ${big.name} ${pct(big.change_1d_pct)}` : null].filter(Boolean).join(" · ");
 
