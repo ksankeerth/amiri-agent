@@ -583,25 +583,25 @@ class MarketSeries:
         fresh = lambda p: p in self._catalog_cache and self._catalog_cache[p][0] > self.clock.now()  # noqa: E731
         if not all(fresh(p) for p in paths):
             async with self._catalog_lock:  # one fill at a time; a list filled while this one waited is reused
-                for path in paths:
-                    if not fresh(path) and not await self._fetch_catalog(path):
-                        break
+                for path in paths:  # each on its own: one failing doesn't keep the other from being fetched
+                    if not fresh(path):
+                        await self._fetch_catalog(path)
         items = [i for p in paths if fresh(p) for i in self._catalog_cache[p][1]]
         return items, all(fresh(p) for p in paths)
 
-    async def _fetch_catalog(self, path: str) -> bool:
+    async def _fetch_catalog(self, path: str) -> None:
         try:
             call_id = await self._reserve(path[1:], None, "lookup")
         except Problem as e:  # the budget is used up: no call made
             log.info("twelvedata %s skipped: %s", path, e.detail)
-            return False
+            return
         started = self.clock.now()
         try:
             data, credits = await self.provider.catalog(path)
         except ProviderError as e:
             await self._finish_call(call_id, started, "error", credits=e.credits, error=e)
             log.warning("twelvedata %s failed: %s", path, e)
-            return False
+            return
         await self._finish_call(call_id, started, "ok", credits=credits, received=len(data))
         items = []
         for d in data:
@@ -616,7 +616,7 @@ class MarketSeries:
                 items.append(catalog_item(sym, f"{base} / {quote}" if base and quote else sym,
                                           "Physical Currency", f"{base} {quote}"))
         self._catalog_cache[path] = (self.clock.now() + LOOKUP_TTL, items)
-        return True
+
 
     # ------------------------------------------------ the tick step
 

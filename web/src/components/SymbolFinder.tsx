@@ -32,7 +32,7 @@ const inCountry = (i: LookupItem, c: string) => !c || (i.country ? i.country ===
 export function SymbolFinder({ picked, onPick }: { picked: string; onPick: (i: LookupItem) => void }) {
   const [q, setQ] = useState("");
   const [home, setHome] = useState<string | null>(null);
-  const [found, setFound] = useState<{ term: string; items: LookupItem[] } | null>(null);
+  const [found, setFound] = useState<Record<string, LookupItem[]>>({});  // answers by term, so going back to one shows it
   const [kinds, setKinds] = useState<Kind[] | null>(null);  // null: as the typed words say
   const [country, setCountry] = useState("");
   const [searching, setSearching] = useState(false);
@@ -43,17 +43,17 @@ export function SymbolFinder({ picked, onPick }: { picked: string; onPick: (i: L
   const words = q.trim().split(/\s+/).filter(Boolean);
   const typedKinds = words.map(w => KIND_WORDS.find(([re]) => re.test(w))?.[1]).filter(Boolean).slice(-1) as Kind[];  // one kind at a time: the last named
   const term = words.filter(w => !KIND_WORDS.some(([re]) => re.test(w))).join(" ");
-  const results = found && found.term.toLowerCase() === term.toLowerCase() ? found.items : null;
+  const results = found[term.toLowerCase()] ?? null;
   useEffect(() => { setKinds(null); setCountry(""); }, [term]);  // new words, fresh filters
   useEffect(() => { setKinds(null); }, [typedKinds[0]]);  // a kind word typed or removed sets the chip again
   const active = kinds ?? typedKinds;
 
-  const last = useRef(0);  // only the newest search may show its answer, error or end the wait
+  const last = useRef(0);  // only the newest search may show an error or end the wait; every answer is kept by its term
   const search = async (t: string) => {
-    if (t.length < 2) return;
+    if (!t) return;  // Enter searches a one-letter ticker (F, T); typing waits for two letters
     const id = ++last.current;
     setSearching(true); setErr(null);
-    try { const r = await seriesApi.lookup(t); if (id === last.current) setFound({ term: t, items: r.items }); }
+    try { const r = await seriesApi.lookup(t); setFound(f => ({ ...f, [t.toLowerCase()]: r.items })); }
     catch (e) { if (id === last.current) setErr(e instanceof ApiError ? e.full : String(e)); }
     finally { if (id === last.current) setSearching(false); }
   };
