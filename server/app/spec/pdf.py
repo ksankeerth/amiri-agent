@@ -20,7 +20,7 @@ from app import settings
 from app.spec import api
 
 ORIGIN = "http://spec.local"
-PUBLISHER = "Amiri Agent"
+PUBLISHER = "AMIRI Agent"
 MARGIN = {"top": "22mm", "bottom": "20mm", "left": "20mm", "right": "20mm"}  # the print layout's page (extra.css)
 FILL = """pages => [...document.querySelectorAll('[data-toc]')].flatMap(e => {
   const page = pages[e.dataset.toc.split(/\\s+/).join(' ')];

@@ -1,0 +1,80 @@
+/* The Overview below its first screen: one section at a time. Its list sits in one column on one side; a glowing-
+   particle scene about that section fills the other, and the sides alternate down the page. The scene stays in view
+   while its list scrolls. Items are green bulletin cards that rise in one by one. Nothing under 14 px. */
+.ovs-wrap { display:flex; flex-direction:column; gap:96px; margin-top:24px; padding-bottom:48px; }
+.ovs { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:64px; align-items:start; scroll-margin-top:24px; }
+.ovs[data-flip] .ovs-text { order:2; }
+.ovs-art { position:sticky; top:24px; height:min(440px, 60vh); border-radius:20px; overflow:hidden;
+  background:radial-gradient(ellipse at 50% 55%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 70%); }
+.ovs-canvas { display:block; width:100%; height:100%; }
+.ovs-text h2 { display:flex; align-items:baseline; gap:12px; margin:0 0 20px; font-size:28px; font-weight:700; letter-spacing:-.02em; color:var(--ink); }
+.ovs-text h2::before { content:""; align-self:center; width:32px; height:3px; border-radius:2px; background:var(--accent); }
+.ovs-n { font-size:20px; font-weight:500; color:var(--ink-3); font-variant-numeric:tabular-nums; }
+.ovs-warn { font-size:16px; font-weight:600; color:var(--high-ink); }
+.ovs-cards { display:flex; flex-direction:column; gap:12px; font-size:16px; line-height:1.5; color:var(--ink-2); }
+.ovs-cards a { text-decoration:none; }
+
+/* a bulletin card: green-tinted, a green edge, the title first */
+.ovt-row { display:flex; flex-direction:column; gap:4px; padding:16px 20px; color:inherit; border-radius:14px;
+  background:color-mix(in srgb, var(--accent) 9%, var(--paper)); border:1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  box-shadow:inset 3px 0 0 var(--accent); transition:background var(--d-fast), border-color var(--d-fast); }
+a.ovt-row:hover, .ovt-ev:hover { background:color-mix(in srgb, var(--accent) 15%, var(--paper)); border-color:color-mix(in srgb, var(--accent) 45%, transparent); }
+.ovt-ev[data-tone="bad"] { box-shadow:inset 3px 0 0 var(--critical); }
+.ovt-ev[data-tone="mixed"] { box-shadow:inset 3px 0 0 var(--high); }
+.ovt-ev[data-tone="neutral"] { box-shadow:inset 3px 0 0 var(--ink-3); }
+.ovt-t { display:flex; align-items:baseline; gap:10px; color:var(--ink); }
+.ovt-tt { display:flex; align-items:baseline; gap:10px; font-size:18px; font-weight:600; color:var(--ink); }
+.ovt-tt2 { font-size:17px; font-weight:500; color:var(--ink); }
+:is(.ovt-t:hover .ovt-tt, a.ovt-row:hover .ovt-tt, a.ovt-row:hover .ovt-tt2) { text-decoration:underline; text-underline-offset:3px; }
+.ovt-sh { width:14px; flex:none; text-align:center; font-size:15px; }
+.ovt-tone { margin-left:auto; padding-left:16px; font-size:16px; font-weight:600; white-space:nowrap; }
+.ovt-ev[data-tone="bad"] .ovt-sh { color:var(--critical); }   .ovt-ev[data-tone="bad"] .ovt-tone { color:var(--critical-ink); }
+.ovt-ev[data-tone="good"] .ovt-sh { color:var(--accent); }    .ovt-ev[data-tone="good"] .ovt-tone { color:var(--accent-ink); }
+.ovt-ev[data-tone="mixed"] .ovt-sh { color:var(--high); }     .ovt-ev[data-tone="mixed"] .ovt-tone { color:var(--high-ink); }
+.ovt-ev[data-tone="neutral"] :is(.ovt-sh, .ovt-tone) { color:var(--ink-3); }
+.ovt-ev > :not(.ovt-t), .ovt-need > .ovt-m { margin-left:24px; }
+.ovt-need[data-lv="crit"] .ovt-sh { color:var(--critical); }
+.ovt-need[data-lv="warn"] .ovt-sh { color:var(--high); }
+.ovt-need[data-lv="info"] .ovt-sh { color:var(--info, var(--ink-3)); }
+.ovt-d { font-size:16px; color:var(--ink-2); }
+.ovt-m { font-size:14px; color:var(--ink-3); }
+.ovt-score { margin-left:10px; font-size:14px; color:var(--ink-3); font-variant-numeric:tabular-nums; }
+.ovt-sum { margin:0 0 4px; font-size:16px; color:var(--ink-2); }
+.ovt-empty { margin:0; padding:16px 20px; border-radius:14px; border:1px dashed color-mix(in srgb, var(--accent) 35%, transparent); font-size:16px; color:var(--ink-2); }
+.ovt-fine { margin:4px 0 0; font-size:14px; color:var(--ink-3); }
+.ovt-all { align-self:flex-start; margin-top:6px; font-size:16px; font-weight:600; color:var(--accent-ink); }
+.ovt-all:hover { text-decoration:underline; text-underline-offset:3px; }
+.ovt-more { align-self:flex-start; display:inline-flex; align-items:center; gap:8px; margin-top:4px; padding:6px 0; border:0; background:none;
+  cursor:pointer; font:600 16px/1.4 var(--font-ui); color:var(--accent-ink); }
+.ovt-more::before { content:"▸"; font-size:18px; line-height:1; transition:transform .15s; }
+.ovt-more[aria-expanded="true"]::before { transform:rotate(90deg); }
+.ovt-fx { border-collapse:collapse; margin:4px 0; font-size:16px; }
+.ovt-fx th { padding:8px 28px 8px 0; text-align:left; font-weight:600; color:var(--ink); border-top:1px solid var(--hairline); white-space:nowrap; }
+.ovt-fx td { padding:8px 0; color:var(--ink-2); border-top:1px solid var(--hairline); }
+.ovt-tbl { width:100%; border-collapse:collapse; font-size:16px; }
+.ovt-tbl :is(th, td) { padding:14px 20px 14px 0; border-bottom:1px solid var(--hairline); text-align:left; vertical-align:middle; }
+.ovt-tbl th a { color:var(--ink); font-weight:600; }
+.ovt-tbl td.r { text-align:right; color:var(--ink); font-variant-numeric:tabular-nums; }
+.ovt-warnw { color:var(--high-ink); }
+
+/* cards rise in one by one as the section scrolls into view (only where the browser has scroll timelines) */
+@supports (animation-timeline: view()) {
+  .ovs-cards > * { animation:ovs-in linear both; animation-timeline:view(); animation-range:entry 0% entry 80%; }
+  .ovs-art { animation:ovs-art linear both; animation-timeline:view(); animation-range:entry 0% entry 60%; }
+}
+@keyframes ovs-in { from { opacity:0; transform:translateY(28px) scale(.98); } }
+@keyframes ovs-art { from { opacity:0; transform:scale(.94); } }
+
+@media (max-width: 1100px) {
+  .ovs { grid-template-columns:minmax(0,1fr); gap:24px; }
+  .ovs[data-flip] .ovs-text { order:0; }
+  .ovs-art { position:static; height:260px; }
+}
+
+/* the recommendations inside their card: each a green link with what it found under it */
+.ovt-recs { list-style:none; margin:8px 0 0 24px; padding:0; display:flex; flex-direction:column; }
+.ovt-recs li { display:flex; flex-direction:column; gap:2px; padding:10px 0; border-top:1px solid color-mix(in srgb, var(--accent) 22%, transparent); }
+.ovt-recs a { align-self:flex-start; font-size:16px; font-weight:600; color:var(--accent-ink); }
+.ovt-recs a:hover { text-decoration:underline; text-underline-offset:3px; }
+.ovs .ovt-recs li > a:not(.btn):not(.chip) { text-decoration:none; }  /* like the other green links; underline only on hover */
+.ovs .ovt-recs li > a:not(.btn):not(.chip):hover { text-decoration:underline; }

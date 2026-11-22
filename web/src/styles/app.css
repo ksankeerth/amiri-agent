@@ -1,4 +1,4 @@
-/* Amiri Agent design tokens and components. */
+/* AMIRI Agent design tokens and components. */
 :root {
   --paper:#F2F4F7; --surface:#FFFFFF; --surface-2:#FAFBFC; --sunken:#EEF0F3;
   --hairline:#DDE1E6; --hairline-2:#CDD2D9; --line-strong:#8A919B; /* line-strong: inputs and data marks, 3:1 on white */
@@ -123,11 +123,18 @@ p { margin:0; }
 .nav { padding:12px 8px; display:flex; flex-direction:column; gap:2px; overflow:auto; flex:1; }
 .nav .grp { margin:16px 12px 8px; }
 .nav a { display:flex; align-items:center; gap:12px; height:34px; padding:0 12px; border-radius:var(--r-nav); color:var(--ink-2); font-weight:500; text-decoration:none; }
-.nav a:hover { background:var(--hover-bg); }
+/* hover: a green tint with a green label and icon (both themes); the current page keeps its own highlight */
+.nav a:not([aria-current="page"]):hover { background:color-mix(in srgb, var(--accent) 22%, transparent); color:var(--accent-ink); }
+.nav a:not([aria-current="page"]):hover svg { color:var(--accent); }
 .nav a[aria-current="page"] { background:var(--active-bg); color:var(--ink); font-weight:600; }
 .nav a svg { width:18px; height:18px; flex:none; }
 .nav a .count { margin-left:auto; font-size:var(--fs-xs); font-weight:700; min-width:20px; height:20px; padding:0 8px; border-radius:var(--r-pill); display:inline-flex; align-items:center; justify-content:center; background:var(--sunken); color:var(--ink-2); }
 .nav a .count.hot { background:var(--critical); color:var(--surface); }
+/* the alerts count keeps pulsing while alerts wait, so it can't be overlooked: a ring spreads from the badge while the
+   number stays solid and readable (the global reduced-motion rule stops it) */
+.nav a .count.hot { animation:navflash 1.4s ease-out infinite; }
+@keyframes navflash { 0% { box-shadow:0 0 0 0 color-mix(in srgb, var(--critical) 70%, transparent); }
+  70%, 100% { box-shadow:0 0 0 7px transparent; } }
 /* the role switch lives at the foot of the sidebar: a demo setting, not the page's main control, and no longer an early
    Tab stop (it came third on every page); the header copy is hidden. On small screens the theme button joins it. */
 .side-foot { border-top:1px solid var(--hairline); padding:12px; display:flex; flex-direction:column; gap:8px; }

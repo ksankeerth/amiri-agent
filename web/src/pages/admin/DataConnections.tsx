@@ -1,4 +1,4 @@
-// Platform Admin: where Amiri Agent reads the institution's own numbers. Set the connection (an address,
+// Platform Admin: where AMIRI Agent reads the institution's own numbers. Set the connection (an address,
 // or a sample institution), Check it, read the report, Approve it, and switch validation on. The sample
 // bank and insurer are switched on, and given conditions, here too.
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
@@ -65,8 +65,8 @@ export function DataConnectionsPage() {
   return (
     <div className="page">
       <PageHeader title="Data connections" pills={<span className="badge b-info" title="The version this server implements">Spec {SPEC}</span>}
-        status={conn.latest_check ? "Where Amiri Agent reads your own figures to check each possible impact" : "No connection checked yet"}
-        help={<p className="ph-about">Amiri Agent checks each possible impact against your institution's own figures, read from a Metrics Spec reference API. Only that API is accepted. Connect it, run the check, then approve it and switch checks on.</p>} />
+        status={conn.latest_check ? "Where AMIRI Agent reads your own figures to check each possible impact" : "No connection checked yet"}
+        help={<p className="ph-about">AMIRI Agent checks each possible impact against your institution's own figures, read from a Metrics Spec reference API. Only that API is accepted. Connect it, run the check, then approve it and switch checks on.</p>} />
       <div className="col gap16">
         <ConnectionCard conn={conn} samples={samples} checking={checking} onSaved={c => { setConn(c); setReport(null); load(); }}
           onCheck={run} onApprove={approve} onValidation={validation} />
@@ -129,12 +129,12 @@ function ConnectionCard({ conn, samples, checking, onSaved, onCheck, onApprove, 
         {conn.auth_allowed === false && <Banner kind="warn" icon="warn"><b>Prototype: no authorization.</b> Use only the sample institutions or a test API with no real data.</Banner>}
         {conn.configured && !editing && <div className="col gap8">
           <div className="row wrap"><b>{conn.source === "sample" ? `The sample ${conn.sample}` : "Your institution's API"}</b>
-            {conn.source === "sample" ? <span className="small muted" title={conn.base_url ?? undefined}>hosted with Amiri Agent</span>
+            {conn.source === "sample" ? <span className="small muted" title={conn.base_url ?? undefined}>hosted with AMIRI Agent</span>
               : <span className="mono small" style={{ wordBreak: "break-all" }}>{conn.base_url}</span>}
             {conn.auth_set && <span className="badge">key stored ({conn.auth_header})</span>}</div>
           {latest?.server_version && <div className="small">{latest.server_version.split(".")[0] === SPEC.split(".")[0]
             ? <>Compatible with Metrics Spec {SPEC.split(".")[0]}.x <span className="muted">(the API serves {latest.server_version})</span></>
-            : <b style={{ color: "var(--critical-ink)" }}>Not compatible: the API serves Metrics Spec {latest.server_version}, and Amiri Agent reads {SPEC.split(".")[0]}.x</b>}</div>}
+            : <b style={{ color: "var(--critical-ink)" }}>Not compatible: the API serves Metrics Spec {latest.server_version}, and AMIRI Agent reads {SPEC.split(".")[0]}.x</b>}</div>}
           <div className="small">{conn.approved ? <>Approved by {conn.approved.by} {ago(conn.approved.at)}.</> : latest
             ? latest.current ? <>Checked {ago(latest.started_at)}: <b>{STATUS_BADGE[latest.status][1].toLowerCase()}</b>. Not approved yet.</> : <>Changed since the last check: check it again.</>
             : <>Not checked yet.</>}</div>

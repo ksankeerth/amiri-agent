@@ -41,7 +41,7 @@ from app.validation import api as validation_api
 from app.validation.service import Validation
 
 DESCRIPTION = """\
-Amiri Agent server API: the platform core behind the web app. Code only, no model: it enumerates,
+AMIRI Agent server API: the platform core behind the web app. Code only, no model: it enumerates,
 scores, schedules and stores, and every number a person reads comes from here.
 
 - **Institution profile** (bank or insurer): footprint, customer groups, products, money flows,

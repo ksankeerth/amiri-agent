@@ -1,4 +1,4 @@
-# Deploying Amiri Agent on Google Cloud
+# Deploying AMIRI Agent on Google Cloud
 
 Everything runs in **your own Google Cloud project**: your keys and your bill. A new account gets free trial
 credit, which covers a prototype for a long time. Terraform describes it all, and a few scripts do the parts

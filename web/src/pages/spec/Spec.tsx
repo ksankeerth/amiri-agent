@@ -180,7 +180,7 @@ export function SpecPage() {
     <div className="page">
       <PageHeader title={s.title} pills={<span className="chip">Version {s.spec_version}</span>}
         status={<>The figures an institution shares, per product: {s.categories.length} categories, {nMetrics} metrics</>}
-        help={<div className="col" style={{ gap: 6 }}><p className="ph-about">The numbers an institution exposes, per product category, and how Amiri Agent judges them when it checks a possible impact.</p>
+        help={<div className="col" style={{ gap: 6 }}><p className="ph-about">The numbers an institution exposes, per product category, and how AMIRI Agent judges them when it checks a possible impact.</p>
           <FactList items={[["Version", s.spec_version], ["Status", s.status], ["Published", s.published], ["Validation parameters", s.validation_params_version]]} /></div>}
         helpLabel="About this spec" />
       <div className="card sp-files">

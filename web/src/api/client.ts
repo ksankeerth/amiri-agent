@@ -51,8 +51,8 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
       r = await fetch(path, { ...init, headers, body });
     } catch {
       throw new ApiError({ status: 0, code: "network", detail: read
-        ? "Amiri Agent didn't answer. It may be starting up after a quiet spell: try again in a few seconds."
-        : "Amiri Agent didn't answer, so this may not have been saved. It may be starting up after a quiet spell: check, then try again in a few seconds." });
+        ? "AMIRI Agent didn't answer. It may be starting up after a quiet spell: try again in a few seconds."
+        : "AMIRI Agent didn't answer, so this may not have been saved. It may be starting up after a quiet spell: check, then try again in a few seconds." });
     }
   }
   if (r.status === 204) return undefined as T;

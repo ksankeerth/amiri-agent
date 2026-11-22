@@ -91,8 +91,8 @@ export function CreateInstitution({ onCreated }: { onCreated: (id: string) => vo
   };
   return (
     <div className="card"><div className="bd col" style={{ gap: 14 }}>
-      <div><h2>Tell Amiri Agent about your institution</h2>
-        <p className="small muted">Everything Amiri Agent watches and checks starts from this profile. Start with the basics; the next steps add where you operate, your customers, products, flows, rules, rivals and risks. Works with forms alone; the setup assistant is optional.</p></div>
+      <div><h2>Tell AMIRI Agent about your institution</h2>
+        <p className="small muted">Everything AMIRI Agent watches and checks starts from this profile. Start with the basics; the next steps add where you operate, your customers, products, flows, rules, rivals and risks. Works with forms alone; the setup assistant is optional.</p></div>
       <div ref={box}><InstitutionFields d={d} set={(k, v) => setD(x => ({ ...x, [k]: v }))} err={err} creating
         fill={data => { setErr({}); setGeneral([]); setD(x => ({ ...x, ...data })); }} /></div>
       {general.concat(hidden).length > 0 && <div className="rawerr" role="alert">{general.concat(hidden).join(" · ")}</div>}
@@ -152,7 +152,7 @@ const mapTitle = (p: Profile) => {
   const home = p.place_names[p.institution.home_country] ?? p.institution.home_country;
   return abroad ? `${home} · money moves with ${plural(abroad, "place")} abroad` : `Where ${p.institution.short_name ?? p.institution.name} operates`;
 };
-const TAB_OF_SECTION: Record<string, string> = {
+export const TAB_OF_SECTION: Record<string, string> = {
   footprint: "footprint", "watch-places": "footprint", flows: "footprint", segments: "customers", products: "customers",
   regulators: "rules", rivals: "rivals", counterparties: "rivals", "risk-exposures": "risks", institution: "overview",
 };
@@ -330,7 +330,7 @@ export function InstitutionPage() {
         title={i.name} pills={<StatusBadge status={i.status} />}
         status={<>{i.subtype ? `${cap(words(i.subtype))} ${i.institution_type === "bank" ? "bank" : "insurer"}` : i.institution_type === "bank" ? "Bank" : "Insurer"}{i.islamic ? " (Islamic)" : ""} in <PlaceName code={i.home_country} names={profile.place_names} /> · {i.base_currency}</>}
         help={<div className="col" style={{ gap: 8 }}>{i.summary && <p className="ph-about">{i.summary}</p>}
-          <p className="small muted">Time zone: {i.time_zone}. Amiri Agent reads this profile to decide what matters to you: where you operate, your customers and products, your flows, rules, rivals and risks.</p></div>}
+          <p className="small muted">Time zone: {i.time_zone}. AMIRI Agent reads this profile to decide what matters to you: where you operate, your customers and products, your flows, rules, rivals and risks.</p></div>}
         helpLabel="About this institution"
         actions={<>
           <Link className="btn" to="/institution/setup"><Icon name="check" />Guided setup</Link>
@@ -417,7 +417,7 @@ export function NewInstitutionPage() {
       try { localStorage.setItem(KEY, p.result.institution_id); } catch { /* */ } nav("/institution/overview"); } }}>
       <div className="page">
         <PageHead title="New institution" crumbs={<Link to="/institution">Institution</Link>}
-          sub="Tell Amiri Agent who you are: a bank or an insurer, where you operate, and who your customers are. The setup agent can do it with you." />
+          sub="Tell AMIRI Agent who you are: a bank or an insurer, where you operate, and who your customers are. The setup agent can do it with you." />
         <CreateInstitution onCreated={id => { try { localStorage.setItem(KEY, id); } catch { /* */ } toast("Created."); nav("/institution/setup/where"); }} />
       </div>
     </WithChat>

@@ -116,14 +116,14 @@ SETTINGS: dict[str, Setting] = {
         Setting(
             "TWELVEDATA_CREDITS_PER_MINUTE",
             "8",
-            "API credits Amiri Agent may spend in any 60 seconds (the free plan allows 8). "
+            "API credits AMIRI Agent may spend in any 60 seconds (the free plan allows 8). "
             "Scheduled fetches over it wait for the next tick; manual refreshes and "
             "adds get 429 with Retry-After.",
         ),
         Setting(
             "TWELVEDATA_CREDITS_PER_DAY",
             "800",
-            "API credits Amiri Agent may spend per UTC day (the free plan allows 800).",
+            "API credits AMIRI Agent may spend per UTC day (the free plan allows 800).",
         ),
         # Assistant (amiri-assistant, the ADK chat agent)
         Setting(
@@ -228,7 +228,7 @@ SETTINGS: dict[str, Setting] = {
         Setting("MONITOR_AUTH", "none", "How the server calls the monitor agent: none (local), or id_token (Cloud Run)."),
         Setting("MONITORS_LIVE_MAX", "10", "Live monitors at most (each check is a model and web search cost)."),
         Setting("MONITOR_MIN_FREQUENCY_MINUTES", "60", "The most often a monitor may be checked: 15, 60, 360 or 1440."),
-        Setting("PROTOTYPE_RESET", "true", "Allow the prototype reset (wipes the institution and all Amiri Agent made for it; "
+        Setting("PROTOTYPE_RESET", "true", "Allow the prototype reset (wipes the institution and all AMIRI Agent made for it; "
                 "keeps market prices and reference data). Switch off for a real deployment."),
         Setting("MOCK_INSTITUTIONS", "true", "Allow the sample bank and insurer (the Metrics Spec reference API at "
                 "/mock/bank and /mock/insurer, switched on by the Platform Admin). Switch off for a real deployment."),

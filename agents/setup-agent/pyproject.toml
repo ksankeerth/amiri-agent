@@ -2,7 +2,7 @@
 name = "setup-agent"
 version = "0.1.0"
 description = "Setup agent: turns a bank's or insurer's own words into profile proposals the person confirms."
-authors = [{name = "The Amiri Agent authors"}]
+authors = [{name = "The AMIRI Agent authors"}]
 license = { text = "Apache-2.0" }
 
 

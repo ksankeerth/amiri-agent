@@ -1,5 +1,5 @@
 {
-  "_about": "Directions per theme. The theme ids are Metrics Spec v1.0's (vocabularies.themes); Amiri Agent adds the directions. Shared by the series, Radar, monitors and the investigation.",
+  "_about": "Directions per theme. The theme ids are Metrics Spec v1.0's (vocabularies.themes); AMIRI Agent adds the directions. Shared by the series, Radar, monitors and the investigation.",
   "themes": {
     "fx": {"directions": {"weaker": "the currency weakens", "stronger": "the currency strengthens"}, "currency": true},
     "rates": {"directions": {"up": "rates rise", "down": "rates fall"}},

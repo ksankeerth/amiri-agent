@@ -71,7 +71,7 @@ async def test_off_topic_gets_a_redirect_and_keeps_the_track(client, scripted):
     evs = await turn(client, sid, "bank-1", text="Write me a poem about the sea.", current_track="risks")
     assert "track" not in kinds(evs) and "proposal" not in kinds(evs)
     msg = next(d for e, d in evs if e == "message")["text"]
-    assert msg.startswith("I can only help set up Amiri Agent") and "Back to risks" in msg
+    assert msg.startswith("I can only help set up AMIRI Agent") and "Back to risks" in msg
 
 
 async def test_router_down_stays_in_the_current_track(client, scripted):

@@ -1,4 +1,4 @@
-<h1 align="center">Amiri Agent</h1>
+<h1 align="center">AMIRI Agent</h1>
 
 <p align="center">
   <b>An AI early-warning analyst for banks and insurers.</b><br/>
@@ -69,13 +69,13 @@
 
 ## Why it is different
 
-![Only Amiri Agent covers the whole chain, every day, for your own products](docs/images/why-different.png)
+![Only AMIRI Agent covers the whole chain, every day, for your own products](docs/images/why-different.png)
 
 - **Your products, not headlines:** each warning names the product, the owning team and the metric to watch.
 - **Checked, not just predicted:** the expected effect is compared with the institution's own numbers.
 - **AI reasons, code counts:** every number on screen comes from code; every step shows its evidence.
 
-![The same event, two ways: by hand, and with Amiri Agent](docs/images/same-event-two-ways.png)
+![The same event, two ways: by hand, and with AMIRI Agent](docs/images/same-event-two-ways.png)
 
 ## What it does
 
@@ -88,7 +88,7 @@ Commercial Bank** (invented, Sri Lanka only).
 
 | # | Go to | Look for |
 |---|---|---|
-| 1 | **Overview** | Today at a glance: what Amiri Agent watched, found, traced and sent to each team |
+| 1 | **Overview** | Today at a glance: what AMIRI Agent watched, found, traced and sent to each team |
 | 2 | **Alerts** › open one | The owning team, the product, the direction, *why*, the evidence and its sources; **Acknowledge** |
 | 3 | The alert's **event** | The chain: findings → event → products → teams, and what the agent considered and **set aside** |
 | 4 | **Radar** | How many articles it read and how many it kept, and why each story matters to this bank |
@@ -177,7 +177,7 @@ sequenceDiagram
 
 | What | In this repository | In a running deployment |
 |---|---|---|
-| **Amiri server REST API** | [`server/openapi.yaml`](server/openapi.yaml) | Interactive docs at `/docs` · `/openapi.json` |
+| **AMIRI server REST API** | [`server/openapi.yaml`](server/openapi.yaml) | Interactive docs at `/docs` · `/openapi.json` |
 | **Metrics Spec 1.0.0**: which summary figures a bank or insurer exposes, per product category | [Guide (Markdown)](server/app/spec/metrics-spec-1.0.0.md) · [PDF](server/app/spec/metrics-spec-1.0.0.pdf) · [YAML](server/app/spec/metrics-spec-1.0.0.yaml) · [Reference API (OpenAPI)](server/app/spec/reference-openapi-1.0.0.yaml) | **Metrics Spec** page (`/spec`) |
 | **Sample bank and insurer**: working Metrics Spec APIs that feed Verification | [`server/app/mockinst/`](server/app/mockinst) | `/mock/bank/openapi.json` · `/mock/insurer/openapi.json` |
 | **Agent contracts** | [`server/contracts/`](server/contracts) · [`agents/event-monitor-agent/openapi.yaml`](agents/event-monitor-agent/openapi.yaml) | Served by each agent, to the server only |

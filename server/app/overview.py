@@ -1,5 +1,5 @@
 """The Overview page's one call: what is happening to the institution,
-what needs the person, and whether Amiri Agent is working. Reads only; code, no model. Live world only."""
+what needs the person, and whether AMIRI Agent is working. Reads only; code, no model. Live world only."""
 
 import asyncio
 from datetime import timedelta
@@ -97,7 +97,7 @@ async def build(app, institution_id: str, audience: str = "user") -> dict:
     tz = (inst or {}).get("time_zone") or "UTC"
 
     def need(kind, level, title, detail=None, link=None, at=None, audience="user"):
-        # audience "admin": about Amiri Agent's own plumbing, for the Platform Admin (the web app hides it from Risk Managers)
+        # audience "admin": about AMIRI Agent's own plumbing, for the Platform Admin (the web app hides it from Risk Managers)
         att.append({"kind": kind, "level": level, "title": title, "detail": detail, "link": link, "at": at,
                     "audience": audience})
 
@@ -107,7 +107,7 @@ async def build(app, institution_id: str, audience: str = "user") -> dict:
              f"{plural(warn, 'early warning')} for your products' risk",
              link="/alerts")
     if not first_run and late:
-        need("tick", "crit", f"Amiri Agent hasn't refreshed since {_when(tick['started_at'], tz) if tick else 'it started'}",
+        need("tick", "crit", f"AMIRI Agent hasn't refreshed since {_when(tick['started_at'], tz) if tick else 'it started'}",
              "Prices, monitor checks and investigations are behind until the scheduler runs again.", audience="admin")
     if inv["findings_waiting"] and not inv["connected"]:
         need("investigation", "warn", f"{plural(inv['findings_waiting'], 'finding')} can't be investigated yet: the investigation agent isn't connected",
@@ -134,7 +134,7 @@ async def build(app, institution_id: str, audience: str = "user") -> dict:
             why = {r["monitor_id"]: r["error"] for r in await cur.fetchall()}
     for m in failed:
         need("monitor_failed", "warn", f"{m['name']}: the last check couldn't read the news",
-             plain_error(why.get(m["monitor_id"])) + " Amiri Agent will try again within the hour; nothing is lost.",
+             plain_error(why.get(m["monitor_id"])) + " AMIRI Agent will try again within the hour; nothing is lost.",
              link=f"/monitors/{m['monitor_id']}", at=m["last_check"]["at"])
     for x in series:
         if x["state"] == "stale" or x["fetch"].get("last_status") == "error":
@@ -163,7 +163,7 @@ async def build(app, institution_id: str, audience: str = "user") -> dict:
             need("recommended", "info", f"{plural(len(rec), 'recommendation')} for the profile",
                  " · ".join((c["fix"] or c["message"]).rstrip(".") for c in rec[:3]), link="/institution")
     admin_notes = sum(1 for a in att if a["audience"] == "admin")
-    if audience != "all":  # a Risk Manager sees what they can act on; Amiri Agent's own plumbing is the Platform Admin's
+    if audience != "all":  # a Risk Manager sees what they can act on; AMIRI Agent's own plumbing is the Platform Admin's
         att = [a for a in att if a["audience"] == "user"]
     att.sort(key=lambda a: LEVEL[a["level"]])
 
@@ -201,8 +201,8 @@ async def build(app, institution_id: str, audience: str = "user") -> dict:
     }
 
 
-@router.get("/overview", summary="The Overview page: events, what needs you, markets, and Amiri Agent's own state")
+@router.get("/overview", summary="The Overview page: events, what needs you, markets, and AMIRI Agent's own state")
 async def overview(request: Request, institution_id: str | None = None,
                    audience: Literal["user", "all"] = "user"):
-    """`audience=all` also lists Amiri Agent's own plumbing notes (the Platform Admin's); the default is what a Risk Manager can act on."""
+    """`audience=all` also lists AMIRI Agent's own plumbing notes (the Platform Admin's); the default is what a Risk Manager can act on."""
     return await build(request.app, institution_id or settings.raw("INSTITUTION_ID"), audience)

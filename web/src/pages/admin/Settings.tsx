@@ -19,7 +19,7 @@ export function SettingsPage() {
       <div className="card">
         <div className="hd"><h2>Start again</h2></div>
         <div className="bd col gap12">
-          <p style={{ margin: 0 }}>Reset the prototype to try it as a new institution: everything Amiri Agent holds for the institution goes,
+          <p style={{ margin: 0 }}>Reset the prototype to try it as a new institution: everything AMIRI Agent holds for the institution goes,
             including its data connection and validation settings. Market series, their prices and the reference data stay.</p>
           {allowed === null ? null : allowed
             ? <div><button className="btn btn--danger" type="button" onClick={() => setResetting(true)}><Icon name="refresh" />Reset the prototype…</button></div>

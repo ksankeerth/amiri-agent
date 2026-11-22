@@ -71,7 +71,7 @@ def files(kind: demo.Kind) -> dict[str, str]:
         n += 1
         return folder
 
-    f = step("Tell Amiri Agent about your institution")
+    f = step("Tell AMIRI Agent about your institution")
     out[f"{f}/profile.json"] = _json(doc)
     out[f"{f}/institution.json"] = _json({"institution": doc["institution"]})
     f = step("Edit place in the footprint")

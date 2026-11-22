@@ -41,7 +41,7 @@ def test_every_file_fits_its_form(kind):
     for f in _step(kind, "Write your own scenario").values():
         assert 8 <= len(f["title"]) <= 120
         CustomIn(headlines=f["headlines"], prices=f["prices"])
-    profile = _step(kind, "Tell Amiri Agent about your institution")["profile.json"]
+    profile = _step(kind, "Tell AMIRI Agent about your institution")["profile.json"]
     ids = {f"{demo_export.EXPOSURE[s]}:{it['id']}" for s, items in profile["sections"].items() for it in items
            if s in demo_export.EXPOSURE}
     for f in _step(kind, "New monitor").values():
@@ -56,7 +56,7 @@ def test_every_file_fits_its_form(kind):
 
 @pytest.mark.parametrize("kind", KINDS)
 async def test_the_whole_profile_and_file_by_file_give_the_same_profile(client, kind):
-    whole = _step(kind, "Tell Amiri Agent about your institution")
+    whole = _step(kind, "Tell AMIRI Agent about your institution")
     doc = whole["profile.json"]
     r = await client.post(f"{B}:import", json={"institution": {**doc["institution"], "institution_id": "demo-whole"},
                                                "sections": doc["sections"]})

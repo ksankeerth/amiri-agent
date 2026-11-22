@@ -52,7 +52,7 @@ class Route:
     model_calls: int = 0
 
 
-ROUTER_PROMPT = """You route one message in the setup chat of Amiri Agent, a risk tool for a bank or insurer.
+ROUTER_PROMPT = """You route one message in the setup chat of AMIRI Agent, a risk tool for a bank or insurer.
 Choose the track it belongs to. Tracks:
 {tracks}
 
@@ -60,7 +60,7 @@ Rules:
 - Stay in the current track ({current}) unless the message clearly belongs to another track. Asking to work on,
   propose or add another track's items ("propose our risks" in rivals_partners) is clearly that other track.
 - A question that changes nothing and fits no track is "question"; anything unrelated to setting up
-  Amiri Agent for this institution is "offtopic".
+  AMIRI Agent for this institution is "offtopic".
 - Facts in the message that belong to other tracks go in notes (track id and the fact), so later tracks
   can use them. Don't put facts for the chosen track in notes. Currencies it settles or clears in, regulators
   and sanctions are rules, not footprint_flows (flows are money and goods sent to or from places). Where a

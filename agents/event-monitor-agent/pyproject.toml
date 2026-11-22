@@ -2,7 +2,7 @@
 name = "event-monitor-agent"
 version = "0.1.0"
 description = "Monitor agent: checks the news for one monitor and reports findings with their sources."
-authors = [{name = "The Amiri Agent authors"}]
+authors = [{name = "The AMIRI Agent authors"}]
 license = { text = "Apache-2.0" }
 
 

@@ -1,6 +1,6 @@
 # amiri-web
 
-The Amiri Agent web app (React + TypeScript + Vite): Overview, Alerts, Events, Radar, Monitors,
+The AMIRI Agent web app (React + TypeScript + Vite): Overview, Alerts, Events, Radar, Monitors,
 Market series, Institution (with the setup agent's chat) and the Scenario Studio. A prototype that runs
 against a demo bank with sample data.
 

@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   summary: Aggregated product metrics served by a bank or insurer, per Metrics Spec 1.0.0.
   description: |
-    The reference API of Metrics Spec 1.0.0, published by Amiri Agent. The guide is
+    The reference API of Metrics Spec 1.0.0, published by AMIRI Agent. The guide is
     `metrics-spec-1.0.0.pdf` and the machine-readable spec is `metrics-spec-1.0.0.yaml`; references
     such as "guide R1" or "§9" point into the guide. Institutions connect by implementing this API
     exactly; there is no per-institution mapping. The onboarding connector runs the conformance

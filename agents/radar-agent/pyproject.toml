@@ -2,7 +2,7 @@
 name = "radar-agent"
 version = "0.1.0"
 description = "Radar agent: reads GDELT for news touching an institution's footprint, groups it into stories and judges them."
-authors = [{name = "The Amiri Agent authors"}]
+authors = [{name = "The AMIRI Agent authors"}]
 license = { text = "Apache-2.0" }
 
 

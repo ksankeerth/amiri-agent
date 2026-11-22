@@ -130,7 +130,7 @@ GUIDES: dict[str, Guide] = {
         [T.get_agent_context, T.get_section, T.conclude]),
     "question": Guide(
         "nothing (read only)",
-        """- Answer questions about Amiri Agent and the setup from what you know and the profile. Amiri Agent: Radar and
+        """- Answer questions about AMIRI Agent and the setup from what you know and the profile. AMIRI Agent: Radar and
   monitors watch the news, market series watch prices; their findings go to the investigation agent,
   which traces events to the institution's products and customers. The profile is what they all read.""",
         [T.get_section, T.get_readiness, T.conclude]),

@@ -120,7 +120,7 @@ export function FactList({ items, inline }: { items: [string, ReactNode][]; inli
 }
 
 export interface Step { label: string; detail?: ReactNode; state: "done" | "now" | "next"; icon: string }
-/** How far something has got through Amiri Agent's flow: noticed, investigated, impacts, alerts, checks. */
+/** How far something has got through AMIRI Agent's flow: noticed, investigated, impacts, alerts, checks. */
 export function Steps({ steps, label = "Progress" }: { steps: Step[]; label?: string }) {
   return (
     <ol className="steps" aria-label={label}>{steps.map((s, i) => (
@@ -163,7 +163,7 @@ const HOW: { icon: string; t: string; d: string }[] = [
   { icon: "alert", t: "Alerts", d: "Tells the team that owns each product, so someone takes it on." },
   { icon: "data", t: "Checks", d: "Tests each possible impact against your own figures as they're published." },
 ];
-/** What Amiri Agent does, in five steps: the explainer behind every "How this works" link. */
+/** What AMIRI Agent does, in five steps: the explainer behind every "How this works" link. */
 export function HowItWorks({ children }: { children?: ReactNode }) {
   return (
     <div className="how">

@@ -34,7 +34,7 @@ export function PricesHelp({ status }: { status: SeriesStatus | null }) {
   const c = status?.provider.credits;
   return (
     <HowItWorks>
-      <p>Amiri Agent watches these prices by itself, with plain arithmetic. It {ruleText(status?.detector_defaults.z_threshold ?? 3)} for that length of time; each flagged move becomes a finding for the investigation.</p>
+      <p>AMIRI Agent watches these prices by itself, with plain arithmetic. It {ruleText(status?.detector_defaults.z_threshold ?? 3)} for that length of time; each flagged move becomes a finding for the investigation.</p>
       {status && <p>Prices are pulled once an hour, not streamed. The next pull is due {due(status.schedule.next_run_at, now)}{status.schedule.next_run_at && new Date(status.schedule.next_run_at) > now ? ` ${ZONE_LABEL} time` : ""}. Refresh now pulls a series' latest prices (once every {Math.round(status.refresh.cooldown_seconds / 60)} minutes). Up to {status.limits.max_series} series can be watched; {status.limits.used} are.</p>}
       {role === "platform_admin" && c && <p>Twelve Data credits today: {c.used_today} of {c.per_day}; this minute {c.used_last_minute} of {c.per_minute}.</p>}
     </HowItWorks>
@@ -120,7 +120,7 @@ export function SeriesList() {
       {items && items.length === 0 && (
         <div className="card"><Empty icon="series" title="No series yet"
           actions={isAdmin ? <button className="btn btn--primary" type="button" onClick={() => setAdding(true)}><Icon name="plus" />Add a series</button> : undefined}>
-          {isAdmin ? "Add the exchange rates and prices that matter to your institution." : "A Platform Admin adds the series Amiri Agent watches."}
+          {isAdmin ? "Add the exchange rates and prices that matter to your institution." : "A Platform Admin adds the series AMIRI Agent watches."}
         </Empty></div>
       )}
       {items && items.length > 0 && <div className="seriesgrid mt12">{items.map(s => <SeriesCard key={s.series_id} s={s} onChange={replace} />)}</div>}

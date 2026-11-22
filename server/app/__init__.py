@@ -1,1 +1,1 @@
-"""Amiri Agent server (amiri-server)."""
+"""AMIRI Agent server (amiri-server)."""
