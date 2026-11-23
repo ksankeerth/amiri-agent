@@ -166,15 +166,15 @@ export function RadarPage() {
     const o = listRef.current;
     if (!o || settle.current) return;
     const top = o.getBoundingClientRect().top, cards = [...o.querySelectorAll<HTMLElement>(".rd-card")];
-    // reading down an unfolded day: leave the scroll where the reader put it until the next day reaches the top
-    if (cards.some(c => { const r = c.getBoundingClientRect(); return c.classList.contains("open") && r.top < top - 1 && r.bottom > top + 1; })) return;
     // the day whose start is nearest the top (a short last day can stop short of it until the next one loads)
     const gap = (c: HTMLElement) => Math.abs(c.getBoundingClientRect().top - top);
     const at = cards.reduce<HTMLElement | null>((a, c) => (!a || gap(c) < gap(a) ? c : a), null);
     if (!at) return;
     const room = o.parentElement!.clientHeight;
-    o.style.height = `${single.current ? Math.min(room, at.offsetHeight) : room}px`;
-    const by = at.getBoundingClientRect().top - top;  // and snap it there
+    if (!single.current || o.querySelector(".rd-card.open")) { o.style.height = `${room}px`; return; }  // filtered, or a day unfolded: a plain list, no pinning
+    o.style.height = `${Math.min(room, at.offsetHeight)}px`;
+    // the browser's snap lands each day; this only catches the rare stop it can't reach (a short last day before the next loads)
+    const by = at.getBoundingClientRect().top - top;
     if (Math.abs(by) > 1) o.scrollBy({ top: by, behavior: "smooth" });
   }, []);
   useLayoutEffect(fit);
@@ -250,7 +250,7 @@ export function RadarPage() {
             {show === "all" && !where ? (st?.connected ? "Radar hasn't found anything touching your footprint yet. Check now runs it at once." : admin ? "Connect the Radar agent (RADAR_URL) and it starts reading the news." : "Radar starts reading the news once your Platform Admin connects it.") : "No stories match these filters."}</Empty>
         : <div className="rd-split">
           <nav className="rd-index" aria-label="Stories">
-            <ol ref={listRef} onKeyDown={keys} onScroll={scrolled} onMouseLeave={() => setHover(null)}>{loaded.map(d => {
+            <ol ref={listRef} className={show === "all" && !where && !open.size ? "snap" : undefined} onKeyDown={keys} onScroll={scrolled} onMouseLeave={() => setHover(null)}>{loaded.map(d => {
               const { top, rest } = rowsOf(d), isOpen = open.has(d);
               const tally = (["sent", "below", "dismissed"] as const).map(k => [rest.filter(s => s.status === k).length, k === "below" ? "held back" : k] as const).filter(([c]) => c);
               return <li key={d} data-day={d} className={`rd-card ${d === countDay ? "on" : ""} ${isOpen ? "open" : ""}`} onMouseEnter={() => setHover(d)}>
