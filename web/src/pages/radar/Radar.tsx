@@ -9,7 +9,7 @@ import { ChipFilter } from "../../components/FlowFilter";
 import { Icon } from "../../components/Icon";
 import { HowItWorks, PageHeader } from "../../components/blocks";
 import { Banner, Empty, ListSkeleton, LoadError, useNow, useRole, useToast } from "../../components/ui";
-import { ago, day, dayTime, placeName, placeOrder, plural, when } from "../../format";
+import { ago, dateKey, day, dayTime, placeName, placeOrder, plural, when } from "../../format";
 import { themeText } from "../events/Events";
 import "../../styles/radar.css";
 
@@ -33,9 +33,10 @@ function Outcome({ s }: { s: RadarStory }) {
 function Reader({ s, place, act, admin }: { s: RadarStory; place: (p: string) => string; act: (f: () => Promise<RadarStory>, m: string) => void; admin: boolean }) {
   const [more, setMore] = useState(false);  // kept across stories: once a reader wants the detail, they get it on every story
   const [src, setSrc] = useState(false);
-  useEffect(() => setSrc(false), [s.story_id]);
+  const box = useRef<HTMLElement>(null);
+  useLayoutEffect(() => { setSrc(false); box.current?.scrollTo(0, 0); }, [s.story_id]);  // each story opens at its top
   const os = outlets(s);
-  return <article className={`rd-read ${s.status}`} aria-labelledby="rd-read-h">
+  return <article ref={box} className={`rd-read ${s.status}`} aria-labelledby="rd-read-h">
     <span className="label">{dayTime(s.last_seen_at)} · {STATE[s.status]}{s.status === "sent" && s.sent_by && s.sent_by !== "agent" ? ` by ${s.sent_by}` : ""} · {REL[s.relevance]}</span>
     <h2 id="rd-read-h">{s.title}</h2>
     <div className="rd-acts">
@@ -87,11 +88,13 @@ export function RadarPage() {
   const listRef = useRef<HTMLOListElement>(null);
 
   const load = useCallback(async () => {
-    try { // ponytail: the newest 200 stories (the server's cap, about 20 days of reads) load at once and the list reveals them a day at a time;
-      // past 200, add a "before this date" option to /radar/stories and fetch each older day as it is scrolled to
-      const [st, ss] = await Promise.all([radarApi.status(), radarApi.stories({ limit: "200" })]); setStatus(st); setItems(ss); setErr(null); }
+    try { // the newest 200 stories (the server's cap) give every tab its counts; a tab or place filter also asks the server for its own
+      // newest 200 matches, so it reaches stories older than that. ponytail: past 200 matches, add a "before this date" option and page
+      const [st, ss, fs] = await Promise.all([radarApi.status(), radarApi.stories({ limit: "200" }),
+        show === "all" && !where ? [] : radarApi.stories({ limit: "200", status: show === "all" ? undefined : show, place: where || undefined })]);
+      setStatus(st); setItems([...new Map([...ss, ...fs].map(s => [s.story_id, s])).values()]); setErr(null); }
     catch (e) { setErr(e); }
-  }, []);
+  }, [show, where]);
   useEffect(() => { load(); const t = setInterval(load, 60_000); return () => clearInterval(t); }, [load]);
   useEffect(() => {
     api<{ institution_id: string; profile: boolean }>("/api/v1/installation").then(i => {
@@ -125,11 +128,12 @@ export function RadarPage() {
   const inPlace = all.filter(s => !where || s.places.includes(where));
   const shown = inPlace.filter(s => show === "all" || s.status === show);
   // one card per day, newest first; a filter starts from the latest day it matches, so it reaches back as far as it needs to
-  const days = [...new Set(shown.map(s => day(s.last_seen_at)))];
-  const visible = shown.filter(s => days.indexOf(day(s.last_seen_at)) < upto);
+  const dk = (s: RadarStory) => dateKey(s.last_seen_at);
+  const days = [...new Set(shown.map(dk))];  // keys like 21/11/2026; the card shows day() of its stories
+  const visible = shown.filter(s => days.indexOf(dk(s)) < upto);
   // a card shows the first few sent and held back; the rest fold under "more"
   const rowsOf = (d: string) => {
-    const xs = shown.filter(s => day(s.last_seen_at) === d);
+    const xs = shown.filter(s => dk(s) === d);
     const top = [...xs.filter(s => s.status === "sent").slice(0, FEW.sent), ...xs.filter(s => s.status === "below").slice(0, FEW.below),
       ...xs.filter(s => s.status === "dismissed").slice(0, FEW.below)];
     return { top, rest: xs.filter(s => !top.includes(s)) };
@@ -140,8 +144,8 @@ export function RadarPage() {
   const cur = visible.find(s => s.story_id === sel) ?? first[0] ?? visible[0];
   const placesSeen = useMemo(() => [...new Set(all.flatMap(s => s.places))], [all]);
   // the tabs count the day in view: the latest on opening (so they agree with the headline), then whichever day is scrolled to
-  const countDay = hover && days.includes(hover) ? hover : inView && days.includes(inView) ? inView : days[0] ?? (inPlace[0] ? day(inPlace[0].last_seen_at) : "");
-  const ofDay = inPlace.filter(s => day(s.last_seen_at) === countDay);
+  const countDay = hover && days.includes(hover) ? hover : inView && days.includes(inView) ? inView : days[0] ?? (inPlace[0] ? dk(inPlace[0]) : "");
+  const ofDay = inPlace.filter(s => dk(s) === countDay);
   const count = (k: Show) => (k === "all" ? ofDay.length : ofDay.filter(s => s.status === k).length);
   const refilter = () => { listRef.current?.scrollTo(0, 0); setSel(null); setUpto(2); setOpen(new Set()); setInView(null); setHover(null); };  // a new filter starts again at the top
   const scrolled = (e: UIEvent<HTMLOListElement>) => {
@@ -192,7 +196,8 @@ export function RadarPage() {
     // past the last row loaded, the next day comes in
     const nx = i >= order.length && upto < days.length ? rowsOf(days[upto]).top[0] : order[Math.min(order.length - 1, Math.max(0, i))];
     if (!nx) return;
-    setUpto(u => Math.max(u, days.indexOf(day(nx.last_seen_at)) + 1));
+    setUpto(u => Math.max(u, days.indexOf(dk(nx)) + 1));
+    clearTimeout(peek.current);  // a hover still waiting must not take the selection back
     setSel(nx.story_id);
     setTimeout(() => listRef.current?.querySelector<HTMLButtonElement>(`[data-id="${nx.story_id}"]`)?.focus());
   };
@@ -257,7 +262,7 @@ export function RadarPage() {
               const { top, rest } = rowsOf(d), isOpen = open.has(d);
               const tally = (["sent", "below", "dismissed"] as const).map(k => [rest.filter(s => s.status === k).length, k === "below" ? "held back" : k] as const).filter(([c]) => c);
               return <li key={d} data-day={d} className={`rd-card ${d === countDay ? "on" : ""} ${isOpen ? "open" : ""}`} onMouseEnter={() => setHover(d)}>
-                <span className="rd-day">{d}</span>
+                <span className="rd-day">{day((top[0] ?? rest[0]).last_seen_at)}</span>
                 <ol>{(isOpen ? [...top, ...rest] : top).map(s => <li key={s.story_id}>
                   <button type="button" data-id={s.story_id} className={s.status} title={s.title} aria-current={cur?.story_id === s.story_id} onClick={() => setSel(s.story_id)}
                     onMouseEnter={() => { clearTimeout(peek.current); peek.current = window.setTimeout(() => setSel(s.story_id), 180); }}

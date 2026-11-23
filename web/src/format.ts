@@ -31,6 +31,7 @@ export const due = (iso: string | null | undefined, now = new Date()) =>
   !iso ? "—" : new Date(iso) <= now ? "overdue: waiting for the scheduler" : when(iso, now);
 export const dayTime = (iso: string) => noComma(fDayTime.format(new Date(iso)));
 export const day = (iso: string) => fDay.format(new Date(iso));
+export const dateKey = (iso: string) => dayKey.format(new Date(iso));  // a calendar day with its year, in the installation's zone
 export const fullNow = (d: Date) => noComma(fFull.format(d));
 
 export function ago(iso: string | null | undefined, now = new Date()): string {
