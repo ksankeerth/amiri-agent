@@ -424,7 +424,7 @@ svg.chart .ax line { stroke:var(--hairline); }
   .brand .inst, .worldpill .wtxt { display:none; }
   .lane { grid-template-columns:96px minmax(0,1fr); }
 }
-@media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition:none !important; animation:none !important; } }
 
 /* every disclosure row is at least a 24 px target */
 details > summary { min-height:24px; }
