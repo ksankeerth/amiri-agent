@@ -88,21 +88,6 @@ a.ov-need:hover { background:var(--hover-bg); }
 @media (max-width: 1100px) { .ov-strip { grid-template-columns:repeat(3,minmax(0,1fr)); } .ov-grid { grid-template-columns:minmax(0,1fr); } }
 @media (max-width: 640px) { .ov-strip { grid-template-columns:repeat(2,minmax(0,1fr)); } .ov-steps { grid-template-columns:minmax(0,1fr); } }
 
-/* ---------------------------------------------------------------- Radar */
-.rd-strip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
-.rd-story { padding:16px 16px; display:flex; flex-direction:column; gap:12px; }
-.rd-story h2 { margin:0; font-size:var(--fs-lg); letter-spacing:-.01em; }
-.rd-story .sum { margin:0; color:var(--ink-2); font-size:var(--fs-md); line-height:1.5; }
-.rd-why { display:flex; gap:8px; padding:8px 12px; border-radius:10px; background:var(--accent-soft); color:var(--accent-ink); font-size:var(--fs-sm); }
-.rd-story.below .rd-why { background:var(--sunken); color:var(--ink-2); }
-.rd-heads { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:4px; }
-.rd-heads li { font-size:var(--fs-sm); color:var(--ink-2); display:flex; gap:8px; align-items:baseline; }
-.rd-heads li .o { color:var(--ink-3); font-size:var(--fs-xs); white-space:nowrap; }
-.rd-score { display:flex; align-items:center; gap:8px; }
-.rd-score .meter { width:80px; }
-.rd-score b { font-variant-numeric:tabular-nums; font-size:var(--fs-sm); }
-.rd-story.dismissed { opacity:.6; }
-@media (max-width: 1100px) { .rd-strip { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 
 /* ---------------------------------------------------------------- Alerts */
 .al-day { font-size:var(--fs-xs); font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); margin:16px 0 8px; }
@@ -121,8 +106,6 @@ a.ov-need:hover { background:var(--hover-bg); }
 .al-hist span b { color:var(--ink-2); font-weight:600; }
 .al-note { font-size:var(--fs-sm); color:var(--ink-2); background:var(--sunken); border-radius:8px; padding:8px 12px; }
 .al-teams { display:flex; flex-wrap:wrap; gap:4px; }
-.rd-strip.al-strip { grid-template-columns:repeat(3,minmax(0,1fr)); }
-@media (max-width: 1100px) { .rd-strip.al-strip { grid-template-columns:minmax(0,1fr); } }
 
 .limits { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 16px; margin:0 0 16px; color:var(--ink-2); }
 .limits details { flex:1 1 100%; }

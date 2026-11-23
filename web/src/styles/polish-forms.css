@@ -1,12 +1,5 @@
 /* Team-feedback polish (16 Nov): Radar's run facts, Data connections' sample institutions, lighter institution lists and forms. */
 
-/* ---- Radar: "Last run / Next run" on one line when Radar isn't connected */
-.rd-line { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 32px; padding:12px 16px; font-size:var(--fs-md); color:var(--ink-2); }
-.rd-line > span { display:inline-flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
-.rd-line .rd-k { font-size:var(--fs-sm); }
-.rd-line b { color:var(--ink); font-weight:600; }
-.rd-line + .rd-watch { border-top:1px solid var(--hairline); }
-.rd-facts .rd-k { font-size:var(--fs-sm); }
 
 /* ---- Data connections: sample institutions as two clear cards, conditions as a spaced list */
 .pf-samples > .bd { display:flex; flex-direction:column; gap:16px; }
