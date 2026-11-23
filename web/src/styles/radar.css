@@ -35,7 +35,10 @@
 /* one card per day, as tall as its stories, snapping to each day's start; a card taller than the list (more unfolded) scrolls within the snap */
 .rd-index > ol { height:100%; box-sizing:border-box; overflow:auto; overscroll-behavior:contain; scroll-snap-type:y mandatory; overflow-anchor:none;
   display:flex; flex-direction:column; gap:16px; list-style:none; margin:0; padding:0 6px 0 0; }
-.rd-card { flex:none; box-sizing:border-box; scroll-snap-align:start; padding:4px 20px 12px; border-radius:14px; background:var(--surface); }
+.rd-card { flex:none; box-sizing:border-box; scroll-snap-align:start; padding:4px 20px 12px; border-radius:14px;
+  background:color-mix(in srgb, var(--accent) 8%, var(--surface)); box-shadow:inset 0 0 0 1px transparent; transition:background .2s, box-shadow .2s; }
+/* the day the tabs are counting (scrolled to, or under the mouse) is a shade greener and outlined */
+.rd-card.on { background:color-mix(in srgb, var(--accent) 14%, var(--surface)); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
 .rd-card ol { list-style:none; margin:0; padding:0; }
 .rd-index .rd-card .rd-fold { width:auto; margin-top:2px; padding:12px 0 4px; border:0; font:600 16px/1.4 var(--font-ui); color:var(--accent-ink); }
 .rd-day { display:block; padding:16px 0 8px; font-size:14px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }

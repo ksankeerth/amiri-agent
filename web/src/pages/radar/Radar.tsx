@@ -79,6 +79,7 @@ export function RadarPage() {
   const [upto, setUpto] = useState(2);  // days loaded: the latest plus one ahead to scroll to; reaching the last brings in the next
   const [open, setOpen] = useState<Set<string>>(new Set());  // days whose "more" is unfolded
   const [inView, setInView] = useState<string | null>(null);  // the day at the top of the list; the tabs count that day
+  const [hover, setHover] = useState<string | null>(null);  // a day card under the mouse wins over the scrolled one
   const [details, setDetails] = useState(false);
   const [why, setWhy] = useState<string | null>(null);  // the watched place whose reason is open
   const [running, setRunning] = useState<string | null>(null);
@@ -137,10 +138,10 @@ export function RadarPage() {
   const cur = visible.find(s => s.story_id === sel) ?? visible.find(s => s.status === "sent") ?? visible[0];
   const placesSeen = useMemo(() => [...new Set(all.flatMap(s => s.places))], [all]);
   // the tabs count the day in view: the latest on opening (so they agree with the headline), then whichever day is scrolled to
-  const countDay = inView && days.includes(inView) ? inView : days[0] ?? (inPlace[0] ? day(inPlace[0].last_seen_at) : "");
+  const countDay = hover && days.includes(hover) ? hover : inView && days.includes(inView) ? inView : days[0] ?? (inPlace[0] ? day(inPlace[0].last_seen_at) : "");
   const ofDay = inPlace.filter(s => day(s.last_seen_at) === countDay);
   const count = (k: Show) => (k === "all" ? ofDay.length : ofDay.filter(s => s.status === k).length);
-  const refilter = () => { listRef.current?.scrollTo(0, 0); setSel(null); setUpto(2); setOpen(new Set()); setInView(null); };  // a new filter starts again at the top
+  const refilter = () => { listRef.current?.scrollTo(0, 0); setSel(null); setUpto(2); setOpen(new Set()); setInView(null); setHover(null); };  // a new filter starts again at the top
   const scrolled = (e: UIEvent<HTMLOListElement>) => {
     const o = e.currentTarget, top = o.getBoundingClientRect().top;
     let d: string | null = null;  // the card at the top of the list
@@ -224,10 +225,10 @@ export function RadarPage() {
             {show === "all" && !where ? (st?.connected ? "Radar hasn't found anything touching your footprint yet. Check now runs it at once." : admin ? "Connect the Radar agent (RADAR_URL) and it starts reading the news." : "Radar starts reading the news once your Platform Admin connects it.") : "No stories match these filters."}</Empty>
         : <div className="rd-split">
           <nav className="rd-index" aria-label="Stories">
-            <ol ref={listRef} onKeyDown={keys} onScroll={scrolled}>{loaded.map(d => {
+            <ol ref={listRef} onKeyDown={keys} onScroll={scrolled} onMouseLeave={() => setHover(null)}>{loaded.map(d => {
               const { top, rest } = rowsOf(d), isOpen = open.has(d);
               const tally = (["sent", "below", "dismissed"] as const).map(k => [rest.filter(s => s.status === k).length, k === "below" ? "held back" : k] as const).filter(([c]) => c);
-              return <li key={d} data-day={d} className="rd-card">
+              return <li key={d} data-day={d} className={`rd-card ${d === countDay ? "on" : ""}`} onMouseEnter={() => setHover(d)}>
                 <span className="rd-day">{d}</span>
                 <ol>{(isOpen ? [...top, ...rest] : top).map(s => <li key={s.story_id}>
                   <button type="button" data-id={s.story_id} className={s.status} aria-current={cur?.story_id === s.story_id} onClick={() => setSel(s.story_id)}>
