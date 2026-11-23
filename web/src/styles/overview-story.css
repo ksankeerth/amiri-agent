@@ -2,8 +2,8 @@
    sweep stays in view while the list scrolls), and "Also waiting for you" across the page as tiles. Items are green
    bulletin cards; only the radar row moves. Nothing under 14 px. */
 .ovs-wrap { display:flex; flex-direction:column; gap:96px; margin-top:24px; padding-bottom:48px; }
-.ovs { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:64px; align-items:start; scroll-margin-top:24px; }
-.ovs-pair { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:64px; align-items:start; }
+.ovs, .ovs-pair { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:64px; align-items:start; }
+.ovs { scroll-margin-top:24px; }
 .ovs-col { min-width:0; scroll-margin-top:24px; }
 .ovs-art { position:sticky; top:24px; height:min(440px, 60vh); border-radius:20px; overflow:hidden;
   background:radial-gradient(ellipse at 50% 55%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 70%); }
@@ -64,7 +64,8 @@ a.ovt-row:hover, .ovt-ev:hover { background:color-mix(in srgb, var(--accent) 15%
 @keyframes ovs-art { from { opacity:0; transform:scale(.94); } }
 
 @media (max-width: 1100px) {
-  .ovs, .ovs-pair { grid-template-columns:minmax(0,1fr); gap:24px; }
+  .ovs, .ovs-pair { grid-template-columns:minmax(0,1fr); }
+  .ovs { gap:24px; }
   .ovs-pair { gap:96px; }
   .ovs-art { position:static; height:260px; }
 }

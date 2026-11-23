@@ -2,10 +2,9 @@
 // passes. Canvas 2D, one sprite per colour; it runs only while on screen, and under reduced motion it draws one still frame.
 import { useEffect, useRef } from "react";
 
-export type SceneKind = "radar";
 export type SceneData = { n?: number; labels?: string[]; ids?: string[]; scores?: number[] };
 type P = { x: number; y: number; vx: number; vy: number; life: number; max: number; c: string; s: number; k?: number; a?: number };
-type Pal = Record<"accent" | "critical" | "high" | "ink3" | "ink", string>;
+type Pal = Record<"accent" | "critical" | "ink", string>;
 
 const rnd = (a: number, b: number) => a + Math.random() * (b - a);
 /** A hex colour at an opacity, so fades stay in that colour (fading to "transparent" goes through black and leaves grey rims). */
@@ -21,7 +20,7 @@ function sprite(color: string): HTMLCanvasElement {  // a soft glowing dot, draw
   return c;
 }
 
-export function ParticleScene({ kind, data, label }: { kind: SceneKind; data: SceneData; label: string }) {
+export function ParticleScene({ data, label }: { data: SceneData; label: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const key = JSON.stringify(data);
   useEffect(() => {
@@ -29,7 +28,7 @@ export function ParticleScene({ kind, data, label }: { kind: SceneKind; data: Sc
     const css = (n: string) => getComputedStyle(cv).getPropertyValue(n).trim();
     let pal: Pal, sp: Record<string, HTMLCanvasElement>, dark = false;
     const readPal = () => {
-      pal = { accent: css("--accent"), critical: css("--critical"), high: css("--high"), ink3: css("--ink-3"), ink: css("--ink-2") };
+      pal = { accent: css("--accent"), critical: css("--critical"), ink: css("--ink-2") };
       sp = Object.fromEntries(Object.entries(pal).map(([k, v]) => [k, sprite(v)]));
       dark = getComputedStyle(document.documentElement).colorScheme.includes("dark");  // glow adds up on dark, plain dots on light
     };
@@ -97,6 +96,6 @@ export function ParticleScene({ kind, data, label }: { kind: SceneKind; data: Sc
     const ro = new ResizeObserver(fit); ro.observe(cv);
     return () => { io.disconnect(); ro.disconnect(); cancelAnimationFrame(raf); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kind, key]);
+  }, [key]);
   return <canvas ref={ref} className="ovs-canvas" role="img" aria-label={label} />;
 }

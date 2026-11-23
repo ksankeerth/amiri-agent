@@ -15,7 +15,7 @@ import { ago, dayTime, pct, placeName, placeOrder, plural, price, TIME_ZONE, ZON
 import { eventTitle, MONITOR_CHECK, SERIES_STATE, setAsideReason, themeLabel } from "../plain";
 import { ProfileMap } from "./institution/ProfileMap";
 import { TAB_OF_SECTION } from "./institution/InstitutionPage";
-import { OverviewStory, Reveal } from "./OverviewStory";
+import { OverviewStory, Reveal, type StoryRow } from "./OverviewStory";
 import "../styles/polish-overview.css";
 import "../styles/overview-story.css";
 
@@ -116,7 +116,7 @@ export function OverviewPage() {
   const load = useCallback(async () => {
     try { const x = await overviewApi.get(admin); setO(x); setErr(null); setLoadedAt(new Date());
       if (x.institution && !x.first_run) inst.profile(x.institution.institution_id).then(setProfile).catch(() => {});
-      if (x.institution && !x.first_run) monitorsApi.list(x.institution.institution_id).then(setMonitors).catch(() => {});
+      if (x.institution && !x.first_run) monitorsApi.list(x.institution.institution_id, "live").then(setMonitors).catch(() => {});
       if (x.institution && x.attention.some(a => a.kind === "recommended"))
         inst.readiness(x.institution.institution_id).then(r => setRecs(r.checks.filter(c => c.level === "recommended" && !c.ok))).catch(() => {}); }
     catch (e) { setErr(e); }
@@ -159,7 +159,6 @@ export function OverviewPage() {
   // the map fills the hero beside the headline: 520 px on a full-HD screen, less on a shorter one so the steps and cue still fit
   // ponytail: read at render (the page re-renders every 30 s), not on resize; add a resize listener if that ever matters
   const mapH = Math.min(520, Math.max(320, window.innerHeight - 500));
-  const below = 6;  // the sections under the first screen, for the scroll cue
 
   // "Also waiting for you": one tile each, across the page, with how urgent it is on top and where to go at the bottom
   const needTile = (a: Attention, n: number) => {
@@ -169,20 +168,76 @@ export function OverviewPage() {
       <span className="ovn-t">{plainNote(a.title)}</span>
       <ul className="ovn-recs">{recs.slice(0, 3).map(c => <li key={c.id}>
         <Link to={`/institution/${TAB_OF_SECTION[c.section] ?? "overview"}`}>{c.fix.replace(/\.$/, "")} →</Link><span className="ovn-d">{c.message}</span></li>)}</ul>
-      {recs.length > 3 && <Link className="ovn-go" to="/institution">See all {recs.length} in the profile →</Link>}</div>;
+      <Link className="ovn-go" to="/institution">{recs.length > 3 ? `See all ${recs.length} in the profile →` : "Open the profile →"}</Link></div>;
     const body = <>{top}<span className="ovn-t">{plainNote(a.title)}</span>{a.detail && <span className="ovn-d">{a.detail}</span>}</>;
     return a.link ? <Link key={n} to={a.link} className="ovn-tile" data-lv={a.level}>{body}<span className="ovn-go">Open →</span></Link>
       : <div key={n} className="ovn-tile" data-lv={a.level}>{body}</div>;
   };
   // the live ones, a failed check first (it needs looking at), then the most recently checked
   const failed = (m: MonitorRow) => m.last_check?.status === "error" ? 0 : 1;
-  const live = monitors.filter(m => m.status === "live")
-    .sort((x, y) => failed(x) - failed(y) || (y.last_check?.at ?? "").localeCompare(x.last_check?.at ?? ""));
+  const live = [...monitors].sort((x, y) => failed(x) - failed(y) || (y.last_check?.at ?? "").localeCompare(x.last_check?.at ?? ""));
   // Radar's blips are labelled with where each story is: its sea or strait first, else its first country
   const radarAt = o.radar.stories.map(r => { const p = placeOrder(r.places)[0]; return p ? names[p] ?? placeName(p) : ""; });
   const late2 = o.markets.filter(m => m.state === "stale").length;  // prices that stopped updating; an unusual move is not one
   const big = [...o.markets].sort((x, y) => Math.abs(y.change_1d_pct ?? 0) - Math.abs(x.change_1d_pct ?? 0))[0];
   const marketsLine = [plural(o.markets.length, "price"), late2 ? `${late2} not updated` : null, big ? `biggest move today ${big.name} ${pct(big.change_1d_pct)}` : null].filter(Boolean).join(" · ");
+
+  const rows: StoryRow[] = [
+        [{ id: "events", label: "Open events", count: o.events.length, body: <>
+          {!o.events.length ? <p className="ovt-empty">No open events. When AMIRI Agent traces news or a price move to your products, it appears here.</p>
+            : [...o.events].sort((x, y) => RANK[x.tone] - RANK[y.tone]).slice(0, 3).map(e => (
+              <div key={e.event_id} className="ovt-row ovt-ev" data-tone={e.tone}>
+                <Link className="ovt-t" to={`/events/${e.event_id}`}><span className="ovt-sh" aria-hidden="true">{SHAPE[e.tone]}</span>
+                  <span className="ovt-tt">{eventTitle(e)}</span><span className="ovt-tone">{TONE_WORD[e.tone]}</span></Link>
+                <div className="ovt-d">{!e.effects ? "No possible impact on your products"
+                  : `${plural(e.effects, "possible impact")}${e.top_effects.length ? `: ${e.top_effects.map(x => x.product).join(", ")}${e.effects > e.top_effects.length ? ` and ${e.effects - e.top_effects.length} more` : ""}` : ""}`}</div>
+                <div className="ovt-m">{[e.places.length ? `${placeOrder(e.places).slice(0, 2).map(p => names[p] ?? placeName(p)).join(", ")}${e.places.length > 2 ? ` +${e.places.length - 2} more` : ""}` : null,
+                  `last news ${ago(e.last_finding_at, now)}`].filter(Boolean).join(" · ")}</div>
+                {e.top_effects.length > 0 && <Reveal label="How it reaches your products">
+                  <table className="ovt-fx"><tbody>{e.top_effects.map((x, n) => <tr key={n}><th>{x.product}</th><td>{x.label}</td></tr>)}</tbody></table>
+                  {e.themes.length > 0 && <div className="ovt-m">Themes: {e.themes.map(themeLabel).join(" · ")}</div>}</Reveal>}
+              </div>))}
+          <Link className="ovt-all" to="/events">See all {plural(o.events.length, "open event")} →</Link></> },
+         { id: "findings", label: "Latest findings", count: o.findings.length, body: <>
+          {!o.findings.length ? <p className="ovt-empty">No findings yet. They appear here when a monitor, a market price or Radar notices something.</p>
+            : o.findings.slice(0, 3).map(f => (
+              <Link key={f.finding_id} className="ovt-row" to={f.event_id ? `/events/${f.event_id}` : `/findings#f-${f.finding_id}`}>
+                <span className="ovt-tt2">{f.title}</span>
+                <span className="ovt-m">{SOURCE[f.source] ?? f.source} · {dayTime(f.created_at)} · {findingStatus(f)}</span></Link>))}
+          <Link className="ovt-all" to="/findings">See all findings →</Link></> }],
+        [{ id: "markets", label: "Markets", count: o.markets.length, body: <>
+          {!o.markets.length ? <p className="ovt-empty">No market prices watched yet. Add the rates and prices that matter to your bank on the Market series page.</p> : <>
+          <p className="ovt-sum">{marketsLine}</p>
+          <table className="ovt-tbl"><tbody>{o.markets.map(m => (
+            <tr key={m.series_id}><th><Link to={`/series/${m.series_id}`}>{m.name}</Link></th>
+              <td className={m.state !== "normal" ? "ovt-warnw" : undefined}>{m.state !== "normal" ? `◆ ${SERIES_STATE[m.state as SeriesState][0]}` : "Normal"}</td>
+              <td className="r">{price(m.close)}</td>
+              <td><Spark values={m.spark} w={80} h={24} color={m.state === "moved" ? "var(--high)" : "var(--ink-3)"} /></td>
+              <td className="r">{pct(m.change_1d_pct)}</td></tr>))}</tbody></table></>}
+          <Link className="ovt-all" to="/series">See market series →</Link></> },
+         { id: "monitors", label: "Monitors", count: c.monitors_live, body: <>
+          {!c.monitors_live ? <p className="ovt-empty">No live monitors yet. Draft them from your profile on the Monitors page; each one reads the news for one risk.</p>
+            : live.slice(0, 3).map(m => (
+              <Link key={m.monitor_id} className="ovt-row" to={`/monitors/${m.monitor_id}`}>
+                <span className="ovt-tt2">{m.name}</span>
+                <span className="ovt-m">{m.last_check ? `${MONITOR_CHECK[m.last_check.status](m.last_check.findings)[0]} · ${ago(m.last_check.at, now)}` : "Not checked yet"} · every {EVERY[m.check_frequency] ?? `${m.check_frequency} minutes`}</span></Link>))}
+          {c.monitors_waiting_approval > 0 && <p className="ovt-fine">{plural(c.monitors_waiting_approval, "monitor")} waiting for approval.</p>}
+          <Link className="ovt-all" to="/monitors">See all monitors →</Link></> }],
+        { id: "radar", label: "Latest from Radar", count: o.radar.stories.length, scene: { data: { n: o.radar.stories.length, labels: radarAt, ids: o.radar.stories.map(r => r.story_id), scores: o.radar.stories.map(r => r.score) }, label: `A radar sweep; each story is a bright blip, the most important nearest the centre${radarAt.some(Boolean) ? `: ${radarAt.filter(Boolean).join(", ")}` : ""}` }, body: <>
+          {s.radar.connected && <p className="ovt-sum">Prototype: {scheduleText(o.radar.every_minutes, o.radar.run_at)}, Check now {o.radar.run_now_limit} times a day.</p>}
+          {!o.radar.stories.length ? <p className="ovt-empty">{s.radar.connected ? "No stories yet." : "Radar isn't connected yet."}</p>
+            : o.radar.stories.map(r => (
+              <Link key={r.story_id} className="ovt-row" to={r.event_id ? `/events/${r.event_id}` : "/radar"}>
+                <span className="ovt-tt2">{r.title}{admin && <b className="ovt-score" title="Radar score">{r.score}</b>}</span>
+                <span className="ovt-m">{ago(r.last_seen_at, now)} · {plural(r.publishers, "publisher")} · {r.status === "sent" ? (r.event_id ? "in an event" : "sent for investigation") : r.status === "below" ? "not important enough" : "dismissed"}</span></Link>))}
+          <Link className="ovt-all" to="/radar">Open Radar →</Link></> },
+        { id: "needs", label: alerts ? "Also waiting for you" : "Needs you", count: more, body: <>
+          {!rest.length ? <p className="ovt-empty">{alerts ? "Nothing else needs you." : "Nothing needs you right now."} Approvals, failed checks, prices that stop updating and gaps in your profile appear here.</p>
+            : <div className="ovn-grid">{rest.map(needTile)}</div>}
+          {o.attention_more > 0 && <p className="ovt-fine">and {o.attention_more} more</p>}
+          {o.admin_notes > 0 && <p className="ovt-fine">{plural(o.admin_notes, "note")} about AMIRI Agent's own services {o.admin_notes === 1 ? "is" : "are"} with your Platform Admin.</p>}</> },
+        ];
+  const below = rows.flat().length;  // the sections under the first screen, for the scroll cue
 
   return (
     <div className="page ovx">
@@ -226,61 +281,7 @@ export function OverviewPage() {
       <div className="ovx-cue" aria-hidden="true">Scroll · {below} more sections</div>
       </div>
 
-      <OverviewStory rows={[
-        [{ id: "events", label: "Open events", count: o.events.length, body: <>
-          {!o.events.length ? <p className="ovt-empty">No open events. When AMIRI Agent traces news or a price move to your products, it appears here.</p>
-            : [...o.events].sort((x, y) => RANK[x.tone] - RANK[y.tone]).slice(0, 3).map(e => (
-              <div key={e.event_id} className="ovt-row ovt-ev" data-tone={e.tone}>
-                <Link className="ovt-t" to={`/events/${e.event_id}`}><span className="ovt-sh" aria-hidden="true">{SHAPE[e.tone]}</span>
-                  <span className="ovt-tt">{eventTitle(e)}</span><span className="ovt-tone">{TONE_WORD[e.tone]}</span></Link>
-                <div className="ovt-d">{!e.effects ? "No possible impact on your products"
-                  : `${plural(e.effects, "possible impact")}${e.top_effects.length ? `: ${e.top_effects.map(x => x.product).join(", ")}${e.effects > e.top_effects.length ? ` and ${e.effects - e.top_effects.length} more` : ""}` : ""}`}</div>
-                <div className="ovt-m">{[e.places.length ? `${placeOrder(e.places).slice(0, 2).map(p => names[p] ?? placeName(p)).join(", ")}${e.places.length > 2 ? ` +${e.places.length - 2} more` : ""}` : null,
-                  `last news ${ago(e.last_finding_at, now)}`].filter(Boolean).join(" · ")}</div>
-                {e.top_effects.length > 0 && <Reveal label="How it reaches your products">
-                  <table className="ovt-fx"><tbody>{e.top_effects.map((x, n) => <tr key={n}><th>{x.product}</th><td>{x.label}</td></tr>)}</tbody></table>
-                  {e.themes.length > 0 && <div className="ovt-m">Themes: {e.themes.map(themeLabel).join(" · ")}</div>}</Reveal>}
-              </div>))}
-          <Link className="ovt-all" to="/events">See all {plural(o.events.length, "open event")} →</Link></> },
-         { id: "findings", label: "Latest findings", count: o.findings.length, body: <>
-          {!o.findings.length ? <p className="ovt-empty">No findings yet. They appear here when a monitor, a market price or Radar notices something.</p>
-            : o.findings.slice(0, 3).map(f => (
-              <Link key={f.finding_id} className="ovt-row" to={f.event_id ? `/events/${f.event_id}` : `/findings#f-${f.finding_id}`}>
-                <span className="ovt-tt2">{f.title}</span>
-                <span className="ovt-m">{SOURCE[f.source] ?? f.source} · {dayTime(f.created_at)} · {findingStatus(f)}</span></Link>))}
-          <Link className="ovt-all" to="/findings">See all findings →</Link></> }],
-        [{ id: "markets", label: "Markets", count: o.markets.length, body: <>
-          {!o.markets.length ? <p className="ovt-empty">No market prices watched yet. Add the rates and prices that matter to your bank on the Market series page.</p> : <>
-          <p className="ovt-sum">{marketsLine}</p>
-          <table className="ovt-tbl"><tbody>{o.markets.map(m => (
-            <tr key={m.series_id}><th><Link to={`/series/${m.series_id}`}>{m.name}</Link></th>
-              <td className={m.state !== "normal" ? "ovt-warnw" : undefined}>{m.state !== "normal" ? `◆ ${SERIES_STATE[m.state as SeriesState][0]}` : "Normal"}</td>
-              <td className="r">{price(m.close)}</td>
-              <td><Spark values={m.spark} w={80} h={24} color={m.state === "moved" ? "var(--high)" : "var(--ink-3)"} /></td>
-              <td className="r">{pct(m.change_1d_pct)}</td></tr>))}</tbody></table></>}
-          <Link className="ovt-all" to="/series">See market series →</Link></> },
-         { id: "monitors", label: "Monitors", count: c.monitors_live, body: <>
-          {!live.length ? <p className="ovt-empty">No live monitors yet. Draft them from your profile on the Monitors page; each one reads the news for one risk.</p>
-            : live.slice(0, 3).map(m => (
-              <Link key={m.monitor_id} className="ovt-row" to={`/monitors/${m.monitor_id}`}>
-                <span className="ovt-tt2">{m.name}</span>
-                <span className="ovt-m">{m.last_check ? `${MONITOR_CHECK[m.last_check.status](m.last_check.findings)[0]} · ${ago(m.last_check.at, now)}` : "Not checked yet"} · every {EVERY[m.check_frequency] ?? `${m.check_frequency} minutes`}</span></Link>))}
-          {c.monitors_waiting_approval > 0 && <p className="ovt-fine">{plural(c.monitors_waiting_approval, "monitor")} waiting for approval.</p>}
-          <Link className="ovt-all" to="/monitors">See all monitors →</Link></> }],
-        { id: "radar", label: "Latest from Radar", count: o.radar.stories.length, scene: { kind: "radar", data: { n: o.radar.stories.length, labels: radarAt, ids: o.radar.stories.map(r => r.story_id), scores: o.radar.stories.map(r => r.score) }, label: `A radar sweep; each story is a bright blip, the most important nearest the centre${radarAt.some(Boolean) ? `: ${radarAt.filter(Boolean).join(", ")}` : ""}` }, body: <>
-          {s.radar.connected && <p className="ovt-sum">Prototype: {scheduleText(o.radar.every_minutes, o.radar.run_at)}, Check now {o.radar.run_now_limit} times a day.</p>}
-          {!o.radar.stories.length ? <p className="ovt-empty">{s.radar.connected ? "No stories yet." : "Radar isn't connected yet."}</p>
-            : o.radar.stories.map(r => (
-              <Link key={r.story_id} className="ovt-row" to={r.event_id ? `/events/${r.event_id}` : "/radar"}>
-                <span className="ovt-tt2">{r.title}{admin && <b className="ovt-score" title="Radar score">{r.score}</b>}</span>
-                <span className="ovt-m">{ago(r.last_seen_at, now)} · {plural(r.publishers, "publisher")} · {r.status === "sent" ? (r.event_id ? "in an event" : "sent for investigation") : r.status === "below" ? "not important enough" : "dismissed"}</span></Link>))}
-          <Link className="ovt-all" to="/radar">Open Radar →</Link></> },
-        { id: "needs", label: alerts ? "Also waiting for you" : "Needs you", count: more, body: <>
-          {!rest.length ? <p className="ovt-empty">{alerts ? "Nothing else needs you." : "Nothing needs you right now."} Approvals, failed checks, prices that stop updating and gaps in your profile appear here.</p>
-            : <div className="ovn-grid">{rest.map(needTile)}</div>}
-          {o.attention_more > 0 && <p className="ovt-fine">and {o.attention_more} more</p>}
-          {o.admin_notes > 0 && <p className="ovt-fine">{plural(o.admin_notes, "note")} about AMIRI Agent's own services {o.admin_notes === 1 ? "is" : "are"} with your Platform Admin.</p>}</> },
-      ]} />
+      <OverviewStory rows={rows} />
     </div>
   );
 }

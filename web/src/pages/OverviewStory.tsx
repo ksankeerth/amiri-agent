@@ -2,10 +2,10 @@
 // list, and a full-width row. Items are green bulletin cards; only the radar row moves.
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { ParticleScene, type SceneData, type SceneKind } from "./ParticleScene";
+import { ParticleScene, type SceneData } from "./ParticleScene";
 
 export type StorySection = { id: string; label: string; count?: number; warn?: boolean; body: ReactNode;
-  scene?: { kind: SceneKind; data: SceneData; label: string } };
+  scene?: { data: SceneData; label: string } };
 export type StoryRow = StorySection | [StorySection, StorySection];
 
 function Head({ x }: { x: StorySection }) {

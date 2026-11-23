@@ -48,7 +48,10 @@ const B = "/api/v1";
 const enc = encodeURIComponent;
 export const monitorsApi = {
   status: () => api<MonitorsStatus>(`${B}/monitors:status`),
-  list: (institution_id?: string) => api<{ items: MonitorRow[] }>(`${B}/monitors${institution_id ? `?institution_id=${enc(institution_id)}` : ""}`).then(r => r.items),
+  list: (institution_id?: string, status?: string) => {
+    const q = new URLSearchParams({ ...(institution_id && { institution_id }), ...(status && { status }) }).toString();
+    return api<{ items: MonitorRow[] }>(`${B}/monitors${q ? `?${q}` : ""}`).then(r => r.items);
+  },
   get: (id: string) => api<Monitor>(`${B}/monitors/${enc(id)}`),
   create: (spec: MonitorSpec, note?: string) => api<Monitor>(`${B}/monitors`, { method: "POST", json: { spec, note } }),
   update: (id: string, spec: MonitorSpec, note?: string) => api<Monitor>(`${B}/monitors/${enc(id)}`, { method: "PATCH", json: { spec, note } }),
