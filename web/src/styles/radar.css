@@ -46,6 +46,8 @@
   background:none; text-align:left; cursor:pointer; font:inherit; color:inherit; }
 .rd-it { display:flex; flex-direction:column; gap:2px; min-width:0; }
 .rd-tt { font-size:16px; font-weight:600; line-height:1.4; color:var(--ink); }
+/* one line each, like a mail list beside its reader: rows keep one height so a day card fits; the full title is on hover and in the reader */
+.rd-tt, .rd-sub { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .rd-sub { font-size:14px; color:var(--ink-3); }
 .rd-index button:not(.sent) .rd-tt { font-weight:500; color:var(--ink-2); }  /* held back and dismissed: quieter, still readable */
 .rd-index button:hover .rd-tt { text-decoration:underline; text-underline-offset:3px; }

@@ -231,7 +231,7 @@ export function RadarPage() {
               return <li key={d} data-day={d} className={`rd-card ${d === countDay ? "on" : ""}`} onMouseEnter={() => setHover(d)}>
                 <span className="rd-day">{d}</span>
                 <ol>{(isOpen ? [...top, ...rest] : top).map(s => <li key={s.story_id}>
-                  <button type="button" data-id={s.story_id} className={s.status} aria-current={cur?.story_id === s.story_id} onClick={() => setSel(s.story_id)}>
+                  <button type="button" data-id={s.story_id} className={s.status} title={s.title} aria-current={cur?.story_id === s.story_id} onClick={() => setSel(s.story_id)}>
                     <span className="rd-dot" aria-hidden="true" />
                     <span className="rd-it"><span className="rd-tt">{s.title}</span>
                       <span className="rd-sub">{placeOrder(s.places).slice(0, 2).map(place).join(", ")}{s.places.length > 2 ? ` +${s.places.length - 2}` : ""}
