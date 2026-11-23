@@ -5,8 +5,12 @@
 .rd .ph-title h1 { font-size:44px; line-height:1.08; letter-spacing:-.03em; max-width:20ch; }
 .rd .ph-status { font-size:var(--fs-lg); color:var(--ink-2); max-width:62ch; }
 .rd .btn--lg { border-radius:var(--r-pill); box-shadow:none; }
+/* like the Overview's count: on one 5 s beat the articles read get an underline that draws in, then the number sent glows.
+   The keyframes (ovline, ovwake) live in shell.css; reduced motion leaves both at rest (underlined, green). */
 .rd-n { color:var(--ink); font-variant-numeric:tabular-nums; }
-.rd-n.ok { color:var(--accent-ink); }
+.rd-n.read { background:linear-gradient(var(--accent), var(--accent)) no-repeat 0 100% / 100% 3px; padding-bottom:2px;
+  animation:ovline 5s .6s ease-in-out infinite; }
+.rd-n.ok { color:var(--accent); --c:var(--accent); animation:ovwake 5s 1.4s ease-out infinite; }
 .rd-link { display:inline-flex; align-items:center; gap:6px; padding:6px 0; border:0; background:none; cursor:pointer; font:600 16px/1.4 var(--font-ui); color:var(--accent-ink); }
 .rd-link:hover { text-decoration:underline; text-underline-offset:3px; }
 
