@@ -87,13 +87,16 @@ export function RadarPage() {
   const [err, setErr] = useState<unknown>(null);
   const listRef = useRef<HTMLOListElement>(null);
 
+  const latest = useRef(0);  // filters change faster than the server answers: only the newest request's answer is used
   const load = useCallback(async () => {
+    const id = ++latest.current;
     try { // the newest 200 stories (the server's cap) give every tab its counts; a tab or place filter also asks the server for its own
       // newest 200 matches, so it reaches stories older than that. ponytail: past 200 matches, add a "before this date" option and page
       const [st, ss, fs] = await Promise.all([radarApi.status(), radarApi.stories({ limit: "200" }),
         show === "all" && !where ? [] : radarApi.stories({ limit: "200", status: show === "all" ? undefined : show, place: where || undefined })]);
+      if (id !== latest.current) return;
       setStatus(st); setItems([...new Map([...ss, ...fs].map(s => [s.story_id, s])).values()]); setErr(null); }
-    catch (e) { setErr(e); }
+    catch (e) { if (id === latest.current) setErr(e); }
   }, [show, where]);
   useEffect(() => { load(); const t = setInterval(load, 60_000); return () => clearInterval(t); }, [load]);
   useEffect(() => {
@@ -142,7 +145,8 @@ export function RadarPage() {
   const order = loaded.flatMap(d => { const r = rowsOf(d); return open.has(d) ? [...r.top, ...r.rest] : r.top; });
   const first = days[0] ? rowsOf(days[0]).top : [];  // with nothing chosen, the reader opens on the latest day's first story
   const cur = visible.find(s => s.story_id === sel) ?? first[0] ?? visible[0];
-  const placesSeen = useMemo(() => [...new Set(all.flatMap(s => s.places))], [all]);
+  // places in the stories first, then the other watched places: the filter asks the server, so it can reach their older stories
+  const placesSeen = useMemo(() => [...new Set([...all.flatMap(s => s.places), ...(scope?.places ?? [])])], [all, scope]);
   // the tabs count the day in view: the latest on opening (so they agree with the headline), then whichever day is scrolled to
   const countDay = hover && days.includes(hover) ? hover : inView && days.includes(inView) ? inView : days[0] ?? (inPlace[0] ? dk(inPlace[0]) : "");
   const ofDay = inPlace.filter(s => dk(s) === countDay);

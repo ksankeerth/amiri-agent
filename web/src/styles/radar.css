@@ -1,6 +1,6 @@
 /* Radar as a news reader: the same language as the Overview (a headline that answers, hairlines instead of boxes).
    Filters on one line, then titles by day beside the chosen story. Held-back stories are quieter. Nothing under 14 px. */
-.rd { max-width:1280px; min-height:100%; display:flex; flex-direction:column; padding-bottom:24px; }
+.rd { max-width:1280px; height:100%; box-sizing:border-box; display:flex; flex-direction:column; padding-bottom:24px; }
 .rd .ph { margin-bottom:8px; }
 .rd .ph-title h1 { font-size:44px; line-height:1.08; letter-spacing:-.03em; max-width:20ch; }
 .rd .ph-status { font-size:var(--fs-lg); color:var(--ink-2); max-width:62ch; }
@@ -81,6 +81,7 @@
 .rd-heads span { font-size:14px; color:var(--ink-3); }
 
 @media (max-width:1000px) {
+  .rd { height:auto; min-height:100%; }  /* stacked: the page grows and scrolls */
   .rd-split { flex:none; grid-template-columns:1fr; gap:32px; }
   .rd-index > ol { height:70vh; }
   .rd-read { overflow:visible; }
