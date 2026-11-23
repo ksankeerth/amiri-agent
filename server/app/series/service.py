@@ -38,6 +38,7 @@ INTERVAL = "1h"
 BAR = timedelta(hours=1)
 AROUND_THE_CLOCK_TYPES = {"physical currency", "digital currency", "commodity", "precious metal"}
 LOOKUP_TTL = timedelta(hours=24)
+PARTIAL_TTL = timedelta(minutes=1)  # an answer missing a list: kept briefly, then the list is tried again
 
 
 @dataclass
@@ -565,8 +566,8 @@ class MarketSeries:
             hits = [{**h, "plan": plans.get(h["symbol"].upper(), h["plan"])} for h in hits]
             seen = {h["symbol"].upper() for h in hits}
             items = hits + [i for i in found if i["symbol"].upper() not in seen]
-            if complete:  # without the lists, "gold" would miss the gold price for a day
-                self._lookup_cache[key] = (now + LOOKUP_TTL, items)
+            # without the lists, "gold" would miss the gold price for a day: keep such an answer for a minute only
+            self._lookup_cache[key] = (now + (LOOKUP_TTL if complete else PARTIAL_TTL), items)
             hit = False
         async with self.pool.connection() as conn:
             cur = await conn.execute("SELECT symbol FROM signals.series WHERE world = 'live'")
