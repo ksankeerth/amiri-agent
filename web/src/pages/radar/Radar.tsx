@@ -30,6 +30,7 @@ function Outcome({ s }: { s: RadarStory }) {
 
 /** The chosen story: what happened, why it matters (or why it was held back), what to do, and the sources on request. */
 function Reader({ s, place, act, admin }: { s: RadarStory; place: (p: string) => string; act: (f: () => Promise<RadarStory>, m: string) => void; admin: boolean }) {
+  const [more, setMore] = useState(false);  // kept across stories: once a reader wants the detail, they get it on every story
   const [src, setSrc] = useState(false);
   useEffect(() => setSrc(false), [s.story_id]);
   const os = outlets(s);
@@ -45,15 +46,19 @@ function Reader({ s, place, act, admin }: { s: RadarStory; place: (p: string) =>
         <button className="btn btn--sm btn--ghost" type="button" onClick={() => act(() => radarApi.restore(s.story_id), "Restored")}>Restore</button></>}
     </div>
     <p className="rd-why"><b>{s.status === "sent" ? "Why it matters to you." : "Why Radar held it back."}</b> {s.why}</p>
-    <p className="rd-sum">{s.summary}</p>
-    <p className="rd-meta">{placeOrder(s.places).map(place).join(" · ")}{s.themes.length ? <> · <span className="rd-themes">{s.themes.map(t => themeText(t)).join(" · ")}</span></> : null}</p>
-    <p className="rd-meta">{plural(s.publishers, "publisher")} · {os.slice(0, 3).join(", ")}{os.length > 3 ? ` and ${os.length - 3} more` : ""}
-      {s.runs_seen > 1 ? ` · seen in ${s.runs_seen} reads` : ""}{s.development_of ? " · continues an earlier story" : ""}{admin ? ` · Radar score ${s.score}` : ""}</p>
-    {s.monitor_hint && <p className="rd-meta">Your monitor <Link to={`/monitors/${s.monitor_hint.monitor_id}`}>{s.monitor_hint.name}</Link> also covers these places.</p>}
-    <button type="button" className="rd-link" aria-expanded={src} onClick={() => setSrc(o => !o)}>
-      <Icon name="chevron" className={`ico16 ${src ? "rot" : ""}`} />{src ? "Hide the headlines" : `Show the ${plural(s.headlines.length, "headline")}`}</button>
-    {src && <ul className="rd-heads">{s.headlines.map((h, i) => <li key={i}>
-      {h.url ? <a href={h.url} target="_blank" rel="noreferrer">{h.title}</a> : h.title}<span>{h.outlet ?? ""} · {dayTime(h.published_at)}</span></li>)}</ul>}
+    <button type="button" className="rd-link" aria-expanded={more} onClick={() => setMore(o => !o)}>
+      <Icon name="chevron" className={`ico16 ${more ? "rot" : ""}`} />{more ? "Less about this story" : "What happened, places and sources"}</button>
+    {more && <div className="rd-more">
+      <p className="rd-sum">{s.summary}</p>
+      <p className="rd-meta">{placeOrder(s.places).map(place).join(" · ")}{s.themes.length ? <> · <span className="rd-themes">{s.themes.map(t => themeText(t)).join(" · ")}</span></> : null}</p>
+      <p className="rd-meta">{plural(s.publishers, "publisher")} · {os.slice(0, 3).join(", ")}{os.length > 3 ? ` and ${os.length - 3} more` : ""}
+        {s.runs_seen > 1 ? ` · seen in ${s.runs_seen} reads` : ""}{s.development_of ? " · continues an earlier story" : ""}{admin ? ` · Radar score ${s.score}` : ""}</p>
+      {s.monitor_hint && <p className="rd-meta">Your monitor <Link to={`/monitors/${s.monitor_hint.monitor_id}`}>{s.monitor_hint.name}</Link> also covers these places.</p>}
+      <button type="button" className="rd-link" aria-expanded={src} onClick={() => setSrc(o => !o)}>
+        <Icon name="chevron" className={`ico16 ${src ? "rot" : ""}`} />{src ? "Hide the headlines" : `Show the ${plural(s.headlines.length, "headline")}`}</button>
+      {src && <ul className="rd-heads">{s.headlines.map((h, i) => <li key={i}>
+        {h.url ? <a href={h.url} target="_blank" rel="noreferrer">{h.title}</a> : h.title}<span>{h.outlet ?? ""} · {dayTime(h.published_at)}</span></li>)}</ul>}
+    </div>}
   </article>;
 }
 

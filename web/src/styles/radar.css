@@ -71,3 +71,5 @@
   .rd-filters .rd-where { margin-left:0; }
 }
 @media (max-width:600px) { .rd .ph-title h1 { font-size:34px; } }
+/* second layer of the chosen story: what happened, places, sources; the headlines sit one layer deeper */
+.rd-more { margin-top:8px; padding-left:22px; }
