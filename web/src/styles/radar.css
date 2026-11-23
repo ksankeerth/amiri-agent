@@ -1,0 +1,98 @@
+/* Radar as a news reader: the same language as the Overview (a headline that answers, hairlines instead of boxes).
+   Filters on one line, then titles by day beside the chosen story. Held-back stories are quieter. Nothing under 14 px. */
+.rd { max-width:1280px; height:100%; box-sizing:border-box; display:flex; flex-direction:column; padding-bottom:24px; }
+.rd .ph { margin-bottom:8px; }
+.rd .ph-title h1 { font-size:44px; line-height:1.08; letter-spacing:-.03em; max-width:20ch; }
+.rd .ph-status { font-size:var(--fs-lg); color:var(--ink-2); max-width:62ch; }
+.rd .btn--lg { border-radius:var(--r-pill); box-shadow:none; }
+/* like the Overview's count: on one 5 s beat the articles read get an underline that draws in, then the number sent glows.
+   The keyframes (ovline, ovwake) live in shell.css; reduced motion leaves both at rest (underlined, green). */
+.rd-n { color:var(--ink); font-variant-numeric:tabular-nums; }
+.rd-n.read { background:linear-gradient(var(--accent), var(--accent)) no-repeat 0 100% / 100% 3px; padding-bottom:2px;
+  animation:ovline 5s .6s ease-in-out infinite; }
+.rd-n.ok { color:var(--accent); --c:var(--accent); animation:ovwake 5s 1.4s ease-out infinite; }
+.rd-link { display:inline-flex; align-items:center; gap:6px; padding:6px 0; border:0; background:none; cursor:pointer; font:600 16px/1.4 var(--font-ui); color:var(--accent-ink); }
+.rd-link:hover { text-decoration:underline; text-underline-offset:3px; }
+
+/* run details and scope, opened from the header */
+.rd-details { margin:16px 0 0; padding:16px 0; border-top:1px solid var(--hairline); border-bottom:1px solid var(--hairline); font-size:16px; color:var(--ink-2); }
+.rd-details dl { display:flex; flex-wrap:wrap; gap:12px 48px; margin:0 0 12px; }
+.rd-details dt { font-size:14px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
+.rd-details dd { margin:2px 0 0; color:var(--ink); font-weight:600; }
+.rd-details p { margin:0 0 8px; max-width:90ch; }
+.rd-pl { padding:0; border:0; background:none; cursor:pointer; font:inherit; color:var(--ink-2); text-decoration:underline dotted; text-underline-offset:4px; }
+.rd-pl:hover, .rd-pl[aria-expanded="true"] { color:var(--accent-ink); text-decoration-style:solid; }
+.rd-pl:not(:last-child)::after { content:" · "; display:inline-block; margin:0 4px; color:var(--ink-3); text-decoration:none; }
+.rd-pwhy { padding-left:14px; border-left:3px solid var(--accent); color:var(--ink); }
+
+.rd-filters { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin:32px 0 0; }
+.rd-filters .rd-where { width:220px; flex:none; margin-left:auto; }
+
+/* the two panes */
+/* the two panes fill the rest of the screen and scroll inside themselves; the page doesn't move */
+.rd-split { flex:1 1 0; min-height:420px; display:grid; grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:40px; margin-top:20px; }
+.rd-split > * { min-height:0; }
+/* one card per day, as tall as its stories; unfiltered, the list takes the height of the day at its top (set in Radar.tsx) */
+.rd-index > ol { height:100%; transition:height .25s ease; box-sizing:border-box; overflow:auto; overscroll-behavior:contain; overflow-anchor:none;
+  display:flex; flex-direction:column; gap:16px; list-style:none; margin:0; padding:0 6px 0 0; }
+.rd-card { flex:none; box-sizing:border-box; padding:4px 20px 12px; border-radius:14px;
+  background:color-mix(in srgb, var(--accent) 8%, var(--surface)); box-shadow:inset 0 0 0 1px transparent; transition:background .2s, box-shadow .2s; }
+/* the day the tabs are counting (scrolled to, or under the mouse) is a shade greener and outlined */
+.rd-card.on { background:color-mix(in srgb, var(--accent) 14%, var(--surface)); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
+.rd-card ol { list-style:none; margin:0; padding:0; }
+/* the full list lands one day at a time with the browser's own snap; off while a day is unfolded, so it reads through freely */
+.rd-index > ol.snap { scroll-snap-type:y mandatory; }
+.rd-index > ol.snap > .rd-card { scroll-snap-align:start; }
+.rd-index .rd-card .rd-fold { width:auto; margin-top:2px; padding:12px 0 4px; border:0; font:600 16px/1.4 var(--font-ui); color:var(--accent-ink); }
+.rd-day { display:block; padding:16px 0 8px; font-size:14px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
+.rd-index li button { display:flex; gap:12px; align-items:baseline; width:100%; padding:10px 12px 10px 0; border:0; border-top:1px solid var(--hairline);
+  background:none; text-align:left; cursor:pointer; font:inherit; color:inherit; }
+.rd-it { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.rd-tt { font-size:16px; font-weight:600; line-height:1.4; color:var(--ink); }
+/* one line each, like a mail list beside its reader: rows keep one height so a day card fits; the full title is on hover and in the reader */
+.rd-tt, .rd-sub { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rd-sub { font-size:14px; color:var(--ink-3); }
+.rd-index button:not(.sent) .rd-tt { font-weight:500; color:var(--ink-2); }  /* held back and dismissed: quieter, still readable */
+.rd-index button:hover .rd-tt { text-decoration:underline; text-underline-offset:3px; }
+.rd-index button[aria-current="true"] { box-shadow:inset -3px 0 0 var(--accent); }
+.rd-index button[aria-current="true"] .rd-tt { color:var(--accent-ink); }
+.rd-index button:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+.rd-dot { flex:none; width:8px; height:8px; border-radius:50%; background:var(--ink-3); opacity:.45; transform:translateY(-1px); }
+.sent > .rd-dot { background:var(--accent); opacity:1; }
+.dismissed > .rd-dot { background:none; border:1.5px solid var(--ink-3); }
+
+/* the chosen story */
+.rd-read { overflow:auto; padding-right:8px; font-size:17px; line-height:1.55; color:var(--ink-2); max-width:72ch; }
+.rd-read h2 { margin:6px 0 12px; font-size:30px; line-height:1.2; letter-spacing:-.02em; color:var(--ink); text-wrap:balance; }
+.rd-read p { margin:0 0 12px; }
+.rd-acts { display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; margin:0 0 18px; }
+.rd-out { font-size:16px; font-weight:600; color:var(--accent-ink); }
+.rd-out a { color:inherit; text-decoration:underline; text-underline-offset:3px; }
+.rd-out.wait { color:var(--ink-2); }
+.rd-out.quiet { font-weight:500; color:var(--ink-3); }
+.rd-full { flex-basis:100%; }
+.rd .ico16.rot { transform:rotate(90deg); }  /* own copy: showcase.css, which also has it, belongs to other pages */
+.rd-why { padding-left:14px; border-left:3px solid var(--accent); color:var(--ink); }
+.rd-read:not(.sent) .rd-why { border-left-color:var(--ink-3); }
+.rd-sum { color:var(--ink-2); }
+.rd-meta { font-size:15px; color:var(--ink-3); }
+.rd-heads { list-style:none; margin:4px 0 0; padding:0; font-size:16px; }
+.rd-heads li { display:flex; flex-direction:column; padding:8px 0; border-top:1px solid var(--hairline); }
+.rd-heads span { font-size:14px; color:var(--ink-3); }
+
+@media (max-width:1000px) {
+  .rd { height:auto; min-height:100%; }  /* stacked: the page grows and scrolls */
+  .rd-split { flex:none; grid-template-columns:1fr; gap:32px; }
+  .rd-index > ol { height:70vh; }
+  .rd-read { overflow:visible; }
+  .rd-filters .rd-where { margin-left:0; }
+}
+@media (max-width:600px) { .rd .ph-title h1 { font-size:34px; } }
+/* second layer of the chosen story: what happened, places, sources; the headlines sit one layer deeper */
+.rd-more { margin-top:8px; padding-left:22px; }
+
+
+@supports (animation-timeline: view()) {  /* rows rise in as their card scrolls into the list, like a bulletin */
+  .rd-card li { animation:rdin linear both; animation-timeline:view(); animation-range:entry 0% entry 70%; }
+}
+@keyframes rdin { from { opacity:0; transform:translateY(14px); } }

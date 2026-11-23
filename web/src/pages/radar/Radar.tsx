@@ -1,109 +1,110 @@
-// Radar: what it watches, how its runs went, and the stories it found:
-// why each matters to the institution, where it went (an event, or held back), and the actions.
-import { useCallback, useEffect, useMemo, useState } from "react";
+// Radar, as a news reader. The headline is the last read's answer; filters sit above two panes: story titles by day on the
+// left, the chosen story in full on the right. Held-back stories are quieter rows; run details, scope and sources are one click down.
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type UIEvent } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
-import { inst, type Profile } from "../../api/institutions";
+import { inst } from "../../api/institutions";
 import { gb, radarApi, scheduleText, type RadarStatus, type RadarStory } from "../../api/radar";
 import { ChipFilter } from "../../components/FlowFilter";
 import { Icon } from "../../components/Icon";
-import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
-import { Banner, Empty, useNow, useRole, useToast, ListSkeleton, LoadError } from "../../components/ui";
-import { ago, dayTime, placeName, placeOrder, when } from "../../format";
-import type { Tone } from "../../plain";
+import { HowItWorks, PageHeader } from "../../components/blocks";
+import { Banner, Empty, ListSkeleton, LoadError, useNow, useRole, useToast } from "../../components/ui";
+import { ago, dateKey, day, dayTime, placeName, placeOrder, plural, when } from "../../format";
 import { themeText } from "../events/Events";
-import "../../styles/showcase.css";
-import "../../styles/polish-forms.css";
+import "../../styles/radar.css";
 
 type Show = "all" | "sent" | "below" | "dismissed";
+type Scope = { places: string[]; why: Record<string, string[]>; themes: string[]; actors: string[] };
 const SHOW: [Show, string][] = [["all", "All"], ["sent", "Sent for investigation"], ["below", "Held back"], ["dismissed", "Dismissed"]];
-const REL: Record<RadarStory["relevance"], [string, Tone]> = { high: ["Highly relevant", "blue"], medium: ["Relevant", "grey"], low: ["Slightly relevant", "grey"] };
+const FEW = { sent: 3, below: 2 };  // stories a day card shows before "more": short enough that the whole first card fits at a glance
+const REL = { high: "highly relevant", medium: "relevant", low: "slightly relevant" } as const;
+const STATE = { sent: "Sent for investigation", below: "Held back by Radar", dismissed: "Dismissed" } as const;
 
-/** The last run in words: what it read, what it kept, what it sent to you (numbers, not bar heights). */
-function Funnel({ s }: { s: RadarStatus }) {
-  const r = s.last_run;
-  if (!r) return <span className="rd-v">no run yet</span>;
-  return <span className="rd-v rd-funnel-t" title={`${r.considered ?? 0} read, ${r.shortlisted ?? 0} grouped into stories, ${r.stories ?? 0} kept, ${r.sent ?? 0} sent`}>
-    <span><b>{r.considered ?? 0}</b> read</span><span aria-hidden="true">→</span><span><b>{r.stories ?? 0}</b> kept</span><span aria-hidden="true">→</span>
-    <span className="sent"><b>{r.sent ?? 0}</b> sent to you</span></span>;
+const outlets = (s: RadarStory) => [...new Set(s.headlines.map(h => h.outlet).filter(Boolean))] as string[];
+
+/** Where a sent story went, with the link when there is one. */
+function Outcome({ s }: { s: RadarStory }) {
+  if (s.status !== "sent") return null;
+  return s.event_id ? <span className="rd-out">In the event <Link to={`/events/${s.event_id}`}>{s.event_title ?? "Open the event"}</Link></span>
+    : <span className="rd-out wait">{s.finding_status === "grouped" ? "Being investigated" : "Waiting to be investigated"}</span>;
 }
 
-function StoryCard({ s, names, onChange }: { s: RadarStory; names: Record<string, string | null>; onChange: (s: RadarStory) => void }) {
-  const toast = useToast();
-  const { role } = useRole();
-  const now = useNow(60_000);
-  const [open, setOpen] = useState(false);
-  const act = async (f: () => Promise<RadarStory>, msg: string) => {
-    try { onChange(await f()); toast(msg); } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
-  };
-  const heads = open ? s.headlines : s.headlines.slice(0, 2);
-  return (
-    <div className={`card rd-story ${s.status}`}>
-      <div className="row wrap" style={{ gap: 6 }}>
-        <span className="small muted">{ago(s.last_seen_at, now)}{s.runs_seen > 1 ? ` · seen in ${s.runs_seen} runs` : ""}</span>
-        <span className="chip">{s.publishers} publisher{s.publishers === 1 ? "" : "s"}</span>
-        {placeOrder(s.places).map(p => <span key={p} className="chip">{names[p] ?? placeName(p)}</span>)}
-        {s.themes.map((t, i) => <span key={i} className="chip">{themeText(t)}</span>)}
-        <span className="spacer" />
-        <StatusPill tone={REL[s.relevance][1]}>{REL[s.relevance][0]}</StatusPill>
-        {role === "platform_admin" && <span className="rd-score" title="Radar's score: footprint match × corroboration × freshness × relevance">
-          <span className={`meter ${s.score >= 60 ? "" : "warn"}`}><span style={{ width: `${s.score}%` }} /></span><b>{s.score}</b></span>}
-      </div>
-      <h2>{s.title}</h2>
-      <p className="sum">{s.summary}</p>
-      <div className="rd-why"><Icon name="info" className="ico16" /><span><b>{s.status === "sent" ? "Why it matters to you" : "Why it was held back"}:</b> {s.why}</span></div>
-      <ul className="rd-heads">{heads.map((h, i) => (
-        <li key={i}><span className="muted">—</span>{h.url ? <a href={h.url} target="_blank" rel="noreferrer">{h.title}</a> : <span>{h.title}</span>}
-          <span className="o">{h.outlet ?? ""} · {dayTime(h.published_at)}</span></li>))}
-        {s.headlines.length > 2 && <li><button className="btn btn--sm btn--ghost" type="button" onClick={() => setOpen(o => !o)}>
-          {open ? "Fewer" : `${s.headlines.length - 2} more headline${s.headlines.length - 2 === 1 ? "" : "s"}`}</button></li>}
-      </ul>
-      <div className="row wrap" style={{ gap: 8 }}>
-        {s.status === "sent" ? (s.event_id
-          ? <><StatusPill tone="green">In an event</StatusPill><Link className="small" to={`/events/${s.event_id}`}>{s.event_title ?? "Open the event"}</Link></>
-          : <><StatusPill tone="blue">{s.finding_status === "grouped" ? "Being investigated" : "Sent"}</StatusPill><span className="small muted">waiting to be investigated</span></>)
-          : s.status === "dismissed" ? <><StatusPill tone="grey">Dismissed</StatusPill><span className="small muted">by {s.dismissed_by} {s.dismissed_at ? ago(s.dismissed_at, now) : ""}</span></>
-          : <><StatusPill tone="grey">Not sent</StatusPill><span className="small muted">Radar judged it not important enough for you</span></>}
-        {s.status === "sent" && s.sent_by && s.sent_by !== "agent" && <span className="small muted">sent by {s.sent_by}</span>}
-        {s.development_of && <span className="small muted">continues an earlier story</span>}
-        <span className="spacer" />
-        {s.monitor_hint && <span className="small muted">Your monitor <Link to={`/monitors/${s.monitor_hint.monitor_id}`}>{s.monitor_hint.name}</Link> covers these places.</span>}
-        {s.status === "below" && <button className="btn btn--sm" type="button" onClick={() => act(() => radarApi.investigate(s.story_id), "Sent for investigation")}>Investigate anyway</button>}
-        {s.status === "below" && <button className="btn btn--sm btn--ghost" type="button" onClick={() => act(() => radarApi.dismiss(s.story_id), "Dismissed")}>Dismiss</button>}
-        {s.status === "dismissed" && <button className="btn btn--sm btn--ghost" type="button" onClick={() => act(() => radarApi.restore(s.story_id), "Restored")}>Restore</button>}
-      </div>
+/** The chosen story: what happened, why it matters (or why it was held back), what to do, and the sources on request. */
+function Reader({ s, place, act, admin }: { s: RadarStory; place: (p: string) => string; act: (f: () => Promise<RadarStory>, m: string) => void; admin: boolean }) {
+  const [more, setMore] = useState(false);  // kept across stories: once a reader wants the detail, they get it on every story
+  const [src, setSrc] = useState(false);
+  const box = useRef<HTMLElement>(null);
+  useLayoutEffect(() => { setSrc(false); box.current?.scrollTo(0, 0); }, [s.story_id]);  // each story opens at its top
+  const os = outlets(s);
+  return <article ref={box} className={`rd-read ${s.status}`} aria-labelledby="rd-read-h">
+    <span className="label">{dayTime(s.last_seen_at)} · {STATE[s.status]}{s.status === "sent" && s.sent_by && s.sent_by !== "agent" ? ` by ${s.sent_by}` : ""} · {REL[s.relevance]}</span>
+    <h2 id="rd-read-h">{s.title}</h2>
+    <div className="rd-acts">
+      <Outcome s={s} />
+      {s.status === "below" && <><span className="rd-out quiet rd-full">Relevant, but Radar judged it not important enough to investigate.</span>
+        <button className="btn btn--sm" type="button" onClick={() => act(() => radarApi.investigate(s.story_id), "Sent for investigation")}>Investigate anyway</button>
+        <button className="btn btn--sm btn--ghost" type="button" onClick={() => act(() => radarApi.dismiss(s.story_id), "Dismissed")}>Dismiss</button></>}
+      {s.status === "dismissed" && <><span className="rd-out quiet">by {s.dismissed_by}{s.dismissed_at ? ` ${ago(s.dismissed_at)}` : ""}</span>
+        <button className="btn btn--sm btn--ghost" type="button" onClick={() => act(() => radarApi.restore(s.story_id), "Restored")}>Restore</button></>}
     </div>
-  );
+    <p className="rd-why"><b>{s.status === "sent" ? "Why it matters to you." : "Why Radar held it back."}</b> {s.why}</p>
+    <button type="button" className="rd-link" aria-expanded={more} onClick={() => setMore(o => !o)}>
+      <Icon name="chevron" className={`ico16 ${more ? "rot" : ""}`} />{more ? "Less about this story" : "What happened, places and sources"}</button>
+    {more && <div className="rd-more">
+      <p className="rd-sum">{s.summary}</p>
+      <p className="rd-meta">{placeOrder(s.places).map(place).join(" · ")}{s.themes.length ? <> · <span className="rd-themes">{s.themes.map(t => themeText(t)).join(" · ")}</span></> : null}</p>
+      <p className="rd-meta">{plural(s.publishers, "publisher")} · {os.slice(0, 3).join(", ")}{os.length > 3 ? ` and ${os.length - 3} more` : ""}
+        {s.runs_seen > 1 ? ` · seen in ${s.runs_seen} reads` : ""}{s.development_of ? " · continues an earlier story" : ""}{admin ? ` · Radar score ${s.score}` : ""}</p>
+      {s.monitor_hint && <p className="rd-meta">Your monitor <Link to={`/monitors/${s.monitor_hint.monitor_id}`}>{s.monitor_hint.name}</Link> also covers these places.</p>}
+      <button type="button" className="rd-link" aria-expanded={src} onClick={() => setSrc(o => !o)}>
+        <Icon name="chevron" className={`ico16 ${src ? "rot" : ""}`} />{src ? "Hide the headlines" : `Show the ${plural(s.headlines.length, "headline")}`}</button>
+      {src && <ul className="rd-heads">{s.headlines.map((h, i) => <li key={i}>
+        {h.url ? <a href={h.url} target="_blank" rel="noreferrer">{h.title}</a> : h.title}<span>{h.outlet ?? ""} · {dayTime(h.published_at)}</span></li>)}</ul>}
+    </div>}
+  </article>;
 }
 
 export function RadarPage() {
   const toast = useToast();
   const now = useNow(30_000);
   const { role } = useRole();
+  const admin = role === "platform_admin";
   const [status, setStatus] = useState<RadarStatus | null>(null);
   const [items, setItems] = useState<RadarStory[] | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [scope, setScope] = useState<{ places: string[]; why: Record<string, string[]>; themes: string[]; actors: string[] } | null>(null);
+  const [names, setNames] = useState<Record<string, string | null>>({});
+  const [scope, setScope] = useState<Scope | null>(null);
+  const [instName, setInstName] = useState("your institution");
   const [show, setShow] = useState<Show>("all");
-  const [place, setPlace] = useState("");
-  const [err, setErr] = useState<unknown>(null);
-  const [running, setRunning] = useState<string | null>(null);
+  const [where, setWhere] = useState("");
+  const [sel, setSel] = useState<string | null>(null);
+  const [upto, setUpto] = useState(2);  // days loaded: the latest plus one ahead to scroll to; reaching the last brings in the next
+  const [open, setOpen] = useState<Set<string>>(new Set());  // days whose "more" is unfolded
+  const [inView, setInView] = useState<string | null>(null);  // the day at the top of the list; the tabs count that day
+  const [hover, setHover] = useState<string | null>(null);  // a day card under the mouse wins over the scrolled one
+  const [details, setDetails] = useState(false);
   const [why, setWhy] = useState<string | null>(null);  // the watched place whose reason is open
-  const [places, setPlaces] = useState(false);  // the watched places, folded to one line until asked
+  const [running, setRunning] = useState<string | null>(null);
+  const [err, setErr] = useState<unknown>(null);
+  const listRef = useRef<HTMLOListElement>(null);
 
+  const latest = useRef(0);  // filters change faster than the server answers: only the newest request's answer is used
   const load = useCallback(async () => {
-    try {
-      const [st, ss] = await Promise.all([radarApi.status(), radarApi.stories({ status: show === "all" ? undefined : show, place: place || undefined })]);
-      setStatus(st); setItems(ss); setErr(null);
-    } catch (e) { setErr(e); }
-  }, [show, place]);
+    const id = ++latest.current;
+    try { // the newest 200 stories (the server's cap) give every tab its counts; a tab or place filter also asks the server for its own
+      // newest 200 matches, so it reaches stories older than that. ponytail: past 200 matches, add a "before this date" option and page
+      const [st, ss, fs] = await Promise.all([radarApi.status(), radarApi.stories({ limit: "200" }),
+        show === "all" && !where ? [] : radarApi.stories({ limit: "200", status: show === "all" ? undefined : show, place: where || undefined })]);
+      if (id !== latest.current) return;
+      setStatus(st); setItems([...new Map([...ss, ...fs].map(s => [s.story_id, s])).values()]); setErr(null); }
+    catch (e) { if (id === latest.current) setErr(e); }
+  }, [show, where]);
   useEffect(() => { load(); const t = setInterval(load, 60_000); return () => clearInterval(t); }, [load]);
   useEffect(() => {
-    api_installation().then(iid => {
-      if (!iid) return;
-      inst.profile(iid).then(setProfile).catch(() => {});
-      inst.context(iid).then(c => setScope(c.radar_scope)).catch(() => {});
-    });
+    api<{ institution_id: string; profile: boolean }>("/api/v1/installation").then(i => {
+      if (!i.profile) return;
+      inst.profile(i.institution_id).then(p => { setNames(p.place_names ?? {}); setInstName(p.institution.name); }).catch(() => {});
+      inst.context(i.institution_id).then(c => setScope(c.radar_scope)).catch(() => {});
+    }).catch(() => {});
   }, []);
   // a run started here is asked for until it finishes
   useEffect(() => {
@@ -115,85 +116,174 @@ export function RadarPage() {
     return () => clearInterval(t);
   }, [running, load, toast]);
 
-  const names = useMemo(() => profile?.place_names ?? {}, [profile]);
-  const placesSeen = useMemo(() => [...new Set((items ?? []).flatMap(s => s.places))], [items]);
+  const place = (p: string) => names[p] ?? placeName(p);
+  const act = async (f: () => Promise<RadarStory>, msg: string) => {
+    try { const x = await f(); setItems(xs => xs?.map(y => (y.story_id === x.story_id ? x : y)) ?? null); toast(msg); }
+    catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
+  };
   const runNow = async () => {
     try { const r = await radarApi.run(); if (r.status === "running") setRunning(r.run_id); else { load(); toast(`Radar found ${r.stories ?? 0} stories, sent ${r.sent ?? 0}`); } }
     catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
   };
-  const lr = status?.last_run;
-  const admin = role === "platform_admin";
-  const left = status?.run_now.left ?? 0;
-  const cantRun = !status?.connected ? "Radar isn't connected yet" : status.budget_spent ? "Today's reading budget is spent"
-    : running || status.running ? "A run is in progress" : left === 0 ? "Limit reached; resets at midnight" : null;
-  const sched = status ? scheduleText(status.every_minutes, status.run_at) : "";
-  const nextRun = status ? (new Date(status.next_run_at) <= now ? "due now" : when(status.next_run_at, now)) : "";
+
+  const all = useMemo(() => [...(items ?? [])].sort((a, b) => b.last_seen_at.localeCompare(a.last_seen_at)
+    || Number(b.status === "sent") - Number(a.status === "sent") || b.score - a.score), [items]);
+  const inPlace = all.filter(s => !where || s.places.includes(where));
+  const shown = inPlace.filter(s => show === "all" || s.status === show);
+  // one card per day, newest first; a filter starts from the latest day it matches, so it reaches back as far as it needs to
+  const dk = (s: RadarStory) => dateKey(s.last_seen_at);
+  const days = [...new Set(shown.map(dk))];  // keys like 21/11/2026; the card shows day() of its stories
+  const visible = shown.filter(s => days.indexOf(dk(s)) < upto);
+  // a card shows the first few sent and held back; the rest fold under "more"
+  const rowsOf = (d: string) => {
+    const xs = shown.filter(s => dk(s) === d);
+    const top = [...xs.filter(s => s.status === "sent").slice(0, FEW.sent), ...xs.filter(s => s.status === "below").slice(0, FEW.below),
+      ...xs.filter(s => s.status === "dismissed").slice(0, FEW.below)];
+    return { top, rest: xs.filter(s => !top.includes(s)) };
+  };
+  const loaded = days.slice(0, upto);
+  const order = loaded.flatMap(d => { const r = rowsOf(d); return open.has(d) ? [...r.top, ...r.rest] : r.top; });
+  const first = days[0] ? rowsOf(days[0]).top : [];  // with nothing chosen, the reader opens on the latest day's first story
+  const cur = visible.find(s => s.story_id === sel) ?? first[0] ?? visible[0];
+  // places in the stories first, then the other watched places: the filter asks the server, so it can reach their older stories
+  const placesSeen = useMemo(() => [...new Set([...all.flatMap(s => s.places), ...(scope?.places ?? [])])], [all, scope]);
+  // the tabs count the day in view: the latest on opening (so they agree with the headline), then whichever day is scrolled to
+  const countDay = hover && days.includes(hover) ? hover : inView && days.includes(inView) ? inView : days[0] ?? (inPlace[0] ? dk(inPlace[0]) : "");
+  const ofDay = inPlace.filter(s => dk(s) === countDay);
+  const count = (k: Show) => (k === "all" ? ofDay.length : ofDay.filter(s => s.status === k).length);
+  const refilter = () => { listRef.current?.scrollTo(0, 0); setSel(null); setUpto(2); setOpen(new Set()); setInView(null); setHover(null); };  // a new filter starts again at the top
+  const scrolled = (e: UIEvent<HTMLOListElement>) => {
+    const o = e.currentTarget, top = o.getBoundingClientRect().top;
+    let d: string | null = null;  // the card at the top of the list
+    o.querySelectorAll<HTMLElement>("[data-day]").forEach(h => { if (h.getBoundingClientRect().top - top <= 24) d = h.dataset.day ?? null; });
+    if (o.scrollTop > 0 && o.scrollHeight - o.scrollTop - o.clientHeight < 2) d = loaded[loaded.length - 1];  // at the bottom, short last cards never reach the top
+    setInView(d);
+    clearTimeout(settle.current); settle.current = window.setTimeout(() => { settle.current = 0; fit(); }, 150);  // fit once the snap has settled
+    if (d && days.indexOf(d) >= upto - 1) setUpto(u => Math.min(days.length, u + 1));  // on the last card loaded: bring in the next
+  };
+  useEffect(() => {  // short cards: keep bringing in days until the list has something to scroll
+    const o = listRef.current;
+    if (o && upto < days.length && o.scrollHeight <= o.parentElement!.clientHeight + 40) setUpto(u => u + 1);
+  });
+  // unfiltered, one day per view: the list takes the height of the day at its top (within the room there is), so no other day shows
+  // and no space is left under a short one. Filtered, days are short, so the list uses all the room and stacks them, the next one
+  // showing below. Once a scroll settles a day's start eases to the top; an unfolded day being read is left alone.
+  const settle = useRef(0);
+  const single = useRef(true);
+  single.current = show === "all" && !where && !open.size;
+  const peek = useRef(0);  // resting on a story shows it, after a moment so passing over rows on the way to the reader doesn't
+  const fit = useCallback(() => {
+    const o = listRef.current;
+    if (!o || settle.current) return;
+    if (matchMedia("(max-width: 1000px)").matches) { o.style.height = ""; return; }  // stacked layout: the CSS height (70vh) holds
+    const top = o.getBoundingClientRect().top, cards = [...o.querySelectorAll<HTMLElement>(".rd-card")];
+    // the day whose start is nearest the top (a short last day can stop short of it until the next one loads)
+    const gap = (c: HTMLElement) => Math.abs(c.getBoundingClientRect().top - top);
+    const at = cards.reduce<HTMLElement | null>((a, c) => (!a || gap(c) < gap(a) ? c : a), null);
+    if (!at) return;
+    const room = o.parentElement!.clientHeight;
+    if (!single.current) { o.style.height = `${room}px`; return; }  // filtered, or a day unfolded: a plain list, no pinning
+    o.style.height = `${Math.min(room, at.offsetHeight)}px`;
+    // the browser's snap lands each day; this only catches the rare stop it can't reach (a short last day before the next loads)
+    const by = at.getBoundingClientRect().top - top;
+    if (Math.abs(by) > 1) o.scrollBy({ top: by, behavior: "smooth" });
+  }, []);
+  useLayoutEffect(fit, [fit, items, show, where, upto, open]);
+  useEffect(() => { window.addEventListener("resize", fit); return () => window.removeEventListener("resize", fit); }, [fit]);
+  const fold = (d: string) => setOpen(o => { const n = new Set(o); if (!n.delete(d)) n.add(d); return n; });
+
+  // up and down move through the list, like a mail reader
+  const keys = (e: KeyboardEvent) => {
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    e.preventDefault();
+    const i = Math.max(0, order.findIndex(s => s.story_id === cur?.story_id)) + (e.key === "ArrowDown" ? 1 : -1);
+    // past the last row loaded, the next day comes in
+    const nx = i >= order.length && upto < days.length ? rowsOf(days[upto]).top[0] : order[Math.min(order.length - 1, Math.max(0, i))];
+    if (!nx) return;
+    setUpto(u => Math.max(u, days.indexOf(dk(nx)) + 1));
+    clearTimeout(peek.current);  // a hover still waiting must not take the selection back
+    setSel(nx.story_id);
+    setTimeout(() => listRef.current?.querySelector<HTMLButtonElement>(`[data-id="${nx.story_id}"]`)?.focus());
+  };
+
+  const st = status, lr = st?.last_run, left = st?.run_now.left ?? 0;
+  const cant = !st?.connected ? "Radar isn't connected yet" : st.budget_spent ? "Today's reading budget is spent"
+    : running || st.running ? "A run is in progress" : left === 0 ? "Limit reached; resets at midnight" : null;
+  const sched = st ? scheduleText(st.every_minutes, st.run_at) : "";
+  const next = st ? (new Date(st.next_run_at) <= now ? "due now" : when(st.next_run_at, now)) : "";
   return (
-    <div className="page">
-      <PageHeader title="Radar"
-        status={!status ? "" : !status.connected ? "Not running yet" : <>Reads world news {sched}{lr ? `, last ${ago(lr.finished_at ?? lr.created_at, now)}` : ""}</>}
-        help={<HowItWorks><p>Radar reads the world's news for anything that touches {profile?.institution.name ?? "your institution"}, using the places and names in your profile. What matters goes to the investigation like any other finding; the rest is kept here, and you can still send it.</p>
-          {status && <p>Prototype limits: Radar reads the news {sched}, and you can Check now {status.run_now.limit} times a day. English news only.</p>}</HowItWorks>}
-        actions={<>
-          <Link className="btn" to="/institution/agents">What Radar reads from your profile</Link>
-          <button className="btn btn--primary" type="button" disabled={!!cantRun} title={cantRun ?? undefined} onClick={runNow}>
-            <Icon name={running ? "refresh" : "radar"} />{running ? "Checking…" : status?.connected ? `Check now · ${left} left today` : "Check now"}</button></>} />
+    <div className="page rd">
+      <PageHeader eyebrow={st ? `Reads world news ${sched}${lr ? ` · last read ${ago(lr.finished_at ?? lr.created_at, now)}` : ""}${st.connected ? ` · next ${next}` : ""}` : undefined}
+        title={!st ? "Radar" : !lr ? "Radar hasn't read the news yet"
+          : <>Radar read <span className="rd-n read">{(lr.considered ?? 0).toLocaleString()}</span> articles and sent <span className="rd-n ok">{lr.sent ?? 0}</span> to you</>}
+        status={lr ? <>{lr.stories ?? 0} stories touched your footprint; {lr.sent ?? 0} {lr.sent === 1 ? "was" : "were"} worth investigating, the rest are kept below.</> : undefined}
+        cta={<>
+          <button className="btn btn--primary btn--lg" type="button" disabled={!!cant} title={cant ?? undefined} onClick={runNow}>
+            <Icon name={running ? "refresh" : "radar"} />{running ? "Checking…" : "Check now"}</button>
+          <span className="muted">{st?.connected ? `${left} of ${st.run_now.limit} left today` : "once Radar is connected"}</span>
+          <button className="rd-link" type="button" aria-expanded={details} onClick={() => setDetails(o => !o)}>
+            {scope ? `What it watches: ${plural(scope.places.length, "place")}${scope.actors.length ? `, ${plural(scope.actors.length, "name")}` : ""}` : "Run details"}</button>
+        </>}
+        actions={<Link className="btn" to="/institution/agents">What Radar reads from your profile</Link>}
+        help={<HowItWorks><p>Radar reads the world's news for anything that touches {instName}, using the places and names in your profile. What matters goes to the investigation like any other finding; the rest is kept here, and you can still send it.</p>
+          {st && <p>Prototype limits: Radar reads the news {sched}, and you can Check now {st.run_now.limit} times a day. English news only.</p>}</HowItWorks>} />
+
       <div className="banners">
         {err != null && <LoadError error={err} onRetry={load} what="Radar" />}
-        {status && left === 0 && status.connected && <Banner kind="info" icon="info">You've used today's {status.run_now.limit} checks; the next run is {nextRun}.</Banner>}
-        {admin ? status?.notes.map(n => <Banner key={n} kind="warn" icon="warn">{n}</Banner>)
-          : status && !status.connected && <Banner kind="warn" icon="warn"><b>Radar isn't running yet.</b> It reads the news for you once your Platform Admin connects it. Monitors and market series still work.</Banner>}
-        {lr?.status === "failed" && <Banner kind="crit" icon="warn"><b>The last run failed</b> {ago(lr.finished_at ?? lr.created_at, now)}.{admin ? ` ${lr.error ?? ""}` : " Radar will try again at the next run."}</Banner>}
+        {admin ? st?.notes.map(n => <Banner key={n} kind="warn" icon="warn">{n}</Banner>)
+          : st && !st.connected && <Banner kind="warn" icon="warn"><b>Radar isn't reading the news yet.</b> Your Platform Admin connects it. Monitors and market series still watch for you.</Banner>}
+        {st && st.connected && left === 0 && <Banner kind="info" icon="info">You've used today's {st.run_now.limit} checks; the next read is {next}.</Banner>}
+        {lr?.status === "failed" && <Banner kind="crit" icon="warn"><b>The last read failed</b> {ago(lr.finished_at ?? lr.created_at, now)}.{admin ? ` ${lr.error ?? ""}` : " Radar will try again at the next read."}</Banner>}
       </div>
-      {status && <div className="card rd-status">
-        {status.connected && <div className="rd-facts">
-          <div className={`rd-fact ${lr?.status === "failed" ? "bad" : ""}`}><span className="rd-k">Last run</span>
-            <span className="rd-v">{lr ? ago(lr.finished_at ?? lr.created_at, now) : "never"}</span>
-            <span className="rd-s">{lr ? `${lr.trigger === "now" ? "on request" : "on schedule"}, ${lr.status === "completed" ? "finished" : lr.status.replace("_", " ")}` : "no run yet"}</span></div>
-          <div className="rd-fact"><span className="rd-k">Next run</span><span className="rd-v">{status.connected ? nextRun : "—"}</span>
-            <span className="rd-s">{sched}{status.running ? " · running now" : ""}</span></div>
-          <div className="rd-fact wide"><span className="rd-k">What that run found</span><Funnel s={status} /></div>
-          <div className={`rd-fact ${status.budget_spent ? "bad" : ""}`}><span className="rd-k">{admin ? "BigQuery today" : "Reading budget"}</span>
-            <span className="rd-v">{admin ? <>{gb(status.bytes_today)} <span className="rd-s">of {gb(status.bytes_cap)}</span></> : <>{Math.round((status.bytes_today / Math.max(1, status.bytes_cap)) * 100)}% <span className="rd-s">used today</span></>}</span>
-            <span className="rd-s">{admin ? `at most ${status.limits.max_queries} queries a run, ${gb(status.limits.max_bytes_per_query)} each` : "resets at midnight UTC"}</span></div>
-        </div>}
-        {/* not connected: the same two facts on one quiet line, so "when does it run?" is never hidden */}
-        {!status.connected && <div className="rd-line">
-          <span><span className="rd-k">Last run</span><b>{lr ? ago(lr.finished_at ?? lr.created_at, now) : "never"}</b></span>
-          <span><span className="rd-k">Next run</span><b>{sched.replace(/^once a day/, "daily")}</b><span className="muted">once Radar is connected</span></span>
-        </div>}
-        {scope && <div className="rd-watch">
-          <span><b>Watching {scope.places.length} {scope.places.length === 1 ? "place" : "places"}</b>{!places && scope.places.length > 0 && <span className="muted">: {scope.places.slice(0, 3).map(p => names[p] ?? p).join(", ")}{scope.places.length > 3 ? " and more" : ""}</span>}
-            {scope.actors.length > 0 && <span className="muted"> · also {scope.actors.length} {scope.actors.length === 1 ? "name" : "names"}</span>}</span>
-          <button type="button" className="btn btn--sm btn--ghost" aria-expanded={places} onClick={() => setPlaces(o => !o)}>
-            <Icon name="chevron" className={`ico16 ${places ? "rot" : ""}`} />{places ? "Hide places" : `Show ${scope.places.length} places`}</button>
-        </div>}
-        {scope && places && <div className="rd-places col" style={{ gap: 8 }}>
-          <div className="row wrap" style={{ gap: 8 }}>{scope.places.map(p => (
-            <button key={p} type="button" className={`chip click ${why === p ? "sel" : ""}`} aria-expanded={why === p} onClick={() => setWhy(why === p ? null : p)}>{names[p] ?? p}</button>))}</div>
-          {why && <div className="note" role="status"><b>{names[why] ?? why}</b>: {(scope.why[why] ?? []).join("; ") || "part of where you operate"}</div>}
-          {scope.actors.length > 0 && <span className="small">Also looks for: {scope.actors.join(", ")}</span>}
-          <span className="small muted">Select a place to see why it's watched.</span>
-        </div>}
+
+      {details && st && <div className="rd-details">
+        <dl>
+          <div><dt>Last read</dt><dd>{lr ? `${dayTime(lr.created_at)}, ${lr.trigger === "now" ? "on request" : "on schedule"}, ${lr.status === "completed" ? "finished" : lr.status.replace("_", " ")}` : "never"}</dd></div>
+          {lr && <div><dt>What it found</dt><dd>{(lr.considered ?? 0).toLocaleString()} read → {lr.shortlisted ?? 0} grouped → {lr.stories ?? 0} kept → {lr.sent ?? 0} sent</dd></div>}
+          <div><dt>Next read</dt><dd>{st.connected ? next : "once Radar is connected"}{st.running ? " · running now" : ""}</dd></div>
+          <div><dt>{admin ? "BigQuery today" : "Reading budget"}</dt><dd>{admin ? `${gb(st.bytes_today)} of ${gb(st.bytes_cap)}, at most ${st.limits.max_queries} queries a run, ${gb(st.limits.max_bytes_per_query)} each` : `${Math.round((st.bytes_today / Math.max(1, st.bytes_cap)) * 100)}% used, resets at midnight UTC`}</dd></div>
+        </dl>
+        {scope && <p className="rd-places"><b>Places.</b> {scope.places.map(p => <button key={p} type="button" className="rd-pl" aria-expanded={why === p} onClick={() => setWhy(why === p ? null : p)}>{place(p)}</button>)}</p>}
+        {scope && why && <p className="rd-pwhy" role="status"><b>{place(why)}</b> is watched because: {(scope.why[why] ?? []).join("; ") || "it is part of where you operate"}.</p>}
+        {scope && scope.actors.length > 0 && <p><b>Names.</b> {scope.actors.join(", ")}</p>}
+        <p className="muted">Select a place to see why it's watched. These come from your profile: <Link to="/institution/agents">what Radar reads from your profile</Link>.</p>
       </div>}
 
-      <div className="row wrap mt16" style={{ gap: 10 }}>
-        <ChipFilter label="Which stories" value={show} onChange={setShow} options={SHOW.map(([key, label]) => ({ key, label }))} />
-        {placesSeen.length > 1 && <select className="input" aria-label="Filter by place" style={{ width: 200 }} value={place} onChange={e => setPlace(e.target.value)}>
-          <option value="">All places</option>{placesSeen.map(p => <option key={p} value={p}>{names[p] ?? p}</option>)}</select>}
+      <div className="rd-filters">
+        <ChipFilter label="Which stories" value={show} onChange={k => { refilter(); setShow(k); }}
+          options={SHOW.map(([key, label]) => ({ key, label, count: count(key) }))} />
+        {placesSeen.length > 1 && <select className="input rd-where" aria-label="Filter by place" value={where} onChange={e => { refilter(); setWhere(e.target.value); }}>
+          <option value="">All places</option>{placesSeen.map(p => <option key={p} value={p}>{place(p)}</option>)}</select>}
       </div>
-      <div className="col gap16 mt12">
-        {items === null ? (err == null && <ListSkeleton rows={3} />)
-          : !items.length ? <div className="card"><Empty icon="radar" title={show === "all" ? "No stories yet" : "Nothing here"}
-            actions={show === "all" && !status?.connected ? <Link className="btn" to="/institution/agents">See what Radar will read</Link> : undefined}>
-            {show === "all" ? (status?.connected ? "Radar hasn't found anything touching your footprint yet. Check now runs it at once." : admin ? "Connect the Radar agent (RADAR_URL) and it starts reading the news." : "Radar starts reading the news once your Platform Admin connects it.") : "No stories in this group."}</Empty></div>
-          : items.map(s => <StoryCard key={s.story_id} s={s} names={names} onChange={x => setItems(xs => xs?.map(y => (y.story_id === x.story_id ? x : y)) ?? null)} />)}
-      </div>
+
+      {items === null ? (err == null && <ListSkeleton rows={4} />)
+        : !shown.length ? <Empty icon="radar" title={show === "all" && !where ? "No stories yet" : "Nothing here"}
+            actions={show === "all" && !st?.connected ? <Link className="btn" to="/institution/agents">See what Radar will read</Link> : undefined}>
+            {show === "all" && !where ? (st?.connected ? "Radar hasn't found anything touching your footprint yet. Check now runs it at once." : admin ? "Connect the Radar agent (RADAR_URL) and it starts reading the news." : "Radar starts reading the news once your Platform Admin connects it.") : "No stories match these filters."}</Empty>
+        : <div className="rd-split">
+          <nav className="rd-index" aria-label="Stories">
+            <ol ref={listRef} className={single.current ? "snap" : undefined} onKeyDown={keys} onScroll={scrolled} onMouseLeave={() => setHover(null)}>{loaded.map(d => {
+              const { top, rest } = rowsOf(d), isOpen = open.has(d);
+              const tally = (["sent", "below", "dismissed"] as const).map(k => [rest.filter(s => s.status === k).length, k === "below" ? "held back" : k] as const).filter(([c]) => c);
+              return <li key={d} data-day={d} className={`rd-card ${d === countDay ? "on" : ""} ${isOpen ? "open" : ""}`} onMouseEnter={() => setHover(d)}>
+                <span className="rd-day">{day((top[0] ?? rest[0]).last_seen_at)}</span>
+                <ol>{(isOpen ? [...top, ...rest] : top).map(s => <li key={s.story_id}>
+                  <button type="button" data-id={s.story_id} className={s.status} title={s.title} aria-current={cur?.story_id === s.story_id} onClick={() => setSel(s.story_id)}
+                    onMouseEnter={() => { clearTimeout(peek.current); peek.current = window.setTimeout(() => setSel(s.story_id), 180); }}
+                    onMouseLeave={() => clearTimeout(peek.current)}>
+                    <span className="rd-dot" aria-hidden="true" />
+                    <span className="rd-it"><span className="rd-tt">{s.title}</span>
+                      <span className="rd-sub">{placeOrder(s.places).slice(0, 2).map(place).join(", ")}{s.places.length > 2 ? ` +${s.places.length - 2}` : ""}
+                        {" · "}{s.status === "sent" ? (s.event_title ?? "sent") : s.status === "below" ? "held back" : "dismissed"}</span></span>
+                  </button></li>)}</ol>
+                {rest.length > 0 && <button type="button" className="rd-link rd-fold" aria-expanded={isOpen} onClick={() => fold(d)}>
+                  <Icon name="chevron" className={`ico16 ${isOpen ? "rot" : ""}`} />
+                  {isOpen ? "Show fewer" : `Show ${rest.length} more: ${tally.map(([c, w]) => `${c} ${w}`).join(", ")}`}</button>}
+              </li>;
+            })}</ol>
+          </nav>
+          {cur && <Reader s={cur} place={place} act={act} admin={admin} />}
+        </div>}
     </div>
   );
-}
-
-async function api_installation(): Promise<string | null> {
-  try { const i = await api<{ institution_id: string; profile: boolean }>("/api/v1/installation"); return i.profile ? i.institution_id : null; }
-  catch { return null; }
 }
