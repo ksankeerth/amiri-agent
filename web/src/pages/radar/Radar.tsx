@@ -145,9 +145,14 @@ export function RadarPage() {
     const o = e.currentTarget, top = o.getBoundingClientRect().top;
     let d: string | null = null;  // the card at the top of the list
     o.querySelectorAll<HTMLElement>("[data-day]").forEach(h => { if (h.getBoundingClientRect().top - top <= 24) d = h.dataset.day ?? null; });
+    if (o.scrollTop > 0 && o.scrollHeight - o.scrollTop - o.clientHeight < 2) d = loaded[loaded.length - 1];  // at the bottom, short last cards never reach the top
     setInView(d);
     if (d && days.indexOf(d) >= upto - 1) setUpto(u => Math.min(days.length, u + 1));  // on the last card loaded: bring in the next
   };
+  useEffect(() => {  // short cards: keep bringing in days until the list has something to scroll
+    const o = listRef.current;
+    if (o && upto < days.length && o.scrollHeight <= o.clientHeight + 40) setUpto(u => u + 1);
+  });
   const fold = (d: string) => setOpen(o => { const n = new Set(o); if (!n.delete(d)) n.add(d); return n; });
 
   // up and down move through the list, like a mail reader

@@ -32,10 +32,10 @@
 /* the two panes fill the rest of the screen and scroll inside themselves; the page doesn't move */
 .rd-split { flex:1 1 0; min-height:420px; display:grid; grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:40px; margin-top:20px; }
 .rd-split > * { min-height:0; }
-/* one card per day, snapping so a single day fills the list; a card taller than the list (more unfolded) scrolls within the snap */
+/* one card per day, as tall as its stories, snapping to each day's start; a card taller than the list (more unfolded) scrolls within the snap */
 .rd-index > ol { height:100%; box-sizing:border-box; overflow:auto; overscroll-behavior:contain; scroll-snap-type:y mandatory; overflow-anchor:none;
   display:flex; flex-direction:column; gap:16px; list-style:none; margin:0; padding:0 6px 0 0; }
-.rd-card { flex:none; min-height:100%; box-sizing:border-box; scroll-snap-align:start; padding:4px 20px 12px; border-radius:14px; background:var(--surface); }
+.rd-card { flex:none; box-sizing:border-box; scroll-snap-align:start; padding:4px 20px 12px; border-radius:14px; background:var(--surface); }
 .rd-card ol { list-style:none; margin:0; padding:0; }
 .rd-index .rd-card .rd-fold { width:auto; margin-top:2px; padding:12px 0 4px; border:0; font:600 16px/1.4 var(--font-ui); color:var(--accent-ink); }
 .rd-day { display:block; padding:16px 0 8px; font-size:14px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
