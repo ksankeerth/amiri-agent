@@ -130,12 +130,14 @@ export function RadarPage() {
   // a card shows the first few sent and held back; the rest fold under "more"
   const rowsOf = (d: string) => {
     const xs = shown.filter(s => day(s.last_seen_at) === d);
-    const top = [...xs.filter(s => s.status === "sent").slice(0, FEW.sent), ...xs.filter(s => s.status === "below").slice(0, FEW.below)];
+    const top = [...xs.filter(s => s.status === "sent").slice(0, FEW.sent), ...xs.filter(s => s.status === "below").slice(0, FEW.below),
+      ...xs.filter(s => s.status === "dismissed").slice(0, FEW.below)];
     return { top, rest: xs.filter(s => !top.includes(s)) };
   };
   const loaded = days.slice(0, upto);
   const order = loaded.flatMap(d => { const r = rowsOf(d); return open.has(d) ? [...r.top, ...r.rest] : r.top; });
-  const cur = visible.find(s => s.story_id === sel) ?? visible.find(s => s.status === "sent") ?? visible[0];
+  const first = days[0] ? rowsOf(days[0]).top : [];  // with nothing chosen, the reader opens on the latest day's first story
+  const cur = visible.find(s => s.story_id === sel) ?? first[0] ?? visible[0];
   const placesSeen = useMemo(() => [...new Set(all.flatMap(s => s.places))], [all]);
   // the tabs count the day in view: the latest on opening (so they agree with the headline), then whichever day is scrolled to
   const countDay = hover && days.includes(hover) ? hover : inView && days.includes(inView) ? inView : days[0] ?? (inPlace[0] ? day(inPlace[0].last_seen_at) : "");
@@ -160,24 +162,25 @@ export function RadarPage() {
   // showing below. Once a scroll settles a day's start eases to the top; an unfolded day being read is left alone.
   const settle = useRef(0);
   const single = useRef(true);
-  single.current = show === "all" && !where;
+  single.current = show === "all" && !where && !open.size;
   const peek = useRef(0);  // resting on a story shows it, after a moment so passing over rows on the way to the reader doesn't
   const fit = useCallback(() => {
     const o = listRef.current;
     if (!o || settle.current) return;
+    if (matchMedia("(max-width: 1000px)").matches) { o.style.height = ""; return; }  // stacked layout: the CSS height (70vh) holds
     const top = o.getBoundingClientRect().top, cards = [...o.querySelectorAll<HTMLElement>(".rd-card")];
     // the day whose start is nearest the top (a short last day can stop short of it until the next one loads)
     const gap = (c: HTMLElement) => Math.abs(c.getBoundingClientRect().top - top);
     const at = cards.reduce<HTMLElement | null>((a, c) => (!a || gap(c) < gap(a) ? c : a), null);
     if (!at) return;
     const room = o.parentElement!.clientHeight;
-    if (!single.current || o.querySelector(".rd-card.open")) { o.style.height = `${room}px`; return; }  // filtered, or a day unfolded: a plain list, no pinning
+    if (!single.current) { o.style.height = `${room}px`; return; }  // filtered, or a day unfolded: a plain list, no pinning
     o.style.height = `${Math.min(room, at.offsetHeight)}px`;
     // the browser's snap lands each day; this only catches the rare stop it can't reach (a short last day before the next loads)
     const by = at.getBoundingClientRect().top - top;
     if (Math.abs(by) > 1) o.scrollBy({ top: by, behavior: "smooth" });
   }, []);
-  useLayoutEffect(fit);
+  useLayoutEffect(fit, [fit, items, show, where, upto, open]);
   useEffect(() => { window.addEventListener("resize", fit); return () => window.removeEventListener("resize", fit); }, [fit]);
   const fold = (d: string) => setOpen(o => { const n = new Set(o); if (!n.delete(d)) n.add(d); return n; });
 
@@ -250,7 +253,7 @@ export function RadarPage() {
             {show === "all" && !where ? (st?.connected ? "Radar hasn't found anything touching your footprint yet. Check now runs it at once." : admin ? "Connect the Radar agent (RADAR_URL) and it starts reading the news." : "Radar starts reading the news once your Platform Admin connects it.") : "No stories match these filters."}</Empty>
         : <div className="rd-split">
           <nav className="rd-index" aria-label="Stories">
-            <ol ref={listRef} className={show === "all" && !where && !open.size ? "snap" : undefined} onKeyDown={keys} onScroll={scrolled} onMouseLeave={() => setHover(null)}>{loaded.map(d => {
+            <ol ref={listRef} className={single.current ? "snap" : undefined} onKeyDown={keys} onScroll={scrolled} onMouseLeave={() => setHover(null)}>{loaded.map(d => {
               const { top, rest } = rowsOf(d), isOpen = open.has(d);
               const tally = (["sent", "below", "dismissed"] as const).map(k => [rest.filter(s => s.status === k).length, k === "below" ? "held back" : k] as const).filter(([c]) => c);
               return <li key={d} data-day={d} className={`rd-card ${d === countDay ? "on" : ""} ${isOpen ? "open" : ""}`} onMouseEnter={() => setHover(d)}>

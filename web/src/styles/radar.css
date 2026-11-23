@@ -71,6 +71,7 @@
 .rd-out.wait { color:var(--ink-2); }
 .rd-out.quiet { font-weight:500; color:var(--ink-3); }
 .rd-full { flex-basis:100%; }
+.rd .ico16.rot { transform:rotate(90deg); }  /* own copy: showcase.css, which also has it, belongs to other pages */
 .rd-why { padding-left:14px; border-left:3px solid var(--accent); color:var(--ink); }
 .rd-read:not(.sent) .rd-why { border-left-color:var(--ink-3); }
 .rd-sum { color:var(--ink-2); }
