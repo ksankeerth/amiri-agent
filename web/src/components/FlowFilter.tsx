@@ -4,17 +4,20 @@ import { Fragment } from "react";
 import { Icon } from "./Icon";
 import "../styles/polish-daily.css";
 
-export interface FlowStep<K extends string> { key: K; label: string; count?: number }
+// state, when a page gives one and the count isn't 0: queued (amber, pulsing), busy (blue, a turning arc, dots running down the
+// line to the next step), done (green). Reduced motion keeps the colours and stops the movement.
+export interface FlowStep<K extends string> { key: K; label: string; count?: number; state?: "queued" | "busy" | "done" }
 
 /** `steps` in order; an inner array is one stage with alternative outcomes ("In an event" or "No impact found"). */
 export function FlowFilter<K extends string>({ steps, value, onChange, all, label }: {
   steps: (FlowStep<K> | FlowStep<K>[])[]; value: K; onChange: (k: K) => void; all: FlowStep<K>; label: string;
 }) {
   const btn = (s: FlowStep<K>) => (
-    <button key={s.key} type="button" className="ff-step" aria-pressed={value === s.key} onClick={() => onChange(s.key)}>
+    <button key={s.key} type="button" className="ff-step" data-state={s.count ? s.state : undefined} aria-pressed={value === s.key} onClick={() => onChange(s.key)}>
       {s.count !== undefined && <span className={`ff-n${s.count ? "" : " zero"}`}>{s.count}</span>}
       <span className="ff-l">{s.label}</span>
     </button>);
+  const busy = (s: FlowStep<K> | FlowStep<K>[]) => !Array.isArray(s) && s.state === "busy" && !!s.count;
   return (
     <div className="ff" role="group" aria-label={label}>
       <button type="button" className="ff-all" aria-pressed={value === all.key} onClick={() => onChange(all.key)}>
@@ -22,7 +25,7 @@ export function FlowFilter<K extends string>({ steps, value, onChange, all, labe
       <span className="ff-sep" aria-hidden="true" />
       <span className="ff-flow">{steps.map((s, i) => (
         <Fragment key={i}>
-          {i > 0 && <span className="ff-line" aria-hidden="true" />}
+          {i > 0 && <span className={`ff-line${busy(steps[i - 1]) ? " moving" : ""}`} aria-hidden="true" />}
           {Array.isArray(s)
             ? <span className="ff-alt">{s.map((x, j) => <Fragment key={x.key}>{j > 0 && <span className="ff-or">or</span>}{btn(x)}</Fragment>)}</span>
             : btn(s)}

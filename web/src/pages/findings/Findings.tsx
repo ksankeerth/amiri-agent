@@ -128,8 +128,8 @@ export function FindingsPage() {
           <b>{count(status.findings_waiting, "finding")} waiting</b> to be investigated{nextBatch ? `: the next batch goes ${nextBatch}` : ""}.
         </Banner>)}
       <div className="fd-filters"><FlowFilter label="Which findings" value={show} onChange={setShow} all={{ key: "all", label: "All", count: n("all") }}
-        steps={[{ key: "new", label: "Waiting", count: n("new") }, { key: "grouped", label: "Being investigated", count: n("grouped") },
-          [{ key: "linked", label: "In an event", count: n("linked") }, { key: "set_aside", label: "No impact found", count: n("set_aside") }]]} /></div>
+        steps={[{ key: "new", label: "Waiting", count: n("new"), state: "queued" }, { key: "grouped", label: "Being investigated", count: n("grouped"), state: "busy" },
+          [{ key: "linked", label: "In an event", count: n("linked"), state: "done" }, { key: "set_aside", label: "No impact found", count: n("set_aside") }]]} /></div>
 
       {items === null ? (err == null && <ListSkeleton rows={5} />) : !shown ? (
         <Empty icon="search" title={show === "all" ? `Nothing found in the last ${DAYS} days` : "None in this step"}

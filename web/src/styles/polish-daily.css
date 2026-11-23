@@ -20,6 +20,16 @@
   border:2px solid var(--line-strong); background:var(--surface); color:var(--ink); font-size:var(--fs-sm); font-weight:700; font-variant-numeric:tabular-nums; }
 .ff-n.zero { border-style:dashed; border-color:var(--hairline-2); color:var(--ink-3); }
 .ff-step[aria-pressed="true"] .ff-n { background:var(--ink); border-color:var(--ink); color:var(--surface); }
+/* steps still in progress move; finished ones are still (FlowFilter's state) */
+.ff-step[data-state="queued"] .ff-n { border-color:var(--medium); background:var(--medium-soft); color:var(--medium-ink); animation:ffpulse 2.2s ease-out infinite; }
+.ff-step[data-state="busy"] .ff-n { position:relative; border-color:var(--info-line); background:var(--info-soft); color:var(--info-ink); }
+.ff-step[data-state="busy"] .ff-n::after { content:""; position:absolute; inset:-4px; border-radius:50%; border:2px solid transparent; border-top-color:var(--info); animation:ffturn 1.1s linear infinite; }
+.ff-step[data-state="done"] .ff-n { border-color:var(--accent); color:var(--accent-ink); }
+.ff-step[data-state][aria-pressed="true"] .ff-n { background:var(--ink); color:var(--surface); }
+.ff-line.moving { height:4px; background:radial-gradient(circle, var(--info) 1.6px, transparent 2.2px) 0 50% / 8px 4px repeat-x; animation:ffdots .7s linear infinite; }
+@keyframes ffpulse { 0% { box-shadow:0 0 0 0 color-mix(in srgb, var(--medium) 55%, transparent); } 70%, 100% { box-shadow:0 0 0 8px transparent; } }
+@keyframes ffturn { to { transform:rotate(360deg); } }
+@keyframes ffdots { to { background-position:8px 50%; } }
 .ff-alt { display:inline-flex; align-items:center; gap:2px; }
 .ff-or { font-size:var(--fs-xs); color:var(--ink-3); padding:0 4px; }
 .ff-step:not(:has(.ff-n)) { padding-left:16px; }
