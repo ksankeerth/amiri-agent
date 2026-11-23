@@ -1,6 +1,6 @@
 // Radar, as a news reader. The headline is the last read's answer; filters sit above two panes: story titles by day on the
 // left, the chosen story in full on the right. Held-back stories are quieter rows; run details, scope and sources are one click down.
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type UIEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type UIEvent } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { inst } from "../../api/institutions";
@@ -16,6 +16,7 @@ import "../../styles/radar.css";
 type Show = "all" | "sent" | "below" | "dismissed";
 type Scope = { places: string[]; why: Record<string, string[]>; themes: string[]; actors: string[] };
 const SHOW: [Show, string][] = [["all", "All"], ["sent", "Sent for investigation"], ["below", "Held back"], ["dismissed", "Dismissed"]];
+const FEW = 3;  // sent and held-back stories a day card shows before "more"
 const REL = { high: "highly relevant", medium: "relevant", low: "slightly relevant" } as const;
 const STATE = { sent: "Sent for investigation", below: "Held back by Radar", dismissed: "Dismissed" } as const;
 
@@ -75,7 +76,8 @@ export function RadarPage() {
   const [show, setShow] = useState<Show>("all");
   const [where, setWhere] = useState("");
   const [sel, setSel] = useState<string | null>(null);
-  const [upto, setUpto] = useState(1);  // how many days the list shows; older days come in as you scroll
+  const [upto, setUpto] = useState(2);  // days loaded: the latest plus one ahead to scroll to; reaching the last brings in the next
+  const [open, setOpen] = useState<Set<string>>(new Set());  // days whose "more" is unfolded
   const [inView, setInView] = useState<string | null>(null);  // the day at the top of the list; the tabs count that day
   const [details, setDetails] = useState(false);
   const [why, setWhy] = useState<string | null>(null);  // the watched place whose reason is open
@@ -121,35 +123,42 @@ export function RadarPage() {
     || Number(b.status === "sent") - Number(a.status === "sent") || b.score - a.score), [items]);
   const inPlace = all.filter(s => !where || s.places.includes(where));
   const shown = inPlace.filter(s => show === "all" || s.status === show);
-  // unfiltered, the list opens on the latest day and brings in one older day at a time; a filter lists its matches from every day
+  // one card per day, newest first; a filter starts from the latest day it matches, so it reaches back as far as it needs to
   const days = [...new Set(shown.map(s => day(s.last_seen_at)))];
-  const paged = show === "all" && !where;
-  const visible = paged ? shown.filter(s => days.indexOf(day(s.last_seen_at)) < upto) : shown;
+  const visible = shown.filter(s => days.indexOf(day(s.last_seen_at)) < upto);
+  // a card shows the first few sent and held back; the rest fold under "more"
+  const rowsOf = (d: string) => {
+    const xs = shown.filter(s => day(s.last_seen_at) === d);
+    const top = [...xs.filter(s => s.status === "sent").slice(0, FEW), ...xs.filter(s => s.status === "below").slice(0, FEW)];
+    return { top, rest: xs.filter(s => !top.includes(s)) };
+  };
+  const loaded = days.slice(0, upto);
+  const order = loaded.flatMap(d => { const r = rowsOf(d); return open.has(d) ? [...r.top, ...r.rest] : r.top; });
   const cur = visible.find(s => s.story_id === sel) ?? visible.find(s => s.status === "sent") ?? visible[0];
   const placesSeen = useMemo(() => [...new Set(all.flatMap(s => s.places))], [all]);
   // the tabs count the day in view: the latest on opening (so they agree with the headline), then whichever day is scrolled to
   const countDay = inView && days.includes(inView) ? inView : days[0] ?? (inPlace[0] ? day(inPlace[0].last_seen_at) : "");
   const ofDay = inPlace.filter(s => day(s.last_seen_at) === countDay);
   const count = (k: Show) => (k === "all" ? ofDay.length : ofDay.filter(s => s.status === k).length);
-  // the next day comes in when the reader scrolls near the end of the list (or presses the button when the list is too short to scroll)
-  const more = () => setUpto(u => Math.min(days.length, u + 1));
-  const refilter = () => { listRef.current?.scrollTo(0, 0); setSel(null); setUpto(1); setInView(null); };  // a new filter starts again at the top
+  const refilter = () => { listRef.current?.scrollTo(0, 0); setSel(null); setUpto(2); setOpen(new Set()); setInView(null); };  // a new filter starts again at the top
   const scrolled = (e: UIEvent<HTMLOListElement>) => {
     const o = e.currentTarget, top = o.getBoundingClientRect().top;
-    let d: string | null = null;  // the last day whose section has reached the top of the list
+    let d: string | null = null;  // the card at the top of the list
     o.querySelectorAll<HTMLElement>("[data-day]").forEach(h => { if (h.getBoundingClientRect().top - top <= 24) d = h.dataset.day ?? null; });
     setInView(d);
-    if (paged && o.scrollTop > 0 && o.scrollHeight - o.scrollTop - o.clientHeight < 120) more();
+    if (d && days.indexOf(d) >= upto - 1) setUpto(u => Math.min(days.length, u + 1));  // on the last card loaded: bring in the next
   };
+  const fold = (d: string) => setOpen(o => { const n = new Set(o); if (!n.delete(d)) n.add(d); return n; });
 
   // up and down move through the list, like a mail reader
   const keys = (e: KeyboardEvent) => {
     if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
     e.preventDefault();
-    const i = Math.max(0, shown.findIndex(s => s.story_id === cur?.story_id)) + (e.key === "ArrowDown" ? 1 : -1);
-    const nx = shown[Math.min(shown.length - 1, Math.max(0, i))];
+    const i = Math.max(0, order.findIndex(s => s.story_id === cur?.story_id)) + (e.key === "ArrowDown" ? 1 : -1);
+    // past the last row loaded, the next day comes in
+    const nx = i >= order.length && upto < days.length ? rowsOf(days[upto]).top[0] : order[Math.min(order.length - 1, Math.max(0, i))];
     if (!nx) return;
-    setUpto(u => Math.max(u, days.indexOf(day(nx.last_seen_at)) + 1));  // arrowing past the last day loaded brings in the next
+    setUpto(u => Math.max(u, days.indexOf(day(nx.last_seen_at)) + 1));
     setSel(nx.story_id);
     setTimeout(() => listRef.current?.querySelector<HTMLButtonElement>(`[data-id="${nx.story_id}"]`)?.focus());
   };
@@ -210,19 +219,23 @@ export function RadarPage() {
             {show === "all" && !where ? (st?.connected ? "Radar hasn't found anything touching your footprint yet. Check now runs it at once." : admin ? "Connect the Radar agent (RADAR_URL) and it starts reading the news." : "Radar starts reading the news once your Platform Admin connects it.") : "No stories match these filters."}</Empty>
         : <div className="rd-split">
           <nav className="rd-index" aria-label="Stories">
-            <ol ref={listRef} onKeyDown={keys} onScroll={scrolled}>{days.filter(d => visible.some(s => day(s.last_seen_at) === d)).map((d, di) =>
-              <li key={d} data-day={d} className="rd-sec">
+            <ol ref={listRef} onKeyDown={keys} onScroll={scrolled}>{loaded.map(d => {
+              const { top, rest } = rowsOf(d), isOpen = open.has(d);
+              const tally = (["sent", "below", "dismissed"] as const).map(k => [rest.filter(s => s.status === k).length, k === "below" ? "held back" : k] as const).filter(([c]) => c);
+              return <li key={d} data-day={d} className="rd-card">
                 <span className="rd-day">{d}</span>
-                <ol>{visible.filter(s => day(s.last_seen_at) === d).map((s, n) => {
-                  const rise = paged && di > 0;
-                  return <li key={s.story_id} className={rise ? "rd-in" : undefined} style={rise ? { "--i": Math.min(n, 8) } as CSSProperties : undefined}>
-                    <button type="button" data-id={s.story_id} className={s.status} aria-current={cur?.story_id === s.story_id} onClick={() => setSel(s.story_id)}>
-                      <span className="rd-dot" aria-hidden="true" />
-                      <span className="rd-it"><span className="rd-tt">{s.title}</span>
-                        <span className="rd-sub">{placeOrder(s.places).slice(0, 2).map(place).join(", ")}{s.places.length > 2 ? ` +${s.places.length - 2}` : ""}
-                          {" · "}{s.status === "sent" ? (s.event_title ?? "sent") : s.status === "below" ? "held back" : "dismissed"}</span></span>
-                    </button></li>;
-                })}</ol></li>)}{paged && upto < days.length && <li key="more"><button type="button" className="rd-link rd-more-days" onClick={more}>Earlier: {days[upto]}</button></li>}</ol>
+                <ol>{(isOpen ? [...top, ...rest] : top).map(s => <li key={s.story_id}>
+                  <button type="button" data-id={s.story_id} className={s.status} aria-current={cur?.story_id === s.story_id} onClick={() => setSel(s.story_id)}>
+                    <span className="rd-dot" aria-hidden="true" />
+                    <span className="rd-it"><span className="rd-tt">{s.title}</span>
+                      <span className="rd-sub">{placeOrder(s.places).slice(0, 2).map(place).join(", ")}{s.places.length > 2 ? ` +${s.places.length - 2}` : ""}
+                        {" · "}{s.status === "sent" ? (s.event_title ?? "sent") : s.status === "below" ? "held back" : "dismissed"}</span></span>
+                  </button></li>)}</ol>
+                {rest.length > 0 && <button type="button" className="rd-link rd-fold" aria-expanded={isOpen} onClick={() => fold(d)}>
+                  <Icon name="chevron" className={`ico16 ${isOpen ? "rot" : ""}`} />
+                  {isOpen ? "Show fewer" : `Show ${rest.length} more: ${tally.map(([c, w]) => `${c} ${w}`).join(", ")}`}</button>}
+              </li>;
+            })}</ol>
           </nav>
           {cur && <Reader s={cur} place={place} act={act} admin={admin} />}
         </div>}
