@@ -1,6 +1,6 @@
 // Radar, as a news reader. The headline is the last read's answer; filters sit above two panes: story titles by day on the
 // left, the chosen story in full on the right. Held-back stories are quieter rows; run details, scope and sources are one click down.
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type UIEvent } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { inst } from "../../api/institutions";
@@ -75,6 +75,7 @@ export function RadarPage() {
   const [show, setShow] = useState<Show>("all");
   const [where, setWhere] = useState("");
   const [sel, setSel] = useState<string | null>(null);
+  const [upto, setUpto] = useState(1);  // how many days the list shows; older days come in as you scroll
   const [details, setDetails] = useState(false);
   const [why, setWhy] = useState<string | null>(null);  // the watched place whose reason is open
   const [running, setRunning] = useState<string | null>(null);
@@ -82,7 +83,8 @@ export function RadarPage() {
   const listRef = useRef<HTMLOListElement>(null);
 
   const load = useCallback(async () => {
-    try { // ponytail: filters and counts run on the newest 200 (the server's cap, about 20 days of reads); past that, filter on the server
+    try { // ponytail: the newest 200 stories (the server's cap, about 20 days of reads) load at once and the list reveals them a day at a time;
+      // past 200, add a "before this date" option to /radar/stories and fetch each older day as it is scrolled to
       const [st, ss] = await Promise.all([radarApi.status(), radarApi.stories({ limit: "200" })]); setStatus(st); setItems(ss); setErr(null); }
     catch (e) { setErr(e); }
   }, []);
@@ -118,9 +120,22 @@ export function RadarPage() {
     || Number(b.status === "sent") - Number(a.status === "sent") || b.score - a.score), [items]);
   const inPlace = all.filter(s => !where || s.places.includes(where));
   const shown = inPlace.filter(s => show === "all" || s.status === show);
-  const cur = shown.find(s => s.story_id === sel) ?? shown.find(s => s.status === "sent") ?? shown[0];
+  // the list starts with the latest day that has stories for these filters, so a filter reaches back as far as it needs to
+  const days = [...new Set(shown.map(s => day(s.last_seen_at)))];
+  const visible = shown.filter(s => days.indexOf(day(s.last_seen_at)) < upto);
+  const cur = visible.find(s => s.story_id === sel) ?? visible.find(s => s.status === "sent") ?? visible[0];
   const placesSeen = useMemo(() => [...new Set(all.flatMap(s => s.places))], [all]);
-  const count = (k: Show) => (k === "all" ? inPlace.length : inPlace.filter(s => s.status === k).length);
+  // the tabs count the latest day only, so they agree with the headline; each day line carries its own counts
+  const latest = inPlace.filter(s => day(s.last_seen_at) === day(inPlace[0]?.last_seen_at ?? ""));
+  const count = (k: Show) => (k === "all" ? latest.length : latest.filter(s => s.status === k).length);
+  const dayCounts = (d: string) => {
+    const xs = inPlace.filter(s => day(s.last_seen_at) === d), n = (k: string) => xs.filter(s => s.status === k).length;
+    return [[n("sent"), "sent"], [n("below"), "held back"], [n("dismissed"), "dismissed"]].filter(([c]) => c).map(([c, w]) => `${c} ${w}`).join(" · ");
+  };
+  // the next day comes in when the reader scrolls near the end of the list (or presses the button when the list is too short to scroll)
+  const more = () => setUpto(u => Math.min(days.length, u + 1));
+  const refilter = () => { listRef.current?.scrollTo(0, 0); setSel(null); setUpto(1); };  // a new filter starts again at the top with one day
+  const nearEnd = (e: UIEvent<HTMLOListElement>) => { const o = e.currentTarget; if (o.scrollTop > 0 && o.scrollHeight - o.scrollTop - o.clientHeight < 120) more(); };
 
   // up and down move through the list, like a mail reader
   const keys = (e: KeyboardEvent) => {
@@ -128,7 +143,10 @@ export function RadarPage() {
     e.preventDefault();
     const i = Math.max(0, shown.findIndex(s => s.story_id === cur?.story_id)) + (e.key === "ArrowDown" ? 1 : -1);
     const nx = shown[Math.min(shown.length - 1, Math.max(0, i))];
-    if (nx) { setSel(nx.story_id); listRef.current?.querySelector<HTMLButtonElement>(`[data-id="${nx.story_id}"]`)?.focus(); }
+    if (!nx) return;
+    setUpto(u => Math.max(u, days.indexOf(day(nx.last_seen_at)) + 1));  // arrowing past the last day loaded brings in the next
+    setSel(nx.story_id);
+    setTimeout(() => listRef.current?.querySelector<HTMLButtonElement>(`[data-id="${nx.story_id}"]`)?.focus());
   };
 
   const st = status, lr = st?.last_run, left = st?.run_now.left ?? 0;
@@ -136,7 +154,7 @@ export function RadarPage() {
     : running || st.running ? "A run is in progress" : left === 0 ? "Limit reached; resets at midnight" : null;
   const sched = st ? scheduleText(st.every_minutes, st.run_at) : "";
   const next = st ? (new Date(st.next_run_at) <= now ? "due now" : when(st.next_run_at, now)) : "";
-  let lastDay = "";
+  let lastDay = "", n = 0;
   return (
     <div className="page rd">
       <PageHeader eyebrow={st ? `Reads world news ${sched}${lr ? ` · last read ${ago(lr.finished_at ?? lr.created_at, now)}` : ""}${st.connected ? ` · next ${next}` : ""}` : undefined}
@@ -176,9 +194,9 @@ export function RadarPage() {
       </div>}
 
       <div className="rd-filters">
-        <ChipFilter label="Which stories" value={show} onChange={k => { setShow(k); setSel(null); }}
+        <ChipFilter label="Which stories" value={show} onChange={k => { refilter(); setShow(k); }}
           options={SHOW.map(([key, label]) => ({ key, label, count: count(key) }))} />
-        {placesSeen.length > 1 && <select className="input rd-where" aria-label="Filter by place" value={where} onChange={e => { setWhere(e.target.value); setSel(null); }}>
+        {placesSeen.length > 1 && <select className="input rd-where" aria-label="Filter by place" value={where} onChange={e => { refilter(); setWhere(e.target.value); }}>
           <option value="">All places</option>{placesSeen.map(p => <option key={p} value={p}>{place(p)}</option>)}</select>}
       </div>
 
@@ -188,16 +206,18 @@ export function RadarPage() {
             {show === "all" && !where ? (st?.connected ? "Radar hasn't found anything touching your footprint yet. Check now runs it at once." : admin ? "Connect the Radar agent (RADAR_URL) and it starts reading the news." : "Radar starts reading the news once your Platform Admin connects it.") : "No stories match these filters."}</Empty>
         : <div className="rd-split">
           <nav className="rd-index" aria-label="Stories">
-            <ol ref={listRef} onKeyDown={keys}>{shown.map(s => {
+            <ol ref={listRef} onKeyDown={keys} onScroll={nearEnd}>{visible.map(s => {
               const d = day(s.last_seen_at), head = d !== lastDay; lastDay = d;
-              return <li key={s.story_id}>{head && <span className="rd-day">{d}</span>}
+              if (head) n = 0; const di = days.indexOf(d);
+              return <li key={s.story_id} className={di > 0 ? "rd-in" : undefined} style={di > 0 ? { "--i": Math.min(n++, 8) } as CSSProperties : undefined}>
+                {head && <span className="rd-day">{d}<span className="rd-dc"> · {dayCounts(d)}</span></span>}
                 <button type="button" data-id={s.story_id} className={s.status} aria-current={cur?.story_id === s.story_id} onClick={() => setSel(s.story_id)}>
                   <span className="rd-dot" aria-hidden="true" />
                   <span className="rd-it"><span className="rd-tt">{s.title}</span>
                     <span className="rd-sub">{placeOrder(s.places).slice(0, 2).map(place).join(", ")}{s.places.length > 2 ? ` +${s.places.length - 2}` : ""}
                       {" · "}{s.status === "sent" ? (s.event_title ?? "sent") : s.status === "below" ? "held back" : "dismissed"}</span></span>
                 </button></li>;
-            })}</ol>
+            })}{upto < days.length && <li><button type="button" className="rd-link rd-more-days" onClick={more}>Earlier: {days[upto]}</button></li>}</ol>
           </nav>
           {cur && <Reader s={cur} place={place} act={act} admin={admin} />}
         </div>}

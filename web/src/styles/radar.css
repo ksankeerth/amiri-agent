@@ -73,3 +73,9 @@
 @media (max-width:600px) { .rd .ph-title h1 { font-size:34px; } }
 /* second layer of the chosen story: what happened, places, sources; the headlines sit one layer deeper */
 .rd-more { margin-top:8px; padding-left:22px; }
+
+/* the list holds the latest day; older days come in as it scrolls, each row rising in like a bulletin (reduced motion: they just appear) */
+.rd-dc { font-weight:500; letter-spacing:0; text-transform:none; }
+.rd-in { animation:rdin .35s ease-out both; animation-delay:calc(var(--i, 0) * 45ms); }
+@keyframes rdin { from { opacity:0; transform:translateY(10px); } }
+.rd-index li .rd-more-days { padding:14px 0; font:600 16px/1.4 var(--font-ui); color:var(--accent-ink); }
