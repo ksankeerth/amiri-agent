@@ -148,27 +148,27 @@ export function RadarPage() {
     o.querySelectorAll<HTMLElement>("[data-day]").forEach(h => { if (h.getBoundingClientRect().top - top <= 24) d = h.dataset.day ?? null; });
     if (o.scrollTop > 0 && o.scrollHeight - o.scrollTop - o.clientHeight < 2) d = loaded[loaded.length - 1];  // at the bottom, short last cards never reach the top
     setInView(d);
+    clearTimeout(settle.current); settle.current = window.setTimeout(() => { settle.current = 0; fit(); }, 150);  // fit once the snap has settled
     if (d && days.indexOf(d) >= upto - 1) setUpto(u => Math.min(days.length, u + 1));  // on the last card loaded: bring in the next
   };
   useEffect(() => {  // short cards: keep bringing in days until the list has something to scroll
     const o = listRef.current;
     if (o && upto < days.length && o.scrollHeight <= o.clientHeight + 40) setUpto(u => u + 1);
   });
-  // one day per view: the list is as tall as its tallest folded card (within the space there is), and every card stretches to it
+  // one day per view: the list takes the height of the day at its top (within the room there is), so no other day shows and no
+  // space is left under a short one. It changes once a scroll settles, and an unfolded day taller than the room scrolls inside.
+  const settle = useRef(0);
+  const peek = useRef(0);  // resting on a story shows it, after a moment so passing over rows on the way to the reader doesn't
   const fit = useCallback(() => {
     const o = listRef.current;
-    if (!o) return;
-    const room = o.parentElement!.clientHeight, top = o.getBoundingClientRect().top;
-    let tall = 0;
-    o.querySelectorAll<HTMLElement>(".rd-card:not(.open)").forEach(c => {  // down to its last line, plus the card's 12 px bottom padding
-      tall = Math.max(tall, (c.lastElementChild?.getBoundingClientRect().bottom ?? 0) - c.getBoundingClientRect().top + 12);
-    });
-    const h = tall ? `${Math.min(room, Math.ceil(tall))}px` : "";
-    if (h === o.style.height) return;
-    // a taller day coming in grows the list: keep the day at the top where it was, snapped to its start
-    const at = [...o.querySelectorAll<HTMLElement>(".rd-card")].find(c => c.getBoundingClientRect().bottom - top > 1);
-    o.style.height = h;
-    if (at) o.scrollTop += at.getBoundingClientRect().top - top;
+    if (!o || settle.current) return;
+    const top = o.getBoundingClientRect().top;
+    // the day whose start is nearest the top (a short last day can stop short of it until the next one loads)
+    const gap = (c: HTMLElement) => Math.abs(c.getBoundingClientRect().top - top);
+    const at = [...o.querySelectorAll<HTMLElement>(".rd-card")].reduce<HTMLElement | null>((a, c) => (!a || gap(c) < gap(a) ? c : a), null);
+    if (!at) return;
+    o.style.height = `${Math.min(o.parentElement!.clientHeight, at.offsetHeight)}px`;
+    o.scrollTop += at.getBoundingClientRect().top - top;  // and snap it there
   }, []);
   useLayoutEffect(fit);
   useEffect(() => { window.addEventListener("resize", fit); return () => window.removeEventListener("resize", fit); }, [fit]);
@@ -249,7 +249,9 @@ export function RadarPage() {
               return <li key={d} data-day={d} className={`rd-card ${d === countDay ? "on" : ""} ${isOpen ? "open" : ""}`} onMouseEnter={() => setHover(d)}>
                 <span className="rd-day">{d}</span>
                 <ol>{(isOpen ? [...top, ...rest] : top).map(s => <li key={s.story_id}>
-                  <button type="button" data-id={s.story_id} className={s.status} title={s.title} aria-current={cur?.story_id === s.story_id} onClick={() => setSel(s.story_id)}>
+                  <button type="button" data-id={s.story_id} className={s.status} title={s.title} aria-current={cur?.story_id === s.story_id} onClick={() => setSel(s.story_id)}
+                    onMouseEnter={() => { clearTimeout(peek.current); peek.current = window.setTimeout(() => setSel(s.story_id), 180); }}
+                    onMouseLeave={() => clearTimeout(peek.current)}>
                     <span className="rd-dot" aria-hidden="true" />
                     <span className="rd-it"><span className="rd-tt">{s.title}</span>
                       <span className="rd-sub">{placeOrder(s.places).slice(0, 2).map(place).join(", ")}{s.places.length > 2 ? ` +${s.places.length - 2}` : ""}
