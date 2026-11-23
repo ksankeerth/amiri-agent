@@ -162,13 +162,16 @@ export function RadarPage() {
   const fit = useCallback(() => {
     const o = listRef.current;
     if (!o || settle.current) return;
-    const top = o.getBoundingClientRect().top;
+    const top = o.getBoundingClientRect().top, cards = [...o.querySelectorAll<HTMLElement>(".rd-card")];
+    // reading down an unfolded day: leave the scroll where the reader put it until the next day reaches the top
+    if (cards.some(c => { const r = c.getBoundingClientRect(); return c.classList.contains("open") && r.top < top - 1 && r.bottom > top + 1; })) return;
     // the day whose start is nearest the top (a short last day can stop short of it until the next one loads)
     const gap = (c: HTMLElement) => Math.abs(c.getBoundingClientRect().top - top);
-    const at = [...o.querySelectorAll<HTMLElement>(".rd-card")].reduce<HTMLElement | null>((a, c) => (!a || gap(c) < gap(a) ? c : a), null);
+    const at = cards.reduce<HTMLElement | null>((a, c) => (!a || gap(c) < gap(a) ? c : a), null);
     if (!at) return;
     o.style.height = `${Math.min(o.parentElement!.clientHeight, at.offsetHeight)}px`;
-    o.scrollTop += at.getBoundingClientRect().top - top;  // and snap it there
+    const by = at.getBoundingClientRect().top - top;  // and snap it there
+    if (Math.abs(by) > 1) o.scrollBy({ top: by, behavior: "smooth" });
   }, []);
   useLayoutEffect(fit);
   useEffect(() => { window.addEventListener("resize", fit); return () => window.removeEventListener("resize", fit); }, [fit]);
