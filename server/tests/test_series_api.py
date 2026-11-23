@@ -468,6 +468,67 @@ async def test_status_and_lookup(client, fake):
     assert r.json()["cached"] is True and len(fake.calls) == n
 
 
+async def test_lookup_finds_commodities_and_pairs_by_name(client, fake, sql):
+    # "gold" is not a ticker of the gold price: the commodity list finds it by its name
+    fake.commodities = [{"symbol": "XAU/USD", "name": "Gold Spot", "category": "Precious Metal"},
+                        {"symbol": "XAG/USD", "name": "Silver Spot", "category": "Precious Metal"}]
+    fake.add("GOLD", [], type_="Common Stock")
+    items = (await client.get("/api/v1/series:lookup", params={"q": "gold"})).json()["items"]
+    assert [(i["symbol"], i["type"]) for i in items] == [("XAU/USD", "Commodity"), ("GOLD", "Common Stock")]
+    # the lists are fetched once a day, not per search
+    await client.get("/api/v1/series:lookup", params={"q": "silver"})
+    calls = await sql("SELECT endpoint FROM signals.provider_calls ORDER BY call_id")
+    assert [c["endpoint"] for c in calls] == ["symbol_search", "commodities", "forex_pairs", "symbol_search"]
+    # an exact code comes first, and a pair found both ways shows once
+    for s in ("USD/LKR", "LKR/JPY"):
+        fake.add(s, [])
+    items = (await client.get("/api/v1/series:lookup", params={"q": "usd/lkr"})).json()["items"]
+    assert [i["symbol"] for i in items] == ["USD/LKR"]
+
+
+async def test_lookup_without_the_catalog_answers_and_tries_again(client, fake, sql, env, clock):
+    fake.commodities = [{"symbol": "XAU/USD", "name": "Gold Spot", "category": "Precious Metal"}]
+    fake.add("GOLD", [], type_="Common Stock")
+    # one credit this minute: the search gets it, the lists are skipped (no call, no error)
+    env.setenv("TWELVEDATA_CREDITS_PER_MINUTE", "1")
+    r = await client.get("/api/v1/series:lookup", params={"q": "gold"})
+    assert r.status_code == 200 and [i["symbol"] for i in r.json()["items"]] == ["GOLD"]
+    calls = await sql("SELECT endpoint FROM signals.provider_calls ORDER BY call_id")
+    assert [c["endpoint"] for c in calls] == ["symbol_search"]
+    # that answer is kept for a minute only, so asking again right away costs nothing
+    assert (await client.get("/api/v1/series:lookup", params={"q": "gold"})).json()["cached"] is True
+    # a minute on: the search gets the commodities, but the pairs are refused
+    clock.advance(seconds=61)
+    env.setenv("TWELVEDATA_CREDITS_PER_MINUTE", "2")
+    r = await client.get("/api/v1/series:lookup", params={"q": "gold"})
+    assert r.json()["cached"] is False and r.json()["items"][0]["symbol"] == "XAU/USD"
+    # the commodities paid for are kept: the next try fetches only the pairs, and then the answer is kept
+    clock.advance(seconds=61)
+    env.setenv("TWELVEDATA_CREDITS_PER_MINUTE", "8")
+    await client.get("/api/v1/series:lookup", params={"q": "gold"})
+    assert (await client.get("/api/v1/series:lookup", params={"q": "gold"})).json()["cached"] is True
+    calls = await sql("SELECT endpoint FROM signals.provider_calls ORDER BY call_id")
+    assert [c["endpoint"] for c in calls] == ["symbol_search", "symbol_search", "commodities", "symbol_search",
+                                             "forex_pairs"]
+
+
+async def test_catalog_hit_keeps_the_plan_the_search_knows(client, fake):
+    # XBR/USD needs the Grow plan (conftest): found by the catalog too, it still says so
+    fake.commodities = [{"symbol": "XBR/USD", "name": "Brent Crude Oil", "category": "Energy"}]
+    fake.symbols["XBR/USD"]["type"] = "Commodity"  # so the fake doesn't list it as a currency pair too
+    items = (await client.get("/api/v1/series:lookup", params={"q": "XBR"})).json()["items"]
+    x = [i for i in items if i["symbol"] == "XBR/USD"]
+    assert len(x) == 1 and x[0]["type"] == "Commodity" and x[0]["name"] == "Brent Crude Oil"
+    assert x[0]["plan"] == "Grow" and x[0]["on_plan"] is False
+
+
+def test_catalog_keeps_the_home_currency_when_cut():
+    from app.series.service import CATALOG_HITS, catalog_item, catalog_matches
+    cat = [catalog_item(f"A{n:02d}/USD", "", "Physical Currency", "") for n in range(CATALOG_HITS)]
+    cat.append(catalog_item("USD/LKR", "US Dollar / Sri Lankan Rupee", "Physical Currency", "US Dollar Sri Lankan Rupee"))
+    assert "USD/LKR" not in [i["symbol"] for i in catalog_matches(cat, "usd")]
+    assert catalog_matches(cat, "usd", "LKR")[0]["symbol"] == "USD/LKR"
+
 async def test_health(client, env):
     d = (await client.get("/health/details")).json()
     # no profile for INSTITUTION_ID (bank-a) yet: findings can't be investigated

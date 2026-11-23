@@ -8,6 +8,7 @@ import { FillFromJson } from "./FillFromJson";
 import { seriesOf } from "./fillJson";
 import { Icon } from "./Icon";
 import { Modal, useNow, useToast } from "./ui";
+import { SymbolFinder } from "./SymbolFinder";
 
 export const StateBadge = ({ state }: { state: SeriesState }) => { const [t, tone] = SERIES_STATE[state]; return <StatusPill tone={tone}>{t}</StatusPill>; };
 
@@ -113,9 +114,6 @@ export const themeLabel = (t: Theme | null) =>
 // ---------------------------------------------------------------- add a series
 export function AddSeriesModal({ onClose, onAdded, left }: { onClose: () => void; onAdded: (s: Series) => void; left: number }) {
   const toast = useToast();
-  const [q, setQ] = useState("");
-  const [results, setResults] = useState<LookupItem[] | null>(null);
-  const [searching, setSearching] = useState(false);
   const [symbol, setSymbol] = useState("");
   const [name, setName] = useState("");
   const [theme, setTheme] = useState(AUTO);
@@ -123,17 +121,9 @@ export function AddSeriesModal({ onClose, onAdded, left }: { onClose: () => void
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const search = async () => {
-    if (!q.trim()) return;
-    setSearching(true); setErr(null);
-    try { setResults((await seriesApi.lookup(q.trim())).items); }
-    catch (e) { setErr(e instanceof ApiError ? e.full : String(e)); }
-    finally { setSearching(false); }
-  };
   const pick = (i: LookupItem) => {
     setSymbol(i.symbol); setName(i.symbol === i.name || !i.name ? i.symbol : `${i.symbol} (${i.name})`.slice(0, 60));
-    const c = COMMODITY[i.symbol.toUpperCase().split("/")[0]];
-    setTheme(c ?? AUTO);  // gold → Gold price, oil → Oil price; else the server sets it from the symbol
+    setTheme(COMMODITY[i.symbol.toUpperCase().split("/")[0]] ?? AUTO);  // gold → Gold price, oil → Oil price; else set from the symbol
   };
   // a file's series fills the form (to check and edit, then add); a theme that isn't one of the choices is set from the symbol
   const fillFrom = (x: Record<string, any>) => {
@@ -165,22 +155,7 @@ export function AddSeriesModal({ onClose, onAdded, left }: { onClose: () => void
       <FillFromJson what="a series" read={seriesOf} onFill={c => fillFrom(c.data)}
         example={'{"symbol": "USD/LKR", "name": "…", "places": ["LK"], "theme": {…}}, or a list of them'} />
       <p className="small muted">AMIRI Agent reads about 2,000 hours of history from Twelve Data now (1 credit), then pulls new prices every hour. A move far outside normal becomes a finding. No model is involved.</p>
-      <div className="row" style={{ alignItems: "flex-end" }}>
-        <label className="field" style={{ flex: 1 }}><span>Find a symbol</span>
-          <input className="input" value={q} onChange={e => setQ(e.target.value)} placeholder="e.g. LKR, gold, Brent"
-            onKeyDown={e => e.key === "Enter" && search()} /></label>
-        <button className="btn" type="button" onClick={search} disabled={searching || !q.trim()}>
-          <Icon name={searching ? "refresh" : "search"} className={searching ? "spin" : undefined} />Search</button>
-      </div>
-      <span className="small muted" style={{ marginTop: -8 }}>Each search uses 1 Twelve Data credit; the same search is free for a day.</span>
-      {results && (results.length ? (
-        <div className="results">{results.map(i => (
-          <button key={`${i.symbol}-${i.exchange}`} type="button" disabled={i.watched || i.on_plan === false} aria-pressed={symbol === i.symbol} onClick={() => pick(i)}
-            title={i.on_plan === false ? `Needs the Twelve Data ${i.plan} plan; this key's plan doesn't include it` : undefined}>
-            <b className="mono">{i.symbol}</b><span className="muted small" style={{ flex: 1 }}>{i.name} · {i.type}{i.exchange ? ` · ${i.exchange}` : ""}</span>
-            {i.watched ? <span className="badge b-ok">WATCHED</span> : i.on_plan === false ? <span className="badge b-warn">NEEDS {i.plan?.toUpperCase()} PLAN</span> : null}
-          </button>))}</div>
-      ) : <div className="note">Nothing found for “{q}”.</div>)}
+      <SymbolFinder picked={symbol} onPick={pick} />
       <div className="grid2">
         <label className="field"><span>Symbol</span><input className="input mono" value={symbol} onChange={e => setSymbol(e.target.value)} placeholder="USD/LKR" /></label>
         <label className="field"><span>Name shown</span><input className="input" value={name} maxLength={60} onChange={e => setName(e.target.value)} placeholder="defaults to the symbol" /></label>

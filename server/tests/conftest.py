@@ -42,6 +42,7 @@ class FakeTwelveData:
         self.fail_next: list[tuple[int, dict]] = []  # (http status, body)
         self.calls: list[httpx.Request] = []
         self.served = 0  # successful calls so far: the api-credits-used header
+        self.commodities: list[dict] = []  # what /commodities lists
 
     def add(self, symbol: str, bars, type_="Physical Currency", plan_restricted=False):
         self.symbols[symbol] = {"bars": list(bars), "type": type_, "restricted": plan_restricted}
@@ -75,9 +76,16 @@ class FakeTwelveData:
             status, body = self.fail_next.pop(0)
             return httpx.Response(status, json=body)
         q = request.url.params
+        if request.url.path == "/commodities":
+            return httpx.Response(200, json={"data": self.commodities, "status": "ok"})
+        if request.url.path == "/forex_pairs":
+            data = [{"symbol": s, "currency_group": "Exotic", "currency_base": s.split("/")[0], "currency_quote": s.split("/")[1]}
+                    for s, v in self.symbols.items() if "/" in s and v["type"] == "Physical Currency"]
+            return httpx.Response(200, json={"data": data, "status": "ok"})
         if request.url.path == "/symbol_search":
             data = [{"symbol": s, "instrument_name": s, "instrument_type": v["type"], "exchange": "PHYSICAL CURRENCY",
-                     "country": "", "currency": s.split("/")[-1], "access": {"plan": "Basic"}}
+                     "country": "", "currency": s.split("/")[-1],
+                     "access": {"plan": "Grow" if v["restricted"] else "Basic"}}
                     for s, v in self.symbols.items() if q["symbol"].upper() in s]
             return httpx.Response(200, json={"data": data, "status": "ok"})
         sym = q["symbol"]

@@ -9061,6 +9061,11 @@ components:
         watched:
           type: boolean
           title: Watched
+        on_plan:
+          type: boolean
+          title: On Plan
+          description: Whether the plan in use (TWELVEDATA_PLAN) includes it.
+          default: true
       type: object
       required:
       - symbol

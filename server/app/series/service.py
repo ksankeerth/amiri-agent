@@ -11,6 +11,7 @@ the call under an advisory lock, so concurrent requests can't overspend the
 per-minute or per-day budget.
 """
 
+import asyncio
 import logging
 import math
 import re
@@ -37,6 +38,7 @@ INTERVAL = "1h"
 BAR = timedelta(hours=1)
 AROUND_THE_CLOCK_TYPES = {"physical currency", "digital currency", "commodity", "precious metal"}
 LOOKUP_TTL = timedelta(hours=24)
+PARTIAL_TTL = timedelta(minutes=1)  # an answer missing a list: kept briefly, then the list is tried again
 
 
 @dataclass
@@ -114,6 +116,8 @@ class MarketSeries:
     def __init__(self, pool: AsyncConnectionPool, provider: TwelveDataClient, clock: Clock):
         self.pool, self.provider, self.clock = pool, provider, clock
         self._lookup_cache: dict[str, tuple[datetime, list[dict]]] = {}
+        self._catalog_cache: dict[str, tuple[datetime, list[dict]]] = {}  # per list, so one paid for is kept
+        self._catalog_lock = asyncio.Lock()  # one cold fill at a time, so concurrent searches don't pay twice
 
     # ------------------------------------------------ credit budget
 
@@ -546,12 +550,24 @@ class MarketSeries:
                 await self._finish_call(call_id, started, "error", credits=e.credits, error=e)
                 raise provider_problem(e) from e
             await self._finish_call(call_id, started, "ok", credits=credits, received=len(data))
-            items = [{
+            found = [{
                 "symbol": d.get("symbol"), "name": d.get("instrument_name"), "type": d.get("instrument_type"),
                 "exchange": d.get("exchange"), "country": d.get("country"), "currency": d.get("currency"),
                 "plan": (d.get("access") or {}).get("plan"),
             } for d in data if d.get("symbol")]
-            self._lookup_cache[key] = (now + LOOKUP_TTL, items)
+            # symbol_search matches tickers and company names, so "gold" or "rupee" alone never finds
+            # XAU/USD or USD/LKR: add the commodities and currency pairs whose names match the words
+            async with self.pool.connection() as conn:
+                home = await self._home_currency(conn)
+            catalog, complete = await self._catalog()
+            hits = catalog_matches(catalog, q, home)
+            # a pair found both ways shows once, as the catalog names it, with the plan the search knows
+            plans = {i["symbol"].upper(): i["plan"] for i in found if i["plan"]}
+            hits = [{**h, "plan": plans.get(h["symbol"].upper(), h["plan"])} for h in hits]
+            seen = {h["symbol"].upper() for h in hits}
+            items = hits + [i for i in found if i["symbol"].upper() not in seen]
+            # without the lists, "gold" would miss the gold price for a day: keep such an answer for a minute only
+            self._lookup_cache[key] = (now + (LOOKUP_TTL if complete else PARTIAL_TTL), items)
             hit = False
         async with self.pool.connection() as conn:
             cur = await conn.execute("SELECT symbol FROM signals.series WHERE world = 'live'")
@@ -559,6 +575,49 @@ class MarketSeries:
         return {"query": q, "cached": hit,
                 "items": [{**i, "watched": (i["symbol"] or "").upper() in watched, "on_plan": on_plan(i.get("plan"))}
                           for i in items]}
+
+    async def _catalog(self) -> tuple[list[dict], bool]:
+        """Twelve Data's commodity and currency-pair lists, each fetched once a day (1 credit each).
+        The bool is False when a list couldn't be had now (refused, or no credits left): the search
+        still answers without it, and only the missing list is tried again next time."""
+        paths = ("/commodities", "/forex_pairs")
+        fresh = lambda p: p in self._catalog_cache and self._catalog_cache[p][0] > self.clock.now()  # noqa: E731
+        if not all(fresh(p) for p in paths):
+            async with self._catalog_lock:  # one fill at a time; a list filled while this one waited is reused
+                for path in paths:  # each on its own: one failing doesn't keep the other from being fetched
+                    if not fresh(path):
+                        await self._fetch_catalog(path)
+        items = [i for p in paths if fresh(p) for i in self._catalog_cache[p][1]]
+        return items, all(fresh(p) for p in paths)
+
+    async def _fetch_catalog(self, path: str) -> None:
+        try:
+            call_id = await self._reserve(path[1:], None, "lookup")
+        except Problem as e:  # the budget is used up: no call made
+            log.info("twelvedata %s skipped: %s", path, e.detail)
+            return
+        started = self.clock.now()
+        try:
+            data, credits = await self.provider.catalog(path)
+        except ProviderError as e:
+            await self._finish_call(call_id, started, "error", credits=e.credits, error=e)
+            log.warning("twelvedata %s failed: %s", path, e)
+            return
+        await self._finish_call(call_id, started, "ok", credits=credits, received=len(data))
+        items = []
+        for d in data:
+            sym = d.get("symbol")
+            if not sym:
+                continue
+            if path == "/commodities":
+                name, words = d.get("name") or sym, f"{d.get('name') or ''} {d.get('category') or ''}"
+                items.append(catalog_item(sym, name, "Commodity", words))
+            else:
+                base, quote = d.get("currency_base") or "", d.get("currency_quote") or ""
+                items.append(catalog_item(sym, f"{base} / {quote}" if base and quote else sym,
+                                          "Physical Currency", f"{base} {quote}"))
+        self._catalog_cache[path] = (self.clock.now() + LOOKUP_TTL, items)
+
 
     # ------------------------------------------------ the tick step
 
@@ -833,6 +892,28 @@ class MarketSeries:
 GOLD = {"XAU"}
 OIL = {"WTI", "BRENT", "XBR", "XTI", "URALS", "USOIL", "UKOIL", "BNO", "USO"}  # BNO, USO: oil ETFs
 PLANS = ["basic", "grow", "pro", "ultra", "enterprise"]  # Twelve Data's plans, cheapest first
+
+
+def catalog_item(symbol: str, name: str, type_: str, words: str) -> dict:
+    return {"symbol": symbol, "name": name, "type": type_, "exchange": None, "country": None,
+            "currency": symbol.split("/")[-1] if "/" in symbol else None, "plan": None,
+            "_words": set(re.findall(r"[a-z0-9]+", f"{symbol} {words}".lower()))}
+
+
+CATALOG_HITS = 60  # "usd" or "dollar" match hundreds of pairs: the most relevant 60 are kept
+
+
+def catalog_matches(catalog: list[dict], query: str, home: str | None = None) -> list[dict]:
+    """The catalog items where every typed word starts one of the item's words: an exact symbol first,
+    then those in the institution's currency (USD/LKR for a Sri Lankan bank), then the rest."""
+    q = query.strip().lower()
+    want = re.findall(r"[a-z0-9]+", q)
+    if not want:
+        return []
+    hits = [i for i in catalog if all(any(w.startswith(t) for w in i["_words"]) for t in want)]
+    mine = (home or "").upper()
+    hits.sort(key=lambda i: (i["symbol"].lower() != q, mine not in i["symbol"].upper().split("/")))
+    return [{k: v for k, v in i.items() if k != "_words"} for i in hits[:CATALOG_HITS]]
 
 
 def on_plan(plan: str | None) -> bool:
