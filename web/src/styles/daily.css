@@ -51,12 +51,5 @@
   background: var(--info-ink); color: var(--surface); }
 .sec-hd .dl-ai-chip { margin-left: var(--s-1); }
 
-/* ---- Findings: signal strength, the article link ---- */
-.dl-fd-t a { color: var(--ink); }
-.dl-fd-t a:hover { color: var(--accent-ink); }
-.dl-fd-t .src-ext { width: 13px; height: 13px; margin-left: 4px; vertical-align: -1px; color: var(--ink-3); }
-
 /* ---- Considered, no impact: the product, then the angle in words ---- */
 .dl-angle { font-weight: 400; color: var(--ink-3); margin-left: var(--s-2); }
-.dl-sig { font-size: var(--fs-sm); font-weight: 600; color: var(--ink-2); white-space: nowrap; }
-.dl-sig.t-blue { color: var(--info-ink); }

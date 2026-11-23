@@ -20,6 +20,23 @@
   border:2px solid var(--line-strong); background:var(--surface); color:var(--ink); font-size:var(--fs-sm); font-weight:700; font-variant-numeric:tabular-nums; }
 .ff-n.zero { border-style:dashed; border-color:var(--hairline-2); color:var(--ink-3); }
 .ff-step[aria-pressed="true"] .ff-n { background:var(--ink); border-color:var(--ink); color:var(--surface); }
+/* steps still in progress move; finished ones are still (FlowFilter's state). In-progress steps keep the dashed ring:
+   waiting keeps its dashes amber and sends out a ripple; being investigated has a light running round the dashes (a second dashed ring
+   on top, shown through a turning conic mask, so its dashes sit exactly on the grey ones) and dots running down the line. */
+.ff-step[data-state="queued"] .ff-n, .ff-step[data-state="busy"] .ff-n { border-style:dashed; border-color:var(--hairline-2); }
+.ff-step[data-state="queued"] .ff-n { border-color:var(--medium); color:var(--medium-ink); animation:ffwait 2.2s ease-out infinite; }
+.ff-step[data-state="busy"] .ff-n { position:relative; color:var(--info-ink); }
+.ff-step[data-state="busy"] .ff-n::after { content:""; position:absolute; inset:-2px; border-radius:50%; border:2px dashed var(--info);
+  -webkit-mask:conic-gradient(from var(--ffa), transparent 0 50%, #000 100%); mask:conic-gradient(from var(--ffa), transparent 0 50%, #000 100%);
+  animation:ffsweep 1.4s linear infinite; }
+.ff-step[data-state="done"] .ff-n { border-color:var(--accent); color:var(--accent-ink); }
+.ff-step[data-state][aria-pressed="true"] .ff-n { background:var(--ink); border-color:var(--ink); color:var(--surface); }
+.ff-step[data-state][aria-pressed="true"] .ff-n::after { border-color:var(--surface); }
+.ff-line.moving { height:4px; background:radial-gradient(circle, var(--info) 1.6px, transparent 2.2px) 0 50% / 8px 4px repeat-x; animation:ffdots .7s linear infinite; }
+@property --ffa { syntax:"<angle>"; inherits:false; initial-value:0deg; }
+@keyframes ffsweep { to { --ffa:360deg; } }
+@keyframes ffwait { 0% { box-shadow:0 0 0 0 color-mix(in srgb, var(--medium) 55%, transparent); } 70%, 100% { box-shadow:0 0 0 10px transparent; } }
+@keyframes ffdots { to { background-position:8px 50%; } }
 .ff-alt { display:inline-flex; align-items:center; gap:2px; }
 .ff-or { font-size:var(--fs-xs); color:var(--ink-3); padding:0 4px; }
 .ff-step:not(:has(.ff-n)) { padding-left:16px; }
@@ -91,20 +108,3 @@
 .pd-imp .ir-size { font-size:var(--fs-sm); color:var(--ink-2); }
 @media (max-width: 760px) { .pd-imp .pd-ir-head { display:none; } .pd-imp .ir-row, .pd-event .lrow, .pd-event .sec-line { padding-left:var(--s-4); padding-right:var(--s-4); }
   .pd-event .sec-hd { padding:var(--s-4) var(--s-4) 0; } }
-
-/* ---- Findings: more air, the title over its explanation, one aligned right column ---- */
-.pd-find .evrow { align-items:flex-start; gap:var(--s-4); padding:var(--s-5) var(--s-6); }
-.pd-find .evrow-ico { margin-top:-4px; }
-.pd-find .evrow-main { gap:var(--s-2); }
-.pd-find .row-top { gap:var(--s-2) var(--s-3); }
-.pd-find .evrow-main .row-l { font-size:var(--fs-lg); line-height:1.35; }
-.pd-find .fd-what { font-size:var(--fs-md); color:var(--ink-2); line-height:1.5; white-space:normal; }
-.pd-find .fd-expl { font-size:var(--fs-md); color:var(--ink-2); line-height:1.5; white-space:normal; max-width:75ch;
-  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-.pd-find .fd-what + .fd-expl { margin-top:calc(-1 * var(--s-1)); }
-.pd-find .evrow-side { width:160px; gap:var(--s-1); padding-top:2px; font-size:var(--fs-sm); line-height:20px; }
-.pd-find .evrow-side .small, .pd-find .evrow-when { font-size:var(--fs-sm); }
-.pd-find .evrow-side a.small { color:var(--ink-2); }
-.pd-find .evrow-side a.small:hover { color:var(--ink); }
-.pd-find .dl-sig { font-size:var(--fs-sm); }
-@media (max-width: 760px) { .pd-find .evrow { padding:var(--s-4); } .pd-find .evrow-side { width:100%; } }
