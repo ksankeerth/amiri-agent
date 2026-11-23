@@ -1,9 +1,10 @@
-/* The Overview below its first screen: one section at a time. Its list sits in one column on one side; a glowing-
-   particle scene about that section fills the other, and the sides alternate down the page. The scene stays in view
-   while its list scrolls. Items are green bulletin cards that rise in one by one. Nothing under 14 px. */
+/* The Overview below its first screen, in rows: two sections side by side, Radar with its sweep beside its list (the
+   sweep stays in view while the list scrolls), and "Also waiting for you" across the page as tiles. Items are green
+   bulletin cards; only the radar row moves. Nothing under 14 px. */
 .ovs-wrap { display:flex; flex-direction:column; gap:96px; margin-top:24px; padding-bottom:48px; }
 .ovs { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:64px; align-items:start; scroll-margin-top:24px; }
-.ovs[data-flip] .ovs-text { order:2; }
+.ovs-pair { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:64px; align-items:start; }
+.ovs-col { min-width:0; scroll-margin-top:24px; }
 .ovs-art { position:sticky; top:24px; height:min(440px, 60vh); border-radius:20px; overflow:hidden;
   background:radial-gradient(ellipse at 50% 55%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 70%); }
 .ovs-canvas { display:block; width:100%; height:100%; }
@@ -32,10 +33,7 @@ a.ovt-row:hover, .ovt-ev:hover { background:color-mix(in srgb, var(--accent) 15%
 .ovt-ev[data-tone="good"] .ovt-sh { color:var(--accent); }    .ovt-ev[data-tone="good"] .ovt-tone { color:var(--accent-ink); }
 .ovt-ev[data-tone="mixed"] .ovt-sh { color:var(--high); }     .ovt-ev[data-tone="mixed"] .ovt-tone { color:var(--high-ink); }
 .ovt-ev[data-tone="neutral"] :is(.ovt-sh, .ovt-tone) { color:var(--ink-3); }
-.ovt-ev > :not(.ovt-t), .ovt-need > .ovt-m { margin-left:24px; }
-.ovt-need[data-lv="crit"] .ovt-sh { color:var(--critical); }
-.ovt-need[data-lv="warn"] .ovt-sh { color:var(--high); }
-.ovt-need[data-lv="info"] .ovt-sh { color:var(--info, var(--ink-3)); }
+.ovt-ev > :not(.ovt-t) { margin-left:24px; }
 .ovt-d { font-size:16px; color:var(--ink-2); }
 .ovt-m { font-size:14px; color:var(--ink-3); }
 .ovt-score { margin-left:10px; font-size:14px; color:var(--ink-3); font-variant-numeric:tabular-nums; }
@@ -57,24 +55,41 @@ a.ovt-row:hover, .ovt-ev:hover { background:color-mix(in srgb, var(--accent) 15%
 .ovt-tbl td.r { text-align:right; color:var(--ink); font-variant-numeric:tabular-nums; }
 .ovt-warnw { color:var(--high-ink); }
 
-/* cards rise in one by one as the section scrolls into view (only where the browser has scroll timelines) */
+/* the radar row's cards rise in one by one as it scrolls into view (only where the browser has scroll timelines) */
 @supports (animation-timeline: view()) {
-  .ovs-cards > * { animation:ovs-in linear both; animation-timeline:view(); animation-range:entry 0% entry 80%; }
+  .ovs .ovs-cards > * { animation:ovs-in linear both; animation-timeline:view(); animation-range:entry 0% entry 80%; }
   .ovs-art { animation:ovs-art linear both; animation-timeline:view(); animation-range:entry 0% entry 60%; }
 }
 @keyframes ovs-in { from { opacity:0; transform:translateY(28px) scale(.98); } }
 @keyframes ovs-art { from { opacity:0; transform:scale(.94); } }
 
 @media (max-width: 1100px) {
-  .ovs { grid-template-columns:minmax(0,1fr); gap:24px; }
-  .ovs[data-flip] .ovs-text { order:0; }
+  .ovs, .ovs-pair { grid-template-columns:minmax(0,1fr); gap:24px; }
+  .ovs-pair { gap:96px; }
   .ovs-art { position:static; height:260px; }
 }
 
-/* the recommendations inside their card: each a green link with what it found under it */
-.ovt-recs { list-style:none; margin:8px 0 0 24px; padding:0; display:flex; flex-direction:column; }
-.ovt-recs li { display:flex; flex-direction:column; gap:2px; padding:10px 0; border-top:1px solid color-mix(in srgb, var(--accent) 22%, transparent); }
-.ovt-recs a { align-self:flex-start; font-size:16px; font-weight:600; color:var(--accent-ink); }
-.ovt-recs a:hover { text-decoration:underline; text-underline-offset:3px; }
-.ovs .ovt-recs li > a:not(.btn):not(.chip) { text-decoration:none; }  /* like the other green links; underline only on hover */
-.ovs .ovt-recs li > a:not(.btn):not(.chip):hover { text-decoration:underline; }
+
+/* "Also waiting for you": tiles across the page, the urgency on a coloured top edge and in words, where to go at the foot.
+   The tiles share the row (one spans it, two halve it); from four they wrap three to a row */
+.ovn-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap:16px; }
+.ovn-tile { --lv:var(--info, var(--ink-3)); display:flex; flex-direction:column; gap:6px; padding:18px 20px 16px; color:inherit;
+  border-radius:14px; background:var(--surface); border:1px solid var(--hairline); border-top:4px solid var(--lv);
+  box-shadow:0 1px 2px color-mix(in srgb, var(--ink) 6%, transparent); transition:border-color var(--d-fast), box-shadow var(--d-fast); }
+.ovn-tile[data-lv="crit"] { --lv:var(--critical); }
+.ovn-tile[data-lv="warn"] { --lv:var(--high); }
+a.ovn-tile:hover { border-color:color-mix(in srgb, var(--lv) 55%, var(--hairline)); border-top-color:var(--lv);
+  box-shadow:0 6px 18px color-mix(in srgb, var(--ink) 10%, transparent); }
+.ovn-lv { display:inline-flex; align-items:center; gap:6px; font-size:14px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-2); }
+.ovn-lv > span { color:var(--lv); }
+.ovn-t { font-size:18px; font-weight:600; color:var(--ink); line-height:1.35; }
+.ovn-d { font-size:14px; color:var(--ink-3); }
+.ovn-go { margin-top:auto; padding-top:8px; font-size:16px; font-weight:600; color:var(--accent-ink); }
+a.ovn-tile:hover .ovn-go { text-decoration:underline; text-underline-offset:3px; }
+/* a tile's recommendations sit side by side when it is wide, stacked when narrow */
+.ovn-recs { list-style:none; margin:4px 0 0; padding:0; display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 280px), 1fr)); column-gap:32px; }
+.ovn-recs li { display:flex; flex-direction:column; gap:2px; padding:10px 0; border-top:1px solid var(--hairline); }
+.ovn-recs a { align-self:flex-start; font-size:16px; font-weight:600; color:var(--accent-ink); text-decoration:none; }
+.ovn-recs a:hover { text-decoration:underline; text-underline-offset:3px; }
+.ovs-col .ovn-recs li > a:not(.btn):not(.chip) { text-decoration:none; }  /* like the other green links; underline only on hover */
+.ovs-col .ovn-recs li > a:not(.btn):not(.chip):hover { text-decoration:underline; }
