@@ -91,6 +91,7 @@ async def _add_themes(conn, event_id: str, themes: list[dict]) -> None:
         await conn.execute("UPDATE cases.events SET themes = themes || %s WHERE event_id = %s", (Jsonb(new), event_id))
 
 MAX_FINDINGS = 20
+MAX_RESENDS = 3  # a batch the agent refuses findings of is sent again without them, this many times
 MAX_REPOSTS = 3
 FINISHED = ("completed", "stopped_early")
 TICK_WORLDS = ("live", "sandbox")
@@ -348,14 +349,38 @@ class Investigations:
                  attempt, now, now))
             await conn.execute("UPDATE signals.findings SET status = 'grouped', run_id = %s WHERE finding_id = ANY(%s)",
                                (run_id, [r["finding_id"] for r in rows]))
-        try:
-            st = await self.client.start(req)
-        except AgentError as e:
-            await self._failed(run_id, f"the agent refused or couldn't take the run: {e}", step, retry=e.retry)
-            return {"run_id": run_id, "finding_ids": [r["finding_id"] for r in rows]}
+        sent = [r["finding_id"] for r in rows]
+        for _ in range(MAX_RESENDS + 1):
+            try:
+                st = await self.client.start(req)
+                break
+            except AgentError as e:
+                refused = sorted(i for i in e.refused if 0 <= i < len(req["findings"]))
+                if not refused or len(refused) == len(req["findings"]):
+                    await self._failed(run_id, f"the agent refused or couldn't take the run: {e}", step, retry=e.retry)
+                    return {"run_id": run_id, "finding_ids": sent}
+                # one bad finding never costs the batch: set those aside, with the reason, and send the rest
+                dropped = [req["findings"][i]["finding_id"] for i in refused]
+                req["findings"] = [f for i, f in enumerate(req["findings"]) if i not in set(refused)]
+                sent = [f for f in sent if f not in dropped]
+                await self._refused(run_id, dropped, sent, req, str(e))
+        else:
+            await self._failed(run_id, "the agent kept refusing findings", step, retry=False)
+            return {"run_id": run_id, "finding_ids": sent}
         if st.get("status") in FINISHED or st.get("status") == "failed":
             await self._finish(run_id, st, step)
-        return {"run_id": run_id, "finding_ids": [r["finding_id"] for r in rows]}
+        return {"run_id": run_id, "finding_ids": sent}
+
+    async def _refused(self, run_id: str, dropped: list[str], kept: list[str], req: dict, error: str) -> None:
+        log.warning("investigation %s: the agent refused %s; sending the rest", run_id, ", ".join(dropped))
+        async with self.pool.connection() as conn, conn.transaction():
+            await conn.execute(
+                """UPDATE signals.findings SET status = 'set_aside', run_id = NULL, outcome = %s
+                   WHERE finding_id = ANY(%s)""",
+                (Jsonb({"reason": "investigation_failed",
+                        "note": f"the investigation agent refused this finding: {error[:400]}"}), dropped))
+            await conn.execute("UPDATE cases.investigations SET finding_ids = %s, request = %s WHERE run_id = %s",
+                               (kept, Jsonb(req), run_id))
 
     async def _collect_due(self, step: dict) -> None:
         async with self.pool.connection() as conn:
