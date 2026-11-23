@@ -1,6 +1,6 @@
 // Radar, as a news reader. The headline is the last read's answer; filters sit above two panes: story titles by day on the
 // left, the chosen story in full on the right. Held-back stories are quieter rows; run details, scope and sources are one click down.
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type UIEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type UIEvent } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { inst } from "../../api/institutions";
@@ -154,6 +154,24 @@ export function RadarPage() {
     const o = listRef.current;
     if (o && upto < days.length && o.scrollHeight <= o.clientHeight + 40) setUpto(u => u + 1);
   });
+  // one day per view: the list is as tall as its tallest folded card (within the space there is), and every card stretches to it
+  const fit = useCallback(() => {
+    const o = listRef.current;
+    if (!o) return;
+    const room = o.parentElement!.clientHeight, top = o.getBoundingClientRect().top;
+    let tall = 0;
+    o.querySelectorAll<HTMLElement>(".rd-card:not(.open)").forEach(c => {  // down to its last line, plus the card's 12 px bottom padding
+      tall = Math.max(tall, (c.lastElementChild?.getBoundingClientRect().bottom ?? 0) - c.getBoundingClientRect().top + 12);
+    });
+    const h = tall ? `${Math.min(room, Math.ceil(tall))}px` : "";
+    if (h === o.style.height) return;
+    // a taller day coming in grows the list: keep the day at the top where it was, snapped to its start
+    const at = [...o.querySelectorAll<HTMLElement>(".rd-card")].find(c => c.getBoundingClientRect().bottom - top > 1);
+    o.style.height = h;
+    if (at) o.scrollTop += at.getBoundingClientRect().top - top;
+  }, []);
+  useLayoutEffect(fit);
+  useEffect(() => { window.addEventListener("resize", fit); return () => window.removeEventListener("resize", fit); }, [fit]);
   const fold = (d: string) => setOpen(o => { const n = new Set(o); if (!n.delete(d)) n.add(d); return n; });
 
   // up and down move through the list, like a mail reader
@@ -228,7 +246,7 @@ export function RadarPage() {
             <ol ref={listRef} onKeyDown={keys} onScroll={scrolled} onMouseLeave={() => setHover(null)}>{loaded.map(d => {
               const { top, rest } = rowsOf(d), isOpen = open.has(d);
               const tally = (["sent", "below", "dismissed"] as const).map(k => [rest.filter(s => s.status === k).length, k === "below" ? "held back" : k] as const).filter(([c]) => c);
-              return <li key={d} data-day={d} className={`rd-card ${d === countDay ? "on" : ""}`} onMouseEnter={() => setHover(d)}>
+              return <li key={d} data-day={d} className={`rd-card ${d === countDay ? "on" : ""} ${isOpen ? "open" : ""}`} onMouseEnter={() => setHover(d)}>
                 <span className="rd-day">{d}</span>
                 <ol>{(isOpen ? [...top, ...rest] : top).map(s => <li key={s.story_id}>
                   <button type="button" data-id={s.story_id} className={s.status} title={s.title} aria-current={cur?.story_id === s.story_id} onClick={() => setSel(s.story_id)}>
