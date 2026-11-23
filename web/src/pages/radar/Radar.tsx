@@ -16,7 +16,7 @@ import "../../styles/radar.css";
 type Show = "all" | "sent" | "below" | "dismissed";
 type Scope = { places: string[]; why: Record<string, string[]>; themes: string[]; actors: string[] };
 const SHOW: [Show, string][] = [["all", "All"], ["sent", "Sent for investigation"], ["below", "Held back"], ["dismissed", "Dismissed"]];
-const FEW = 3;  // sent and held-back stories a day card shows before "more"
+const FEW = { sent: 3, below: 2 };  // stories a day card shows before "more": short enough that the whole first card fits at a glance
 const REL = { high: "highly relevant", medium: "relevant", low: "slightly relevant" } as const;
 const STATE = { sent: "Sent for investigation", below: "Held back by Radar", dismissed: "Dismissed" } as const;
 
@@ -130,7 +130,7 @@ export function RadarPage() {
   // a card shows the first few sent and held back; the rest fold under "more"
   const rowsOf = (d: string) => {
     const xs = shown.filter(s => day(s.last_seen_at) === d);
-    const top = [...xs.filter(s => s.status === "sent").slice(0, FEW), ...xs.filter(s => s.status === "below").slice(0, FEW)];
+    const top = [...xs.filter(s => s.status === "sent").slice(0, FEW.sent), ...xs.filter(s => s.status === "below").slice(0, FEW.below)];
     return { top, rest: xs.filter(s => !top.includes(s)) };
   };
   const loaded = days.slice(0, upto);
