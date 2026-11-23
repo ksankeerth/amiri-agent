@@ -153,11 +153,14 @@ export function RadarPage() {
   };
   useEffect(() => {  // short cards: keep bringing in days until the list has something to scroll
     const o = listRef.current;
-    if (o && upto < days.length && o.scrollHeight <= o.clientHeight + 40) setUpto(u => u + 1);
+    if (o && upto < days.length && o.scrollHeight <= o.parentElement!.clientHeight + 40) setUpto(u => u + 1);
   });
-  // one day per view: the list takes the height of the day at its top (within the room there is), so no other day shows and no
-  // space is left under a short one. It changes once a scroll settles, and an unfolded day taller than the room scrolls inside.
+  // unfiltered, one day per view: the list takes the height of the day at its top (within the room there is), so no other day shows
+  // and no space is left under a short one. Filtered, days are short, so the list uses all the room and stacks them, the next one
+  // showing below. Once a scroll settles a day's start eases to the top; an unfolded day being read is left alone.
   const settle = useRef(0);
+  const single = useRef(true);
+  single.current = show === "all" && !where;
   const peek = useRef(0);  // resting on a story shows it, after a moment so passing over rows on the way to the reader doesn't
   const fit = useCallback(() => {
     const o = listRef.current;
@@ -169,7 +172,8 @@ export function RadarPage() {
     const gap = (c: HTMLElement) => Math.abs(c.getBoundingClientRect().top - top);
     const at = cards.reduce<HTMLElement | null>((a, c) => (!a || gap(c) < gap(a) ? c : a), null);
     if (!at) return;
-    o.style.height = `${Math.min(o.parentElement!.clientHeight, at.offsetHeight)}px`;
+    const room = o.parentElement!.clientHeight;
+    o.style.height = `${single.current ? Math.min(room, at.offsetHeight) : room}px`;
     const by = at.getBoundingClientRect().top - top;  // and snap it there
     if (Math.abs(by) > 1) o.scrollBy({ top: by, behavior: "smooth" });
   }, []);
