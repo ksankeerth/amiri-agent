@@ -12,7 +12,7 @@ import { Spark } from "../components/charts";
 import { Icon } from "../components/Icon";
 import { Banner, CountUp, DEMOS, errText, isDown, LoadError, PageHead, PageSkeleton, useNow, useRole } from "../components/ui";
 import { ago, dayTime, pct, placeName, placeOrder, plural, price, TIME_ZONE, ZONE_LABEL } from "../format";
-import { eventTitle, SERIES_STATE, setAsideReason, themeLabel } from "../plain";
+import { eventTitle, MONITOR_CHECK, SERIES_STATE, setAsideReason, themeLabel } from "../plain";
 import { ProfileMap } from "./institution/ProfileMap";
 import { TAB_OF_SECTION } from "./institution/InstitutionPage";
 import { OverviewStory, Reveal } from "./OverviewStory";
@@ -26,7 +26,6 @@ const SHAPE = { bad: "▲", good: "●", mixed: "◆", neutral: "■" };
 const TONE_WORD = { bad: "Bad for you", good: "Good for you", mixed: "Mixed for you", neutral: "Neutral for you" };
 const LEVEL_SHAPE: Record<Attention["level"], string> = { crit: "▲", warn: "◆", info: "●" };
 const LEVEL_WORD: Record<Attention["level"], string> = { crit: "Urgent", warn: "Check", info: "To do" };
-const CHECK_WORD = { fired: "found news", quiet: "nothing new", error: "couldn't read the news" } as const;
 const SOURCE: Record<string, string> = { monitor: "News", timeseries: "Prices", radar: "Radar" };
 
 function greeting(now: Date): string {
@@ -175,7 +174,10 @@ export function OverviewPage() {
     return a.link ? <Link key={n} to={a.link} className="ovn-tile" data-lv={a.level}>{body}<span className="ovn-go">Open →</span></Link>
       : <div key={n} className="ovn-tile" data-lv={a.level}>{body}</div>;
   };
-  const live = monitors.filter(m => m.status === "live").sort((x, y) => (y.last_check?.at ?? "").localeCompare(x.last_check?.at ?? ""));
+  // the live ones, a failed check first (it needs looking at), then the most recently checked
+  const failed = (m: MonitorRow) => m.last_check?.status === "error" ? 0 : 1;
+  const live = monitors.filter(m => m.status === "live")
+    .sort((x, y) => failed(x) - failed(y) || (y.last_check?.at ?? "").localeCompare(x.last_check?.at ?? ""));
   // Radar's blips are labelled with where each story is: its sea or strait first, else its first country
   const radarAt = o.radar.stories.map(r => { const p = placeOrder(r.places)[0]; return p ? names[p] ?? placeName(p) : ""; });
   const late2 = o.markets.filter(m => m.state === "stale").length;  // prices that stopped updating; an unusual move is not one
@@ -262,7 +264,7 @@ export function OverviewPage() {
             : live.slice(0, 3).map(m => (
               <Link key={m.monitor_id} className="ovt-row" to={`/monitors/${m.monitor_id}`}>
                 <span className="ovt-tt2">{m.name}</span>
-                <span className="ovt-m">{m.last_check ? `${CHECK_WORD[m.last_check.status]}${m.last_check.status === "fired" ? ` (${plural(m.last_check.findings, "finding")})` : ""} ${ago(m.last_check.at, now)}` : "not checked yet"} · every {EVERY[m.check_frequency] ?? `${m.check_frequency} minutes`}</span></Link>))}
+                <span className="ovt-m">{m.last_check ? `${MONITOR_CHECK[m.last_check.status](m.last_check.findings)[0]} · ${ago(m.last_check.at, now)}` : "Not checked yet"} · every {EVERY[m.check_frequency] ?? `${m.check_frequency} minutes`}</span></Link>))}
           {c.monitors_waiting_approval > 0 && <p className="ovt-fine">{plural(c.monitors_waiting_approval, "monitor")} waiting for approval.</p>}
           <Link className="ovt-all" to="/monitors">See all monitors →</Link></> }],
         { id: "radar", label: "Latest from Radar", count: o.radar.stories.length, scene: { kind: "radar", data: { n: o.radar.stories.length, labels: radarAt, ids: o.radar.stories.map(r => r.story_id), scores: o.radar.stories.map(r => r.score) }, label: `A radar sweep; each story is a bright blip, the most important nearest the centre${radarAt.some(Boolean) ? `: ${radarAt.filter(Boolean).join(", ")}` : ""}` }, body: <>
@@ -273,7 +275,7 @@ export function OverviewPage() {
                 <span className="ovt-tt2">{r.title}{admin && <b className="ovt-score" title="Radar score">{r.score}</b>}</span>
                 <span className="ovt-m">{ago(r.last_seen_at, now)} · {plural(r.publishers, "publisher")} · {r.status === "sent" ? (r.event_id ? "in an event" : "sent for investigation") : r.status === "below" ? "not important enough" : "dismissed"}</span></Link>))}
           <Link className="ovt-all" to="/radar">Open Radar →</Link></> },
-        { id: "needs", label: alerts ? "Also waiting for you" : "Needs you", count: more, wide: true, body: <>
+        { id: "needs", label: alerts ? "Also waiting for you" : "Needs you", count: more, body: <>
           {!rest.length ? <p className="ovt-empty">{alerts ? "Nothing else needs you." : "Nothing needs you right now."} Approvals, failed checks, prices that stop updating and gaps in your profile appear here.</p>
             : <div className="ovn-grid">{rest.map(needTile)}</div>}
           {o.attention_more > 0 && <p className="ovt-fine">and {o.attention_more} more</p>}

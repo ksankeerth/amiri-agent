@@ -89,7 +89,6 @@ a.ovn-tile:hover .ovn-go { text-decoration:underline; text-underline-offset:3px;
 /* a tile's recommendations sit side by side when it is wide, stacked when narrow */
 .ovn-recs { list-style:none; margin:4px 0 0; padding:0; display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%, 280px), 1fr)); column-gap:32px; }
 .ovn-recs li { display:flex; flex-direction:column; gap:2px; padding:10px 0; border-top:1px solid var(--hairline); }
-.ovn-recs a { align-self:flex-start; font-size:16px; font-weight:600; color:var(--accent-ink); text-decoration:none; }
-.ovn-recs a:hover { text-decoration:underline; text-underline-offset:3px; }
-.ovs-col .ovn-recs li > a:not(.btn):not(.chip) { text-decoration:none; }  /* like the other green links; underline only on hover */
-.ovs-col .ovn-recs li > a:not(.btn):not(.chip):hover { text-decoration:underline; }
+/* like the other green links: underline only on hover (specific enough to beat app.css's underline for links in a li) */
+.ovn-recs li > a:not(.btn):not(.chip) { align-self:flex-start; font-size:16px; font-weight:600; color:var(--accent-ink); text-decoration:none; }
+.ovn-recs li > a:not(.btn):not(.chip):hover { text-decoration:underline; text-underline-offset:3px; }
