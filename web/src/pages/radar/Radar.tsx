@@ -76,6 +76,7 @@ export function RadarPage() {
   const [where, setWhere] = useState("");
   const [sel, setSel] = useState<string | null>(null);
   const [upto, setUpto] = useState(1);  // how many days the list shows; older days come in as you scroll
+  const [inView, setInView] = useState<string | null>(null);  // the day at the top of the list; the tabs count that day
   const [details, setDetails] = useState(false);
   const [why, setWhy] = useState<string | null>(null);  // the watched place whose reason is open
   const [running, setRunning] = useState<string | null>(null);
@@ -120,22 +121,26 @@ export function RadarPage() {
     || Number(b.status === "sent") - Number(a.status === "sent") || b.score - a.score), [items]);
   const inPlace = all.filter(s => !where || s.places.includes(where));
   const shown = inPlace.filter(s => show === "all" || s.status === show);
-  // the list starts with the latest day that has stories for these filters, so a filter reaches back as far as it needs to
+  // unfiltered, the list opens on the latest day and brings in one older day at a time; a filter lists its matches from every day
   const days = [...new Set(shown.map(s => day(s.last_seen_at)))];
-  const visible = shown.filter(s => days.indexOf(day(s.last_seen_at)) < upto);
+  const paged = show === "all" && !where;
+  const visible = paged ? shown.filter(s => days.indexOf(day(s.last_seen_at)) < upto) : shown;
   const cur = visible.find(s => s.story_id === sel) ?? visible.find(s => s.status === "sent") ?? visible[0];
   const placesSeen = useMemo(() => [...new Set(all.flatMap(s => s.places))], [all]);
-  // the tabs count the latest day only, so they agree with the headline; each day line carries its own counts
-  const latest = inPlace.filter(s => day(s.last_seen_at) === day(inPlace[0]?.last_seen_at ?? ""));
-  const count = (k: Show) => (k === "all" ? latest.length : latest.filter(s => s.status === k).length);
-  const dayCounts = (d: string) => {
-    const xs = inPlace.filter(s => day(s.last_seen_at) === d), n = (k: string) => xs.filter(s => s.status === k).length;
-    return [[n("sent"), "sent"], [n("below"), "held back"], [n("dismissed"), "dismissed"]].filter(([c]) => c).map(([c, w]) => `${c} ${w}`).join(" · ");
-  };
+  // the tabs count the day in view: the latest on opening (so they agree with the headline), then whichever day is scrolled to
+  const countDay = inView && days.includes(inView) ? inView : days[0] ?? (inPlace[0] ? day(inPlace[0].last_seen_at) : "");
+  const ofDay = inPlace.filter(s => day(s.last_seen_at) === countDay);
+  const count = (k: Show) => (k === "all" ? ofDay.length : ofDay.filter(s => s.status === k).length);
   // the next day comes in when the reader scrolls near the end of the list (or presses the button when the list is too short to scroll)
   const more = () => setUpto(u => Math.min(days.length, u + 1));
-  const refilter = () => { listRef.current?.scrollTo(0, 0); setSel(null); setUpto(1); };  // a new filter starts again at the top with one day
-  const nearEnd = (e: UIEvent<HTMLOListElement>) => { const o = e.currentTarget; if (o.scrollTop > 0 && o.scrollHeight - o.scrollTop - o.clientHeight < 120) more(); };
+  const refilter = () => { listRef.current?.scrollTo(0, 0); setSel(null); setUpto(1); setInView(null); };  // a new filter starts again at the top
+  const scrolled = (e: UIEvent<HTMLOListElement>) => {
+    const o = e.currentTarget, top = o.getBoundingClientRect().top;
+    let d: string | null = null;  // the last day whose section has reached the top of the list
+    o.querySelectorAll<HTMLElement>("[data-day]").forEach(h => { if (h.getBoundingClientRect().top - top <= 24) d = h.dataset.day ?? null; });
+    setInView(d);
+    if (paged && o.scrollTop > 0 && o.scrollHeight - o.scrollTop - o.clientHeight < 120) more();
+  };
 
   // up and down move through the list, like a mail reader
   const keys = (e: KeyboardEvent) => {
@@ -154,7 +159,6 @@ export function RadarPage() {
     : running || st.running ? "A run is in progress" : left === 0 ? "Limit reached; resets at midnight" : null;
   const sched = st ? scheduleText(st.every_minutes, st.run_at) : "";
   const next = st ? (new Date(st.next_run_at) <= now ? "due now" : when(st.next_run_at, now)) : "";
-  let lastDay = "", n = 0;
   return (
     <div className="page rd">
       <PageHeader eyebrow={st ? `Reads world news ${sched}${lr ? ` · last read ${ago(lr.finished_at ?? lr.created_at, now)}` : ""}${st.connected ? ` · next ${next}` : ""}` : undefined}
@@ -206,18 +210,19 @@ export function RadarPage() {
             {show === "all" && !where ? (st?.connected ? "Radar hasn't found anything touching your footprint yet. Check now runs it at once." : admin ? "Connect the Radar agent (RADAR_URL) and it starts reading the news." : "Radar starts reading the news once your Platform Admin connects it.") : "No stories match these filters."}</Empty>
         : <div className="rd-split">
           <nav className="rd-index" aria-label="Stories">
-            <ol ref={listRef} onKeyDown={keys} onScroll={nearEnd}>{visible.map(s => {
-              const d = day(s.last_seen_at), head = d !== lastDay; lastDay = d;
-              if (head) n = 0; const di = days.indexOf(d);
-              return <li key={s.story_id} className={di > 0 ? "rd-in" : undefined} style={di > 0 ? { "--i": Math.min(n++, 8) } as CSSProperties : undefined}>
-                {head && <span className="rd-day">{d}<span className="rd-dc"> · {dayCounts(d)}</span></span>}
-                <button type="button" data-id={s.story_id} className={s.status} aria-current={cur?.story_id === s.story_id} onClick={() => setSel(s.story_id)}>
-                  <span className="rd-dot" aria-hidden="true" />
-                  <span className="rd-it"><span className="rd-tt">{s.title}</span>
-                    <span className="rd-sub">{placeOrder(s.places).slice(0, 2).map(place).join(", ")}{s.places.length > 2 ? ` +${s.places.length - 2}` : ""}
-                      {" · "}{s.status === "sent" ? (s.event_title ?? "sent") : s.status === "below" ? "held back" : "dismissed"}</span></span>
-                </button></li>;
-            })}{upto < days.length && <li><button type="button" className="rd-link rd-more-days" onClick={more}>Earlier: {days[upto]}</button></li>}</ol>
+            <ol ref={listRef} onKeyDown={keys} onScroll={scrolled}>{days.filter(d => visible.some(s => day(s.last_seen_at) === d)).map((d, di) =>
+              <li key={d} data-day={d} className="rd-sec">
+                <span className="rd-day">{d}</span>
+                <ol>{visible.filter(s => day(s.last_seen_at) === d).map((s, n) => {
+                  const rise = paged && di > 0;
+                  return <li key={s.story_id} className={rise ? "rd-in" : undefined} style={rise ? { "--i": Math.min(n, 8) } as CSSProperties : undefined}>
+                    <button type="button" data-id={s.story_id} className={s.status} aria-current={cur?.story_id === s.story_id} onClick={() => setSel(s.story_id)}>
+                      <span className="rd-dot" aria-hidden="true" />
+                      <span className="rd-it"><span className="rd-tt">{s.title}</span>
+                        <span className="rd-sub">{placeOrder(s.places).slice(0, 2).map(place).join(", ")}{s.places.length > 2 ? ` +${s.places.length - 2}` : ""}
+                          {" · "}{s.status === "sent" ? (s.event_title ?? "sent") : s.status === "below" ? "held back" : "dismissed"}</span></span>
+                    </button></li>;
+                })}</ol></li>)}{paged && upto < days.length && <li key="more"><button type="button" className="rd-link rd-more-days" onClick={more}>Earlier: {days[upto]}</button></li>}</ol>
           </nav>
           {cur && <Reader s={cur} place={place} act={act} admin={admin} />}
         </div>}
