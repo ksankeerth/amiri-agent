@@ -111,7 +111,7 @@ export function FindingsPage() {
   </>;
 
   const linked = groups.reduce((s, [, fs]) => s + fs.length, 0), waiting = n("new") + n("grouped");
-  const into = groups.length === 1 && events[groups[0][0]] ? <>went into <Link to={`/events/${groups[0][0]}`}>{eventTitle(events[groups[0][0]])}</Link></> : <>went into {count(groups.length, "event")}</>;
+  const into = groups.length === 1 && events[groups[0][0]] ? <>went into <Link className="fd-ev" to={`/events/${groups[0][0]}`}>{eventTitle(events[groups[0][0]])}</Link></> : <>went into {count(groups.length, "event")}</>;
   const shown = (show === "all" || show === "new" || show === "grouped" ? pending.length : 0) + (show === "all" || show === "linked" ? linked : 0) + (show === "all" || show === "set_aside" ? aside.length : 0);
   return (
     <div className="page fd">

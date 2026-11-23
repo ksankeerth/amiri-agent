@@ -1,11 +1,16 @@
 /* Findings, by outcome: the Overview's language (an answering headline, hairlines, no boxes). Each finding is one line: when, what,
-   then two labels: how strongly it was flagged (filled, the app's high/medium/low) and which source found it (outlined, its own hue). */
+   then two labels: how strongly it was flagged (filled: strong green, moderate amber, weak blue-grey) and which source found it
+   (outlined: Radar blue, a monitor orange, a market series grey). */
 .fd { max-width:1180px; }
 .fd .ph-title h1 { font-size:44px; line-height:1.08; letter-spacing:-.03em; }
 .fd .ph-status { font-size:var(--fs-lg); color:var(--ink-2); max-width:70ch; }
 .fd .ph-status b { color:var(--ink); }
 .fd .ph-status a, .fd-sub a, .fd-groups h2 a, .fd-x a { color:var(--accent-ink); text-decoration:underline; text-underline-offset:3px; }
 .fd-n { font-variant-numeric:tabular-nums; background:linear-gradient(var(--accent), var(--accent)) no-repeat 0 100% / 100% 3px; padding-bottom:2px; }
+/* like the Overview and Radar, on one 5 s beat: the count's underline draws in, then the event it went into glows.
+   Keyframes are in shell.css; reduced motion leaves both at rest (underlined, bold green). */
+.fd-n { animation:ovline 5s .6s ease-in-out infinite; }
+.fd .ph-status a.fd-ev { font-weight:700; --c:var(--accent); animation:ovwake 5s 1.4s ease-out infinite; }
 .fd .ico16.rot { transform:rotate(90deg); }
 .fd-filters { margin:28px 0 0; }
 
@@ -38,12 +43,12 @@
 /* the labels */
 .fd-lab { display:inline-flex; align-items:center; gap:5px; padding:2px 9px; border:1px solid transparent; border-radius:var(--r-pill); font:600 14px/1.5 var(--font-ui); white-space:nowrap; text-decoration:none; }
 .fd-lab svg { width:14px; height:14px; flex:none; }
-.fd-lab.sig-strong   { background:var(--high-soft);   color:var(--high-ink); }
+.fd-lab.sig-strong   { background:var(--accent-soft); color:var(--accent-ink); }
 .fd-lab.sig-moderate { background:var(--medium-soft); color:var(--medium-ink); }
 .fd-lab.sig-weak     { background:var(--low-soft);    color:var(--low-ink); }
 .fd-lab[class*="src-"] { background:none; border-color:var(--line-strong); color:var(--ink-2); }
 .fd-lab.src-radar      { border-color:var(--info-line);   color:var(--info-ink); }
-.fd-lab.src-monitor    { border-color:var(--accent-line); color:var(--accent-ink); }
+.fd-lab.src-monitor    { border-color:var(--high-line); color:var(--high-ink); }  /* not green: Strong signal is */
 .fd .fd-line .fd-labels a.fd-lab { text-decoration:none; }  /* beats app.css :where(li) a:not(.btn)… */
 a.fd-lab:hover { background:var(--hover-bg); }
 
