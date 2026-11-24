@@ -216,7 +216,7 @@ export function RadarPage() {
     <div className="page rd">
       <PageHeader eyebrow={st ? `Reads world news ${sched}${lr ? ` · last read ${ago(lr.finished_at ?? lr.created_at, now)}` : ""}${st.connected ? ` · next ${next}` : ""}` : undefined}
         title={!st ? "Radar" : !lr ? "Radar hasn't read the news yet"
-          : <>Radar read <span className="rd-n read">{(lr.considered ?? 0).toLocaleString()}</span> articles and sent <span className="rd-n ok">{lr.sent ?? 0}</span> to you</>}
+          : <>Radar read <span className="rd-n read">{(lr.considered ?? 0).toLocaleString()} articles</span> and sent <span className="rd-n ok">{lr.sent ?? 0}</span> to you</>}
         status={lr ? <>{lr.stories ?? 0} stories touched your footprint; {lr.sent ?? 0} {lr.sent === 1 ? "was" : "were"} worth investigating, the rest are kept below.</> : undefined}
         cta={<>
           <button className="btn btn--primary btn--lg" type="button" disabled={!!cant} title={cant ?? undefined} onClick={runNow}>

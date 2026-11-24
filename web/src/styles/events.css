@@ -6,8 +6,7 @@
 .ev .ph-status { font-size:var(--fs-lg); color:var(--ink-2); max-width:72ch; }
 .ev .ph-status b { color:var(--ink); }
 /* the count is underlined; the event it names stays green and bold, not underlined too, and glows on the same beat */
-.ev-n { font-variant-numeric:tabular-nums; background:linear-gradient(var(--medium), var(--medium)) no-repeat 0 100% / 100% 3px; padding-bottom:2px;
-  animation:ovline 5s .6s ease-in-out infinite; }
+.ev-n { color:var(--accent-ink); font-variant-numeric:tabular-nums; }
 .ev .ph-status a.ev-name { font-weight:700; color:var(--accent-ink); text-decoration:none; --c:var(--accent); animation:ovwake 5s 1.4s ease-out infinite; }
 .ev .ph-status a.ev-name:hover { text-decoration:underline; text-underline-offset:3px; }
 

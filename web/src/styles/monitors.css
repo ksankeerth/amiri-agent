@@ -5,8 +5,7 @@
 .mon .ph-status { font-size:var(--fs-lg); color:var(--ink-2); max-width:76ch; }
 .mon .ph-status b { color:var(--ink); }
 /* the count is underlined; the monitor it names stays green and bold, not underlined too, and glows on the same beat */
-.mon-n { font-variant-numeric:tabular-nums; background:linear-gradient(var(--accent), var(--accent)) no-repeat 0 100% / 100% 3px; padding-bottom:2px;
-  animation:ovline 5s .6s ease-in-out infinite; }
+.mon-n { color:var(--accent-ink); font-variant-numeric:tabular-nums; }
 .mon .ph-status a.mon-ev { font-weight:700; color:var(--accent-ink); text-decoration:none; --c:var(--accent); animation:ovwake 5s 1.4s ease-out infinite; }
 .mon .ph-status a.mon-ev:hover { text-decoration:underline; text-underline-offset:3px; }
 .mon-down { color:var(--medium-ink); }

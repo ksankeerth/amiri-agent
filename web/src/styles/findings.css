@@ -6,10 +6,9 @@
 .fd .ph-status { font-size:var(--fs-lg); color:var(--ink-2); max-width:70ch; }
 .fd .ph-status b { color:var(--ink); }
 .fd .ph-status a, .fd-sub a, .fd-groups h2 a, .fd-x a { color:var(--accent-ink); text-decoration:underline; text-underline-offset:3px; }
-.fd-n { font-variant-numeric:tabular-nums; background:linear-gradient(var(--accent), var(--accent)) no-repeat 0 100% / 100% 3px; padding-bottom:2px; }
+.fd-n { color:var(--accent-ink); font-variant-numeric:tabular-nums; }
 /* like the Overview and Radar, on one 5 s beat: the count's underline draws in, then the event it went into glows.
    Keyframes are in shell.css; reduced motion leaves both at rest (underlined, bold green). */
-.fd-n { animation:ovline 5s .6s ease-in-out infinite; }
 .fd .ph-status a.fd-ev { font-weight:700; --c:var(--accent); animation:ovwake 5s 1.4s ease-out infinite; }
 .fd .ico16.rot { transform:rotate(90deg); }
 .fd-filters { margin:28px 0 0; }
