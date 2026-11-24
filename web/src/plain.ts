@@ -61,9 +61,12 @@ export function themeLabel(t: ThemeTag): string {
  *  A real headline-like title stays as it is. */
 export function eventTitle(e: { title: string; themes?: ThemeTag[] | null; size?: { value: number; unit: string } | null }): string {
   const m = e.title.trim().match(/^(.*?)\s*\((\d+(?:\.\d+)?)\s*(%|bp)\)$/);  // the size the server put at the end
-  const base = m ? m[1] : e.title.trim();
-  const raw = /^[a-z_]+ \([\w ]+\)$/.test(base) || base.split(/\s+/).length <= 2;
-  const t = e.themes?.[0];
+  // "disaster (abroad) in IR and LK": the places the server spelt as codes go; the page shows them
+  const base = (m ? m[1] : e.title.trim()).replace(/ in [A-Z]{2}(?: and [A-Z]{2})*$/, "");
+  const machine = base.match(/^([a-z_]+) \(([\w ]+)\)$/);
+  const raw = !!machine || base.split(/\s+/).length <= 2;
+  // a bare title ("macro (better)") still reads as its theme when the themes didn't come with it
+  const t = e.themes?.[0] ?? (machine ? { theme: machine[1], direction: machine[2] } as ThemeTag : undefined);
   if (!raw || !t) return e.title;
   const size = m ? `${m[2]}${m[3] === "%" ? "%" : " bp"}` : moveSize(e.size);
   return size ? `${themeLabel(t)} ${size}` : themeLabel(t);

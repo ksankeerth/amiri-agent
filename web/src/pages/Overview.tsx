@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { inst, type Check, type Profile } from "../api/institutions";
 import { overviewApi, type Attention, type Overview } from "../api/overview";
-import { monitorsApi, EVERY, type MonitorRow } from "../api/monitors";
+import { monitorsApi, type MonitorRow } from "../api/monitors";
 import { scheduleText } from "../api/radar";
 import { HowItWorks, PageHeader } from "../components/blocks";
 import type { SeriesState } from "../api/series";
@@ -12,7 +12,7 @@ import { Spark } from "../components/charts";
 import { Icon } from "../components/Icon";
 import { Banner, CountUp, DEMOS, errText, isDown, LoadError, PageHead, PageSkeleton, useNow, useRole } from "../components/ui";
 import { ago, dayTime, pct, placeName, placeOrder, plural, price, TIME_ZONE, ZONE_LABEL } from "../format";
-import { eventTitle, MONITOR_CHECK, SERIES_STATE, setAsideReason, themeLabel } from "../plain";
+import { eventTitle, everyText, MONITOR_CHECK, SERIES_STATE, setAsideReason, themeLabel, undated } from "../plain";
 import { ProfileMap } from "./institution/ProfileMap";
 import { TAB_OF_SECTION } from "./institution/InstitutionPage";
 import { OverviewStory, Reveal, type StoryRow } from "./OverviewStory";
@@ -101,6 +101,10 @@ function DemoCard() {
     </div></section>
   );
 }
+
+/** When every live monitor checks on the same cadence, it's said once above them ("All check every hour"). */
+const oneCadence = (live: MonitorRow[]) =>
+  live.length > 1 && live.every(m => m.check_frequency === live[0].check_frequency) ? `All check ${everyText(live[0].check_frequency).toLowerCase()}` : "";
 
 export function OverviewPage() {
   const nav = useNavigate();
@@ -202,7 +206,7 @@ export function OverviewPage() {
           {!o.findings.length ? <p className="ovt-empty">No findings yet. They appear here when a monitor, a market price or Radar notices something.</p>
             : o.findings.slice(0, 3).map(f => (
               <Link key={f.finding_id} className="ovt-row" to={f.event_id ? `/events/${f.event_id}` : `/findings#f-${f.finding_id}`}>
-                <span className="ovt-tt2">{f.title}</span>
+                <span className="ovt-tt2">{undated(f.title)}</span>
                 <span className="ovt-m">{SOURCE[f.source] ?? f.source} · {dayTime(f.created_at)} · {findingStatus(f)}</span></Link>))}
           <Link className="ovt-all" to="/findings">See all findings →</Link></> }],
         [{ id: "markets", label: "Markets", count: o.markets.length, body: <>
@@ -217,10 +221,10 @@ export function OverviewPage() {
           <Link className="ovt-all" to="/series">See market series →</Link></> },
          { id: "monitors", label: "Monitors", count: c.monitors_live, body: <>
           {!c.monitors_live ? <p className="ovt-empty">No live monitors yet. Draft them from your profile on the Monitors page; each one reads the news for one risk.</p>
-            : live.slice(0, 3).map(m => (
+            : <>{oneCadence(live) && <p className="ovt-sum">{oneCadence(live)}.</p>}{live.slice(0, 3).map(m => (
               <Link key={m.monitor_id} className="ovt-row" to={`/monitors/${m.monitor_id}`}>
                 <span className="ovt-tt2">{m.name}</span>
-                <span className="ovt-m">{m.last_check ? `${MONITOR_CHECK[m.last_check.status](m.last_check.findings)[0]} · ${ago(m.last_check.at, now)}` : "Not checked yet"} · every {EVERY[m.check_frequency] ?? `${m.check_frequency} minutes`}</span></Link>))}
+                <span className="ovt-m">{m.last_check ? `${MONITOR_CHECK[m.last_check.status](m.last_check.findings)[0]} · ${ago(m.last_check.at, now)}` : "Not checked yet"}{oneCadence(live) ? "" : ` · ${everyText(m.check_frequency).toLowerCase()}`}</span></Link>))}</>}
           {c.monitors_waiting_approval > 0 && <p className="ovt-fine">{plural(c.monitors_waiting_approval, "monitor")} waiting for approval.</p>}
           <Link className="ovt-all" to="/monitors">See all monitors →</Link></> }],
         { id: "radar", label: "Latest from Radar", count: o.radar.stories.length, scene: { data: { n: o.radar.stories.length, labels: radarAt, ids: o.radar.stories.map(r => r.story_id), scores: o.radar.stories.map(r => r.score) }, label: `A radar sweep; each story is a bright blip, the most important nearest the centre${radarAt.some(Boolean) ? `: ${radarAt.filter(Boolean).join(", ")}` : ""}` }, body: <>

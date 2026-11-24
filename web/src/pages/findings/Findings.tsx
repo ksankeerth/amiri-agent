@@ -10,7 +10,7 @@ import { FlowFilter } from "../../components/FlowFilter";
 import { Icon } from "../../components/Icon";
 import { Banner, Empty, errText, isDown, ListSkeleton, LoadError, useNow, useToast } from "../../components/ui";
 import { ago, dayTime, until } from "../../format";
-import { count, eventTitle, longWhen, signalStrength, sourceInfo } from "../../plain";
+import { count, eventTitle, longWhen, signalStrength, sourceInfo, undated } from "../../plain";
 import "../../styles/findings.css";
 import { InvestigateNowButton, useInvestigationStatus } from "../events/Events";
 import { DAYS, reasonText, useRecentFindings } from "./recent";
@@ -84,7 +84,7 @@ export function FindingsPage() {
     const si = sourceInfo(f.source), src = sourceLink(f), sig = signalStrength(f.score), isOpen = open === f.finding_id, x = split(f.explanation);
     return <li key={f.finding_id} id={`f-${f.finding_id}`} className={`fd-line ${f.status} ${target === f.finding_id ? "target" : ""}`}>
       <time dateTime={f.created_at} title={longWhen(f.created_at)}>{dayTime(f.created_at)}</time>
-      <button type="button" className="fd-t" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : f.finding_id)}>{f.title}</button>
+      <button type="button" className="fd-t" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : f.finding_id)}>{undated(f.title)}</button>
       <span className="fd-labels">
         {sig && <span className={`fd-lab sig-${sig[0].split(" ")[0].toLowerCase()}`} title="How strongly the source flagged it">{sig[0]}</span>}
         {src ? <Link className={`fd-lab src-${f.source}`} to={src}><Icon name={si.icon} />{si.label}</Link>
@@ -140,7 +140,7 @@ export function FindingsPage() {
           <p className="fd-sub">The investigation picks these up{nextBatch ? ` in its next batch, ${nextBatch}` : " shortly"}.</p>{lines("pending", pending, pending.length)}</section>}
         {(show === "all" || show === "linked") && groups.map(([k, fs]) => { const e = events[k]; return <section key={k} aria-labelledby={`fd-${k}`}>
           <h2 id={`fd-${k}`}>{e ? <Link to={`/events/${k}`}>{eventTitle(e)}</Link> : "An event"} <span>{count(fs.length, "finding")}</span></h2>
-          <p className="fd-sub">The investigation linked these to the event{e?.status ? `, which is ${e.status}` : ""}. {k && <Link to={`/events/${k}`}>Open the event</Link>}</p>
+          <p className="fd-sub">The investigation linked these to this event{e?.status === "open" ? ", which is still open" : e?.status === "closed" ? ", now closed" : ""}. {k && <Link to={`/events/${k}`}>See the event</Link>}</p>
           {lines(k, fs)}</section>; })}
         {(show === "all" || show === "set_aside") && aside.length > 0 && <section className="quiet" aria-labelledby="fd-a">
           <h2 id="fd-a">No impact found <span>{aside.length}</span></h2>

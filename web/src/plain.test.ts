@@ -69,6 +69,10 @@ test("generic event titles become the theme in words plus the size; real titles 
   assert.equal(eventTitle({ title: "Oil rose", themes: oil, size: null }), "Oil prices up");
   assert.equal(eventTitle({ title: "CBSL holds policy rate", themes: [{ theme: "rates", direction: "steady" }], size: { value: 9, unit: "pct" } }), "CBSL holds policy rate");
   assert.equal(eventTitle({ title: "Oil rose", themes: [] }), "Oil rose");
+  assert.equal(eventTitle({ title: "disaster (abroad) in IR and LK and SA and YE", themes: [{ theme: "disaster", direction: "abroad" }] }), "Disaster abroad");
+  assert.equal(eventTitle({ title: "disaster (abroad) in IR and LK" }), "Disaster abroad");
+  assert.equal(eventTitle({ title: "macro (better)" }), themeLabel({ theme: "macro", direction: "better" }));
+  assert.equal(eventTitle({ title: "Floods in Colombo" }), "Floods in Colombo");
 });
 
 test("an alert queue: open first, then the most serious, then the latest", () => {
