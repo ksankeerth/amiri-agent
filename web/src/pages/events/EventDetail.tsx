@@ -48,7 +48,7 @@ function EventPage({ d, retryAlerts }: { d: D; retryAlerts: () => void }) {
     <header className="evd-head">
       <nav className="crumbs" aria-label="Breadcrumb"><Link to="/events">Events</Link><span aria-hidden="true">/</span><span>{d.title}</span></nav>
       <p className="evd-when"><time dateTime={e.anchor} title={longWhen(e.anchor)}>{dayTime(e.anchor)}</time>
-        {n > 0 && <TonePill tone={d.tone} />}{e.world !== "live" && <span className="pill t-blue">Simulated</span>}
+        {n > 0 && !(d.alertsFailed && d.tone === "neutral") && <TonePill tone={d.tone} />}{e.world !== "live" && <span className="pill t-blue">Simulated</span>}
         <span>{open ? `Open until ${onDay(e.open_until.slice(0, 10))}` : `Closed${e.closed_at ? ` ${onDay(e.closed_at.slice(0, 10))}` : ""}`}</span>
         <button type="button" className="ph-help" aria-expanded={help} aria-controls={panel} onClick={() => setHelp(h => !h)}><Icon name="help" />How this works</button></p>
       <div className="evd-h1row"><h1>{d.title}</h1>
@@ -65,7 +65,7 @@ function EventPage({ d, retryAlerts }: { d: D; retryAlerts: () => void }) {
     </header>
 
     {n > 0 && <section className="evd-sec" aria-labelledby="evd-why">
-      <h2 id="evd-why">Why it matters to you, by team <span>{n}</span><Link className="evd-all" to="/alerts">All alerts</Link></h2>
+      <h2 id="evd-why">Why it matters to you{d.alertsFailed ? "" : ", by team"} <span>{n}</span><Link className="evd-all" to="/alerts">All alerts</Link></h2>
       {d.alertsFailed && <p className="evd-once evd-fail"><Icon name="warn" />The alerts for this event couldn't be loaded, so the impacts aren't grouped by team.
         <button type="button" className="evd-retry" onClick={retryAlerts}>Try again</button></p>}
       {d.onePhrase && <p className="evd-once">{d.teams.length === 1 ? "The team has" : "Each team has"} {d.onePhrase}.</p>}
