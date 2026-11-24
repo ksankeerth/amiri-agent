@@ -53,10 +53,10 @@ function ProposalCard({ p, onDecided }: { p: Proposal; onDecided: (p: Proposal) 
     catch (e) { toast(e instanceof ApiError ? e.full : String(e)); chat.proposal(p.proposal_id).then(onDecided).catch(() => {}); }
     finally { setBusy(false); }
   };
-  const [badge, icon, said] = PSTATE[p.status];
+  const [badge, , said] = PSTATE[p.status];
   return (
     <div className="proposal" data-proposal={p.proposal_id}>
-      <div className="ph"><Icon name="edit" className="ico16" /><b style={{ flex: 1 }}>{p.status === "pending" ? "Shall I apply these changes?" : p.summary}</b><span className={`badge pstate ${badge}`}><Icon name={icon} />{said}</span></div>
+      <div className="ph"><b style={{ flex: 1 }}>{p.status === "pending" ? "Suggested changes" : p.summary}</b><span className={`pstate ${badge}`}>{said}</span></div>
       <div className="pb">
         {p.status === "pending" && <span className="small" style={{ color: "var(--ink)" }}>{p.summary}</span>}
         {p.kind === "monitors" ? p.changes.map((c, i) => (
@@ -316,6 +316,11 @@ export function SetupChat({ institutionId, onTrack, onApplied, at, askKey = 0 }:
     setPicked(atTrack); setHeld(null);
   }, [atTrack]);  // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (askKey) box.current?.focus(); }, [askKey]);
+  useEffect(() => {  // the message box grows with what is typed, up to about eight lines
+    const t = box.current; if (!t) return;
+    if (!draft) { t.style.height = ""; return; }
+    t.style.height = "auto"; t.style.height = `${Math.min(t.scrollHeight + 2, 200)}px`;
+  }, [draft]);
   const hereLabel = here && here === atTrack && at?.label ? at.label : def(here)?.label ?? null;
   const starters = here && !working && !messages.some(m => m.track === here && m.role === "user") ? startersFor(country)[here] ?? [] : [];
   const answered = new Set(messages.filter(m => m.kind === "answer").map(m => m.content.question_id));
@@ -345,8 +350,9 @@ export function SetupChat({ institutionId, onTrack, onApplied, at, askKey = 0 }:
   return (
     <div className="col" style={{ height: "100%", minHeight: 0 }}>
       <div className="chathead">
-        <div className="row"><Icon name="chat" className="ico16" /><b>Setup agent</b><span className="spacer" />
-          {chatToggle && <button className="btn btn--sm btn--ghost" type="button" onClick={chatToggle.toggle} aria-label="Hide the setup agent">Hide<Icon name="x" /></button>}</div>
+        <div className="chat-title"><div><h2>Setup assistant</h2>
+          <p>Ask, check or change your profile. Nothing is saved until you apply it.</p></div>
+          {chatToggle && <button className="chat-close" type="button" onClick={chatToggle.toggle} aria-label="Hide the setup assistant" title="Hide the setup assistant"><Icon name="x" /></button>}</div>
         <div className="helping">
           <span className="helping-l">Helping with: <b>{hereLabel ?? "anything about your profile"}</b></span>
           <MenuButton label="Topic">
@@ -362,7 +368,7 @@ export function SetupChat({ institutionId, onTrack, onApplied, at, askKey = 0 }:
             <b>Not connected yet.</b> {status.message}{role === "platform_admin" && <span className="mono"> ({status.backend})</span>}</div>)}
         {status?.connected && status.backend === "stub" && role === "platform_admin" && <div className="note small">Stub agent: canned replies and keyword routing, for building the UI.</div>}
       </div>
-      <div ref={log} role="log" aria-label="Conversation with the setup agent" tabIndex={0} style={{ flex: 1, overflow: "auto", padding: 14, display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>
+      <div ref={log} className="chatlog" role="log" aria-label="Conversation with the setup agent" tabIndex={0}>
         {folded.length > 0 && <button type="button" className="chat-earlier" onClick={() => setShowAll(true)}>
           Earlier: {foldedTopics.join(", ")} ({folded.length === 1 ? "1 message" : `${folded.length} messages`}) · <u>Show</u></button>}
         {rows}
@@ -377,19 +383,19 @@ export function SetupChat({ institutionId, onTrack, onApplied, at, askKey = 0 }:
         {live && <div className="msg ai">{live}<span className="muted">▍</span></div>}
         {working && <div className="agentwork" role="status" aria-live="polite"><span className="orb" aria-hidden="true" />
           <span>{busy ? (live ? "Writing…" : slow ? "Waiting for the assistant… If it was asleep, the first reply can take up to a minute."
-            : "The setup agent is working on it…")
+            : "Thinking…")
             : writing ? "A reply is still being written… it will appear here."
             : `Moving on to ${(def(nextUp) ?? { label: "the next section" }).label.toLowerCase()}…`}</span></div>}
       </div>
       {draft.length >= MAX_CHARS * 0.8 && <div className="small" role="status" style={{ padding: "6px 12px 0", color: draft.length >= MAX_CHARS ? "var(--medium-ink)" : "var(--ink-3)" }}>
         {draft.length}/{MAX_CHARS}{draft.length >= MAX_CHARS ? " · That's the limit: keep to one topic, and send the rest after the reply." : ""}</div>}
-      <div style={{ borderTop: "1px solid var(--hairline)", padding: 12, display: "flex", gap: 8, alignItems: "center" }}>
-        <textarea ref={box} className="input" rows={2} aria-label="Message to the setup agent" style={{ flex: 1, resize: "none" }} value={draft} disabled={working}
+      <div className="chatcomp">
+        <textarea ref={box} className="input" rows={1} aria-label="Message to the setup agent" value={draft} disabled={working}
           maxLength={MAX_CHARS}
-          placeholder={working ? "The setup agent is working… you can type once it's done." : picked ? `About ${def(picked)?.label.toLowerCase()}…` : institutionId ? "Ask, check, or ask for a change…" : "e.g. We're a commercial bank with branches in two regions"}
+          placeholder={working ? "The setup agent is working… you can type once it's done." : picked ? `About ${def(picked)?.label.toLowerCase()}…` : institutionId ? "Ask or tell me about your institution…" : "e.g. We're a commercial bank with branches in two regions"}
           onChange={e => setDraft(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (draft.trim() && !working) { send({ text: draft.trim() }); setDraft(""); } } }} />
-        <button className="btn btn--primary" type="button" disabled={working || !draft.trim()} onClick={() => { send({ text: draft.trim() }); setDraft(""); }}>Send</button>
+        <button className="chat-send" type="button" aria-label="Send" title="Send" disabled={working || !draft.trim()} onClick={() => { send({ text: draft.trim() }); setDraft(""); }}><Icon name="arrow" /></button>
       </div>
     </div>
   );
@@ -432,7 +438,8 @@ function MessageRow({ m, proposals, flash, open, busy, onAnswer, onDecided }: {
     case "applied": return <div className="msg sys">{m.content.status === "confirmed" ? "✓ Applied" : "✗ Not applied"}: {m.content.summary}
       {m.content.status === "failed" && m.content.detail ? <span style={{ color: "var(--medium-ink)" }}> · {m.content.detail}</span> : null}</div>;
     case "notes": return <div className="msg sys">Noted for later: {(m.content.notes ?? []).map((n: any) => `${n.track.replace(/_/g, " ")}: ${n.text}`).join(" · ")}</div>;
-    case "error": return <div className="msg sys">{m.content.message}</div>;
+    case "error": return <div className="msg sys chat-err"><span><span aria-hidden="true">◆ </span>{m.content.message}</span>
+      {(m.content.detail || m.content.code) && <details><summary>Details</summary><div className="rawerr">{String(m.content.detail ?? m.content.code)}</div></details>}</div>;
     case "proposal": {
       const p = proposals[m.content.proposal_id];
       return p ? <div style={flash === p.proposal_id ? { outline: "2px solid var(--accent)", borderRadius: 12 } : undefined}><ProposalCard p={p} onDecided={onDecided} /></div> : null;
