@@ -42,8 +42,8 @@ function DataSoFar({ a }: { a: AlertItem }) {
     <span key={v}>{i > 0 && ", "}<Result verdict={v} adverse={checked.find(e => e.check!.verdict === v)!.adverse} figure={kinds.length === 1 ? move : undefined} strong={false} /></span>))}</span>;
 }
 
-function AlertRow({ a, next, ev, primary, showLevel, now, onChange }: {
-  a: AlertItem; next: string | null; ev: EventDetail | undefined; primary: boolean; showLevel: boolean; now: Date; onChange: (a: AlertItem) => void;
+function AlertRow({ a, next, ev, showLevel, now, onChange }: {
+  a: AlertItem; next: string | null; ev: EventDetail | undefined; showLevel: boolean; now: Date; onChange: (a: AlertItem) => void;
 }) {
   const toast = useToast();
   const [open, setOpen] = useState(false);
@@ -90,9 +90,9 @@ function AlertRow({ a, next, ev, primary, showLevel, now, onChange }: {
         </div>
         <div className="rd-alrow-data rd-row-d"><DataSoFar a={a} /></div>
         {!asking ? <div className="rd-alrow-act">
-          {a.status === "new" && (primary
-            ? <button className="btn btn--primary" type="button" title={ACTION_MEANS.ack} onClick={() => setAsking("ack")}>Acknowledge</button>
-            : <TextButton title={ACTION_MEANS.ack} onClick={() => setAsking("ack")}>Acknowledge</TextButton>)}
+          {/* every alert waiting for review gets the same button: they're peers, and the list's order already says which
+              is most serious. The filled button is kept for the confirmation, the one action at that moment. */}
+          {a.status === "new" && <button className="btn" type="button" title={ACTION_MEANS.ack} onClick={() => setAsking("ack")}>Acknowledge</button>}
           {a.status === "acknowledged" && <TextButton title={ACTION_MEANS.resolve} onClick={() => setAsking("resolve")}>Resolve</TextButton>}
           {a.status !== "new" && <TextButton title={ACTION_MEANS.reopen} disabled={busy} onClick={() => act("reopen")}>Reopen</TextButton>}
         </div> : <div className="rd-alrow-act" />}
@@ -138,7 +138,7 @@ function AlertRow({ a, next, ev, primary, showLevel, now, onChange }: {
             placeholder={asking === "ack" ? "A note for your team (optional): who is looking, what next" : "Why it's resolved (optional)"}
             value={note} onChange={e => setNote(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") act(asking); else if (e.key === "Escape") { setAsking(null); setNote(""); } }} />
-          <button className={`btn${primary ? " btn--primary" : ""}`} type="button" disabled={busy} onClick={() => act(asking)}>{asking === "ack" ? "Acknowledge" : "Resolve"}</button>
+          <button className="btn btn--primary" type="button" disabled={busy} onClick={() => act(asking)}>{asking === "ack" ? "Acknowledge" : "Resolve"}</button>
           <TextButton onClick={() => { setAsking(null); setNote(""); }}>Cancel</TextButton>
         </div>}
       </div>}
@@ -196,7 +196,6 @@ export function AlertsPage() {
   // one queue, the most serious first (the alert your own data confirms leads), then the latest; an event's alerts
   // sit together where its most serious one is
   const queue = useMemo(() => [...(shown ?? [])].sort((x, y) => alertOrder({ ...x, at: changed(x) }, { ...y, at: changed(y) })), [shown]);
-  const firstNew = queue.find(a => a.status === "new")?.alert_id;
   const groups = useMemo(() => {
     const m = new Map<string, AlertItem[]>();
     for (const a of queue) m.set(a.event_id, [...(m.get(a.event_id) ?? []), a]);
@@ -262,7 +261,7 @@ export function AlertsPage() {
               </span>}
               >
               <div className="rd-alhead rd-colh" aria-hidden="true"><span /><span>Your data</span><span /></div>
-              {as.map(a => <AlertRow key={a.alert_id} a={a} next={nextCheck(a)} ev={ev} now={now} primary={a.alert_id === firstNew} showLevel={!sameLevel} onChange={update} />)}
+              {as.map(a => <AlertRow key={a.alert_id} a={a} next={nextCheck(a)} ev={ev} now={now} showLevel={!sameLevel} onChange={update} />)}
             </Section>);
         })}</div>}
     </div>
