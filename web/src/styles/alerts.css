@@ -6,7 +6,7 @@
 .ap .ph-status b { color:var(--ink); }
 /* the count's underline draws in, then the event glows, on the Overview's 5 s beat (keyframes in shell.css) */
 .ap-n { color:var(--accent); font-variant-numeric:tabular-nums; }
-.ap .ph-status a.ap-ev { font-weight:700; color:var(--accent-ink); text-decoration:none; background:linear-gradient(var(--accent), var(--accent)) no-repeat 0 100% / 100% 2px; padding-bottom:2px; animation:ovline 5s .6s ease-in-out infinite; }
+.ap .ph-status a.ap-ev { font-weight:700; color:var(--accent-ink); text-decoration:none; background:linear-gradient(var(--critical), var(--critical)) no-repeat 0 100% / 100% 2px; padding-bottom:2px; animation:ovline 5s .6s ease-in-out infinite; }
 .ap .muted { color:var(--ink-3); }
 .ap .ico16.rot { transform:rotate(90deg); }
 .ap-filters { margin:28px 0 0; }
