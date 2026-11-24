@@ -1,26 +1,33 @@
-// Monitors: the list, the status badges and actions shared with the monitor page, and
-// "Draft from the profile" (code fills the sentence, lines and chips from a profile item).
-import { useCallback, useEffect, useState } from "react";
+// Monitors: the list, grouped by state, and the pieces shared with the monitor page (the approval buttons, the
+// last check in words, the notes about the service) and "Draft from the profile" (code fills the sentence,
+// lines and names from a profile item).
+import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ApiError } from "../../api/client";
-import { EVERY, monitorsApi, type Draftable, type MonitorRow, type MonitorsStatus, type MonitorStatus } from "../../api/monitors";
-import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
-import { Icon } from "../../components/Icon";
-import { Banner, Empty, Modal, useNow, useRole, useToast, InlineSkeleton, LoadError } from "../../components/ui";
-import { ago, due, when } from "../../format";
-import { count, everyText, MONITOR_CHECK, MONITOR_STATUS } from "../../plain";
+import { monitorsApi, type Draftable, type MonitorRow, type MonitorsStatus, type MonitorStatus } from "../../api/monitors";
+import { StatusPill } from "../../components/blocks";
+import { Fold, PageTitle, QuietWarn, Section, TextButton } from "../../components/rd";
+import { Banner, Modal, useNow, useRole, useToast, ListSkeleton, LoadError } from "../../components/ui";
+import { ago, dayTime, person } from "../../format";
+import { MONITOR_CHECK, MONITOR_STATUS } from "../../plain";
+import "../../styles/rd-monitors.css";
+import { everyWords, isOverdue } from "./words";
 
+/** A status as a pill: only the setup step still uses this; the Monitors pages say it in words. */
 export function StatusBadge({ status }: { status: MonitorStatus }) {
   const [text, tone] = MONITOR_STATUS[status];
   return <StatusPill tone={tone}>{text}</StatusPill>;
 }
 
-/** The last check in words: "Found 1 · 26 min ago", "Nothing new · 2 h ago", "Couldn't check (tries again soon)". */
+/** The last check in words: "Nothing new · 2 h ago", "Found 1 · 26 min ago", or "◆ Overdue: last checked 21 h ago". */
 export function LastCheck({ m, now }: { m: MonitorRow; now: Date }) {
-  if (!m.last_check) return <span className="small muted">Not checked yet</span>;
+  if (!m.last_check) return <span>Not checked yet</span>;
   const c = m.last_check;
-  const [text, tone] = MONITOR_CHECK[c.status](c.findings);
-  return <span className="lastck"><StatusPill tone={tone}>{text}</StatusPill><span className="small muted">{ago(c.at, now)}</span></span>;
+  if (isOverdue(m, now)) return <span className="rd-warn"><span className="rd-shape" aria-hidden="true">◆</span> Overdue: last checked {ago(c.at, now)}</span>;
+  const [text] = MONITOR_CHECK[c.status](c.findings);
+  return c.status === "error"
+    ? <span className="rd-warn"><span className="rd-shape" aria-hidden="true">◆</span> {text} · {ago(c.at, now)}</span>
+    : <span>{text} · {ago(c.at, now)}</span>;
 }
 
 export const ORIGIN: Record<string, string> = { profile: "drafted from the profile", setup: "drafted in setup", radar_story: "from a Radar story", template: "from a template" };
@@ -32,31 +39,40 @@ export function useMonitorsStatus() {
   return { status, reload: load };
 }
 
-/** Notes about the monitor service: the Platform Admin reads the server's own words; a Risk Manager reads what it means. */
+/** Notes about the monitor service, in words: the Platform Admin reads the server's own words; a Risk Manager reads what it means. */
 export function MonitorBanners({ status }: { status: MonitorsStatus | null }) {
   const { role } = useRole();
   if (!status) return null;
-  if (role === "platform_admin") return <>{status.notes.map(n => <Banner key={n} kind="warn" icon="warn">{n}</Banner>)}</>;
-  return !status.connected ? <Banner kind="warn" icon="warn">Monitors can't check the news right now. Your Platform Admin has been told.</Banner> : null;
+  if (role === "platform_admin") return <>{status.notes.map(n => <QuietWarn key={n}>{n}</QuietWarn>)}</>;
+  return !status.connected ? <QuietWarn>Monitors can't check the news right now. Your Platform Admin has been told.</QuietWarn> : null;
 }
 
-/** How monitor checks work: behind the page's "How this works" link. */
-export function MonitorHelp({ status }: { status: MonitorsStatus | null }) {
+/** How monitor checks work: the text behind the page's "How this works". */
+export function MonitorHelp({ status, id, open }: { status: MonitorsStatus | null; id: string; open: boolean }) {
   return (
-    <HowItWorks>
-      <p>A monitor watches the news for something you care about. It runs once a Risk Manager approves it. What it finds goes to the investigation like any other finding.</p>
-      {status && <p>Each check reads news published since the last one (up to {status.web_queries_per_check} searches). In this prototype a monitor is checked at most every {EVERY[status.min_frequency_minutes] ?? `${status.min_frequency_minutes} minutes`}, and up to {status.live_max} can be live. If a check can't read the news, it tries again within the hour and nothing is lost.</p>}
-    </HowItWorks>
+    <div id={id} className="rd-open rd-prose mn-help" hidden={!open}>
+      <p>A monitor is one question, in plain words, that a Risk Manager approved. Amiri Agent checks it against the news on a schedule. What it finds goes to the investigation like any other finding.</p>
+      {status && <p>Each check reads news published since the last one (up to {status.web_queries_per_check} searches). In this prototype a monitor is checked at most {everyWords(status.min_frequency_minutes)}, and up to {status.live_max} can be live. If a check can't read the news, it tries again within the hour and nothing is lost.</p>}
+    </div>
   );
 }
 
-/** The buttons for a monitor's state. Any Risk Manager approves (prototype: no separate approver role). */
-export function MonitorActions({ m, onChange, compact }: { m: MonitorRow; onChange: () => void; compact?: boolean }) {
+/** The lede's "How this works" toggle and its text. */
+export function useHelp() {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  const toggle = <TextButton aria-expanded={open} aria-controls={id} onClick={() => setOpen(o => !o)}>How this works</TextButton>;
+  return { open, id, toggle };
+}
+
+/** Waiting for a Risk Manager's approval: a new monitor, or a new version of a live or paused one. */
+export const awaitingApproval = (m: Pick<MonitorRow, "status" | "pending">) => m.status === "submitted" || m.pending?.status === "submitted";
+
+/** The calls behind a monitor's buttons, with their toasts. Any Risk Manager approves (prototype: no separate approver role). */
+export function useMonitorAct(m: { monitor_id: string }, onChange: () => void) {
   const toast = useToast();
   const [asking, setAsking] = useState(false);
   const [note, setNote] = useState("");
-  const pendingSubmitted = m.pending?.status === "submitted" || m.status === "submitted";
-  const pendingDraft = m.pending?.status === "draft" || m.status === "draft";
   const act = async (a: "submit" | "approve" | "pause" | "resume" | "retire") => {
     try {
       await monitorsApi.act(m.monitor_id, a);
@@ -68,25 +84,41 @@ export function MonitorActions({ m, onChange, compact }: { m: MonitorRow; onChan
     try { await monitorsApi.requestChanges(m.monitor_id, note); toast("Sent back with your note"); setAsking(false); setNote(""); onChange(); }
     catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
   };
+  return { act, asking, setAsking, note, setNote, sendBack };
+}
+
+/** Pause or Resume, as a text action. */
+export function PauseResume({ m, onChange }: { m: MonitorRow; onChange: () => void }) {
+  const { act } = useMonitorAct(m, onChange);
+  if (m.status === "live") return <TextButton onClick={() => act("pause")}>Pause</TextButton>;
+  if (m.status === "paused") return <TextButton onClick={() => act("resume")}>Resume</TextButton>;
+  return null;
+}
+
+/** Approve and Request changes (when a version waits), or Submit (when a draft is ready). `primary` makes Approve
+ *  (or Submit) the screen's one filled button; the list keeps that for "New monitor". */
+export function ApprovalActions({ m, onChange, primary }: { m: MonitorRow; onChange: () => void; primary?: boolean }) {
+  const { act, asking, setAsking, note, setNote, sendBack } = useMonitorAct(m, onChange);
+  const version = m.pending ? ` version ${m.pending.version}` : "";
   if (m.status === "retired") return null;
   if (asking) return (
-    <span className="row" style={{ gap: 6 }}>
-      <input className="input" style={{ width: compact ? 200 : 260 }} placeholder="What should change?" value={note} onChange={e => setNote(e.target.value)} autoFocus />
-      <button className="btn btn--sm btn--primary" type="button" disabled={note.trim().length < 3} onClick={sendBack}>Send back</button>
-      <button className="btn btn--sm" type="button" onClick={() => setAsking(false)}>Cancel</button>
+    <span className="mn-ask">
+      <input className="input" aria-label="What should change?" placeholder="What should change?" value={note} onChange={e => setNote(e.target.value)} autoFocus />
+      <button className="btn" type="button" disabled={note.trim().length < 3} onClick={sendBack}>Send back</button>
+      <TextButton onClick={() => setAsking(false)}>Cancel</TextButton>
     </span>
   );
-  return (
-    <span className="row wrap" style={{ gap: 6 }}>
-      {pendingDraft && <button className="btn btn--sm" type="button" onClick={() => act("submit")}>Submit{m.pending ? ` version ${m.pending.version}` : ""} for approval</button>}
-      {pendingSubmitted && <>
-        <button className="btn btn--sm btn--primary" type="button" onClick={() => act("approve")}>Approve{m.pending ? ` version ${m.pending.version}` : ""}</button>
-        <button className="btn btn--sm" type="button" onClick={() => setAsking(true)}>Request changes</button></>}
-      {m.status === "live" && <button className="btn btn--sm" type="button" onClick={() => act("pause")}>Pause</button>}
-      {m.status === "paused" && <button className="btn btn--sm" type="button" onClick={() => act("resume")}>Resume</button>}
-      {!compact && <button className="btn btn--sm btn--ghost" type="button" onClick={() => act("retire")}>Retire</button>}
+  if (awaitingApproval(m)) return (
+    <span className="mn-acts">
+      <button className={`btn${primary ? " btn--primary" : ""}`} type="button" onClick={() => act("approve")}>Approve{version}</button>
+      <TextButton onClick={() => setAsking(true)}>Request changes</TextButton>
     </span>
   );
+  if (m.pending?.status === "draft" || m.status === "draft") return (
+    <span className="mn-acts">{primary ? <button className="btn btn--primary" type="button" onClick={() => act("submit")}>Submit{version} for approval</button>
+      : <TextButton onClick={() => act("submit")}>Submit{version} for approval</TextButton>}</span>
+  );
+  return null;
 }
 
 const SECTION_WORDS: Record<string, string> = {
@@ -123,62 +155,115 @@ export function DraftFromProfile({ onClose, only }: { onClose: () => void; only?
   );
 }
 
+
+type Sent = { by: string | null; at: string | null };
+
+/** One monitor: name, its question in full, who owns it and how often; findings in 30 days; the last check; actions. */
+function MonitorRowView({ m, now, sent, onChange }: { m: MonitorRow; now: Date; sent?: Sent; onChange: () => void }) {
+  const waiting = awaitingApproval(m);
+  const small: ReactNode[] = [];
+  if (waiting) {
+    const who = sent?.by ? `Sent for approval by ${person(sent.by)}${sent.at ? `, ${dayTime(sent.at)}` : ""}` : "Sent for approval";
+    small.push(m.status === "submitted" ? who : `${who}: version ${m.pending!.version}`);
+    if (m.status === "live" || m.status === "paused") small.push(`${m.status === "live" ? "Live" : "Paused"} now: version ${m.live_version} ${m.status === "live" ? "keeps running" : "stays as it is"}`);
+  } else if (m.pending && (m.status === "live" || m.status === "paused")) small.push(`Version ${m.pending.version} being edited`);
+  small.push(`${m.owner} · ${everyWords(m.check_frequency)}`);
+  if (m.status === "draft") small.push(ORIGIN[m.origin] ?? "");
+  const showFigure = !waiting && m.status !== "draft";
+  return (
+    <li className={`mn-row${waiting ? " mn-wait" : ""}`}>
+      <div className="mn-main">
+        <h3 className="mn-name"><Link className="rd-name" to={`/monitors/${m.monitor_id}`}>{m.name}</Link></h3>
+        <p className="mn-q">{m.sentence}</p>
+        <p className="rd-fine mn-fine">{small.filter(Boolean).join(" · ")}
+          {m.review_due && <span className="rd-warn"> · <span aria-hidden="true">◆</span> Review due</span>}</p>
+      </div>
+      {showFigure && <div className="mn-fig">
+        <div className="mn-fig-v">{m.findings_30d}</div>
+        <div className="mn-fig-l">{m.findings_30d === 1 ? "finding" : "findings"} in 30 days</div>
+      </div>}
+      <div className="mn-side">
+        {!waiting && m.status !== "draft" && <span className="mn-last"><LastCheck m={m} now={now} /></span>}
+        <ApprovalActions m={m} onChange={onChange} />
+        {!waiting && <PauseResume m={m} onChange={onChange} />}
+      </div>
+    </li>
+  );
+}
+
 export function MonitorsPage() {
   const now = useNow(30_000);
   const { role } = useRole();
   const { status, reload: reloadStatus } = useMonitorsStatus();
+  const help = useHelp();
   const [items, setItems] = useState<MonitorRow[] | null>(null);
+  const [sent, setSent] = useState<Record<string, Sent>>({});  // who sent each waiting monitor (the list doesn't say)
   const [err, setErr] = useState<unknown>(null);
   const [drafting, setDrafting] = useState(false);
   const load = useCallback(async () => {
-    try { setItems(await monitorsApi.list()); setErr(null); reloadStatus(); }
-    catch (e) { setErr(e); }
+    try {
+      const xs = await monitorsApi.list();
+      setItems(xs); setErr(null); reloadStatus();
+      const waiting = xs.filter(awaitingApproval);
+      const got = await Promise.all(waiting.map(w => monitorsApi.get(w.monitor_id).then(d => {
+        const v = [...d.versions].reverse().find(x => x.status === "submitted");
+        return [w.monitor_id, { by: v?.submitted_by ?? null, at: v?.submitted_at ?? null }] as const;
+      }).catch(() => null)));
+      setSent(Object.fromEntries(got.filter((x): x is NonNullable<typeof x> => !!x)));
+    } catch (e) { setErr(e); }
   }, [reloadStatus]);
   useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t); }, [load]);
-  const actions = <>
-    <button className="btn" type="button" onClick={() => setDrafting(true)}><Icon name="bank" />Draft from the profile</button>
-    <Link className="btn btn--primary" to="/monitors/new"><Icon name="plus" />New monitor</Link></>;
+
+  const groups = useMemo(() => {
+    const xs = items ?? [];
+    const waiting = xs.filter(awaitingApproval);
+    const rest = xs.filter(m => !awaitingApproval(m));
+    return {
+      waiting,
+      live: rest.filter(m => m.status === "live").sort((a, b) => b.findings_30d - a.findings_30d),   // busiest first
+      paused: rest.filter(m => m.status === "paused"),
+      draft: rest.filter(m => m.status === "draft"),
+      retired: xs.filter(m => m.status === "retired"),
+    };
+  }, [items]);
   const empty = items !== null && !items.length;
-  const live = (items ?? []).filter(m => m.status === "live").length;
-  const waiting = (items ?? []).filter(m => m.status === "submitted" || m.pending?.status === "submitted").length;
+  const nLive = (items ?? []).filter(m => m.status === "live").length;
+  const nWaiting = groups.waiting.length;
+  const newBtn = <Link className="btn btn--primary" to="/monitors/new">+ New monitor</Link>;
+  const draftBtn = <TextButton onClick={() => setDrafting(true)}>Draft from the profile</TextButton>;
+  const rows = (xs: MonitorRow[], label: string) => <ul className="mn-list" aria-label={label}>{xs.map(m =>
+    <MonitorRowView key={m.monitor_id} m={m} now={now} sent={sent[m.monitor_id]} onChange={load} />)}</ul>;
+  const meta = (xs: MonitorRow[], first = false) => <span className="rd-dots"><span>{xs.length}</span>{first && <span>Colombo time</span>}</span>;
+
   return (
-    <div className="page">
-      <PageHeader title="Monitors"
-        status={items === null ? "" : <><b className="ink">{count(live, "live monitor")}</b>
-          {status?.next_check_at ? `, next check ${due(status.next_check_at)}` : ""}{waiting ? ` · ${waiting} waiting for approval` : ""}</>}
-        actions={empty ? undefined : actions} help={<MonitorHelp status={status} />} />
+    <div className="page rd rd-monitors">
+      <PageTitle title="Monitors" actions={empty ? undefined : <>{draftBtn}{newBtn}</>}
+        lede={items === null || empty ? undefined : <>
+          <b>{nLive} live.</b> Each watches the news for one question a Risk Manager approved.
+          {nWaiting > 0 && ` ${nWaiting} ${nWaiting === 1 ? "is" : "are"} waiting for your approval.`} {help.toggle}</>}
+        help={!empty && <MonitorHelp status={status} id={help.id} open={help.open} />} />
       {/* with no monitors yet, "can't check the news" changes nothing for a Risk Manager: the empty state says it calmly */}
-      {err != null && <LoadError error={err} onRetry={load} what="the monitors" />}
-      <div className="banners">{(!empty || role === "platform_admin") && <MonitorBanners status={status} />}</div>
-      <div className="card">
-        {items === null ? (err == null && <InlineSkeleton />) : !items.length ? (
-          <Empty icon="monitor" title="No monitors yet" actions={actions}>
-            Monitors watch the news for what you care about: a rival's prices, a regulator's rules, jobs in a remittance corridor.
-            {status && !status.connected && <span className="small" style={{ display: "block", marginTop: 8 }}>News checks are paused right now; a monitor you add starts once they are back.</span>}
-          </Empty>
-        ) : (
-          <ul className="evlist" aria-label="Monitors">{items.map(m => (
-            <li key={m.monitor_id}>
-              <div className="evrow">
-                <span className="evrow-ico"><Icon name="monitor" /></span>
-                <span className="evrow-main">
-                  <span className="row-top"><Link className="row-l" to={`/monitors/${m.monitor_id}`}>{m.name}</Link><StatusBadge status={m.status} />
-                    {m.pending && (m.status === "live" || m.status === "paused") && <StatusPill tone="blue">{m.pending.status === "submitted" ? `Version ${m.pending.version} waiting for approval` : `Version ${m.pending.version} being edited`}</StatusPill>}
-                    {m.review_due && <StatusPill tone="amber">Review due</StatusPill>}</span>
-                  <span className="row-d">{m.sentence}</span>
-                  <span className="mon-facts"><span><Icon name="clock" />{everyText(m.check_frequency)}{m.status === "live" && m.next_check_at ? `, next ${when(m.next_check_at, now)}` : ""}</span>
-                    <span><Icon name="users" />{m.owner}</span>
-                    {m.findings_30d > 0 && <span><Icon name="search" />{count(m.findings_30d, "finding")} in 30 days</span>}</span>
-                </span>
-                <span className="evrow-side">
-                  <LastCheck m={m} now={now} />
-                  <MonitorActions m={m} onChange={load} compact />
-                </span>
-              </div>
-            </li>))}</ul>
-        )}
-      </div>
-      <p className="small muted mt12">Monitors watch the news. Price and rate moves are watched by <Link to="/series">market series</Link>, without a monitor.</p>
+      {err != null && (items === null ? <LoadError error={err} onRetry={load} what="the monitors" />
+        : <QuietWarn>Couldn't refresh the monitors. Showing what was loaded.</QuietWarn>)}
+      {(!empty || role === "platform_admin") && <MonitorBanners status={status} />}
+
+      {items === null ? (err == null && <div className="mt12"><ListSkeleton rows={3} /></div>)
+        : empty ? (
+          <div className="rd-empty">
+            <p className="rd-lede">No monitors yet. A monitor watches the news for something you care about: a rival's prices, a regulator's rules, jobs in a remittance corridor.</p>
+            {status && !status.connected && <p className="rd-fine">News checks are paused right now; a monitor you add starts once they are back.</p>}
+            <div className="mn-empty-acts">{newBtn}{draftBtn}</div>
+          </div>
+        ) : <>
+          {groups.waiting.length > 0 && <Section title="Waiting for your approval" meta={meta(groups.waiting, true)}>{rows(groups.waiting, "Waiting for your approval")}</Section>}
+          {groups.live.length > 0 && <Section title="Live" meta={meta(groups.live)}
+            action={<span className="rd-fine">busiest first, by findings in 30 days</span>}>{rows(groups.live, "Live monitors")}</Section>}
+          {groups.paused.length > 0 && <Section title="Paused" meta={meta(groups.paused)}>{rows(groups.paused, "Paused monitors")}</Section>}
+          {groups.draft.length > 0 && <Section title="Drafts" meta={meta(groups.draft)}>{rows(groups.draft, "Draft monitors")}</Section>}
+          {groups.retired.length > 0 && <div className="mn-retired">
+            <Fold title="Retired" summary={`${groups.retired.length} no longer checked`} remember="monitors-retired">{rows(groups.retired, "Retired monitors")}</Fold></div>}
+        </>}
+      <p className="rd-fine mn-note">Monitors watch the news. Price and rate moves are watched by <Link className="rd-go" to="/series">market series</Link>, without a monitor.</p>
       {drafting && <DraftFromProfile onClose={() => setDrafting(false)} />}
     </div>
   );
