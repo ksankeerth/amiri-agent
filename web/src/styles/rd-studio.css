@@ -26,13 +26,15 @@
 .rd-studio .rds-cols { display: grid; grid-template-columns: minmax(0, 1fr) 400px; column-gap: 48px; align-items: start; }
 .rd-studio .rds-cols > div > .rd-sec:first-child { margin-top: 36px; }
 .rd-studio .rds-cols .rds-fine { margin: 4px 0 6px; max-width: 680px; }
-.rd-studio .rds-head { display: flex; gap: 14px; align-items: flex-start; padding: 16px 0; }
+.rd-studio .rds-head { display: flex; gap: 14px; align-items: center; padding: 10px 0; }
 .rd-studio .rds-head.rds-off .rds-ht { color: var(--ink-3); text-decoration: line-through; }
-.rd-studio .rds-pick { display: flex; gap: 14px; align-items: flex-start; flex: 1; min-width: 0; cursor: pointer; }
-.rd-studio .rds-pick input { width: 22px; height: 22px; margin: 3px 0 0; flex: none; accent-color: var(--accent); cursor: pointer; }
-.rd-studio .rds-pick .rds-ht { display: block; font-size: 17px; line-height: 1.4; color: var(--ink); }
-.rd-studio .rds-pick .rd-fine { display: block; }
-.rd-studio .rds-head .rds-acts { display: flex; gap: 16px; padding-top: 2px; flex: none; }
+.rd-studio .rds-pick { display: flex; gap: 14px; align-items: center; flex: 1; min-width: 0; cursor: pointer; }
+.rd-studio .rds-pick input { width: 22px; height: 22px; margin: 0; flex: none; accent-color: var(--accent); cursor: pointer; }
+.rd-studio .rds-pick .rds-ht { flex: 1; min-width: 0; font-size: 17px; line-height: 1.4; color: var(--ink); }
+.rd-studio .rds-pick .rds-dn { flex: none; width: 48px; }
+.rd-studio .rds-pick .rds-tag { flex: none; }
+.rd-studio .rds-head .menu { flex: none; }
+.rd-studio .rds-head .menu-more { width: 40px; min-width: 40px; height: 40px; padding: 0; font-size: 22px; line-height: 1; justify-content: center; }
 .rd-studio .rds-form { display: block; padding: 16px 0; }
 .rd-studio .rds-form .rds-frow { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-top: 10px; }
 .rd-studio .rds-form .rds-grow { flex: 1; }

@@ -44,7 +44,7 @@ export function LoadError({ error, onRetry, what = "this page" }: { error: unkno
 }
 
 /** A button that opens a short list of actions; closes on Escape, a click outside, or a choice. */
-export function MenuButton({ label, children }: { label: string; children: ReactNode }) {
+export function MenuButton({ label, children, compact }: { label: string; children: ReactNode; compact?: string }) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -56,7 +56,9 @@ export function MenuButton({ label, children }: { label: string; children: React
   }, [open]);
   return (
     <div className="menu" ref={box}>
-      <button className="btn" type="button" aria-haspopup="true" aria-expanded={open} onClick={() => setOpen(o => !o)}>{label}<span aria-hidden="true" className="caret">▾</span></button>
+      {compact
+        ? <button className="btn btn--ghost btn--icon menu-more" type="button" aria-haspopup="true" aria-expanded={open} aria-label={compact} title={compact} onClick={() => setOpen(o => !o)}><span aria-hidden="true">⋯</span></button>
+        : <button className="btn" type="button" aria-haspopup="true" aria-expanded={open} onClick={() => setOpen(o => !o)}>{label}<span aria-hidden="true" className="caret">▾</span></button>}
       {open && <div className="menu-pop" role="group" aria-label={label} onClick={() => setOpen(false)}>{children}</div>}
     </div>
   );

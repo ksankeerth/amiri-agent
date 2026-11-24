@@ -7,7 +7,7 @@ import { FillFromJson } from "../../components/FillFromJson";
 import { scenariosOf } from "../../components/fillJson";
 import { Icon } from "../../components/Icon";
 import { Fold, GoLink, PageTitle, Section, TextButton, ToneMark, TONE_WORD } from "../../components/rd";
-import { LoadError, Modal, PageSkeleton, useToast } from "../../components/ui";
+import { LoadError, MenuButton, Modal, PageSkeleton, useToast } from "../../components/ui";
 import { day, dayTime, plural } from "../../format";
 import "../../styles/rd-studio.css";
 
@@ -211,24 +211,25 @@ function Headlines({ s, save, startOpen, own }: { s: Scenario; save: (body: { cu
   return (
     <Section title="Headlines" meta={plural(inRun, "headline") + " in the run"}
       action={editing !== "new" && all.length < 30 ? <TextButton onClick={() => setEditing("new")}>+ Add</TextButton> : undefined}>
-      <p className="rd-fine rds-fine">{own ? "Your headlines are marked simulated and never reach the live pages. Amiri Agent's monitor reads each one on its day; the investigation traces what it finds to your products."
-        : "Written for this scenario and marked simulated: you can edit, add or remove them. Their figures come from the price path. Sizes are illustrative."}</p>
+      <p className="rd-fine rds-fine" title={own ? "Amiri Agent's monitor reads each one on its day; the investigation traces what it finds to your products."
+        : "Their figures come from the price path. Sizes are illustrative."}>{own ? "Marked simulated: they never reach the live pages." : "Marked simulated: edit, add or remove them."}</p>
       {!all.length && editing !== "new" && <p className="rd-row-d rd-prose" style={{ margin: "12px 0" }}>No headlines yet. Write what happens and on which day: Amiri Agent's monitor reads each headline the day it is published.{" "}
         <TextButton onClick={() => setEditing("new")}>Write the first headline</TextButton></p>}
       {all.map(h => editing === h.id
         ? <HeadlineForm key={h.id} value={{ id: h.id, title: h.title, day: h.day, time: h.time }} dayLabel={dayLabel} onSave={upsert} onCancel={() => setEditing(null)} />
         : (
           <div key={h.id} className={`rds-head ${off.has(h.id) ? "rds-off" : ""}`}>
-            <label className="rds-pick">{/* the whole headline is the checkbox's target, not 22 px of it */}
+            <label className="rds-pick" title={`Day ${h.day} · ${dayLabel(h.day)} ${h.time}: ${h.title}`}>{/* the whole headline is the checkbox's target, not 22 px of it */}
               <input type="checkbox" checked={!off.has(h.id)} onChange={() => toggle(h.id)} aria-label={`Include: ${h.title}`} />
-              <span style={{ flex: 1, minWidth: 0 }}>
-                <span className="rd-fine">Day {h.day} · {dayLabel(h.day)} {h.time}{off.has(h.id) ? " · switched off" : ""}{h.story === "custom" && b.template_id !== "blank" ? " · added by you" : ""}</span>
-                <span className="rds-ht">{h.title}</span>
-              </span>
+              <span className="rd-fine rds-dn">Day {h.day}</span>
+              <span className="rds-ht rd-clamp1">{h.title}</span>
+              {(off.has(h.id) || (h.story === "custom" && b.template_id !== "blank")) && <span className="rd-fine rds-tag">
+                {[off.has(h.id) ? "switched off" : "", h.story === "custom" && b.template_id !== "blank" ? "added by you" : ""].filter(Boolean).join(", ")}</span>}
             </label>
-            <span className="rds-acts">
-              <TextButton onClick={() => setEditing(h.id)} title={`Edit: ${h.title}`}>Edit</TextButton>
-              <TextButton onClick={() => remove(h.id)} title={`Remove: ${h.title}`}>Remove</TextButton></span>
+            <MenuButton label="More" compact={`More for: ${h.title}`}>
+              <button className="btn" type="button" onClick={() => setEditing(h.id)}>Edit</button>
+              <button className="btn" type="button" onClick={() => remove(h.id)}>Remove</button>
+            </MenuButton>
           </div>))}
       {editing === "new" && <HeadlineForm value={{ id: newId(), title: "", day: Math.min(DAYS, (all[all.length - 1]?.day ?? 0) + 1), time: "09:00" }}
         dayLabel={dayLabel} onSave={upsert} onCancel={() => setEditing(null)} />}
@@ -330,9 +331,10 @@ export function ScenarioPage() {
                   {missing ? "Replay: not recorded yet" : <><Icon name="play" />{label}</>}</button>;
               })}
             </div>
-            <p className="rd-fine" style={{ margin: "10px 0 0" }}>{rec ? (rec.current ? (rec.complete ? `Recorded ${dayTime(rec.recorded_at)}.` : "A recording was started but didn't finish.")
-              : "Changed since it was recorded: run it live and save it to replay again.") : "Not recorded yet: run it live and save it, then it replays instantly."}
-              {current ? " Another run is going, so nothing can start until it ends." : ""}</p>
+            <p className="rd-fine" style={{ margin: "10px 0 0" }}
+              title={current ? "Another run is going, so nothing can start until it ends." : undefined}>
+              {current ? "Another run is going: wait for it to end." : rec ? (rec.current ? (rec.complete ? `Recorded ${dayTime(rec.recorded_at)}.` : "A recording was started but didn't finish.")
+                : "Changed since it was recorded: save a live run to replay.") : "Not recorded yet: save a live run to replay it."}</p>
           </Section>
           {!own && <Section title="Should find" meta={plural(b.stories.length, "story", "stories")}>
             {b.stories.map(st => (
