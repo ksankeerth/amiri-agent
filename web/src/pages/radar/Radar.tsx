@@ -51,7 +51,8 @@ function StoryCard({ s, names, onChange }: { s: RadarStory; names: Record<string
       </div>
       <h2>{s.title}</h2>
       <p className="sum">{s.summary}</p>
-      <div className="rd-why"><Icon name="info" className="ico16" /><span><b>{s.status === "sent" ? "Why it matters to you" : "Why it was held back"}:</b> {s.why}</span></div>
+      <div className="rd-why"><Icon name="info" className="ico16" /><span><b>Why it matters to you:</b> {s.why}</span></div>
+      {s.status === "below" && <p className="small muted" style={{ margin: 0 }}>Not sent this run: Radar sends only a few stories a run, the ones its judge picks, best first.</p>}
       <ul className="rd-heads">{heads.map((h, i) => (
         <li key={i}><span className="muted">—</span>{h.url ? <a href={h.url} target="_blank" rel="noreferrer">{h.title}</a> : <span>{h.title}</span>}
           <span className="o">{h.outlet ?? ""} · {dayTime(h.published_at)}</span></li>))}
