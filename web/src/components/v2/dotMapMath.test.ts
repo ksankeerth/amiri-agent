@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { describePlaces, frameOf, gridCells } from "./dotMapMath.ts";
+import { describePlaces, frameOf, gridCells, pickSides } from "./dotMapMath.ts";
 
 test("a small area is padded to at least 30 degrees each way, round its centre", () => {
   const f = frameOf([[-97.7, 30.3], [-102, 31.9]]);
@@ -32,4 +32,13 @@ test("the picture's words name every place under its direction", () => {
   const t = describePlaces([{ label: "Austin", tone: "bad" }, { label: "Texas", tone: "bad" }, { label: "Silicon Valley", tone: "mixed" }, { label: "Permian", tone: "good" }]);
   assert.equal(t, "Where today's events are. Bad for you: Austin, Texas. Mixed: Silicon Valley. Good for you: Permian.");
   assert.equal(describePlaces([]), "Where today's events are: none.");
+});
+
+test("names go to the first side that fits: right by default, left at the right-hand edge, apart from each other", () => {
+  assert.deepEqual(pickSides([{ label: "Austin", x: 100, y: 100 }], 511, 224), ["right"]);
+  assert.deepEqual(pickSides([{ label: "Sri Lanka", x: 480, y: 100 }], 511, 224), ["left"]);
+  // two places side by side: the first one's name would run over the second's mark on the right, so it goes left
+  assert.deepEqual(pickSides([{ label: "Saudi Arabia", x: 100, y: 100 }, { label: "Iran", x: 140, y: 102 }], 511, 224), ["left", "right"]);
+  assert.deepEqual(pickSides([{ label: "X", x: 100, y: 100, side: "top" }], 511, 224), ["top"]);
+  assert.deepEqual(pickSides([{ label: "Corner", x: 5, y: 5 }], 511, 224), ["right"]);
 });

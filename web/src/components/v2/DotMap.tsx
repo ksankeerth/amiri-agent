@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { feature } from "topojson-client";
 import { directionOf, type DirectionTone } from "./directionWords";
 import { DirectionMark } from "./Direction";
-import { describePlaces, frameOf, gridCells } from "./dotMapMath";
+import { describePlaces, frameOf, gridCells, pickSides } from "./dotMapMath";
 
 export interface DotPlace {
   label: string;
@@ -20,7 +20,7 @@ export interface DotPlace {
   strong?: boolean;
   /** A dashed ring round it (the focus of an event). */
   halo?: boolean;
-  /** Where the name sits (default right). */
+  /** Where the name sits (default: the first of right, left, top, bottom that stays on the picture and clear of other names). */
   side?: "right" | "left" | "top" | "bottom";
 }
 export interface DotMapProps {
@@ -91,12 +91,16 @@ export function DotMap({ places, fit, minSpan, width = 511, height = 224, intro,
 
   const marks = places.map(p => ({ p, xy: projection([p.lon, p.lat]), tone: directionOf(p.tone) })).filter((m): m is { p: DotPlace; xy: [number, number]; tone: DirectionTone } => !!m.xy);
   const label = description ?? describePlaces(marks.map(m => ({ label: m.p.label, tone: m.tone })), intro);
+  // strongest first, so the place the picture is about gets the best spot for its name
+  const order = marks.map((_, i) => i).sort((a, b) => Number(!!marks[b].p.strong) - Number(!!marks[a].p.strong) || a - b);
+  const picked = pickSides(order.map(i => ({ label: marks[i].p.label, x: marks[i].xy[0], y: marks[i].xy[1], side: marks[i].p.side })), width, height);
+  const sideOf = new Map(order.map((i, n) => [i, picked[n]]));
   return (
     <figure className={`v2-dotmap${className ? ` ${className}` : ""}`}>
       <div className="v2-dotmap__box" role="img" aria-label={label} style={{ aspectRatio: `${width} / ${height}`, maxWidth: width }}>
         <svg className="v2-dotmap__dots" viewBox={`0 0 ${width} ${height}`} aria-hidden="true" focusable="false"><path d={dots} /></svg>
-        {marks.map(({ p, xy, tone }) => (
-          <span key={p.label} className={`v2-dotmap__pt is-${p.side ?? "right"}${p.strong ? " is-strong" : ""} v2-dotmap__pt--${tone}`}
+        {marks.map(({ p, xy, tone }, i) => (
+          <span key={p.label} className={`v2-dotmap__pt is-${sideOf.get(i) ?? "right"}${p.strong ? " is-strong" : ""} v2-dotmap__pt--${tone}`}
             style={{ left: `${(xy[0] / width) * 100}%`, top: `${(xy[1] / height) * 100}%` }} aria-hidden="true">
             {p.halo && <span className="v2-dotmap__halo" />}
             <DirectionMark tone={tone} size={p.strong ? 14 : 13} />

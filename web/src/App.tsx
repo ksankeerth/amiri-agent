@@ -5,7 +5,7 @@ import { PageTitle } from "./components/rd";
 import { PageSkeleton } from "./components/ui";
 import { api } from "./api/client";
 import { setZone } from "./format";
-import "./styles/shell.css";  // still used by the Overview page (.ovx, .ph-cta, .btn--lg); the shell itself is styles/v2/shell.css
+import "./styles/shell.css";  // only .btn--lg is still used (Login, Studio); the shell itself is styles/v2/shell.css
 import { Shell } from "./components/v2/Shell";
 import { BUILT, NAV } from "./components/v2/nav";
 import { InstitutionPage, NewInstitutionPage } from "./pages/institution/InstitutionPage";
