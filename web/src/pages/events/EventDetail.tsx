@@ -6,6 +6,7 @@ import { ApiError } from "../../api/client";
 import { investigationApi, type EventDetail } from "../../api/investigation";
 import { alertsApi, type AlertItem } from "../../api/alerts";
 import { FactList, HowItWorks, PageHeader, TechnicalDetails, TonePill } from "../../components/blocks";
+import { CheckPill } from "../../components/checks";
 import { Icon } from "../../components/Icon";
 import { Empty, LoadError, PageSkeleton, useRole } from "../../components/ui";
 import { dayTime } from "../../format";
@@ -13,24 +14,31 @@ import { count, longWhen, onDay } from "../../plain";
 import { alertPhrase, derive, forYou, Progress, ProductLines, Report, SetAside, Story, type D } from "./eventParts";
 import "../../styles/event-detail.css";
 
+// keyed by the event id: moving to another event starts from loading, and the previous event's answers can't land on it
 export function EventDetailPage() {
   const { id = "" } = useParams();
+  return <EventLoader key={id} id={id} />;
+}
+
+function EventLoader({ id }: { id: string }) {
   const [e, setE] = useState<EventDetail | null>(null);
   const [err, setErr] = useState<unknown>(null);
   const [alerts, setAlerts] = useState<AlertItem[] | null>(null);
+  const [alertsFailed, setAlertsFailed] = useState(false);
   const load = () => investigationApi.event(id).then(x => { setE(x); setErr(null); }).catch(setErr);
-  useEffect(() => { load(); }, [id]);  // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { alertsApi.list({ event_id: id }).then(setAlerts).catch(() => setAlerts([])); }, [id]);
+  // a failed alerts request is not "no alerts": the page says it couldn't load them and offers to try again
+  const loadAlerts = () => alertsApi.list({ event_id: id }).then(x => { setAlerts(x); setAlertsFailed(false); }).catch(() => { setAlerts([]); setAlertsFailed(true); });
+  useEffect(() => { load(); loadAlerts(); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
   if (err instanceof ApiError && err.status === 404) return (
     <div className="page"><PageHeader title="Event not found" crumbs={<Link to="/events">Events</Link>} />
       <div className="card"><Empty icon="events" title="This event isn't here" actions={<Link className="btn" to="/events">See all events</Link>}>
         It may have been removed when the prototype was reset.</Empty></div></div>);
   if (!e || !alerts) return <div className="page">{err != null ? <><PageHeader title="Event" crumbs={<Link to="/events">Events</Link>} />
     <LoadError error={err} onRetry={load} what="this event" /></> : <PageSkeleton bare />}</div>;
-  return <EventPage d={derive(e, alerts)} />;
+  return <EventPage d={derive(e, alerts, alertsFailed)} retryAlerts={loadAlerts} />;
 }
 
-function EventPage({ d }: { d: D }) {
+function EventPage({ d, retryAlerts }: { d: D; retryAlerts: () => void }) {
   const { role } = useRole();
   const [help, setHelp] = useState(false);
   const panel = useId();
@@ -49,7 +57,7 @@ function EventPage({ d }: { d: D }) {
         ? <>This event stays open until <b>{dayTime(e.open_until)}</b>: new news about the same thing joins it instead of starting a new one.</>
         : <>This event closed {e.closed_at ? dayTime(e.closed_at) : ""}: nothing new about it came in for a while.</>}</p></HowItWorks></div>
       <p className="evd-lede">{n ? <><span className="ev-n">{count(n, "possible impact")}</span> on <b>{count(d.products.length, "product")}</b>{forYou(d) && `, ${forYou(d)}`}.{" "}
-        {d.teams.length > 0 && <><b>{count(d.teams.length, "team")}</b> {d.teams.length === 1 ? "has" : "have"} an alert
+        {!d.alertsFailed && d.teams.length > 0 && <><b>{count(d.teams.length, "team")}</b> {d.teams.length === 1 ? "has" : "have"} an alert
           {d.toReview === d.alerts.length ? `; ${d.alerts.length === 1 ? "not" : "none"} taken on yet` : d.toReview ? `; ${d.toReview} still to review` : ", all taken on"}.</>}</>
         : <>Nothing in it reaches your products. {open ? "It closes on its own when the news stops." : ""}</>}</p>
       <Progress d={d} />
@@ -58,13 +66,16 @@ function EventPage({ d }: { d: D }) {
 
     {n > 0 && <section className="evd-sec" aria-labelledby="evd-why">
       <h2 id="evd-why">Why it matters to you, by team <span>{n}</span><Link className="evd-all" to="/alerts">All alerts</Link></h2>
+      {d.alertsFailed && <p className="evd-once evd-fail"><Icon name="warn" />The alerts for this event couldn't be loaded, so the impacts aren't grouped by team.
+        <button type="button" className="evd-retry" onClick={retryAlerts}>Try again</button></p>}
       {d.onePhrase && <p className="evd-once">{d.teams.length === 1 ? "The team has" : "Each team has"} {d.onePhrase}.</p>}
       {d.teams.map(t => <div key={t.owner} className="evd-team">
         <h3><Link to="/alerts">{t.owner}<Icon name="arrow" /></Link>
           {!d.onePhrase && <span className="evd-st">{[...new Set(t.alerts.map(alertPhrase))].join("; ")}</span>}</h3>
         <ProductLines d={d} hs={t.hs} /></div>)}
-      {d.free.length > 0 && <div className="evd-team"><h3>No team alerted</h3><ProductLines d={d} hs={d.free} /></div>}
-      <p className="evd-sub">AMIRI Agent's assessment: expectations, not facts yet{d.validation ? "; each is checked against your own figures as they're published" : ""}.</p>
+      {d.free.length > 0 && (d.alertsFailed ? <ProductLines d={d} hs={d.free} /> : <div className="evd-team"><h3>No team alerted</h3><ProductLines d={d} hs={d.free} /></div>)}
+      <p className="evd-sub">AMIRI Agent's assessment: expectations, not facts yet{d.validation ? "; each is checked against your own figures as they're published" : ""}.
+        {d.validation && d.same && d.checked > 0 && <span className="evd-shared">Your data so far, for all of them: <CheckPill c={d.checks[0]} /></span>}</p>
     </section>}
 
     <section className="evd-sec" aria-labelledby="evd-what"><h2 id="evd-what">What happened</h2><Story d={d} /></section>

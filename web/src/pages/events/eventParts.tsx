@@ -32,7 +32,7 @@ const STATUS_PHRASE = (a: AlertItem) => a.status === "new" ? "waiting for review
 export const alertPhrase = (a: AlertItem) => `${LEVEL_PHRASE[a.level] ?? "an alert"}, ${STATUS_PHRASE(a)}`;
 
 /** Everything the page says, worked out once from the event and its alerts. */
-export function derive(e: EventDetail, alerts: AlertItem[]) {
+export function derive(e: EventDetail, alerts: AlertItem[], alertsFailed = false) {
   const tasks = new Map(e.tasks.map(t => [t.hypothesis_id, t]));
   const effects = new Map(alerts.flatMap(a => a.effects).map(x => [x.hypothesis_id, x]));
   // the spec's metric name and whether the move is bad for you: from the alerts when they carry it, else from the task
@@ -55,7 +55,7 @@ export function derive(e: EventDetail, alerts: AlertItem[]) {
   const alerted = new Set(alerts.flatMap(a => a.effects.map(x => x.hypothesis_id)));
   const phrases = new Set(alerts.map(alertPhrase));
   return {
-    e, alerts, tasks, metric, adverse, nBad, nGood, checks, teams, free: hs.filter(h => !alerted.has(h.hypothesis_id)),
+    e, alerts, alertsFailed, tasks, metric, adverse, nBad, nGood, checks, teams, free: hs.filter(h => !alerted.has(h.hypothesis_id)),
     tone: (nBad && nGood ? "mixed" : nBad ? "bad" : nGood ? "good" : "neutral") as "bad" | "good" | "mixed" | "neutral",
     checked: checks.filter(c => c.verdict !== "not_yet").length,
     same: new Set(checks.map(c => c.verdict)).size <= 1 && checks.length === hs.length,  // then no per-line result
@@ -81,7 +81,8 @@ export function Progress({ d }: { d: D }) {
     { t: <>Noticed <span>{onDay(e.anchor.slice(0, 10))}</span></>, st: "agent" },
     { t: e.run.status === "running" ? "Investigating" : "Investigated", st: e.run.status === "running" ? "now" : "agent" },
     { t: n ? count(n, "possible impact") : "No impact found", st: "agent" },
-    d.teams.length ? { t: <>{count(d.teams.length, "team")} alerted <span>{d.toReview ? `${d.toReview} waiting for review` : "all taken on"}</span></>, st: d.toReview ? "wait" : "person" }
+    d.alertsFailed ? { t: "Alerts couldn't be loaded", st: "off" }
+      : d.teams.length ? { t: <>{count(d.teams.length, "team")} alerted <span>{d.toReview ? `${d.toReview} waiting for review` : "all taken on"}</span></>, st: d.toReview ? "wait" : "person" }
       : { t: "No alerts", st: "off" },
     !d.validation ? { t: "Checks switched off", st: "off" }
       : d.checked ? { t: <>{d.checked} of {n} checked{d.next && <span>next {onDay(d.next)}</span>}</>, st: d.next ? "now" : "agent" }
@@ -119,12 +120,14 @@ function Detail({ d, h }: { d: D; h: Hypothesis }) {
 /** A product's possible impacts as one line: the same move from two angles is one line ("from Saudi Arabia and overall"),
  *  both angles in the detail. Bad or good only when the event's impacts differ; the result only when the checks differ. */
 function ProductLine({ d, hs }: { d: D; hs: Hypothesis[] }) {
-  const moves = [...new Set(hs.map(h => impactText(d.metric(h), h.expected.direction)))];
+  const move = impactText(d.metric(hs[0]), hs[0].expected.direction);
   const segs = hs.map(segText).filter(Boolean);
-  const mixed = d.nBad > 0 && d.nGood > 0, bad = d.adverse(hs[0]);
-  const c = d.tasks.get(hs[0].hypothesis_id)?.check;
+  // every angle of one move shares its bad-or-good; a result shows on the line only when the angles' checks agree
+  const mixed = d.nBad > 0 && d.nGood > 0, bads = new Set(hs.map(d.adverse)), bad = bads.size === 1 ? d.adverse(hs[0]) : null;
+  const cs = hs.map(h => d.tasks.get(h.hypothesis_id)?.check);
+  const c = cs.every(x => x && x.verdict === cs[0]?.verdict) ? cs[0] : undefined;
   return <details className="evd-line">
-    <summary><span className="evd-l1"><b>{productOf(hs[0])}</b>: {lower(moves.join("; "))}
+    <summary><span className="evd-l1"><b>{productOf(hs[0])}</b>: {lower(move)}
       {segs.length > 0 && <span className="muted"> ({listText(hs.length > segs.length ? [...segs, "overall"] : segs)})</span>}
       {mixed && bad !== null && <span className={`evd-for ${bad ? "bad" : "good"}`}> · {bad ? "bad for you" : "good for you"}</span>}</span>
       {d.validation && !d.same && c && <CheckPill c={{ verdict: c.verdict as VerdictKey, alert: c.alert, adverse: bad }} />}
@@ -133,9 +136,12 @@ function ProductLine({ d, hs }: { d: D; hs: Hypothesis[] }) {
     {hs.map(h => <Detail key={h.hypothesis_id} d={d} h={h} />)}
   </details>;
 }
-/** Impacts as product lines, in the order they came. */
-export const ProductLines = ({ d, hs }: { d: D; hs: Hypothesis[] }) =>
-  <>{[...new Set(hs.map(productOf))].map(p => <ProductLine key={p} d={d} hs={hs.filter(h => productOf(h) === p)} />)}</>;
+/** Impacts as lines, in the order they came: one per product and move, so two angles on one move share a line and two
+ *  different moves on one product each get their own. */
+export function ProductLines({ d, hs }: { d: D; hs: Hypothesis[] }) {
+  const key = (h: Hypothesis) => `${productOf(h)}|${impactText(d.metric(h), h.expected.direction)}`;
+  return <>{[...new Set(hs.map(key))].map(k => <ProductLine key={k} d={d} hs={hs.filter(h => key(h) === k)} />)}</>;
+}
 
 /** Where it started, labelled; the reports that joined since in one line, the list on request. */
 export function Story({ d }: { d: D }) {

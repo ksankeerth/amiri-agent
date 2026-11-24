@@ -124,3 +124,10 @@
   .evd-fold > summary .muted { order:3; flex-basis:100%; padding-left:28px; }
 }
 .evd-fold > summary .evd-chev { margin-left:auto; }
+/* the alerts didn't load: said in the section, with a retry, instead of filing every impact under "No team alerted" */
+.evd-fail { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; color:var(--medium-ink); }
+.evd-fail svg { width:16px; height:16px; flex:none; }
+.evd-retry { font:inherit; font-weight:600; color:var(--accent-ink); background:none; border:0; padding:0; cursor:pointer; }
+.evd-retry:hover { text-decoration:underline; text-underline-offset:3px; }
+/* every check agrees: the shared result once, under the impacts */
+.evd-shared { display:inline-flex; align-items:center; gap:8px; margin-left:6px; }
