@@ -15,12 +15,14 @@
 
 /* ---------- the list: one row per monitor, held by space */
 .rd-monitors .mn-list { list-style:none; margin:0; padding:0; }
-.rd-monitors .mn-row { display:grid; grid-template-columns:minmax(0, 1fr) 150px 270px; column-gap:28px; align-items:start; padding:16px 0; }
+.rd-monitors .mn-row { display:grid; grid-template-columns:minmax(0, 1fr) 150px 240px; column-gap:28px; align-items:start; padding:16px 0; }
 .rd-monitors .mn-name { font-size:17px; line-height:1.3; font-weight:600; }
-.rd-monitors .mn-q { margin:4px 0 0; font-size:16px; color:var(--ink-2); max-width:62ch; }
+.rd-monitors .mn-q { margin:4px 0 0; font-size:16px; color:var(--ink-2); }
+.rd-monitors .mn-colhead { padding:0 0 2px; }
+.rd-monitors .mn-colhead .rd-colh { grid-column:2; }
+.rd-monitors .mn-name, .rd-monitors .mn-name a { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rd-monitors .mn-fine { margin:6px 0 0; }
 .rd-monitors .mn-fig-v { font-size:28px; line-height:1.1; font-weight:700; color:var(--ink); letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
-.rd-monitors .mn-fig-l { font-size:15px; color:var(--ink-3); margin-top:2px; }
 .rd-monitors .mn-side { grid-column:3; display:flex; flex-direction:column; align-items:flex-start; gap:8px; font-size:16px; color:var(--ink-2); }
 .rd-monitors .mn-last { display:block; }
 .rd-monitors .mn-acts { display:flex; gap:20px; align-items:center; flex-wrap:wrap; }

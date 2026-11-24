@@ -40,11 +40,13 @@ export function useMonitorsStatus() {
 }
 
 /** Notes about the monitor service, in words: the Platform Admin reads the server's own words; a Risk Manager reads what it means. */
-export function MonitorBanners({ status }: { status: MonitorsStatus | null }) {
+export function MonitorBanners({ status, extra }: { status: MonitorsStatus | null; extra?: ReactNode }) {
   const { role } = useRole();
-  if (!status) return null;
-  if (role === "platform_admin") return <>{status.notes.map(n => <QuietWarn key={n}>{n}</QuietWarn>)}</>;
-  return !status.connected ? <QuietWarn>Monitors can't check the news right now. Your Platform Admin has been told.</QuietWarn> : null;
+  if (!status) return extra ? <QuietWarn>{extra}</QuietWarn> : null;
+  if (role === "platform_admin") return <>{status.notes.map((n, i) => <QuietWarn key={n}>{n}{i === status.notes.length - 1 && extra ? <> {extra}</> : null}</QuietWarn>)}
+    {!status.notes.length && extra ? <QuietWarn>{extra}</QuietWarn> : null}</>;
+  return !status.connected ? <QuietWarn>Monitors can't check the news right now. Your Platform Admin has been told.{extra ? <> {extra}</> : null}</QuietWarn>
+    : extra ? <QuietWarn>{extra}</QuietWarn> : null;
 }
 
 /** How monitor checks work: the text behind the page's "How this works". */
@@ -156,10 +158,18 @@ export function DraftFromProfile({ onClose, only }: { onClose: () => void; only?
 }
 
 
+/** "20 to 24 h ago" from several last-check times: one unit, the range once. */
+export function agoRange(ats: string[], now: Date): string {
+  const parts = ats.map(a => ago(a, now).match(/^(\d+) (min|h|days) ago$/));
+  if (!parts.length || parts.some(p => !p) || new Set(parts.map(p => p![2])).size !== 1) return "a while ago";
+  const ns = parts.map(p => +p![1]), lo = Math.min(...ns), hi = Math.max(...ns), unit = parts[0]![2];
+  return lo === hi ? `${lo} ${unit} ago` : `${lo} to ${hi} ${unit} ago`;
+}
+
 type Sent = { by: string | null; at: string | null };
 
 /** One monitor: name, its question in full, who owns it and how often; findings in 30 days; the last check; actions. */
-function MonitorRowView({ m, now, sent, onChange }: { m: MonitorRow; now: Date; sent?: Sent; onChange: () => void }) {
+function MonitorRowView({ m, now, sent, onChange, overdueSaid }: { m: MonitorRow; now: Date; sent?: Sent; onChange: () => void; overdueSaid?: boolean }) {
   const waiting = awaitingApproval(m);
   const small: ReactNode[] = [];
   if (waiting) {
@@ -167,23 +177,25 @@ function MonitorRowView({ m, now, sent, onChange }: { m: MonitorRow; now: Date; 
     small.push(m.status === "submitted" ? who : `${who}: version ${m.pending!.version}`);
     if (m.status === "live" || m.status === "paused") small.push(`${m.status === "live" ? "Live" : "Paused"} now: version ${m.live_version} ${m.status === "live" ? "keeps running" : "stays as it is"}`);
   } else if (m.pending && (m.status === "live" || m.status === "paused")) small.push(`Version ${m.pending.version} being edited`);
-  small.push(`${m.owner} · ${everyWords(m.check_frequency)}`);
+  small.push(`${m.owner}, ${everyWords(m.check_frequency)}`);
   if (m.status === "draft") small.push(ORIGIN[m.origin] ?? "");
   const showFigure = !waiting && m.status !== "draft";
   return (
     <li className={`mn-row${waiting ? " mn-wait" : ""}`}>
       <div className="mn-main">
         <h3 className="mn-name"><Link className="rd-name" to={`/monitors/${m.monitor_id}`}>{m.name}</Link></h3>
-        <p className="mn-q">{m.sentence}</p>
+        <p className="mn-q rd-clamp1" title={m.sentence}>{m.sentence}</p>
         <p className="rd-fine mn-fine">{small.filter(Boolean).join(" · ")}
           {m.review_due && <span className="rd-warn"> · <span aria-hidden="true">◆</span> Review due</span>}</p>
       </div>
-      {showFigure && <div className="mn-fig">
-        <div className="mn-fig-v">{m.findings_30d}</div>
-        <div className="mn-fig-l">{m.findings_30d === 1 ? "finding" : "findings"} in 30 days</div>
+      {showFigure && <div className="mn-fig" title={`${m.findings_30d} ${m.findings_30d === 1 ? "finding" : "findings"} in 30 days`}>
+        <span className="mn-fig-v">{m.findings_30d}</span><span className="sr"> {m.findings_30d === 1 ? "finding" : "findings"} in 30 days</span>
       </div>}
       <div className="mn-side">
-        {!waiting && m.status !== "draft" && <span className="mn-last"><LastCheck m={m} now={now} /></span>}
+        {!waiting && m.status !== "draft" && !(overdueSaid && isOverdue(m, now)) && <span className="mn-last">
+          {m.last_check && isOverdue(m, now)
+            ? <span className="rd-warn" title={`Overdue: last checked ${ago(m.last_check.at, now)}`}><span className="rd-shape" aria-hidden="true">◆</span> Overdue</span>
+            : <LastCheck m={m} now={now} />}</span>}
         <ApprovalActions m={m} onChange={onChange} />
         {!waiting && <PauseResume m={m} onChange={onChange} />}
       </div>
@@ -231,8 +243,14 @@ export function MonitorsPage() {
   const nWaiting = groups.waiting.length;
   const newBtn = <Link className="btn btn--primary" to="/monitors/new">+ New monitor</Link>;
   const draftBtn = <TextButton onClick={() => setDrafting(true)}>Draft from the profile</TextButton>;
-  const rows = (xs: MonitorRow[], label: string) => <ul className="mn-list" aria-label={label}>{xs.map(m =>
-    <MonitorRowView key={m.monitor_id} m={m} now={now} sent={sent[m.monitor_id]} onChange={load} />)}</ul>;
+  // every live monitor late for the same reason: said once, with the page's warning, not on each row
+  const lateLive = groups.live.filter(m => isOverdue(m, now));
+  const allLate = groups.live.length > 1 && lateLive.length === groups.live.length;
+  const lateWords = allLate ? <>All {lateLive.length} are overdue: last checked {agoRange(lateLive.map(m => m.last_check!.at), now)}.</> : undefined;
+  const rows = (xs: MonitorRow[], label: string, heading = false) => <>
+    {heading && <div className="mn-row mn-colhead" aria-hidden="true"><span /><span className="rd-colh">Findings in 30 days</span><span /></div>}
+    <ul className="mn-list" aria-label={label}>{xs.map(m =>
+      <MonitorRowView key={m.monitor_id} m={m} now={now} sent={sent[m.monitor_id]} onChange={load} overdueSaid={allLate} />)}</ul></>;
   const meta = (xs: MonitorRow[], first = false) => <span className="rd-dots"><span>{xs.length}</span>{first && <span>Colombo time</span>}</span>;
 
   return (
@@ -245,7 +263,7 @@ export function MonitorsPage() {
       {/* with no monitors yet, "can't check the news" changes nothing for a Risk Manager: the empty state says it calmly */}
       {err != null && (items === null ? <LoadError error={err} onRetry={load} what="the monitors" />
         : <QuietWarn>Couldn't refresh the monitors. Showing what was loaded.</QuietWarn>)}
-      {(!empty || role === "platform_admin") && <MonitorBanners status={status} />}
+      {(!empty || role === "platform_admin") && <MonitorBanners status={status} extra={lateWords} />}
 
       {items === null ? (err == null && <div className="mt12"><ListSkeleton rows={3} /></div>)
         : empty ? (
@@ -257,8 +275,8 @@ export function MonitorsPage() {
         ) : <>
           {groups.waiting.length > 0 && <Section title="Waiting for your approval" meta={meta(groups.waiting, true)}>{rows(groups.waiting, "Waiting for your approval")}</Section>}
           {groups.live.length > 0 && <Section title="Live" meta={meta(groups.live)}
-            action={<span className="rd-fine">busiest first, by findings in 30 days</span>}>{rows(groups.live, "Live monitors")}</Section>}
-          {groups.paused.length > 0 && <Section title="Paused" meta={meta(groups.paused)}>{rows(groups.paused, "Paused monitors")}</Section>}
+            action={<span className="rd-fine">busiest first</span>}>{rows(groups.live, "Live monitors", true)}</Section>}
+          {groups.paused.length > 0 && <Section title="Paused" meta={meta(groups.paused)}>{rows(groups.paused, "Paused monitors", true)}</Section>}
           {groups.draft.length > 0 && <Section title="Drafts" meta={meta(groups.draft)}>{rows(groups.draft, "Draft monitors")}</Section>}
           {groups.retired.length > 0 && <div className="mn-retired">
             <Fold title="Retired" summary={`${groups.retired.length} no longer checked`} remember="monitors-retired">{rows(groups.retired, "Retired monitors")}</Fold></div>}
