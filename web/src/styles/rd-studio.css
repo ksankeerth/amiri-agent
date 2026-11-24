@@ -1,0 +1,97 @@
+/* Scenario Studio (the redesign): the list, one scenario, and a run. Scoped to .rd-studio. Nothing here moves
+   except the day advancing on the run's track. */
+
+/* ---------- one quiet line: a running run, a waiting run, a stopped run, an error */
+.rd-studio .rds-line { margin: 16px 0 0; padding: 12px 0; border-top: 1px solid var(--rd-hair); border-bottom: 1px solid var(--rd-hair);
+  font-size: 17px; color: var(--ink); display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: baseline; }
+.rd-studio .rds-line .rds-grow { flex: 1; min-width: 260px; }
+.rd-studio .rds-quiet { margin: 12px 0 0; font-size: 16px; color: var(--ink-2); display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: baseline; }
+.rd-studio .rds-danger { color: var(--critical-ink); }
+.rd-studio .rds-help { margin: 10px 0 0; }
+.rd-studio .rd-lede .rd-tbtn { font-size: 16px; margin-left: 14px; }
+
+/* ---------- the list */
+.rd-studio .rds-tpl { display: flex; gap: 24px; align-items: center; }
+.rd-studio .rds-tpl > .rds-main { flex: 1; min-width: 0; }
+.rd-studio .rds-tpl .rd-row-t { font-size: 20px; }
+.rd-studio .rds-tpl .rds-act { flex: none; }
+.rd-studio .rds-tpl .rd-row-m { margin-top: 6px; }
+.rd-studio .rds-table td .rds-sub { font-size: 15px; color: var(--ink-3); margin-top: 2px; }
+.rd-studio .rds-table tr.rds-click { cursor: pointer; }
+.rd-studio .rds-table .rds-acts { display: flex; gap: 20px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+.rd-studio .rds-table th:last-child, .rd-studio .rds-table td:last-child { padding-right: 0; text-align: right; }
+.rd-studio .rds-empty { margin: 16px 0 0; }
+
+/* ---------- one scenario */
+.rd-studio .rds-cols { display: grid; grid-template-columns: minmax(0, 1fr) 400px; column-gap: 48px; align-items: start; }
+.rd-studio .rds-cols > div > .rd-sec:first-child { margin-top: 36px; }
+.rd-studio .rds-cols .rds-fine { margin: 4px 0 6px; max-width: 680px; }
+.rd-studio .rds-head { display: flex; gap: 14px; align-items: flex-start; padding: 16px 0; border-bottom: 1px solid var(--rd-hair); }
+.rd-studio .rds-head.rds-off .rds-ht { color: var(--ink-3); text-decoration: line-through; }
+.rd-studio .rds-pick { display: flex; gap: 14px; align-items: flex-start; flex: 1; min-width: 0; cursor: pointer; }
+.rd-studio .rds-pick input { width: 22px; height: 22px; margin: 3px 0 0; flex: none; accent-color: var(--accent); cursor: pointer; }
+.rd-studio .rds-pick .rds-ht { display: block; font-size: 17px; line-height: 1.4; color: var(--ink); }
+.rd-studio .rds-pick .rd-fine { display: block; }
+.rd-studio .rds-head .rds-acts { display: flex; gap: 16px; padding-top: 2px; flex: none; }
+.rd-studio .rds-form { display: block; padding: 16px 0; border-bottom: 1px solid var(--rd-hair); }
+.rd-studio .rds-form .rds-frow { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-top: 10px; }
+.rd-studio .rds-form .rds-grow { flex: 1; }
+.rd-studio .rds-modes { display: grid; gap: 10px; margin-top: 16px; }
+.rd-studio .rds-modes .btn { width: 100%; justify-content: center; }
+.rd-studio .rds-runit { display: grid; gap: 12px; margin-top: 8px; }
+.rd-studio .rds-check { display: flex; gap: 12px; align-items: flex-start; font-size: 16px; color: var(--ink); cursor: pointer; }
+.rd-studio .rds-check input { width: 22px; height: 22px; margin: 1px 0 0; flex: none; accent-color: var(--accent); }
+.rd-studio .rds-find { display: flex; gap: 10px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--rd-hair); font-size: 16px; color: var(--ink); }
+.rd-studio .rds-find .rd-fine { margin-left: auto; text-align: right; }
+.rd-studio .rds-runs { list-style: none; margin: 0; padding: 0; }
+.rd-studio .rds-runs li { padding: 8px 0; }
+.rd-studio .rds-fold-p { margin: 0 0 8px; font-size: 16px; color: var(--ink-2); max-width: 680px; }
+.rd-studio .rds-fold-p + ul { margin: 0; padding-left: 20px; font-size: 16px; color: var(--ink-2); }
+.rd-studio .rds-name-in { font: inherit; font-size: 28px; font-weight: 700; height: 52px; width: min(560px, 80vw); }
+
+/* ---------- a run: the control line */
+.rd-studio .rds-ctl { margin-top: 20px; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rd-hair);
+  padding: 18px 0; display: flex; gap: 20px 28px; align-items: center; flex-wrap: wrap; }
+.rd-studio .rds-btns { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.rd-studio .rds-day { display: flex; align-items: baseline; gap: 10px; white-space: nowrap; }
+.rd-studio .rds-day b { font-size: 34px; line-height: 1.1; font-weight: 700; color: var(--ink); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.rd-studio .rds-day span { font-size: 20px; color: var(--ink-3); }
+.rd-studio .rds-when { flex: 1; min-width: 300px; }
+.rd-studio .rds-date { font-size: 17px; color: var(--ink); }
+.rd-studio .rds-state { font-size: 18px; font-weight: 600; color: var(--ink); }
+
+/* the track: one segment a day; grey for days run, dark for days an event formed, a light mark for headlines */
+.rd-studio .rds-track { display: flex; gap: 3px; margin: 8px 0 0; padding: 0; list-style: none; }
+.rd-studio .rds-seg { flex: 1; position: relative; height: 12px; border-radius: 1px; background: var(--rd-hair); opacity: .55; }
+.rd-studio .rds-seg.ran { background: var(--rd-mark); opacity: 1; }
+.rd-studio .rds-seg.ev { background: var(--ink); opacity: 1; }
+.rd-studio .rds-seg.hd::after { content: ""; position: absolute; left: 50%; top: 17px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--rd-mark); }
+.rd-studio .rds-key { margin-top: 14px; font-size: 14px; color: var(--ink-3); }
+
+/* ---------- a run: figures, two columns, rows */
+.rd-studio .rd-figs { margin-top: 24px; }
+.rd-studio .rd-fig-v { display: flex; align-items: baseline; gap: 8px; }
+.rd-studio .rds-two { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); column-gap: 48px; align-items: start; }
+.rd-studio .rds-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--high); margin-right: 6px; }
+.rd-studio .rds-score { list-style: none; margin: 0; padding: 0; }
+.rd-studio .rds-score li { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--rd-hair); font-size: 17px; color: var(--ink); }
+.rd-studio .rds-score .rds-w { font-weight: 700; color: var(--ink); }
+.rd-studio .rds-score .rds-w.rds-no { color: var(--ink-3); font-weight: 500; }
+.rd-studio .rds-score .rd-shape, .rd-studio .rd-row-t .rd-shape, .rd-studio .rd-row-m .rd-shape, .rd-studio .rds-find .rd-shape { margin-right: 8px; }
+.rd-studio .rds-chart { margin-top: 12px; }
+.rd-studio .rds-more { margin: 14px 0 0; }
+.rd-studio .rds-happ .rd-row-t { font-weight: 500; font-size: 17px; }
+.rd-studio .rds-happ .rds-step .rd-row-t { color: var(--ink-2); }
+.rd-studio .rds-showall { margin: 16px 0 0; }
+
+/* form labels and inputs from the shared form styles, at the redesign's small-print size */
+.rd-studio .field > span { font-size: 15px; }
+.rd-studio .field .input, .rd-studio .field select, .rd-studio .field textarea { font-size: 16px; }
+
+@media (max-width: 1100px) {
+  .rd-studio .rds-cols, .rd-studio .rds-two { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+  .rd-studio .rds-tpl { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .rd-studio .rds-day b { font-size: 28px; }
+}
