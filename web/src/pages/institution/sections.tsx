@@ -49,7 +49,7 @@ function describe(section: SectionName, it: Item, ctx: Ctx): { title: ReactNode;
         badges: <>{it.status !== "active" && <span className="badge b-paused">{it.status.toUpperCase()}</span>}
           {it.islamic && <span className="badge b-info">ISLAMIC</span>}
           {!it.segments.length && <span className="badge b-warn">NO CUSTOMER GROUP</span>}
-          {!it.data?.source_id && <span className="badge b-noeffect" title="Checks need its numbers from a data connection">NO DATA YET</span>}</> };
+          {!it.data?.source_id && <span className="badge b-noeffect" title="Checks need its numbers from your institution's imported data">NO DATA YET</span>}</> };
     case "flows":
       return { title: <>{cap(FLOW_WORDS[it.kind] ?? "")} {it.goods ? `(${it.goods}) ` : ""}· {pn(ctx, it.local)} ↔ {pn(ctx, it.counterpart)}</>,
         meta: keep([["Value", it.value ? `${usdText(it.value.amount)} a year (${it.value.year})` : "no figure"],
@@ -291,13 +291,13 @@ function ProductsTable({ ctx, items, archived, picked, setPicked, onEdit, itemAc
   const unlinked = items.filter(p => !p.data?.source_id).length;
   const [lead, rest] = unlinked === 0 ? ["", ""]
     : unlinked === items.length
-      ? items.length === 1 ? ["This product is not linked to a data connection yet", ", so its checks can't use your numbers."]
-        : [`None of the ${items.length} is linked to a data connection yet`, ", so their checks can't use your numbers."]
-      : [`${unlinked} of the ${items.length} ${unlinked === 1 ? "is" : "are"} not linked to a data connection yet`, `, so ${unlinked === 1 ? "its" : "their"} checks can't use your numbers.`];
+      ? items.length === 1 ? ["This product is not linked to your institution's data yet", ", so its checks can't use your numbers."]
+        : [`None of the ${items.length} is linked to your institution's data yet`, ", so their checks can't use your numbers."]
+      : [`${unlinked} of the ${items.length} ${unlinked === 1 ? "is" : "are"} not linked to your institution's data yet`, `, so ${unlinked === 1 ? "its" : "their"} checks can't use your numbers.`];
   return (
     <>
       {unlinked > 0 && <p className="rd-warn ins-nodata"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> <b>{lead}</b>{rest}{" "}
-        <Link className="rd-go" to="/admin/data">Link {unlinked === 1 ? "it" : "them"} →</Link></p>}
+        <Link className="rd-go" to="/admin/data">Import your data →</Link></p>}
       <table className="rd-table ins-products">
         <thead><tr><th scope="col">Product</th><th scope="col">Type</th><th scope="col">Owner</th><th scope="col">For</th><th scope="col" className="rd-num">Book</th></tr></thead>
         <tbody>{items.map(p => {

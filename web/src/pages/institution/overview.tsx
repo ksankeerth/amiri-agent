@@ -45,7 +45,7 @@ function openWords(c: Check): OpenCheck {
     case "flows": return { title: "Review the suggested money flows", sub: c.message, action: "Review", to: "/institution/footprint" };
     case "product_data": {
       const m = /(\d+) of (\d+)/.exec(c.message);
-      return { title: "Link products to a data connection", sub: m ? `${m[1]} of ${m[2]} linked: checks need each product's numbers` : c.fix, action: "Link", to: "/institution/customers" };
+      return { title: "Link products to your institution's data", sub: m ? `${m[1]} of ${m[2]} linked: checks need each product's numbers` : c.fix, action: "Link", to: "/institution/customers" };
     }
     default: {
       const tab = TAB_OF_SECTION[c.section] ?? "overview";

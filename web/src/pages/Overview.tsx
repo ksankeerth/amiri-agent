@@ -92,7 +92,7 @@ function FirstRun({ o }: { o: Overview }) {
     <div className="page rd rd-overview">
       <h1 className="rd-ov-h1">Welcome to Amiri Agent</h1>
       <p className="rd-lede rd-prose">{i ? <>Three steps, and Amiri Agent starts watching the world for <b>{i.name}</b>.</>
-        : <>See it work on a sample institution in one click, or set up your own.</>}</p>
+        : <>See it work on a demo institution in one click, or set up your own.</>}</p>
       {!i && <DemoLoad />}
       <section className={i ? "rd-fr-demo" : "rd-fr-steps-sec"} aria-labelledby="fr-steps-h">
         <h2 id="fr-steps-h">{i ? "Three steps to go live" : "Or set up your own institution"}</h2>

@@ -21,7 +21,7 @@ export function SettingsPage() {
       {err != null && <LoadError error={err} onRetry={load} what="the settings" />}
       <Section title="Start again">
         <p className="rd-row-d rd-prose">Reset the prototype to try it as a new institution: everything Amiri Agent holds for the institution goes,
-          including its data connection and validation settings. Market series, their prices and the reference data stay.</p>
+          including its imported data and validation settings. Market series, their prices and the reference data stay.</p>
         {allowed === null ? null : allowed
           ? <div className="ad-act"><LockBtn className="btn btn--danger" onClick={() => setResetting(true)}>Reset the prototype…</LockBtn></div>
           : <QuietWarn>The reset is switched off on this server. To allow it, set <code>prototype_reset = true</code> in Terraform and deploy (locally: <code>PROTOTYPE_RESET=true</code>).</QuietWarn>}

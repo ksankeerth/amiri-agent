@@ -1,4 +1,5 @@
-// The institution's data connection, the connector's reports, and the sample institutions.
+// The institution's data (imported as a JSON file), the connector's reports, approval and the validation switch.
+import type { ImportSummary } from "../pages/admin/importWords";
 import { api } from "./client";
 
 export type CheckStatus = "ready" | "ready_with_gaps" | "not_ready";
@@ -9,13 +10,14 @@ export interface CheckSummary {
   check_id: string; started_at: string; status: CheckStatus; target: string; server_version: string | null;
   headline: string; current?: boolean; connection_version?: number;
 }
+export interface Imported {
+  file_name: string | null; bytes: number; as_of: string; about: string | null; summary: ImportSummary; at: string; by: string | null;
+}
 export interface Connection {
-  configured: boolean; source?: "sample" | "url"; sample?: "bank" | "insurer" | null; base_url?: string | null;
-  openapi_url?: string | null; auth_header?: string | null; auth_set?: boolean;
+  configured: boolean; source?: "imported"; imported?: Imported;
   approved: { check_id: string; at: string; by: string } | null;
   validation_enabled: boolean; validation_allowed: boolean; latest_check: CheckSummary | null;
-  auth_allowed?: boolean;  // false: no key or token (DATA_SECRET_KEY isn't set); the prototype connects without
-  updated_at?: string; updated_by?: string;
+  max_import_mb: number; updated_at?: string; updated_by?: string;
 }
 export interface ConformanceCheck {
   id: string; level: string; title: string; status: CheckState; findings: string[]; more: number; fix: string; note: string | null;
@@ -38,33 +40,19 @@ export interface Report {
   summary: { calls: number; seconds: number; passed: number; failed: number; format_problems: number };
   withdrawn?: string;  // this check withdrew an approval
 }
-export interface ConnectionIn {
-  source: "sample" | "url"; sample?: "bank" | "insurer"; base_url?: string; openapi_url?: string;
-  auth_header?: string; auth_value?: string;
-}
-
-export interface Preset {
-  id: string; label: string; group: "data" | "fault"; size_label: string | null; size: number | null;
-  start_days_ago: number; note: string;
-}
-export interface Condition { id: string; on?: boolean; start?: string | null; size?: number | null }
-export interface Sample {
-  kind: "bank" | "insurer"; enabled: boolean; conditions: Condition[]; updated_at: string | null; updated_by: string | null;
-  allowed: boolean; base_path: string; openapi_path: string; shaped_by: { name: string; source: "installation" | "bundled" };
-  presets: Preset[];
-}
 
 const C = "/api/v1/data-connection";
 
 export const connectApi = {
   get: () => api<Connection>(C),
-  put: (body: ConnectionIn) => api<Connection>(C, { method: "PUT", json: body }),
+  /** The file as it is, as the body: the server checks it, and nothing is stored unless all of it is valid. */
+  importFile: (file: Blob, name: string) => api<Connection>(`${C}:import?file_name=${encodeURIComponent(name)}`,
+    { method: "POST", body: file, headers: { "content-type": "application/json" } }),
+  /** Where the example file downloads from (a plain link: the browser saves it). */
+  exampleUrl: `${C}:example`,
   check: () => api<Report>(`${C}:check`, { method: "POST" }),
   checks: () => api<{ items: (CheckSummary & { summary: Report["summary"]; run_by: string })[] }>(`${C}/checks`).then(r => r.items),
   report: (id: string) => api<Report>(`${C}/checks/${encodeURIComponent(id)}`),
   approve: () => api<Connection>(`${C}:approve`, { method: "POST" }),
   validation: (enabled: boolean) => api<Connection>("/api/v1/validation", { method: "PUT", json: { enabled } }),
-  samples: () => api<{ allowed: boolean; items: Sample[] }>("/api/v1/mock-institutions"),
-  putSample: (kind: string, enabled: boolean, conditions: Condition[]) =>
-    api<Sample>(`/api/v1/mock-institutions/${kind}`, { method: "PUT", json: { enabled, conditions } }),
 };

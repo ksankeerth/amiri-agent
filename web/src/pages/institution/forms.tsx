@@ -165,9 +165,9 @@ const BODIES: Record<SectionName, Body> = {
       <Field label="Islamic product" error={err.islamic}><label className="check"><input type="checkbox" checked={!!d.islamic} onChange={e => set("islamic", e.target.checked)} /> Islamic or takaful variant</label></Field>
       <Field label="Launched" error={err.launched_on}><input className="input" type="date" value={d.launched_on ?? ""} onChange={e => set("launched_on", e.target.value || null)} /></Field>
       <Group>Its numbers</Group>
-      <Field label="Data connection" error={err.data} full hint="Where its numbers come from (Data connections).">
+      <Field label="In your institution's data" error={err.data} full hint="Its numbers come from the JSON file imported on Data connections: name the source and its product id in that file's catalog.">
         <div className="row" style={{ gap: 6 }}>
-          <input className="input" value={d.data?.source_id ?? ""} placeholder="source id, e.g. ds-core" onChange={e => set("data", { ...(d.data ?? {}), source_id: e.target.value || null })} />
+          <input className="input" value={d.data?.source_id ?? ""} placeholder="source id, e.g. institution-data" onChange={e => set("data", { ...(d.data ?? {}), source_id: e.target.value || null })} />
           <input className="input" value={d.data?.catalog_product_id ?? ""} placeholder="its product id in the catalog" onChange={e => set("data", { ...(d.data ?? {}), catalog_product_id: e.target.value || null })} />
         </div>
       </Field>
