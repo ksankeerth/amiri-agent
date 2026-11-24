@@ -121,8 +121,9 @@
 /* a filter inside the bar (FlowFilter's `after`): a borderless select set like the steps, with its own small chevron */
 .ff-sel { height:36px; padding:0 30px 0 14px; border:0; border-radius:var(--r-pill); font:inherit; font-size:var(--fs-md); font-weight:500;
   color:var(--ink-2); cursor:pointer; appearance:none; -webkit-appearance:none;
-  background:transparent linear-gradient(45deg, transparent 50%, currentColor 50%) no-repeat right 16px center / 5px 5px,
-    linear-gradient(135deg, currentColor 50%, transparent 50%) no-repeat right 11px center / 5px 5px; }
+  background:linear-gradient(45deg, transparent 50%, currentColor 50%) no-repeat right 16px center / 5px 5px,
+    linear-gradient(135deg, currentColor 50%, transparent 50%) no-repeat right 11px center / 5px 5px;
+  background-color:transparent; }  /* a colour may only sit on the last layer of the shorthand, so it goes on its own */
 .ff-sel { field-sizing:content; }  /* as wide as the chosen team, not the longest one */
 .ff-sel:hover { background-color:var(--hover-bg); }
 .ff-sel[data-on] { background-color:var(--active-bg); color:var(--ink); font-weight:600; }

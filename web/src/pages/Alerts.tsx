@@ -165,7 +165,7 @@ export function AlertsPage() {
   const adverse = waiting.filter(a => a.level === "adverse").length;
   const g0 = waiting[0];
   const headline = !s ? "Alerts" : !s.to_review ? "All caught up"
-    : team && (show === "new" || show === "all") ? <><span className="ap-n">{count(waiting.length, "alert")}</span> waiting for {team}</>
+    : team && (show === "new" || show === "all") ? <><span className="ap-n">{count(nAt("new", team) ?? waiting.length, "alert")}</span> waiting for {team}</>
     : show === "new" || show === "all" ? <><span className="ap-n">{count(teams || s.teams.length, "team")}</span> {(teams || s.teams.length) === 1 ? "has" : "have"} an alert waiting</>
     : <>{count(s.to_review, "alert")} waiting for review</>;
   const status = !s ? "" : !s.to_review ? "Nothing is waiting for review." : !waiting.length ? "Choose To review to see them." : <>
