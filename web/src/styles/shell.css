@@ -102,7 +102,7 @@ button.worldpill:hover { background-image:none; background:var(--surface-2); bor
 
 /* the role switch: a 40 px sunken track with a white chosen segment, full width */
 .side-foot .seg { display:flex; width:100%; height:40px; padding:3px; gap:2px; border:0; border-radius:12px; background:var(--sunken); overflow:visible; }
-.side-foot .seg button { flex:1 1 0; min-width:0; width:auto; height:34px; padding:0 4px; border:0; border-radius:9px; background:transparent; font-size:14px; font-weight:500; color:var(--ink-2); text-align:center; white-space:nowrap; box-shadow:none; }
+.side-foot .seg button { flex:1 1 auto; min-width:0; width:auto; height:34px; padding:0 8px; border:0; border-radius:9px; background:transparent; font-size:14px; font-weight:500; color:var(--ink-2); text-align:center; white-space:nowrap; box-shadow:none; }
 .side-foot .seg button + button { border:0; }
 .side-foot .seg button:hover { background:transparent; color:var(--ink); }
 .side-foot .seg button[aria-pressed="true"] { background:var(--seg-on); color:var(--ink); font-weight:600; box-shadow:var(--seg-shadow); }
