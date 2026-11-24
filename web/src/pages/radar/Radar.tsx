@@ -144,7 +144,7 @@ export function RadarPage() {
         {!status.connected && <p className="rd-fine rs-small">Last run {lr ? ago(lr.finished_at ?? lr.created_at, now) : "never"} · next run {sched.replace(/^once a day/, "daily")} once Radar is connected</p>}
 
         <Section title="Sent to you" meta={items === null ? undefined : sentNow.length === 0 ? undefined
-          : <>{plural(sentNow.length - again, "story", "stories")} this run{again > 0 ? ` · ${again} sent earlier, seen again` : ""} · open one for why it matters</>}>
+          : <>{plural(sentNow.length - again, "story", "stories")} this run{again > 0 ? ` · ${again} sent earlier, seen again` : ""}</>}>
           {items === null ? (err == null && <p className="rd-fine" role="status">Loading stories…</p>)
             : !items.length ? <p className="rd-row-d">{status.connected ? "Radar hasn't found anything touching your footprint yet. Check now runs it at once."
               : admin ? "Connect the Radar agent (RADAR_URL) and it starts reading the news." : "Radar starts reading the news once your Platform Admin connects it."}
@@ -154,7 +154,7 @@ export function RadarPage() {
         </Section>
 
         {held.length > 0 && <Section title="Held back" meta={`${held.length} this run`}>
-          <p className="rd-fine rd-prose" style={{ margin: "0 0 4px" }}>Not sent this run: Radar sends only a few stories a run, the ones its judge picks, best first.</p>
+          <p className="rd-fine rd-prose" style={{ margin: "0 0 4px" }}>Radar sends only the few its judge picks, best first.</p>
           <ul className="rs-list">{held.map(s => <CompactRow key={s.story_id} s={s} w={w} onChange={onChange} />)}</ul>
         </Section>}
 

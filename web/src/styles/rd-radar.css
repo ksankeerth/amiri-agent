@@ -53,3 +53,8 @@
 .rd-radar .rd-step[data-to="next"]::after { background:var(--hairline-2); opacity:.6; }
 .rd-radar .rs-opened { margin-left: 26px; }
 .rd-radar .rd-fig + .rd-fig { border-left: 0; }
+
+/* text density: a story's title is one line and its summary two; the meta line is quiet and one line */
+.rd-radar .rs-title > .rd-clamp1 { min-width: 0; flex: 1; }
+.rd-radar .rs-meta { padding-left: 26px; }
+.rd-radar .rs-compact .rd-row-m { margin-top: 4px; }
