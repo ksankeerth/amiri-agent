@@ -341,7 +341,7 @@ export function ScenarioPage() {
           </Section>}
         </div>
       </div>
-      <div style={{ marginTop: 36, borderTop: "2px solid var(--ink)" }}>
+      <div className="rds-folds">
         <Fold title="The monitor it runs" summary={b.monitor.spec.about.name} remember="studio-monitor">
           <p className="rds-fold-p">{b.monitor.spec.public.in_one_sentence}</p>
           <ul>{b.monitor.spec.public.tell_me_if.map(l => <li key={l}>{l}</li>)}</ul>

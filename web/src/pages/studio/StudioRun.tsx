@@ -181,6 +181,7 @@ export function StudioRunPage() {
         </Section>
       </div>
 
+      <div className="rds-pair">
       <Section title="Alerts it would raise" count={sim.alerts.length || undefined} meta="for the team that owns each product">
         {!sim.alerts.length ? <p className="rd-row-d" style={{ marginTop: 12 }}>{active ? "None yet. An alert appears when an event is traced to a product's risk." : "No event in this run puts a product at risk."}</p>
           : sim.alerts.map((a, n) => (
@@ -199,6 +200,7 @@ export function StudioRunPage() {
               <div className="rd-row-m">{TONE_WORD[e.tone]}{e.themes.length ? ` · ${[...new Set(e.themes.map(themeLabel))].join(", ")}` : ""} · {plural(e.effects, "possible impact")}{e.developments ? ` · ${plural(e.developments, "later finding")} joined` : ""}</div>
             </div>))}
       </Section>
+      </div>
 
       <Section title="What happened" meta={`newest first · ${ZONE_LABEL} time`} className="rds-happ">
         {!rows.length ? <p className="rd-row-d" style={{ marginTop: 12 }}>Press Play or Step: each simulated day's headlines, findings and events appear here.</p>

@@ -2,7 +2,7 @@
    except the day advancing on the run's track. */
 
 /* ---------- one quiet line: a running run, a waiting run, a stopped run, an error */
-.rd-studio .rds-line { margin: 16px 0 0; padding: 12px 0; border-top: 1px solid var(--rd-hair); border-bottom: 1px solid var(--rd-hair);
+.rd-studio .rds-line { margin: 16px 0 0; padding: 8px 0;
   font-size: 17px; color: var(--ink); display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: baseline; }
 .rd-studio .rds-line .rds-grow { flex: 1; min-width: 260px; }
 .rd-studio .rds-quiet { margin: 12px 0 0; font-size: 16px; color: var(--ink-2); display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: baseline; }
@@ -13,7 +13,7 @@
 /* ---------- the list */
 .rd-studio .rds-tpl { display: flex; gap: 24px; align-items: center; }
 .rd-studio .rds-tpl > .rds-main { flex: 1; min-width: 0; }
-.rd-studio .rds-tpl .rd-row-t { font-size: 20px; }
+.rd-studio .rds-tpl .rd-row-t { font-size: 17px; }
 .rd-studio .rds-tpl .rds-act { flex: none; }
 .rd-studio .rds-tpl .rd-row-m { margin-top: 6px; }
 .rd-studio .rds-table td .rds-sub { font-size: 15px; color: var(--ink-3); margin-top: 2px; }
@@ -26,14 +26,14 @@
 .rd-studio .rds-cols { display: grid; grid-template-columns: minmax(0, 1fr) 400px; column-gap: 48px; align-items: start; }
 .rd-studio .rds-cols > div > .rd-sec:first-child { margin-top: 36px; }
 .rd-studio .rds-cols .rds-fine { margin: 4px 0 6px; max-width: 680px; }
-.rd-studio .rds-head { display: flex; gap: 14px; align-items: flex-start; padding: 16px 0; border-bottom: 1px solid var(--rd-hair); }
+.rd-studio .rds-head { display: flex; gap: 14px; align-items: flex-start; padding: 16px 0; }
 .rd-studio .rds-head.rds-off .rds-ht { color: var(--ink-3); text-decoration: line-through; }
 .rd-studio .rds-pick { display: flex; gap: 14px; align-items: flex-start; flex: 1; min-width: 0; cursor: pointer; }
 .rd-studio .rds-pick input { width: 22px; height: 22px; margin: 3px 0 0; flex: none; accent-color: var(--accent); cursor: pointer; }
 .rd-studio .rds-pick .rds-ht { display: block; font-size: 17px; line-height: 1.4; color: var(--ink); }
 .rd-studio .rds-pick .rd-fine { display: block; }
 .rd-studio .rds-head .rds-acts { display: flex; gap: 16px; padding-top: 2px; flex: none; }
-.rd-studio .rds-form { display: block; padding: 16px 0; border-bottom: 1px solid var(--rd-hair); }
+.rd-studio .rds-form { display: block; padding: 16px 0; }
 .rd-studio .rds-form .rds-frow { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-top: 10px; }
 .rd-studio .rds-form .rds-grow { flex: 1; }
 .rd-studio .rds-modes { display: grid; gap: 10px; margin-top: 16px; }
@@ -41,7 +41,7 @@
 .rd-studio .rds-runit { display: grid; gap: 12px; margin-top: 8px; }
 .rd-studio .rds-check { display: flex; gap: 12px; align-items: flex-start; font-size: 16px; color: var(--ink); cursor: pointer; }
 .rd-studio .rds-check input { width: 22px; height: 22px; margin: 1px 0 0; flex: none; accent-color: var(--accent); }
-.rd-studio .rds-find { display: flex; gap: 10px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--rd-hair); font-size: 16px; color: var(--ink); }
+.rd-studio .rds-find { display: flex; gap: 10px; align-items: baseline; padding: 8px 0; font-size: 16px; color: var(--ink); }
 .rd-studio .rds-find .rd-fine { margin-left: auto; text-align: right; }
 .rd-studio .rds-runs { list-style: none; margin: 0; padding: 0; }
 .rd-studio .rds-runs li { padding: 8px 0; }
@@ -50,8 +50,8 @@
 .rd-studio .rds-name-in { font: inherit; font-size: 28px; font-weight: 700; height: 52px; width: min(560px, 80vw); }
 
 /* ---------- a run: the control line */
-.rd-studio .rds-ctl { margin-top: 20px; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rd-hair);
-  padding: 18px 0; display: flex; gap: 20px 28px; align-items: center; flex-wrap: wrap; }
+.rd-studio .rds-ctl { margin-top: 20px;
+  padding: 12px 0 8px; display: flex; gap: 20px 28px; align-items: center; flex-wrap: wrap; }
 .rd-studio .rds-btns { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .rd-studio .rds-day { display: flex; align-items: baseline; gap: 10px; white-space: nowrap; }
 .rd-studio .rds-day b { font-size: 34px; line-height: 1.1; font-weight: 700; color: var(--ink); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
@@ -62,19 +62,19 @@
 
 /* the track: one segment a day; grey for days run, dark for days an event formed, a light mark for headlines */
 .rd-studio .rds-track { display: flex; gap: 3px; margin: 8px 0 0; padding: 0; list-style: none; }
-.rd-studio .rds-seg { flex: 1; position: relative; height: 12px; border-radius: 1px; background: var(--rd-hair); opacity: .55; }
+.rd-studio .rds-seg { flex: 1; position: relative; height: 12px; border-radius: 3px; background: var(--rd-hair); opacity: .55; }
 .rd-studio .rds-seg.ran { background: var(--rd-mark); opacity: 1; }
 .rd-studio .rds-seg.ev { background: var(--ink); opacity: 1; }
 .rd-studio .rds-seg.hd::after { content: ""; position: absolute; left: 50%; top: 17px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--rd-mark); }
 .rd-studio .rds-key { margin-top: 14px; font-size: 14px; color: var(--ink-3); }
 
 /* ---------- a run: figures, two columns, rows */
-.rd-studio .rd-figs { margin-top: 24px; }
+.rd-studio .rd-figs { --rd-fig: 36px; margin-top: 24px; }
 .rd-studio .rd-fig-v { display: flex; align-items: baseline; gap: 8px; }
 .rd-studio .rds-two { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); column-gap: 48px; align-items: start; }
 .rd-studio .rds-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--high); margin-right: 6px; }
 .rd-studio .rds-score { list-style: none; margin: 0; padding: 0; }
-.rd-studio .rds-score li { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--rd-hair); font-size: 17px; color: var(--ink); }
+.rd-studio .rds-score li { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 8px 0; font-size: 17px; color: var(--ink); }
 .rd-studio .rds-score .rds-w { font-weight: 700; color: var(--ink); }
 .rd-studio .rds-score .rds-w.rds-no { color: var(--ink-3); font-weight: 500; }
 .rd-studio .rds-score .rd-shape, .rd-studio .rd-row-t .rd-shape, .rd-studio .rd-row-m .rd-shape, .rd-studio .rds-find .rd-shape { margin-right: 8px; }
@@ -95,3 +95,25 @@
   .rd-studio .rds-tpl { flex-direction: column; align-items: flex-start; gap: 12px; }
   .rd-studio .rds-day b { font-size: 28px; }
 }
+
+/* warm look: named things and "go" links sit in ink and are underlined only on hover (app.css underlines every link in a paragraph at rest) */
+.rd-studio a.rd-name:not(.btn):not(.strong):not(.chip), .rd-studio a.rd-go:not(.btn):not(.strong):not(.chip) { text-decoration:none; }
+.rd-studio a.rd-name:not(.btn):not(.strong):not(.chip):hover, .rd-studio a.rd-go:not(.btn):not(.strong):not(.chip):hover { text-decoration:underline; text-underline-offset:3px; }
+
+/* an opened item (help, details, verification) is a very light soft surface, not a rule on the left */
+.rd-studio .rd-open { border-left:0; background:var(--surface-2); border-radius:12px; padding:16px 20px 18px; margin:8px 0 12px; }
+.rd-studio .rds-chart { border-radius: 16px; overflow: hidden; }
+.rd-studio .field .input, .rd-studio .field select, .rd-studio .field textarea { border-radius: 10px; }
+
+/* a run's lists use the width: alerts and events side by side, "what happened" as a grid of rows below them */
+.rd-studio .rds-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 56px; align-items: start; }
+.rd-studio .rds-pair > .rd-sec { margin-top: 32px; }
+.rd-studio .rds-happ { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); column-gap: 56px; row-gap: 4px; align-items: start; }
+.rd-studio .rds-happ > .rd-sec-h, .rd-studio .rds-happ > .rd-row-d, .rd-studio .rds-happ > .rds-showall { grid-column: 1 / -1; }
+.rd-studio .rds-happ > .rd-row + .rd-row { margin-top: 0; }
+.rd-studio .rds-happ > .rd-row { padding: 9px 0; }
+.rd-studio .rd-fig + .rd-fig { border-left: 0; }
+@media (max-width: 1100px) { .rd-studio .rds-pair { grid-template-columns: minmax(0, 1fr); } }
+.rd-studio .rds-folds { margin-top: 32px; border-top: 1px solid var(--hairline); padding-top: 16px; }
+.rd-studio .rds-cols > div > .rd-sec:first-child { border-top: 0; margin-top: 24px; padding-top: 0; }
+.rd-studio .rds-line + .rds-cols, .rd-studio .rds-line + .rd-sec { margin-top: 8px; }
