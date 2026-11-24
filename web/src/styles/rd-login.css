@@ -1,0 +1,32 @@
+/* The bot check and the paused page (rd system): one calm centred column on the plain page. The wordmark, one heading, one
+   line, one action; small print below. No card, no brand panel. Scoped under .rd-login. */
+
+.rd-login { min-height: 100vh; min-height: 100dvh; display: flex; background: var(--paper); color: var(--ink-2); }
+.rd-login .lg-main { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; padding: 48px 24px; }
+.rd-login .lg-main:focus { outline: none; }
+.rd-login .lg-col { width: min(520px, 100%); display: flex; flex-direction: column; align-items: center; text-align: center; }
+
+.rd-login .lg-brand { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 52px; }
+.rd-login .lg-brand svg { width: 44px; height: 44px; }
+.rd-login .lg-brand b { font-size: 22px; font-weight: 650; letter-spacing: -.01em; color: var(--ink); }
+.rd-login .lg-tag { font-size: 15px; color: var(--ink-3); }
+
+.rd-login h1 { font-size: 32px; line-height: 1.2; font-weight: 650; letter-spacing: -.02em; color: var(--ink); margin: 0; }
+.rd-login .lg-lede { margin: 14px 0 30px; max-width: 460px; font-size: 18px; line-height: 1.5; color: var(--ink-2); }
+.rd-login .btn { min-width: 200px; justify-content: center; }
+.rd-login .lg-check { min-height: 78px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.rd-login .lg-check .errtext { font-size: 15px; }
+.rd-login .lg-status { margin: 16px 0 0; font-size: 16px; line-height: 1.4; color: var(--ink-2); }
+.rd-login .lg-status:empty { display: none; }
+.rd-login .lg-fine { margin: 24px 0 0; max-width: 460px; font-size: 15px; line-height: 1.5; color: var(--ink-3); }
+.rd-login .lg-fine b { color: var(--ink-2); font-weight: 600; }
+.rd-login .lg-fine + .lg-fine { margin-top: 12px; }
+.rd-login a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.rd-login .lg-foot { margin: 56px 0 0; font-size: 15px; color: var(--ink-3); }
+
+@media (max-width: 520px) {
+  .rd-login h1 { font-size: 28px; }
+  .rd-login .lg-brand { margin-bottom: 36px; }
+  .rd-login .lg-foot { margin-top: 40px; }
+}
+.rd-login .lg-lede, .rd-login .lg-fine { text-wrap: pretty; }
