@@ -1,6 +1,7 @@
 """Keeping bots out. The prototype has no login: AUTH_MODE=prototype (the public URL) asks a visitor to tick Google
 reCAPTCHA's "I'm not a robot" box (v2 checkbox, checked here with the secret key); passing it sets a signed cookie
-for SESSION_HOURS, then the box shows again. AUTH_MODE=off (local, tests): no check at all.
+for SESSION_HOURS, then the box shows again. AUTH_MODE=off (local, tests): no check at all. With DEMO_LOCK=true as well
+(a live demo; editing is locked anyway), the login page offers one click, "Judge login", instead of the box.
 
 With the check on, every API, the docs, /health/details and /internal/tick need either that cookie or an agent's
 Google ID token (a service account in INTERNAL_CALLERS, as /api/v1/internal/* already checks). The web app's own files
@@ -173,13 +174,26 @@ class PrototypeIn(BaseModel):
     token: str = Field(min_length=10, max_length=4096, description="The reCAPTCHA response from the page's widget.")
 
 
+def judge_login_on() -> bool:
+    """The one-click "Judge login" works only on a public prototype whose editing is locked."""
+    return settings.raw("AUTH_MODE") == "prototype" and settings.flag("DEMO_LOCK")
+
+
+def _set_cookie(request: Request, response: Response, kind: str) -> dict:
+    token, exp = issue(kind)
+    secure = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+    response.set_cookie(COOKIE, token, max_age=exp - int(time.time()), httponly=True, secure=secure, samesite="lax",
+                        path="/")
+    return {"signed_in": True, "kind": kind, "expires_at": exp}
+
+
 @router.get("/config", summary="Whether a bot check is on (and its site key), and whether the server is asleep (public)")
 async def config(request: Request):
     from app import sleep
 
     awake = await sleep.wake(request.app, request.app.state.database_url)
     return {"mode": settings.raw("AUTH_MODE"), "recaptcha_site_key": settings.raw("RECAPTCHA_SITE_KEY") or None,
-            "asleep": not awake}
+            "asleep": not awake, "judge_login": judge_login_on()}
 
 
 @router.get("/me", summary="Whether this browser has passed the bot check (public)")
@@ -220,12 +234,18 @@ async def prototype(request: Request, body: PrototypeIn, response: Response):
                  v.get("error-codes", []), v.get("hostname"), ", ".join(hosts) or "any")
         raise Problem(403, "captcha_failed", "The check didn't pass. Tick the box again.",
                       reasons=v.get("error-codes", []))
-    token, exp = issue("prototype")
     log.info("bot check passed")
-    secure = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
-    response.set_cookie(COOKIE, token, max_age=exp - int(time.time()), httponly=True, secure=secure, samesite="lax",
-                        path="/")
-    return {"signed_in": True, "kind": "prototype", "expires_at": exp}
+    return _set_cookie(request, response, "prototype")
+
+
+@router.post("/judge", summary="Judge login: one click, no check (only with AUTH_MODE=prototype and DEMO_LOCK=true)")
+async def judge(request: Request, response: Response):
+    if not judge_login_on():
+        raise Problem(404, "not_found", "Judge login isn't on here.")
+    if _rate_limited(_client_ip(request)):
+        raise Problem(429, "too_many", "Too many tries; wait a minute.", retry_after=60)
+    log.info("judge login")
+    return _set_cookie(request, response, "judge")
 
 
 @router.post("/logout", summary="Forget the passed check (clears the cookie)")

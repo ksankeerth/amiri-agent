@@ -85,8 +85,35 @@ export function PausedPage() {
   );
 }
 
+/** The demo lock is on (server: AUTH_MODE=prototype and DEMO_LOCK=true): one click, no box, no Google script. */
+function JudgeLogin() {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const btn = useRef<HTMLButtonElement>(null);
+  useEffect(() => { document.title = "Amiri Agent"; btn.current?.focus(); }, []);
+  const enter = async () => {
+    setBusy(true); setErr(null);
+    try {
+      await authApi.judge();
+      window.location.assign("/home");  // a full load, as after the box: the app re-checks /me and opens the Overview
+    } catch (e) { setErr(e instanceof ApiError ? e.problem.detail : String(e)); setBusy(false); }
+  };
+  return (
+    <Frame>
+      <h1>Open Amiri Agent</h1>
+      <p className="lg-lede">One click, no password. Editing is switched off for this demo.</p>
+      <button ref={btn} className="btn btn--primary btn--lg" type="button" disabled={busy} onClick={enter}>{busy ? "Opening…" : "Judge login"}</button>
+      <p className="lg-status" role={err ? "alert" : "status"}>{busy ? "Opening Amiri Agent…" : err ? <><span aria-hidden="true">◆ </span>{err}</> : ""}</p>
+    </Frame>
+  );
+}
+
 /** The prototype has no login: one tick of "I'm not a robot" (checked by the server) and the app opens. */
 export function BotCheckPage({ cfg }: { cfg: AuthConfig }) {
+  return cfg.judge_login ? <JudgeLogin /> : <BoxCheck cfg={cfg} />;  // the box (and its script) only exists in BoxCheck
+}
+
+function BoxCheck({ cfg }: { cfg: AuthConfig }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [resetKey, setResetKey] = useState(0);

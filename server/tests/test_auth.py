@@ -33,7 +33,8 @@ async def test_the_api_needs_a_sign_in_and_the_check_gives_one(client, gated):
     assert (await client.post("/internal/tick")).status_code == 401  # no longer open on a public URL
     assert (await client.get("/health")).status_code == 200  # liveness stays open
     cfg = (await client.get("/api/v1/auth/config")).json()
-    assert cfg == {"mode": "prototype", "recaptcha_site_key": "site-key", "asleep": False}  # no login: just the box
+    assert cfg == {"mode": "prototype", "recaptcha_site_key": "site-key", "asleep": False,
+                   "judge_login": False}  # no login: just the box
     assert (await client.get("/api/v1/auth/me")).json()["signed_in"] is False
     r = await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token"})
     assert r.status_code == 200 and "amiri_session" in r.cookies
@@ -88,3 +89,44 @@ async def test_a_quota_error_is_a_failure_and_the_daily_budget_protects_the_allo
     auth._checks.update(day="", n=0)
     codes = [(await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token"})).status_code for _ in range(4)]
     assert codes == [200, 200, 429, 429]  # the third check never reaches Google
+
+
+async def test_judge_login_works_only_on_a_prototype_with_the_demo_lock_on(client, gated, env):
+    assert (await client.get("/api/v1/auth/config")).json()["judge_login"] is False
+    r = await client.post("/api/v1/auth/judge")  # lock off: no such door
+    assert r.status_code == 404 and r.json()["code"] == "not_found" and "amiri_session" not in r.cookies
+    env.setenv("DEMO_LOCK", "true")
+    assert (await client.get("/api/v1/auth/config")).json()["judge_login"] is True
+    env.setenv("AUTH_MODE", "off")  # no bot check at all: nothing to log in to
+    assert (await client.get("/api/v1/auth/config")).json()["judge_login"] is False
+    assert (await client.post("/api/v1/auth/judge")).status_code == 404
+
+
+async def test_the_judge_cookie_opens_the_api_without_a_captcha(client, gated, app, env):
+    env.setenv("DEMO_LOCK", "true")
+    env.setenv("RECAPTCHA_SECRET", "")  # not needed, and Google is never asked
+    app.state.captcha_transport = httpx.MockTransport(lambda request: pytest.fail("judge login called Google"))
+    assert (await client.get("/api/v1/series")).status_code == 401
+    r = await client.post("/api/v1/auth/judge")
+    assert r.status_code == 200 and r.json()["kind"] == "judge" and "amiri_session" in r.cookies
+    c = r.headers["set-cookie"].lower()
+    assert "httponly" in c and "samesite=lax" in c and "path=/" in c
+    assert (await client.get("/api/v1/series")).status_code == 200
+    me = (await client.get("/api/v1/auth/me")).json()
+    assert me["signed_in"] is True and me["kind"] == "judge"
+    await client.post("/api/v1/auth/logout")
+    client.cookies.clear()
+    assert (await client.get("/api/v1/series")).status_code == 401
+
+
+async def test_judge_login_is_rate_limited_and_the_captcha_path_is_unchanged(client, gated, env):
+    env.setenv("DEMO_LOCK", "true")
+    codes = [(await client.post("/api/v1/auth/judge")).status_code for _ in range(6)]
+    assert codes[:5] == [200] * 5 and codes[-1] == 429
+    from app import auth
+    auth._attempts.clear()
+    r = await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token"})  # the box still works
+    assert r.status_code == 200 and r.json()["kind"] == "prototype"
+    env.setenv("DEMO_LOCK", "false")
+    client.cookies.clear()
+    assert (await client.post("/api/v1/auth/prototype", json={"token": "a-captcha-token"})).status_code == 200

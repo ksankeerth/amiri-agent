@@ -22,4 +22,6 @@ prototype_reset = true
 
 # Switch on for a live demo where many people click around: editing, deleting and the reset are locked (the app
 # greys them out). Alerts can still be acknowledged and Scenario Studio still runs. Switch off to edit again.
+# With auth_mode = "prototype" (the default) and demo_lock = true, the login page shows a one-click "Judge login"
+# instead of the reCAPTCHA box. With demo_lock = false the reCAPTCHA box stays.
 demo_lock = false
