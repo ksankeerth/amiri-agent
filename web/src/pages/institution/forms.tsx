@@ -322,10 +322,13 @@ const SUBTYPES: Record<InstitutionType, string[]> = {
 };
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-export function InstitutionFields({ d, set, err, creating, fill }: { d: Draft; set: (k: string, v: any) => void; err: Errors; creating: boolean; fill?: (data: Draft) => void }) {
+/** `grouped`: the fields under three plain headings (the first-run form); otherwise one flat grid, as in the edit dialog. */
+export function InstitutionFields({ d, set, err, creating, fill, grouped }: { d: Draft; set: (k: string, v: any) => void; err: Errors; creating: boolean; fill?: (data: Draft) => void; grouped?: boolean }) {
   const t = (d.institution_type ?? "bank") as InstitutionType;
+  const islamic = <Field label="Islamic" error={err.islamic}><label className="check"><input type="checkbox" checked={!!d.islamic} onChange={e => set("islamic", e.target.checked)} /> Islamic bank or window, or takaful</label></Field>;
   return (
     <div className="grid2">
+      {grouped && <Group first>Who you are</Group>}
       <Field req label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} placeholder="The institution's name" /></Field>
       <Field label="Legal name" error={err.legal_name}><input className="input" value={d.legal_name ?? ""} onChange={e => set("legal_name", e.target.value || null)} /></Field>
       <Field req label="Type" error={err.institution_type} hint={!creating ? "Can't change while products of this type exist." : undefined}>
@@ -334,13 +337,16 @@ export function InstitutionFields({ d, set, err, creating, fill }: { d: Draft; s
       <Field label="Kind of bank or insurer" error={err.subtype}>
         <select className="input" value={d.subtype ?? ""} onChange={e => set("subtype", e.target.value || null)}><option value="">—</option>{opt(SUBTYPES[t])}</select>
       </Field>
+      {grouped && islamic}
+      {grouped && <Group>Where you are, and in what money</Group>}
       <Field req label="Home country" error={err.home_country} hint={!creating ? "To move home, add the new country to the footprint as home first." : undefined}>
         <CountrySelect home value={d.home_country ?? null} onChange={v => set("home_country", v)} /></Field>
       <Field req label="Base currency" error={err.base_currency}><CurrencySelect home value={d.base_currency ?? null} onChange={v => set("base_currency", v)} /></Field>
       <Field req label="Time zone" error={err.time_zone}><TimeZoneInput value={d.time_zone ?? ""} onChange={v => set("time_zone", v)} /></Field>
-      <Field label="Islamic" error={err.islamic}><label className="check"><input type="checkbox" checked={!!d.islamic} onChange={e => set("islamic", e.target.checked)} /> Islamic bank or window, or takaful</label></Field>
+      {!grouped && islamic}
       <Field label="Currencies you settle in abroad" error={err.clearing_currencies} full hint="Decides which sanctions regimes reach you (USD → OFAC).">
         <CurrenciesField value={d.clearing_currencies ?? []} onChange={v => set("clearing_currencies", v)} /></Field>
+      {grouped && <Group>More about you (optional)</Group>}
       <Field label="Who owns risk decisions" error={err.governance_body}><input className="input" value={d.governance_body ?? ""} onChange={e => set("governance_body", e.target.value || null)} placeholder="e.g. Board Risk Committee" /></Field>
       <Field label="Size" error={err.size_band}><select className="input" value={d.size_band ?? ""} onChange={e => set("size_band", e.target.value || null)}><option value="">—</option>{opt(["small", "mid", "large", "systemic"], { mid: "mid-size", systemic: "systemically important" })}</select></Field>
       <Field label="Financial year starts in" error={err.fiscal_year_start_month}><select className="input" value={d.fiscal_year_start_month ?? 1} onChange={e => set("fiscal_year_start_month", Number(e.target.value))}>{MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select></Field>

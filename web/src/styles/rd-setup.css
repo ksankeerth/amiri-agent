@@ -87,3 +87,40 @@
 
 /* ---- beside the Setup agent: the products table keeps to the width it has */
 .rd-setup.wz-chat .ins-products { display: block; overflow-x: auto; }
+
+/* ---- the first-run form (new institution, and the wizard before there is one): open fields, labels above, two columns,
+   three plain headings, and one filled button kept in view. Used on three pages, so it is scoped to .rd-form. */
+.rd-form { max-width: 880px; }
+.rd-pagehead + .rd-form { padding-top: 24px; }
+.rd-form .rf-intro { margin: 0 0 4px; }
+.rd-form .rf-req { margin: 0 0 4px; }
+.rd-form .rf-fields .grid2 { gap: 22px 32px; }
+.rd-form .pf-group { margin: 22px 0 -4px; padding-top: 0; border-top: 0; font-size: 18px; font-weight: 650; letter-spacing: -.01em; text-transform: none; color: var(--ink); }
+.rd-form .pf-group.first { margin-top: 12px; }
+.rd-form .field { gap: 8px; }
+.rd-form .field > span:not(.hint):not(.errtext), .rd-form .field > label { font-size: 16px; font-weight: 600; color: var(--ink); }
+.rd-form .field .hint, .rd-form .field .errtext { font-size: 15px; line-height: 1.45; }
+.rd-form .req { color: var(--ink-2); }
+.rd-form .input, .rd-form select.input { font-size: 16px; border-radius: 12px; }
+.rd-form .check { align-items: center; min-height: 48px; font-size: 16px; font-weight: 400; color: var(--ink); }
+.rd-form .check input { width: 20px; height: 20px; margin: 0; accent-color: var(--ink); }
+.rd-form .seg { border: 0; background: none; border-radius: 0; overflow: visible; gap: 10px; }
+.rd-form .seg button { height: auto; min-height: 44px; padding: 9px 22px; border: 1px solid var(--hairline-2); border-radius: 999px; background: var(--surface); font-size: 16px; font-weight: 500; color: var(--ink); }
+.rd-form .seg button + button { border-left: 1px solid var(--hairline-2); }
+.rd-form .seg button:hover { border-color: var(--ink); }
+.rd-form .seg button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); font-weight: 600; }
+.rd-form .seg button:focus-visible { outline-offset: 2px; }
+.rd-form .chip { font-size: 15px; min-height: 36px; }
+.rd-form .fillfile .btn { border: 0; background: none; padding: 0; min-height: 0; height: auto; font-size: 15px; font-weight: 600; color: var(--ink); }
+.rd-form .fillfile .btn:hover { background: none; text-decoration: underline; text-underline-offset: 3px; }
+.rd-form .fillfile .btn svg { display: none; }
+.rd-form .rf-err { margin: 16px 0 0; }
+.rd-form .rf-foot { position: sticky; bottom: 0; z-index: 2; margin-top: 32px; background: var(--paper); padding-bottom: 12px; }
+.rd-form .rf-foot-in { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding-top: 16px; border-top: 1px solid var(--hairline); }
+.rd-form .rf-foot .btn { min-height: 48px; padding: 0 22px; }
+.rd-form .rf-foot .btn--primary { margin-left: auto; }
+.rd-form .rf-demos { flex: 1 1 260px; min-width: 0; }
+.rd-form .rf-demos a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.ins-narrow .rd-form .rf-fields .grid2 { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 760px) { .rd-form .rf-fields .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.rd-setup .rd-pagehead + .wz-ways { margin-top: 18px; }

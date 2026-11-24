@@ -5,12 +5,11 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { inst, type HistoryRow, type InstitutionSummary, type Item, type Profile, type Readiness } from "../../api/institutions";
 import type { Installation } from "../../App";
-import { Icon } from "../../components/Icon";
 import { WithChat } from "../../components/SetupChat";
 import { changeWords, countOf, fieldWord, SECTION_ONE, valueText } from "../../components/setupFlow";
 import { StatusPill } from "../../components/blocks";
 import { PageTitle, Section, TextButton, TextTabs } from "../../components/rd";
-import { ChatToggleCtx, DEMOS, InlineSkeleton, LoadError, Modal, PageHead, ResetModal, useRole, useToast, PageSkeleton } from "../../components/ui";
+import { ChatToggleCtx, DEMOS, InlineSkeleton, LoadError, Modal, ResetModal, useRole, useToast, PageSkeleton } from "../../components/ui";
 import { dayTime, person, plural, ZONE_LABEL } from "../../format";
 import { cap, words } from "../../plain";
 import { PlaceName, useLoad } from "./fields";
@@ -20,6 +19,7 @@ import { LinkGrid, SectionList } from "./sections";
 import { DraftFromProfile } from "../monitors/Monitors";
 import "../../styles/setup.css";
 import "../../styles/rd-institution.css";
+import "../../styles/rd-setup.css";
 
 // ---------------------------------------------------------------- loading
 
@@ -92,17 +92,19 @@ export function CreateInstitution({ onCreated }: { onCreated: (id: string) => vo
     } catch (e) { setGeneral(e instanceof ApiError ? [e.full] : [`Not a profile file: ${String(e)}`]); }
   };
   return (
-    <div className="card"><div className="bd col" style={{ gap: 14 }}>
-      <div><h2>Tell Amiri Agent about your institution</h2>
-        <p className="small muted">Everything Amiri Agent watches and checks starts from this profile. Start with the basics; the next steps add where you operate, your customers, products, flows, rules, rivals and risks. Works with forms alone; the setup assistant is optional.</p></div>
-      <div ref={box}><InstitutionFields d={d} set={(k, v) => setD(x => ({ ...x, [k]: v }))} err={err} creating
+    <Section title="Tell Amiri Agent about your institution" className="rd-form">
+      <p className="rd-row-d rd-prose rf-intro">Everything Amiri Agent watches and checks starts from this profile. Start with the basics; the next steps add where you operate, your customers, products, flows, rules, rivals and risks. Works with forms alone; the Setup agent is optional.</p>
+      <p className="rd-fine rf-req"><span aria-hidden="true">*</span> means required; the rest is optional.</p>
+      <div ref={box} className="rf-fields"><InstitutionFields grouped d={d} set={(k, v) => setD(x => ({ ...x, [k]: v }))} err={err} creating
         fill={data => { setErr({}); setGeneral([]); setD(x => ({ ...x, ...data })); }} /></div>
-      {general.concat(hidden).length > 0 && <div className="rawerr" role="alert">{general.concat(hidden).join(" · ")}</div>}
-      <div className="row wrap"><label className="btn"><Icon name="plus" />Import a whole profile (creates everything)
-        <input type="file" accept="application/json" className="sr" onChange={e => e.target.files?.[0] && importFile(e.target.files[0])} /></label>
-        <span className="small muted">Download a demo's profile: {DEMOS.map((d, n) => <Fragment key={d.kind}>{n ? ", " : ""}<a href={`/api/v1/reference/demo-profile?kind=${d.kind}`} download>{d.label.toLowerCase()}</a></Fragment>)}</span>
-        <span className="spacer" /><button className="btn btn--primary" type="button" disabled={busy} onClick={create}>Create and continue</button></div>
-    </div></div>
+      {general.concat(hidden).length > 0 && <p className="rd-warn rf-err" role="alert"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> {general.concat(hidden).join(" · ")}</p>}
+      <p className="rd-fine rf-demos">Already have a profile file? Import it to create everything at once. To try one, download a demo's profile: {DEMOS.map((d, n) => <Fragment key={d.kind}>{n ? ", " : ""}<a href={`/api/v1/reference/demo-profile?kind=${d.kind}`} download>{d.label.toLowerCase()}</a></Fragment>)}.</p>
+      <div className="rf-foot"><div className="rf-foot-in">
+        <label className="btn">Import a whole profile
+          <input type="file" accept="application/json" className="sr" onChange={e => e.target.files?.[0] && importFile(e.target.files[0])} /></label>
+        <button className="btn btn--primary" type="button" disabled={busy} onClick={create}>Create and continue</button>
+      </div></div>
+    </Section>
   );
 }
 
@@ -121,9 +123,10 @@ export function ReadinessList({ r, onFix }: { r: Readiness; onFix?: (section: st
       <li key={c.id} className="rd-row ins-open-row">
         <div className="ins-main">
           <div className="rd-row-t ins-open-t">{c.message}</div>
-          <p className={`rd-row-m${!c.ok && c.level === "required" ? " rd-warn" : ""}`}>
-            <span className="rd-shape" aria-hidden="true">{c.ok ? "●" : c.level === "required" ? "◆" : "○"}</span>{" "}
-            <b className="ins-k">{c.ok ? "Done" : c.level === "required" ? "Required, not done" : "Recommended, not done"}</b>
+          <p className="rd-row-m">
+            <span className={!c.ok && c.level === "required" ? "rd-warn" : undefined}>
+              <span className="rd-shape" aria-hidden="true">{c.ok ? "●" : c.level === "required" ? "◆" : "○"}</span>{" "}
+              <b className="ins-k">{c.ok ? "Done" : c.level === "required" ? "Required, not done" : "Recommended, not done"}</b></span>
             {!c.ok && c.fix ? ` · ${c.fix}` : ""}</p>
         </div>
         {!c.ok && onFix && c.section !== "institution" && <div className="ins-acts"><TextButton onClick={() => onFix(c.section)}>Fix</TextButton></div>}
@@ -350,10 +353,10 @@ export function InstitutionPage() {
     else S.reload();
   };
   if (!list.length) return (
-    <WithChat institutionId={null} onTrack={follow} onApplied={applied}><div className="page rd rd-inst">
-      <PageTitle title="Institution" lede="Not set up yet. Fill in the form, or tell the Setup agent." actions={<Link className="rd-tbtn" to="/institution/setup">Guided setup</Link>} />
+    <WithChat institutionId={null} onTrack={follow} onApplied={applied}><PageRoot>
+      <PageTitle title="Institution" lede="Not set up yet. Fill in the form, or tell the Setup agent." actions={<><Link className="rd-tbtn" to="/institution/setup">Guided setup</Link><SetupAgentToggle /></>} />
       <CreateInstitution onCreated={id => { S.select(id); S.reloadList(); nav("/institution/setup/where"); }} />
-    </div></WithChat>
+    </PageRoot></WithChat>
   );
   if (!profile || !readiness) return <PageSkeleton />;
   const i = profile.institution;
@@ -459,11 +462,10 @@ export function NewInstitutionPage() {
   return (
     <WithChat institutionId={null} onApplied={p => { if (p.kind === "create_institution" && p.result?.institution_id) {
       try { localStorage.setItem(KEY, p.result.institution_id); } catch { /* */ } nav("/institution/overview"); } }}>
-      <div className="page">
-        <PageHead title="New institution" crumbs={<Link to="/institution">Institution</Link>}
-          sub="Tell Amiri Agent who you are: a bank or an insurer, where you operate, and who your customers are. The setup agent can do it with you." />
+      <PageRoot>
+        <PageTitle title="New institution" crumbs={<Link to="/institution">Institution</Link>} actions={<SetupAgentToggle />} />
         <CreateInstitution onCreated={id => { try { localStorage.setItem(KEY, id); } catch { /* */ } toast("Created."); nav("/institution/setup/where"); }} />
-      </div>
+      </PageRoot>
     </WithChat>
   );
 }
