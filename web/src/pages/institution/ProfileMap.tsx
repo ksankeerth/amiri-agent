@@ -40,9 +40,19 @@ function ToneShape({ tone, s = 1, stroke = "var(--surface)", sw = 2 }: { tone: M
 const Key = ({ tone }: { tone: MapEvent["tone"] }) => <svg width={14} height={14} viewBox="-8 -9 16 16" aria-hidden="true" style={{ verticalAlign: -2 }}><ToneShape tone={tone} s={0.85} sw={0} /></svg>;
 const FLOW_COLOR: Record<string, string> = { remittances_in: "var(--accent)", remittances_out: "var(--accent)", tourism: "var(--info)", services: "var(--info)", exports: "var(--high)", imports: "var(--medium-stroke)" };
 
-export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {}, layers, compact = false, onEvent, title }: {
+export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {}, layers, compact = false, onEvent, title, legend = true, labelTones, focusTones, markScale }: {
   profile: Profile; height?: number; events?: MapEvent[]; extraPlaces?: Record<string, PlaceInfo>; layers?: Layer[];
   compact?: boolean; onEvent?: (eventId: string) => void; title?: ReactNode;
+  /** false: the page draws its own key (the Overview does). The default keeps the map's own legend under it. */
+  legend?: boolean;
+  /** Name the events of these tones on the map, beside their first place (the Overview names the bad ones). Default: none. */
+  labelTones?: MapEvent["tone"][];
+  /** Fit the first view to the events of these tones only (the rest are still drawn, and zooming out shows them).
+   *  Default: every event, as before. */
+  focusTones?: MapEvent["tone"][];
+  /** The event marks' size at the whole-picture view (1 = full size; the Overview's big map uses larger marks).
+   *  Default: 0.55 compact, 0.7 otherwise, as before. */
+  markScale?: number;
 }) {
   const world = useLoad(loadWorld);
   const routes = useLoad(() => ref.routes()) ?? [];
@@ -86,7 +96,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
     const pts: [number, number][] = [];
     const add = (c: string | null | undefined) => { const p = c ? at(c) : null; if (p) pts.push(p); };
     S.footprint.forEach(f => add(f.code));
-    events.forEach(e => e.places.forEach(add));
+    events.filter(e => !focusTones || focusTones.includes(e.tone)).forEach(e => e.places.forEach(add));
     riskHazards.forEach(h => h.centre && pts.push([h.centre[1], h.centre[0]]));  // the risk zones are in view too
     if (view === "world") {
       S.flows.forEach(f => add(f.counterpart)); S["watch-places"].forEach(x => add(x.code));
@@ -114,7 +124,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
     }
     return proj;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [world, w, height, view, profile.institution.profile_version, routes.length, events.length, compact]);
+  }, [world, w, height, view, profile.institution.profile_version, routes.length, events.length, compact, focusTones?.join()]);
   // The person's pan and zoom on top of the fit: k scales about the view's centre, x/y move it (screen pixels).
   // Applied to the projection, not as an SVG transform, so pins, labels and line widths keep their size.
   const [zoom, setZoom] = useState({ k: 1, x: 0, y: 0 });
@@ -187,7 +197,8 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
   const homeXY = xy(at(home));
   // event symbols: small at the whole-picture view so they don't hide a country (Sri Lanka vanished under a square),
   // growing as you zoom in, up to the full size
-  const ms = Math.min(1, Math.max(compact ? 0.55 : 0.7, (compact ? 0.55 : 0.7) * Math.sqrt(zoom.k)));
+  const m0 = markScale ?? (compact ? 0.55 : 0.7);
+  const ms = Math.min(1, Math.max(m0, m0 * Math.sqrt(zoom.k)));
   const toggle = (l: Layer) => setOn(s => { const n = new Set(s); if (n.has(l)) n.delete(l); else n.add(l); return n; });
 
   return (
@@ -285,6 +296,13 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
             <circle r={13 * ms} fill={color} opacity={0.16} />
             <ToneShape tone={e.tone} s={ms} sw={1.5} /></g>;
         }))}
+        {labelTones && events.filter(e => labelTones.includes(e.tone)).map(e => {
+          const p = e.places.map(c => xy(at(c))).find(Boolean);
+          if (!p) return null;
+          const left = p[0] > w - 200;  // near the right edge the name goes to the left of its marker
+          return <text key={`l${e.event_id}`} x={p[0] + (left ? -14 : 14)} y={p[1] - 10} textAnchor={left ? "end" : "start"} fontSize={16} fontWeight={700}
+            fill="var(--ink)" stroke="var(--map-halo)" strokeWidth={4} strokeLinejoin="round" paintOrder="stroke" style={{ pointerEvents: "none" }}>{e.title}</text>;
+        })}
       </svg>
       <div className="mapzoom">
         <button type="button" aria-label="Zoom in" title="Zoom in" onClick={() => zoomTo(zoom.k * ZOOM_STEP)} disabled={zoom.k >= ZOOM_MAX}>+</button>
@@ -294,7 +312,7 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
       </div>
       </div>
       {tip && <div className="maptip" style={{ left: Math.min(tip.x + 12, w - 250), top: tip.y + 12 }}>{tip.text}</div>}
-      {compact ? <div className="row wrap small muted" style={{ gap: 14, marginTop: 8 }}>
+      {!legend ? null : compact ? <div className="row wrap small muted" style={{ gap: 14, marginTop: 8 }}>
         <span><Key tone="bad" /> bad for you</span>
         <span><Key tone="good" /> good for you</span>
         <span><Key tone="mixed" /> mixed</span>
