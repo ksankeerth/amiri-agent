@@ -80,7 +80,7 @@ function AlertLine({ a, ev, label, primary, onChange }: { a: AlertItem; ev?: Eve
         {asking ? <span className="ap-act">
           <input className="input" autoFocus aria-label={asking === "ack" ? "A note for your team (optional)" : "Why it's resolved (optional)"}
             placeholder={asking === "ack" ? "A note for your team (optional)" : "Why it's resolved (optional)"}
-            value={note} onChange={e => setNote(e.target.value)} onKeyDown={e => { if (e.key === "Enter") act(asking); if (e.key === "Escape") setAsking(null); }} />
+            value={note} onChange={e => setNote(e.target.value)} onKeyDown={e => { if (e.key === "Enter") act(asking); if (e.key === "Escape") { setAsking(null); setNote(""); } }} />
           <button className="btn btn--primary btn--sm" type="button" disabled={busy} onClick={() => act(asking)}>{asking === "ack" ? "Acknowledge" : "Resolve"}</button>
           <button className="btn btn--sm btn--ghost" type="button" onClick={() => { setAsking(null); setNote(""); }}>Cancel</button>
         </span> : <span className="ap-act">
@@ -154,11 +154,12 @@ export function AlertsPage() {
   const done = show === "all" ? queue.filter(a => a.status !== "new") : [];
   const groups = useMemo(() => { const m = new Map<string, AlertItem[]>(); open.forEach(a => m.set(a.event_id, [...(m.get(a.event_id) ?? []), a])); return [...m.values()]; }, [open]);
   const levels = new Set(open.map(a => a.level));
-  const same = levels.size === 1 && !levels.has("adverse");  // one level for all: said once in the headline, not on every line
   const firstNew = open.find(a => a.status === "new")?.alert_id;
 
   const s = sum;
   const waiting = open.filter(a => a.status === "new");
+  // all early warnings: the headline says so once, and the lines leave the label out; any other mix keeps it on every line
+  const allEarly = waiting.length > 0 && levels.size === 1 && levels.has("warning");
   const teams = new Set(waiting.map(a => a.owner)).size;
   const first = earliest(waiting.map(nextCheck));
   const adverse = waiting.filter(a => a.level === "adverse").length;
@@ -170,13 +171,15 @@ export function AlertsPage() {
     {new Set(waiting.map(a => a.event_id)).size === 1 && g0 ? <>All from <Link className="ap-ev" to={`/events/${g0.event_id}`}>{evName(g0)}</Link></>
       : <>From {count(new Set(waiting.map(a => a.event_id)).size, "event")}</>}
     {adverse ? <>; <b className="dl-crit">{adverse} confirmed by your data</b>, shown first.</>
-      : levels.size === 1 && levels.has("warning") ? <>, and all are early warnings: AMIRI Agent expects the impact, your data can't show it yet.</> : "."}
+      : allEarly ? <>, and all are early warnings: AMIRI Agent expects the impact, your data can't show it yet.</> : "."}
     {first && <> The first check against your figures is <b>{onDay(first)}</b> ({relDay(first)}).</>}</>;
 
-  const section = (k: string, g: AlertItem[]) => { const a0 = g[0]; return <section key={k} aria-labelledby={`ap-${k}`}>
+  const section = (k: string, g: AlertItem[]) => {
+    const a0 = g[0], latest = g.map(changed).reduce((x, y) => (Date.parse(y) > Date.parse(x) ? y : x));  // a0 is the most serious, not the latest
+    return <section key={k} aria-labelledby={`ap-${k}`}>
     <h2 id={`ap-${k}`}><Link to={`/events/${a0.event_id}`}>{evName(a0)}</Link> <span>{count(g.length, "alert")}</span>{a0.event_status === "closed" && <span>· closed</span>}</h2>
-    <p className="ap-sub2">Raised {onDay(a0.created_at)}{a0.top_finding ? <>, from “{a0.top_finding}”</> : null}. Last new evidence {dayTime(changed(a0))}.</p>
-    <ol className="ap-lines">{g.map(a => <AlertLine key={a.alert_id} a={a} ev={events[a.event_id]} label={!same} primary={a.alert_id === firstNew} onChange={update} />)}</ol>
+    <p className="ap-sub2">Raised {onDay(a0.created_at)}{a0.top_finding ? <>, from “{a0.top_finding}”</> : null}. Last new evidence {dayTime(latest)}.</p>
+    <ol className="ap-lines">{g.map(a => <AlertLine key={a.alert_id} a={a} ev={events[a.event_id]} label={!allEarly} primary={a.alert_id === firstNew} onChange={update} />)}</ol>
   </section>; };
 
   return (
