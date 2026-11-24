@@ -18,7 +18,7 @@ import { DAYS, reasonText, useRecentFindings } from "./recent";
 type WithEvidence = FindingRow & { evidence?: { headlines?: { url?: string | null }[] } | null };
 type Show = "all" | "new" | "grouped" | "linked" | "set_aside";
 
-const SHOW_NEWEST = 3;      // an event's group shows its newest three; the rest is one click away
+const SHOW_NEWEST = 2;      // an event's group shows its newest two; the rest is one click away
 const SHOW_OTHERS = 10;     // the groups without an event are short; they fold only when they aren't
 
 function sourceLink(f: FindingRow): string | null {
