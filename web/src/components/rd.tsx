@@ -1,6 +1,6 @@
 // The redesign's shared pieces (styles in styles/rd.css). Every redesigned page uses these instead of cards, pills
 // and tiles, so the same thing looks and reads the same everywhere.
-import { useId, useState, type ReactNode } from "react";
+import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { VERDICT_LABEL, sourceInfo, type VerdictKey } from "../plain";
 import { Icon } from "./Icon";
@@ -186,4 +186,26 @@ const SOURCE_ICON: Record<string, string> = { monitor: "monitor", radar: "radar"
 export function SourceMark({ source }: { source: string }) {
   const label = sourceInfo(source).label;
   return <span className="rd-src" role="img" aria-label={label} title={label}><Icon name={SOURCE_ICON[source] ?? "info"} /></span>;
+}
+
+/** A summary held to two lines. When it is longer, "Show more" opens the rest in place (aria-expanded); the full text
+ *  is also the tooltip while it is clamped. */
+export function ClampedText({ text, className = "rd-row-d rd-prose" }: { text: string; className?: string }) {
+  const [open, setOpen] = useState(false);
+  const [over, setOver] = useState(false);
+  const ref = useRef<HTMLParagraphElement>(null);
+  const id = useId();
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || open) return;
+    const check = () => setOver(el.scrollHeight > el.clientHeight + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [text, open]);
+  return <>
+    <p ref={ref} id={id} className={`${className}${open ? "" : " rd-clamp2"}`} title={open || !over ? undefined : text}>{text}</p>
+    {(over || open) && <TextButton aria-expanded={open} aria-controls={id} onClick={() => setOpen(o => !o)}>{open ? "Show less" : "Show more"}</TextButton>}
+  </>;
 }

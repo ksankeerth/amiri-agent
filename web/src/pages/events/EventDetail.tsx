@@ -9,7 +9,7 @@ import { alertsApi, type AlertItem } from "../../api/alerts";
 import { Places } from "../../components/blocks";
 import { Markdown } from "../../components/markdown";
 import { errText, isDown, PageSkeleton } from "../../components/ui";
-import { Chain, Fold, PageTitle, Result, Scale, Section, TextButton, TONE_WORD, ToneMark, ToneWord, type Step, type ToneKey } from "../../components/rd";
+import { Chain, ClampedText, Fold, PageTitle, Result, Scale, Section, SourceMark, TextButton, TONE_WORD, ToneMark, ToneWord, type Step, type ToneKey } from "../../components/rd";
 import { day, dayTime, person, ZONE_LABEL } from "../../format";
 import {
   anchorLabel, cap, count, dateRange, earliest, eventTitle, impactText, listText, metricWords, onDay, sizeTiming,
@@ -121,7 +121,9 @@ function EventView({ e, alerts, open, setOpen, help, setHelp, crumbs }: {
     const prices = e.findings.length > 0 && e.findings.every(f => f.source === "timeseries");
   const groups = groupAside(e.set_aside);
   const nAside = e.set_aside.length;
-  const asideLink = nAside > 0 && <a className="rd-name" href="#set-aside" aria-label={`${count(nAside, "link")} set aside: go to them`}>{nAside} set aside ↓</a>;
+  // the set-aside fold is closed by default: its link opens it
+  const openAside = () => setTimeout(() => document.querySelector<HTMLButtonElement>("#set-aside > button[aria-expanded=false]")?.click());
+  const asideLink = nAside > 0 && <a className="rd-name" href="#set-aside" onClick={openAside} aria-label={`${count(nAside, "link")} set aside: go to them`}>{nAside} set aside ↓</a>;
   const why = n ? null : untracedWhy(e.run.report, e.findings.map(f => f.title));
   const others = otherEventsInReport(e.run.report);
 
@@ -156,13 +158,13 @@ function EventView({ e, alerts, open, setOpen, help, setHelp, crumbs }: {
   return (
     <div className="page rd rd-event">
       <PageTitle crumbs={crumbs(title)} title={title}
-        actions={toReview ? <Link className="btn btn--primary" to="/alerts">Review {count(toReview, "alert")} →</Link> : undefined}
+        actions={<>
+          <TextButton aria-expanded={help} aria-controls="ev-help" onClick={() => setHelp(!help)}>How this works</TextButton>
+          {toReview > 0 && <Link className="btn btn--primary" to="/alerts">Review {count(toReview, "alert")} →</Link>}</>}
         status={<>
           <ToneWord tone={tone} />
-          {e.world !== "live" && <span className="rd-ink">Simulated</span>}
-          <span>{e.status === "open" ? `Collecting news until ${day(e.open_until)}` : `Closed${e.closed_at ? ` ${day(e.closed_at)}` : ""}`}</span>
+          <span>{e.world !== "live" ? "Simulated, " : ""}{e.status === "open" ? `${e.world !== "live" ? "collecting" : "Collecting"} news until ${day(e.open_until)}` : `${e.world !== "live" ? "closed" : "Closed"}${e.closed_at ? ` ${day(e.closed_at)}` : ""}`}</span>
           {e.places.length > 0 && <Places codes={e.places} max={2} />}
-          <TextButton aria-expanded={help} aria-controls="ev-help" onClick={() => setHelp(!help)}>How this works</TextButton>
         </>}
         help={<div id="ev-help" className="rd-open rd-prose ev-help" hidden={!help}>
           <p>Amiri Agent <b>watches</b> the news through your monitors, market prices and Radar; <b>notices</b> a finding worth a
@@ -184,7 +186,7 @@ function EventView({ e, alerts, open, setOpen, help, setHelp, crumbs }: {
             : <p>The investigation report below says why.</p>}
           {e.run.report && <p><a className="rd-name" href="#report" onClick={() => setTimeout(() => document.querySelector<HTMLButtonElement>("#report > button[aria-expanded=false]")?.click())}>Read the investigation report ↓</a></p>}
         </div> : <>
-          <p className="ev-lede">Expectations, not facts yet: each is checked against your own figures as they're published.
+          <p className="ev-lede">Expectations, not facts yet: each is checked against your own figures.
             {sameTone && <> All {n} would be <ToneWord tone={nBad ? "bad" : "good"}>{nBad ? "bad for you" : "good for you"}</ToneWord>.</>}</p>
           <table className="rd-table ev-impacts">
             <thead><tr><th scope="col">Product</th><th scope="col">What may happen</th><th scope="col">Team alerted</th><th scope="col">Your data so far</th></tr></thead>
@@ -215,8 +217,9 @@ function EventView({ e, alerts, open, setOpen, help, setHelp, crumbs }: {
       </Section>
 
       {nAside > 0 && (
-        <Section title="Considered and set aside" count={`${nAside} · Amiri Agent's judgement (AI)`} id="set-aside">
-          <p className="ev-lede">Links it looked at and didn't send to a team.</p>
+        <div className="ev-aside">
+          <Fold id="set-aside" title="Considered and set aside" remember="event-set-aside"
+            summary={`${count(nAside, "link")} looked at, not sent to a team · Amiri Agent's judgement (AI)`}>
           {groups.map((g, i) => (
             <div key={i} className="rd-row">
               <div className="rd-row-t">{g.links.length > 1 ? `${g.links.length} links set aside for the same reason:` : `${g.links[0]}:`}</div>
@@ -224,7 +227,8 @@ function EventView({ e, alerts, open, setOpen, help, setHelp, crumbs }: {
               {g.links.length > 1 && <ul className="ev-links">{g.links.map(l => <li key={l}>{l}</li>)}</ul>}
               <p className="rd-row-d rd-prose">In plain words: {asideMeaning(g)}</p>
             </div>))}
-        </Section>
+          </Fold>
+        </div>
       )}
 
       <Section title="What Amiri Agent noticed" id="noticed"
@@ -253,16 +257,16 @@ const when = (f: Finding) => f.evidence?.headlines?.[0]?.published_at ?? f.creat
 
 /** A report that started the event: its headline (linked), where it came from, its own date and Amiri Agent's line. */
 function FindingRow({ f }: { f: Finding }) {
-  const h = f.evidence?.headlines?.[0], si = sourceInfo(f.source), ref = f.source_ref ?? {};
+  const h = f.evidence?.headlines?.[0], ref = f.source_ref ?? {};
   const to = ref.monitor_id ? `/monitors/${ref.monitor_id}` : ref.series_id ? `/series/${ref.series_id}` : undefined;
   return (
     <div className="rd-row">
-      <h3 className="rd-row-t">{h?.url
+      <h3 className="rd-row-t rd-clamp1" title={h?.title ?? f.title}>{h?.url
         ? <a className="rd-name" href={h.url} target="_blank" rel="noreferrer">{h.title ?? f.title} ↗<span className="sr"> (opens the article)</span></a>
         : h?.title ?? f.title}</h3>
-      <div className="rd-row-m">{[si.label, h?.outlet, day(when(f))].filter(Boolean).join(" · ")}
-        {to && <> · <Link className="rd-go" to={to}>{ref.monitor_id ? "Open the monitor" : "Open the price series"}</Link></>}</div>
-      {f.explanation && <p className="rd-row-d rd-prose">{f.explanation}</p>}
+      <div className="rd-row-m ev-fm"><SourceMark source={f.source} /><span>{[h?.outlet, day(when(f))].filter(Boolean).join(" · ")}</span>
+        {to && <Link className="rd-go" to={to}>{ref.monitor_id ? "Open the monitor" : "Open the price series"}</Link>}</div>
+      {f.explanation && <ClampedText text={f.explanation} />}
     </div>
   );
 }
@@ -275,7 +279,7 @@ function Developments({ items }: { items: EventDetail["developments"] }) {
   const shown = all ? sorted : sorted.slice(0, 10);
   return (
     <Fold title={`${count(items.length, "more report")} joined this event`}
-      summary={`${first ? `${day(first.joined_at)} to ${day(latest.joined_at)} · ` : ""}latest: “${latest.title}”`}>
+      summary={first ? `${day(first.joined_at)} to ${day(latest.joined_at)}` : undefined}>
       <ol className="ev-devs">{shown.map(d => <li key={d.finding_id}><span className="ev-dev-t">{d.title}</span> <span className="ev-st">· joined {dayTime(d.joined_at)}</span></li>)}</ol>
       {items.length > 10 && <p className="ev-more"><TextButton onClick={() => setAll(!all)}>{all ? "Show the latest 10" : `Show all ${items.length}`}</TextButton></p>}
     </Fold>
