@@ -1,23 +1,29 @@
-import { useCallback, useEffect, useState } from "react";
+// One market series: its price as the hero beside the track (how unusual the latest one-day move is), the chart,
+// the moves it flagged with the events they went to, the 1/3/5-day table, and three folds (what a move means,
+// try a move, the fetch log for a Platform Admin).
+import { useCallback, useEffect, useId, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "../api/client";
+import { investigationApi, type EventRow } from "../api/investigation";
 import { seriesApi, type Bar, type Finding, type ProviderCall, type Series, type SimulateResult } from "../api/series";
-import { FactList, PageHeader, Places, Section, StatTiles, StatusPill, TechnicalDetails } from "../components/blocks";
+import { Places } from "../components/blocks";
 import { PriceChart, type Mark } from "../components/charts";
 import { spikeIndex } from "../components/chartMath";
-import { Icon } from "../components/Icon";
-import { EditSeriesModal, FetchBadge, RefreshButton, seriesSentence, StateBadge, themeMeaning } from "../components/series";
-import { Banner, Empty, Modal, useNow, useRole, useToast, PageSkeleton, InlineSkeleton, LoadError } from "../components/ui";
-import { ago, day, dayTime, due, pct, price, when, zx, ZONE_LABEL } from "../format";
-import { FINDING_STATUS, ruleText, setAsideReason, themeLabel } from "../plain";
+import { Fold, GoLink, PageTitle, QuietWarn, Section, TextButton, TextTabs, ToneMark, TONE_WORD } from "../components/rd";
+import { EditSeriesModal, RefreshButton, themeMeaning } from "../components/series";
+import { InlineSkeleton, LoadError, Modal, PageSkeleton, useNow, useRole, useToast } from "../components/ui";
+import { ago, day, dayTime, due, pct, price, ZONE_LABEL, zx } from "../format";
+import { eventTitle, FINDING_STATUS, ruleText, setAsideReason } from "../plain";
 import { InvestigateNowButton } from "./events/Events";
-import { PricesHelp, PrototypeBanner, useSeriesStatus } from "./SeriesList";
+import { SeriesHelp, Track, useSeriesStatus } from "./series/parts";
+import { moveLine, oneDayZ, seriesNotice, shortMeaning } from "./series/words";
 
 const RANGES = [
   { id: "1w", label: "1 week", phrase: "the week", days: 7, interval: "1h" as const },
   { id: "1m", label: "1 month", phrase: "the month", days: 31, interval: "1h" as const },
   { id: "3m", label: "3 months", phrase: "3 months", days: 92, interval: "1d" as const },
 ];
+type RangeId = (typeof RANGES)[number]["id"];
 
 /** The chart's takeaway in one line: which way it went over the range, and by how much. */
 function takeaway(name: string, vs: number[], range: string, typical: number | null | undefined): string {
@@ -28,7 +34,8 @@ function takeaway(name: string, vs: number[], range: string, typical: number | n
 }
 
 function Chart({ s, findings }: { s: Series; findings: Finding[] }) {
-  const [range, setRange] = useState(RANGES[0]);
+  const [rangeId, setRangeId] = useState<RangeId>("1w");
+  const range = RANGES.find(r => r.id === rangeId)!;
   const [bars, setBars] = useState<Bar[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const lastBar = s.latest?.bar_ts;
@@ -52,93 +59,67 @@ function Chart({ s, findings }: { s: Series; findings: Finding[] }) {
     marks.push({ t: bars[spike].ts, color: "var(--ink-3)", note: true, tag: "One-hour spike, not flagged",
       label: "A single hourly price far from its neighbours that came straight back: Amiri Agent looks at closes over whole days, so it doesn't count as a move." });
   return (
-    <div className="card">
-      <div className="hd wrap"><h2>{bars && bars.length > 1 ? takeaway(s.name, vs, `${range.phrase}${anchored ? ` to ${day(bars[bars.length - 1].ts)}` : ""}`, s.latest?.typical_daily_move_pct) : "Price"}</h2>
-        <span className="small muted">{range.interval === "1h" ? "Hourly" : "Daily"} closes, {ZONE_LABEL} time</span>
-        <span className="spacer" />
-        <span className="seg" role="group" aria-label="Period">{RANGES.map(r => <button key={r.id} type="button" aria-pressed={r.id === range.id} onClick={() => setRange(r)}>{r.label}</button>)}</span></div>
-      <div className="bd">
-        {anchored && <p className="small muted" style={{ margin: "0 0 8px" }}>No new prices since {dayTime(s.latest?.bar_end ?? lastBar!)}, so this shows {range.phrase} up to the last one.</p>}
+    <Section title="Price">
+      <TextTabs label="Period" value={rangeId} onChange={setRangeId} items={RANGES.map(r => ({ key: r.id, label: r.label }))}
+        end={<span className="rd-fine">{range.interval === "1h" ? "Hourly" : "Daily"} closes, {ZONE_LABEL} time</span>} />
+      {bars && bars.length > 1 && <p className="sr-take">{takeaway(s.name, vs, `${range.phrase}${anchored ? ` to ${day(bars[bars.length - 1].ts)}` : ""}`, s.latest?.typical_daily_move_pct)}</p>}
+      {anchored && <p className="rd-fine sr-note">No new prices since {dayTime(s.latest?.bar_end ?? lastBar!)}, so this shows {range.phrase} up to the last one.</p>}
+      <div className="sr-chart">
         {err ? <div className="rawerr">{err}</div> : bars === null ? <InlineSkeleton /> :
           <PriceChart points={bars.map(b => ({ t: b.ts, v: b.close }))} marks={marks}
             fmtX={day} fmtY={price}
             fmtTip={t => (range.interval === "1h" ? `hour from ${dayTime(t)}` : day(t))} />}
       </div>
-    </div>
+    </Section>
   );
 }
 
 function Windows({ s }: { s: Series }) {
   const l = s.latest;
   return (
-    <Section title="How unusual is the latest price?" flush>
-      <p className="sec-line">{l?.typical_daily_move_pct ? <>A normal day moves <b>±{l.typical_daily_move_pct.toFixed(2)}%</b>. </> : null}Amiri Agent {ruleText(s.detector.z_threshold)}.</p>
-      {!l || !l.windows.length ? <p className="sec-line">No prices yet.</p> : (
-        <div className="tblwrap"><table className="tbl">
-          <thead><tr><th>Over</th><th>Change</th><th>Compared with usual</th></tr></thead>
+    <Section title="How unusual, over 1, 3 and 5 days">
+      <p className="sr-lede">{l?.typical_daily_move_pct ? <>A normal day moves <b>±{l.typical_daily_move_pct.toFixed(2)}%</b>. </> : null}Amiri Agent {ruleText(s.detector.z_threshold)}.</p>
+      {!l || !l.windows.length ? <p className="sr-lede">No prices yet.</p> : (
+        <table className="rd-table">
+          <thead><tr><th scope="col">Over</th><th scope="col" className="rd-num">Change</th><th scope="col">Against a normal move</th><th scope="col" className="rd-num">From</th></tr></thead>
           <tbody>{l.windows.map(w => {
             const fires = w.z !== null && Math.abs(w.z) >= s.detector.z_threshold;
             return (
               <tr key={w.days}>
-                <td className="strong">{w.days} trading day{w.days === 1 ? "" : "s"}<div className="sub">from {price(w.ref_close)}</div></td>
-                <td className="num">{pct(w.change_pct)}</td>
-                <td>{w.z === null ? <span className="muted">not known yet</span> : fires ? <StatusPill tone="red">{zx(w.z)} usual: flagged</StatusPill> : <span className="num">{zx(w.z)} usual</span>}</td>
+                <td className="rd-strong">{w.days} trading day{w.days === 1 ? "" : "s"}</td>
+                <td className="rd-num">{pct(w.change_pct)}</td>
+                <td>{w.z === null ? "not known yet" : fires
+                  ? <span className="sr-flag"><ToneMark tone="mixed" />{zx(w.z)}, flagged</span> : zx(w.z)}</td>
+                <td className="rd-num">{price(w.ref_close)}</td>
               </tr>);
           })}</tbody>
-        </table></div>
+        </table>
       )}
     </Section>
   );
 }
 
-function FetchLog({ calls }: { calls: ProviderCall[] | null }) {
-  return (
-    <div className="card">
-      <div className="hd"><h2>Fetch log</h2><span className="small muted">for the Platform Admin: every call to Twelve Data, errors exactly as returned</span></div>
-      {!calls ? <InlineSkeleton /> : !calls.length ? <div className="bd muted small">No calls yet.</div> : (
-        <div className="tblwrap"><table className="tbl">
-          <thead><tr><th>When</th><th>Why</th><th>Result</th><th>New hours</th><th>Credits</th><th>Took</th><th>Error</th></tr></thead>
-          <tbody>{calls.map(c => (
-            <tr key={c.call_id}>
-              <td className="num">{dayTime(c.at)}</td>
-              <td>{{ scheduled: "hourly pull", manual: "refresh", backfill: "history (added)", lookup: "search" }[c.trigger] ?? c.trigger}</td>
-              <td>{c.status === "ok" ? <span className="badge b-ok">OK</span> : c.status === "no_new_data" ? <span className="badge b-noeffect">NO NEW DATA</span> :
-                c.status === "error" ? <span className="badge b-down">ERROR</span> : <span className="badge b-info">RUNNING</span>}</td>
-              <td className="num">{c.bars_new ?? "—"}{c.bars_received !== null ? <span className="muted"> / {c.bars_received}</span> : null}</td>
-              <td className="num">{c.credits}</td>
-              <td className="num">{c.duration_ms !== null ? `${(c.duration_ms / 1000).toFixed(1)} s` : "—"}</td>
-              <td className="small mono" style={{ color: "var(--critical-ink)", maxWidth: 360 }}>{c.error_code && c.status === "error" ? `${c.error_code}${c.http_status ? ` (${c.http_status})` : ""}: ${c.error_message}` : ""}</td>
-            </tr>))}</tbody>
-        </table></div>
-      )}
-    </div>
-  );
-}
-
-function Findings({ findings, onChange }: { findings: Finding[] | null; onChange: () => void }) {
+function Moves({ findings, events, onChange }: { findings: Finding[] | null; events: Record<string, EventRow> | null; onChange: () => void }) {
   const waiting = (findings ?? []).filter(f => f.status === "new").map(f => f.finding_id);
   return (
-    <section className="card sec" id="findings" aria-labelledby="moves-h">
-      <div className="sec-hd"><h2 id="moves-h">Moves flagged</h2>{findings && <span className="sec-n">{findings.length}</span>}
-        <span className="spacer" />{waiting.length > 0 && <InvestigateNowButton ids={waiting} onDone={onChange} small />}</div>
-      <div className="sec-bd flush">
-      {!findings ? <InlineSkeleton /> : !findings.length ? <p className="sec-line">None yet. A move shows here when it's far bigger than usual.</p>
-        : findings.map(f => {
-          const [label, tone] = FINDING_STATUS[f.status] ?? [f.status, "grey" as const];
+    <Section id="findings" title="Moves it flagged" count={findings ? findings.length : undefined}>
+      {waiting.length > 0 && <div className="sr-wait"><InvestigateNowButton ids={waiting} onDone={onChange} small /></div>}
+      {!findings ? <InlineSkeleton /> : !findings.length ? <p className="sr-lede">None yet. A move shows here when it's far bigger than usual.</p> : (
+        <ul className="sr-moves">{findings.map(f => {
+          const ev = f.outcome?.event_id ? events?.[f.outcome.event_id] : undefined;
+          const [label] = FINDING_STATUS[f.status] ?? [f.status];
           return (
-            <div key={f.finding_id} className="lrow">
-              <span className="row-ico"><Icon name="series" /></span>
-              <span className="row-main">
-                <span className="row-top"><b className="row-l">{f.title}</b><StatusPill tone={tone}>{label}</StatusPill>
-                  {f.world === "sandbox" && <StatusPill tone="blue">Test</StatusPill>}</span>
-                <span className="row-d">{f.outcome?.event_id ? <Link to={`/events/${f.outcome.event_id}`}>Open the event</Link>
-                  : f.status === "set_aside" ? `No impact found: ${setAsideReason(f.outcome?.reason)}` : f.themes.map(themeLabel).join(", ")}</span>
-              </span>
-              <span className="row-meta">{dayTime(f.created_at)}</span>
-            </div>);
-        })}
-      </div>
-    </section>
+            <li key={f.finding_id}>
+              <span className="sr-mt"><ToneMark tone="mixed" label="Flagged move: " />{moveLine(f)}{f.world === "sandbox" && <span className="rd-fine"> · test</span>}</span>
+              <span className="sr-mm">{dayTime(f.created_at)}{" · "}
+                {f.outcome?.event_id
+                  ? ev ? <>in {ev.tone && <ToneMark tone={ev.tone} label={`${TONE_WORD[ev.tone]}: `} />}<Link className="rd-name" to={`/events/${ev.event_id}`}>{eventTitle(ev)}</Link></>
+                    : <GoLink to={`/events/${f.outcome.event_id}`}>Open the event</GoLink>
+                  : f.status === "set_aside" ? `no impact found: ${setAsideReason(f.outcome?.reason)}` : label.toLowerCase()}</span>
+            </li>);
+        })}</ul>
+      )}
+    </Section>
   );
 }
 
@@ -147,6 +128,7 @@ function SimulateMove({ s, onDone }: { s: Series; onDone: () => void }) {
   const [busy, setBusy] = useState(false);
   const [out, setOut] = useState<SimulateResult | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const id = useId();
   const run = async () => {
     const v = Number(pctText);
     if (!Number.isFinite(v) || v === 0) { setErr("Enter a move in percent, e.g. 3 or -2.5."); return; }
@@ -156,20 +138,36 @@ function SimulateMove({ s, onDone }: { s: Series; onDone: () => void }) {
     finally { setBusy(false); }
   };
   return (
-    <div className="card">
-      <div className="hd"><h2>Try a move</h2><StatusPill tone="blue">Test</StatusPill></div>
-      <div className="bd col" style={{ gap: 10 }}>
-        <p className="small muted">See whether a made-up move would be flagged. Your real prices don't change.</p>
-        <div className="row" style={{ alignItems: "flex-end" }}>
-          <label className="field" style={{ width: 160 }}><span>Move (% of the latest price)</span>
-            <input className="input" type="number" step="0.5" value={pctText} onChange={e => setPct(e.target.value)} onKeyDown={e => e.key === "Enter" && run()} /></label>
-          <button className="btn" type="button" onClick={run} disabled={busy}><Icon name={busy ? "refresh" : "play"} className={busy ? "spin" : undefined} />Simulate</button>
-        </div>
-        {out && <div className={out.fired ? "note" : "small muted"}>{out.note}</div>}
-        {err && <div className="rawerr">{err}</div>}
-        <div className="small muted">If it's flagged, a test finding goes to the investigation, marked Test. It never reaches your real alerts.</div>
+    <>
+      <p className="rd-fine rd-prose" style={{ margin: "0 0 12px" }}>See whether a made-up move would be flagged. Your real prices don't change. If it's flagged, a test finding goes to the investigation, marked as a test. It never reaches your real alerts.</p>
+      <div className="sr-try">
+        <label htmlFor={id}>Move (% of the latest price)
+          <input id={id} className="input" type="number" step="0.5" value={pctText} onChange={e => setPct(e.target.value)} onKeyDown={e => e.key === "Enter" && run()} /></label>
+        <button className="btn" type="button" onClick={run} disabled={busy}>{busy ? "Simulating…" : "Simulate"}</button>
       </div>
-    </div>
+      {out && <p className="sr-out" style={{ color: "var(--ink)" }}>{out.fired && <ToneMark tone="mixed" label="Flagged: " />}{out.note}</p>}
+      {err && <div className="rawerr">{err}</div>}
+    </>
+  );
+}
+
+function FetchLog({ calls }: { calls: ProviderCall[] | null }) {
+  if (!calls) return <InlineSkeleton />;
+  if (!calls.length) return <p className="rd-fine">No calls yet.</p>;
+  return (
+    <table className="rd-table sr-log">
+      <thead><tr><th scope="col">When</th><th scope="col">Why</th><th scope="col">Result</th><th scope="col" className="rd-num">New hours</th><th scope="col" className="rd-num">Credits</th><th scope="col" className="rd-num">Took</th><th scope="col">Error</th></tr></thead>
+      <tbody>{calls.map(c => (
+        <tr key={c.call_id}>
+          <td className="rd-num">{dayTime(c.at)}</td>
+          <td>{{ scheduled: "hourly pull", manual: "refresh", backfill: "history (added)", lookup: "search" }[c.trigger] ?? c.trigger}</td>
+          <td>{c.status === "ok" ? "OK" : c.status === "no_new_data" ? "No new data" : c.status === "error" ? <span className="rd-warn"><ToneMark tone="mixed" />Error</span> : "Running"}</td>
+          <td className="rd-num">{c.bars_new ?? "—"}{c.bars_received !== null ? ` / ${c.bars_received}` : ""}</td>
+          <td className="rd-num">{c.credits}</td>
+          <td className="rd-num">{c.duration_ms !== null ? `${(c.duration_ms / 1000).toFixed(1)} s` : "—"}</td>
+          <td className="sr-err">{c.error_code && c.status === "error" ? `${c.error_code}${c.http_status ? ` (${c.http_status})` : ""}: ${c.error_message}` : ""}</td>
+        </tr>))}</tbody>
+    </table>
   );
 }
 
@@ -184,9 +182,13 @@ export function SeriesDetail() {
   const [notFound, setNotFound] = useState(false);
   const [err, setErr] = useState<unknown>(null);
   const [findings, setFindings] = useState<Finding[] | null>(null);
+  const [events, setEvents] = useState<Record<string, EventRow> | null>(null);
   const [calls, setCalls] = useState<ProviderCall[] | null>(null);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [help, setHelp] = useState(false);
+  const [tech, setTech] = useState(false);
+  const helpId = useId(), techId = useId();
   const { status, reload: reloadStatus } = useSeriesStatus();
   const isAdmin = role === "platform_admin";
 
@@ -204,11 +206,16 @@ export function SeriesDetail() {
     const t = setInterval(load, 60_000);
     return () => clearInterval(t);
   }, [load]);
+  // the events its flagged moves went to, by name (a failure just leaves a plain "Open the event" link)
+  useEffect(() => {
+    investigationApi.events().then(xs => setEvents(Object.fromEntries(xs.map(e => [e.event_id, e])))).catch(() => setEvents({}));
+  }, [id]);
   useEffect(() => {
     if (loc.hash === "#findings" && findings) document.getElementById("findings")?.scrollIntoView({ behavior: "smooth" });
   }, [loc.hash, findings]);
 
-  const updated = (x: Series) => { setS(x); reloadStatus(); seriesApi.findings(id).then(setFindings).catch(() => {}); seriesApi.fetches(id).then(setCalls).catch(() => {}); };
+  const refreshFindings = () => seriesApi.findings(id).then(setFindings).catch(() => {});
+  const updated = (x: Series) => { setS(x); reloadStatus(); refreshFindings(); seriesApi.fetches(id).then(setCalls).catch(() => {}); };
   const pause = async () => {
     if (!s) return;
     try { updated(await seriesApi.update(s.series_id, s.version, { enabled: !s.enabled })); toast(s.enabled ? `${s.name} paused: no hourly pulls until resumed.` : `${s.name} resumed: prices update again within the hour.`); }
@@ -221,67 +228,88 @@ export function SeriesDetail() {
   };
 
   if (notFound) return (
-    <div className="page"><PageHeader title="Series not found" crumbs={<Link to="/series">Market series</Link>} />
-      <div className="card"><Empty icon="series" title="This series isn't watched" actions={<Link className="btn" to="/series">See market series</Link>}>It may have been deleted.</Empty></div></div>
+    <div className="page rd rd-series">
+      <PageTitle title="Series not found" crumbs={<Link to="/series">Market series</Link>} />
+      <div className="rd-empty"><p className="rd-lede">This series isn't watched. It may have been deleted.</p>
+        <Link className="btn btn--primary" to="/series">See market series</Link></div>
+    </div>
   );
-  if (!s) return <div className="page">{err != null ? <><PageHeader title="Market series" crumbs={<Link to="/series">Market series</Link>} /><LoadError error={err} onRetry={load} what="this series" /></> : <PageSkeleton bare />}</div>;
+  if (!s) return <div className="page rd rd-series">{err != null ? <><PageTitle title="Market series" crumbs={<Link to="/series">Market series</Link>} /><LoadError error={err} onRetry={load} what="this series" /></> : <PageSkeleton bare />}</div>;
   const l = s.latest;
-  const moved = l?.max_z !== null && l?.max_z !== undefined && Math.abs(l.max_z) >= s.detector.z_threshold;
+  const z = oneDayZ(l);
+  const notice = seriesNotice({
+    stale: s.state === "stale", since: l ? dayTime(l.bar_end) : "it was added", configured: status?.provider.configured ?? true, admin: isAdmin,
+    failed: s.fetch.last_status === "error" && s.fetch.last_error ? { at: dayTime(s.fetch.last_error.at), code: s.fetch.last_error.code, http: s.fetch.last_error.http_status, message: s.fetch.last_error.message } : null,
+  });
+  const plain = s.state === "warming_up" ? "Still learning what a normal move is; it can flag moves once it has enough history."
+    : s.state === "pending" ? "Waiting for its first prices." : s.state === "paused" ? "Paused: prices aren't updated until it's resumed." : null;
   return (
-    <div className="page">
-      <PageHeader crumbs={<><Link to="/series">Market series</Link><span aria-hidden="true">/</span><span>{s.name}</span></>}
-        title={s.name} pills={<><StateBadge state={s.state} /><FetchBadge s={s} /></>}
-        status={(status && !status.provider.configured) || (s.fetch.last_status === "error" && s.fetch.last_error)  // a banner below says who was told: not twice
-          ? seriesSentence(s, now).replace(/; your Platform Admin has been told\.$/, ".") : seriesSentence(s, now)}
-        actions={<>
+    <div className="page rd rd-series">
+      <PageTitle crumbs={<><Link to="/series">Market series</Link> / {s.name}</>} title={s.name}
+        actions={<span className="sr-act">
           <RefreshButton s={s} onDone={updated} small={false} />
           {isAdmin && <>
-            <button className="btn" type="button" onClick={pause}><Icon name={s.enabled ? "pause" : "play"} />{s.enabled ? "Pause" : "Resume"}</button>
-            <button className="btn" type="button" onClick={() => setEditing(true)}><Icon name="edit" />Edit</button>
-            <button className="btn btn--danger" type="button" onClick={() => setDeleting(true)}><Icon name="trash" />Delete</button>
+            <TextButton onClick={() => setEditing(true)}>Edit</TextButton>
+            <TextButton onClick={pause}>{s.enabled ? "Pause" : "Resume"}</TextButton>
+            <TextButton onClick={() => setDeleting(true)}>Stop watching</TextButton>
           </>}
-        </>}
-        help={<PricesHelp status={status} />} />
-      <div className="banners">
-        <PrototypeBanner status={status} />
-        {s.fetch.last_status === "error" && s.fetch.last_error && (isAdmin
-          ? <Banner kind="crit" icon="warn"><b>The last fetch failed</b> ({when(s.fetch.last_error.at, now)}). Twelve Data returned: <span className="mono">{s.fetch.last_error.code}{s.fetch.last_error.http_status ? ` ${s.fetch.last_error.http_status}` : ""}: {s.fetch.last_error.message}</span>.</Banner>
-          : <Banner kind="warn" icon="warn">The last price update failed. The prices below are the last ones received; your Platform Admin has been told.</Banner>)}
+        </span>}
+        status={plain ? <span>{plain}</span> : undefined}
+        help={<>
+          {notice && <QuietWarn>{notice}</QuietWarn>}
+          <p className="rd-fine" style={{ margin: "8px 0 0" }}><TextButton aria-expanded={help} aria-controls={helpId} onClick={() => setHelp(h => !h)}>How this works</TextButton></p>
+          <SeriesHelp status={status} id={helpId} open={help} />
+        </>} />
+
+      <div className="sr-hero">
+        <div>
+          <div className="sr-hp">{price(l?.close)}</div>
+          <p className="sr-hd">{l ? <>{l.change_1d_pct === null ? "No day's change yet" : `${pct(l.change_1d_pct)} over one trading day`}{l.typical_daily_move_pct ? ` · a normal day is ±${l.typical_daily_move_pct.toFixed(2)}%` : ""}</> : "No prices yet"}</p>
+        </div>
+        <Track z={z} threshold={s.detector.z_threshold} size="lg" />
       </div>
-      <StatTiles label="The latest price in short" items={[
-        { value: price(l?.close), label: "Latest price", sub: l ? `hour ending ${when(l.bar_end, now)}` : "no prices yet", tone: s.state === "stale" ? "amber" : "grey", icon: "series" },
-        { value: pct(l?.change_1d_pct), label: "Over one trading day", sub: l?.typical_daily_move_pct ? `a normal day is ±${l.typical_daily_move_pct.toFixed(2)}%` : undefined, tone: "grey" },
-        { value: l?.max_z !== null && l?.max_z !== undefined ? zx(l.max_z) : "—", label: "How unusual", sub: `of a normal move; flagged at ${s.detector.z_threshold}×`, tone: moved ? "red" : "green" },
-      ]} />
+
       <Chart s={s} findings={findings ?? []} />
-      <div className="grid2 mt16">
-        <Windows s={s} />
-        <Section title="What a move means" action={isAdmin ? <button className="btn btn--sm" type="button" onClick={() => setEditing(true)}><Icon name="edit" />Edit</button> : undefined}>
-          <FactList items={[
-            ["A move means", themeMeaning(s.theme)],
-            ["Where", s.places.length ? <Places codes={s.places} max={8} /> : null],
-            ["Rule", `Amiri Agent ${ruleText(s.detector.z_threshold)}`],
-            ["Updated", s.enabled ? `${ago(s.fetch.last_at, now)}; prices are pulled every hour` : "Paused"],
-          ]} />
-          <div className="mt12"><TechnicalDetails>
-            <FactList items={[["Symbol", `${s.symbol}${s.instrument.type ? ` · ${s.instrument.type}` : ""}${s.instrument.exchange ? ` · ${s.instrument.exchange}` : ""}`],
-              ["Vendor", "Twelve Data, hourly"], ["Next pull", s.enabled ? due(s.fetch.next_scheduled_at, now) : "paused"],
-              ["Detector", `${s.detector.z_threshold}× typical over ${s.detector.windows_days.join(", ")} trading days; typical from the last ${s.detector.sigma_days}; quiet for ${s.detector.cooldown_hours} h after flagging`],
-              ["Stale after", `${s.detector.stale_after_hours} market hours without a new price`], ["State", s.state_reason],
-              ["Version", `${s.version}, changed ${dayTime(s.updated_at)}`], ["Added", day(s.created_at)]]} />
-          </TechnicalDetails></div>
-        </Section>
+      <Moves findings={findings} events={events} onChange={refreshFindings} />
+      <Windows s={s} />
+
+      <div className="rd-sec">
+        <Fold remember="series-meaning" title="What a move means"
+          summary={`${shortMeaning(themeMeaning(s.theme))} · flagged at ${s.detector.z_threshold}×`}>
+          <dl className="sr-facts">
+            <dt>A move means</dt><dd>{themeMeaning(s.theme)}</dd>
+            {s.places.length > 0 && <><dt>Where</dt><dd><Places codes={s.places} max={8} /></dd></>}
+            <dt>Rule</dt><dd>Amiri Agent {ruleText(s.detector.z_threshold)}</dd>
+            <dt>Updated</dt><dd>{s.enabled ? `${ago(s.fetch.last_at, now)}; prices are pulled every hour` : "Paused"}</dd>
+            {l && <><dt>Latest price</dt><dd>hour ending {dayTime(l.bar_end)}</dd></>}
+          </dl>
+          <p className="sr-tech"><TextButton aria-expanded={tech} aria-controls={techId} onClick={() => setTech(t => !t)}>Technical details</TextButton></p>
+          <div id={techId} className="rd-open sr-tech" hidden={!tech}>
+            <dl className="sr-facts">
+              <dt>Symbol</dt><dd>{s.symbol}{s.instrument.type ? ` · ${s.instrument.type}` : ""}{s.instrument.exchange ? ` · ${s.instrument.exchange}` : ""}</dd>
+              <dt>Vendor</dt><dd>Twelve Data, hourly</dd>
+              <dt>Next pull</dt><dd>{s.enabled ? due(s.fetch.next_scheduled_at, now) : "paused"}</dd>
+              <dt>Detector</dt><dd>{s.detector.z_threshold}× typical over {s.detector.windows_days.join(", ")} trading days; typical from the last {s.detector.sigma_days}; quiet for {s.detector.cooldown_hours} h after flagging</dd>
+              <dt>Stale after</dt><dd>{s.detector.stale_after_hours} market hours without a new price</dd>
+              <dt>State</dt><dd>{s.state_reason}</dd>
+              <dt>Version</dt><dd>{s.version}, changed {dayTime(s.updated_at)}</dd>
+              <dt>Added</dt><dd>{day(s.created_at)}</dd>
+            </dl>
+          </div>
+        </Fold>
+        <Fold remember="series-try" title="Try a move" summary="a test: see whether a made-up move would be flagged; your real prices don't change">
+          <SimulateMove s={s} onDone={refreshFindings} />
+        </Fold>
+        {isAdmin && <Fold remember="series-log" title="Fetch log" summary="Platform Admin · every call to Twelve Data, errors exactly as returned">
+          <FetchLog calls={calls} />
+        </Fold>}
       </div>
-      <div className="grid2 mt16" style={{ gridTemplateColumns: "2fr 1fr", alignItems: "start" }}>
-        <Findings findings={findings} onChange={() => seriesApi.findings(id).then(setFindings).catch(() => {})} />
-        <SimulateMove s={s} onDone={() => seriesApi.findings(id).then(setFindings).catch(() => {})} />
-      </div>
-      {isAdmin && <div className="mt16"><FetchLog calls={calls} /></div>}
+
       {editing && <EditSeriesModal s={s} onClose={() => setEditing(false)} onSaved={x => { setEditing(false); updated(x); }} />}
       {deleting && (
         <Modal title={`Stop watching ${s.name}?`} onClose={() => setDeleting(false)} footer={<>
           <button className="btn" type="button" onClick={() => setDeleting(false)}>Cancel</button>
-          <button className="btn btn--danger" type="button" onClick={remove}>Delete</button></>}>
+          <button className="btn btn--danger" type="button" onClick={remove}>Stop watching</button></>}>
           <p>Its stored prices and fetch log are removed and it frees a series slot. Moves it already flagged stay as findings.</p>
         </Modal>
       )}
