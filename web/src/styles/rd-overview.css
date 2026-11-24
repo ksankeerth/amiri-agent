@@ -12,7 +12,9 @@
 .rd-overview .rd-ov-refresh:hover { color:var(--ink); }
 .rd-overview .rd-ov-refresh svg { width:18px; height:18px; }
 
-.rd-overview .rd-ov-hero { display:grid; grid-template-columns:416px minmax(0, 1fr); gap:32px; margin-top:10px; align-items:start; }
+.rd-overview .rd-ov-hero { display:grid; grid-template-columns:416px minmax(0, 1fr); gap:32px; margin-top:10px; align-items:stretch; }
+/* the words fill the map's height: the line of what it watches settles at the bottom, level with the map's key */
+.rd-overview .rd-ov-words { display:flex; flex-direction:column; }
 .rd-overview .rd-ov-h1 { font-size:36px; line-height:1.12; letter-spacing:-.02em; font-weight:650; }
 .rd-overview .rd-ov-words .rd-lede { margin-top:12px; }
 .rd-overview .rd-lede .rd-name { font-weight:600; }
@@ -23,7 +25,7 @@
 .rd-overview .rd-ov-words .rd-fig + .rd-fig { padding-left:14px; border-left:0; }
 .rd-overview .rd-ov-words .rd-fig-l { font-size:16px; white-space:nowrap; }
 .rd-overview .rd-ov-words .rd-fig-s { font-size:14px; }
-.rd-overview .rd-ov-cap { font-size:16px; color:var(--ink-2); margin:14px 0 0; }
+.rd-overview .rd-ov-cap { font-size:16px; color:var(--ink-2); margin:auto 0 0; padding-top:24px; }
 .rd-overview .rd-ov-cap .rd-tbtn { margin-left:2px; }
 .rd-overview .rd-ov-hot { margin-right:6px; }
 
@@ -50,10 +52,8 @@
 /* ---------- layer 1: two columns, 7 : 5 */
 /* three lists side by side when there is room (no short column beside a long one), one under another when there is not */
 .rd-overview .rd-ov-l1 { display:grid; grid-template-columns:minmax(0, 1fr); gap:0; align-items:start; }
-@media (min-width: 1001px) { .rd-overview .rd-ov-l1 { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0 48px; } }
-
-/* open events sit in the words column, beside the map that shows them: no rule above, just space */
-.rd-overview .rd-ov-words .rd-sec { border-top:0; margin-top:36px; padding-top:0; }
+@media (min-width: 1180px) { .rd-overview .rd-ov-l1 { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:0 36px; } }
+@media (min-width: 1440px) { .rd-overview .rd-ov-l1 { gap:0 48px; } }
 .rd-overview .rd-ov-l1 .rd-sec { scroll-margin-top:16px; }
 .rd-overview .rd-ov-evt { display:flex; align-items:baseline; gap:8px; font-size:17px; }
 .rd-overview .rd-ov-evt .rd-name { min-width:0; }
