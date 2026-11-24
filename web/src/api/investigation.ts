@@ -1,7 +1,7 @@
 // Findings, investigation runs and events (server: app/investigation/api.py).
 import { api } from "./client";
 
-export interface Theme { theme: string; direction: string; item?: string; currency?: string }
+export interface Theme { theme: string; direction: string; item?: string; currency?: string; implied?: boolean }
 export interface FindingRow {
   finding_id: string; world: "live" | "sandbox" | "studio"; source: string; kind: string; title: string; explanation: string;
   score: number; themes: Theme[]; places: string[]; status: "new" | "grouped" | "linked" | "set_aside";

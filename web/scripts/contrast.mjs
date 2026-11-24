@@ -75,6 +75,9 @@ const text = [
   ["toast-text", ["toast-bg"]],
   ["toast-text-2", ["toast-bg"]],
   ["toast-muted", ["toast-bg"]],
+  ["event-text", ["event-bg"]],                  // the dark "The event" panel on the Event page
+  ["event-text-2", ["event-bg"]],
+  ["event-muted", ["event-bg"]],
 ];
 // non-text pairs: [token, background]; 3:1
 const nonText = [

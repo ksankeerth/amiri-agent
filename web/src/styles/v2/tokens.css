@@ -90,6 +90,11 @@
   --v2-toast-text:#FFFFFF;
   --v2-toast-text-2:#C8CEC9;
   --v2-toast-muted:#9AA39E;    /* the small mono code on a refusal toast */
+  /* the dark "The event" panel in the middle of the chain (board 02): its own surface and three text steps, in both themes */
+  --v2-event-bg:#101613;
+  --v2-event-text:#FFFFFF;
+  --v2-event-text-2:#C8CEC9;
+  --v2-event-muted:#9AA39E;
   /* A2: dots and marks only, never words */
   --v2-dot-live:#13A05A;  --v2-halo-live:#DDF1E5;
   --v2-dot-warn:#D97706;  --v2-halo-warn:#FBEBD5;
@@ -132,6 +137,10 @@
     --v2-warn-bg:#2A1E10;  --v2-warn-line:#5A4020;
     --v2-warn-ink:#F2C58A;
     --v2-warn-ink-2:#D9A866;
+    --v2-event-bg:#26302B;
+    --v2-event-text:#E9EEEA;
+    --v2-event-text-2:#C3CBC6;
+    --v2-event-muted:#A3ACA6;
     --v2-toast-bg:#26302B;
     --v2-toast-text:#E9EEEA;
     --v2-toast-text-2:#C3CBC6;
@@ -174,6 +183,10 @@
   --v2-warn-bg:#2A1E10;  --v2-warn-line:#5A4020;
   --v2-warn-ink:#F2C58A;
   --v2-warn-ink-2:#D9A866;
+  --v2-event-bg:#26302B;
+  --v2-event-text:#E9EEEA;
+  --v2-event-text-2:#C3CBC6;
+  --v2-event-muted:#A3ACA6;
   --v2-toast-bg:#26302B;
   --v2-toast-text:#E9EEEA;
   --v2-toast-text-2:#C3CBC6;
