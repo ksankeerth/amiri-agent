@@ -19,20 +19,30 @@ import "../../styles/events.css";
 /** A theme tag in words ("Oil prices up"): the Overview and Radar use it too. */
 export const themeText = (t: Theme) => themeLabel(t);
 
-const details = new Map<string, EventDetail>();
-/** Each listed event's detail (its checks), fetched once per page load and kept while the page is open. */
-export function useEventDetails(ids: string[]): Record<string, EventDetail> {
+// each detail remembers the row it was loaded for: when a reload brings a row that changed (new impacts, more news, closed),
+// its detail is fetched again, so the reader and the list count from the same snapshot
+const details = new Map<string, { sig: string; d: EventDetail }>();
+const sigOf = (e: EventRow) => `${e.status}|${e.hypotheses}|${e.developments}|${e.finding_ids.length}`;
+const asking = new Set<string>();  // details already on their way: a new selection mid-batch doesn't ask for them twice
+/** The listed events' details: missing or out-of-date ones up to 30 at a time, the event on show (`first`) always among them.
+ *  The ones that failed stay in `failed` until `retry` changes, which asks for them again. */
+export function useEventDetails(rows: EventRow[], first?: string, retry = 0) {
   const [, bump] = useState(0);
-  const key = ids.join(",");
+  const [failed, setFailed] = useState<Set<string>>(() => new Set());
+  const stale = rows.filter(e => details.get(e.event_id)?.sig !== sigOf(e) && !asking.has(e.event_id));
+  // at most 30 in flight at once, the event on show never waiting behind them
+  const want = [...new Set([...stale.filter(e => e.event_id === first), ...stale.slice(0, Math.max(0, 30 - asking.size))])];
+  const key = `${want.map(e => `${e.event_id}:${sigOf(e)}`).join(",")}#${retry}`;
   useEffect(() => {
-    const todo = ids.filter(id => !details.has(id)).slice(0, 30);
-    if (!todo.length) return;
+    if (!want.length) return;
     let live = true;
-    Promise.all(todo.map(id => investigationApi.event(id).then(e => { details.set(id, e); }).catch(() => {})))
-      .then(() => { if (live) bump(n => n + 1); });
+    want.forEach(e => asking.add(e.event_id));
+    Promise.all(want.map(e => investigationApi.event(e.event_id).then(d => { details.set(e.event_id, { sig: sigOf(e), d }); return null; }).catch(() => e.event_id)
+      .finally(() => asking.delete(e.event_id))))
+      .then(bad => { if (live) setFailed(f => new Set([...[...f].filter(id => !want.some(e => e.event_id === id)), ...bad.filter((x): x is string => x !== null)])); bump(n => n + 1); });
     return () => { live = false; };
   }, [key]);  // eslint-disable-line react-hooks/exhaustive-deps
-  return Object.fromEntries(ids.filter(id => details.has(id)).map(id => [id, details.get(id)!]));
+  return { details: Object.fromEntries(rows.filter(e => details.has(e.event_id)).map(e => [e.event_id, details.get(e.event_id)!.d])) as Record<string, EventDetail>, failed };
 }
 
 export function useInvestigationStatus() {
@@ -116,10 +126,12 @@ function Runs({ runs, onChange }: { runs: Run[]; onChange: () => void }) {
 }
 
 /** What an event means for the bank: its impacts by product, where it started (its source, labelled), where it is, and the way in. */
-function Brief({ e, det, checks, why, onWhy }: { e: EventRow; det?: EventDetail; checks: boolean; why: boolean; onWhy: (open: boolean) => void }) {
+function Brief({ e, det, failed, onRetry, checks, why, onWhy }: { e: EventRow; det?: EventDetail; failed: boolean; onRetry: () => void; checks: boolean; why: boolean; onWhy: (open: boolean) => void }) {
   const xs = impacts(det), f = det?.findings[0], si = f ? sourceInfo(f.source) : null;
   const url = f?.evidence?.headlines?.find(h => h.url)?.url;
   return <div className="ev-brief">
+    {!det && failed && <p className="ev-fail">Couldn't load what this event means for you.
+      <button className="btn btn--sm" type="button" onClick={onRetry}><Icon name="refresh" />Try again</button></p>}
     {xs.length > 0 ? <>
       {/* folded to one line; opened, it stays open from event to event */}
       <details className="ev-why" open={why} onToggle={x => onWhy((x.target as HTMLDetailsElement).open)}>
@@ -173,15 +185,18 @@ export function EventsPage() {
     } catch (e) { setErr(e); }
   }, [reloadStatus]);
   useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t); }, [load]);
-  const refresh = () => { load(); recent.load(); };
+  const [retry, setRetry] = useState(0);  // asks again for event details that failed to load
+  const refresh = () => { load(); recent.load(); setRetry(n => n + 1); };
   const inProgress = (recent.items ?? []).filter(f => f.status === "grouped");
   const noEvent = (recent.items ?? []).filter(f => f.status === "set_aside");
   const nSim = (events ?? []).filter(e => e.world !== "live").length;
   const shown = (events ?? []).filter(e => sim || e.world === "live");  // what the status filter counts
   const rows = useMemo(() => shown.filter(e => show === "all" || e.status === show)
     .sort((a, b) => sort === "impacts" ? b.hypotheses - a.hypotheses || (a.anchor < b.anchor ? 1 : -1) : (a.anchor < b.anchor ? 1 : -1)), [shown, show, sort]);
-  const ev = useEventDetails(shown.map(e => e.event_id));
-  const open = (events ?? []).filter(e => e.world === "live" && e.status === "open");
+  const reach = rows.filter(e => e.hypotheses > 0), none = rows.filter(e => e.hypotheses === 0);
+  const cur = rows.find(e => e.event_id === peek) ?? rows.find(e => e.event_id === sel) ?? reach[0] ?? rows[0];
+  const { details: ev, failed } = useEventDetails(shown, cur?.event_id, retry);
+  const open =(events ?? []).filter(e => e.world === "live" && e.status === "open");
   const checks = !!status?.validation;
 
   // the answer: which open events reach the bank's products
@@ -204,9 +219,7 @@ export function EventsPage() {
   const pipeline = !!status && (waiting > 0 || inProgress.length > 0 || (admin && status.notes.length > 0));
   const next = status?.next_batch_at && status.connected ? (new Date(status.next_batch_at) <= now ? "very soon" : `in ${until(status.next_batch_at, now)}`) : null;
 
-  const reach = rows.filter(e => e.hypotheses > 0), none = rows.filter(e => e.hypotheses === 0);
-  const cur = rows.find(e => e.event_id === peek) ?? rows.find(e => e.event_id === sel) ?? reach[0] ?? rows[0];
-  const item = (e: EventRow) => <li key={e.event_id}>
+  const item =(e: EventRow) => <li key={e.event_id}>
     <button type="button" aria-current={cur?.event_id === e.event_id}
       // resting on an event previews it, after a moment so passing over rows on the way to the reader doesn't
       onMouseEnter={() => { clearTimeout(timer.current); timer.current = window.setTimeout(() => setPeek(e.event_id), 180); }}
@@ -261,7 +274,7 @@ export function EventsPage() {
             {cur.hypotheses > 0 && <TonePill tone={cur.tone} />}
             {cur.world !== "live" && <span className="pill t-blue">Simulated</span>}</p>
           <h2 id="ev-read-h">{title(cur)}</h2>
-          <Brief e={cur} det={ev[cur.event_id]} checks={checks} why={why} onWhy={setWhy} />
+          <Brief e={cur} det={ev[cur.event_id]} failed={failed.has(cur.event_id)} onRetry={() => setRetry(n => n + 1)} checks={checks} why={why} onWhy={setWhy} />
         </article>
       </div>}
       {admin && <Runs runs={runs} onChange={load} />}

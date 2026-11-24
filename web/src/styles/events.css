@@ -121,3 +121,5 @@
   .ev-run { grid-template-columns:minmax(0,1fr); row-gap:4px; }
   .ev-run-end { justify-self:start; flex-wrap:wrap; }
 }
+/* an event whose detail could not load: said in the reader, with a retry (Refresh retries too) */
+.ev-fail { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:0; color:var(--ink-2); }
