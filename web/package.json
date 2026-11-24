@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
+    "contrast": "node scripts/contrast.mjs",
     "preview": "vite preview",
     "test": "node --test src/components/chartMath.test.ts src/components/foldStore.test.ts src/components/fillJson.test.ts src/components/setupFlow.test.ts src/components/demoLock.test.ts src/format.test.ts src/plain.test.ts src/pages/admin/importWords.test.ts src/pages/alerts/words.test.ts src/pages/events/words.test.ts src/pages/monitors/words.test.ts src/pages/series/words.test.ts src/pages/spec/words.test.ts src/pages/studio/words.test.ts"
   },

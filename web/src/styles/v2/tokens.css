@@ -1,0 +1,186 @@
+/* Amiri Agent UI v2: design tokens.
+   Light and dark twins for every colour; dark values are from board 13 section 7
+   (docs/ux/v2/pages/13_*.html), the rest are derived and checked by `npm run contrast`.
+   Every name starts with --v2- so the old stylesheets (app.css and the rd-*.css files)
+   and their tokens are untouched. Theming works as in app.css: the OS setting, unless the
+   toggle says light; or the toggle says dark. Edit the two dark blocks together. */
+:root {
+  /* fonts (D6: self-hosted, see base.css) */
+  --v2-font:'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --v2-mono:'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  /* type scale (A5: nothing under 12 px; the boards' 10 and 11 px are now 12) */
+  --v2-fs-cap:12px;       /* uppercase captions, pills, mono, footnotes */
+  --v2-fs-meta:13px;      /* meta lines, buttons, secondary rows */
+  --v2-fs-body:14px;      /* body, table and nav text, tabs */
+  --v2-fs-lead:15px;      /* brand name, panel titles, Go-to input */
+  --v2-fs-title:16px;     /* row and section titles */
+  --v2-fs-title-lg:17px;  /* event headline in a list, hero sub-line */
+  --v2-fs-h3:20px;        /* section heading */
+  --v2-fs-h2:24px;        /* page and board heading */
+  --v2-fs-stat:40px;      /* big numbers */
+  --v2-fs-stat-lg:44px;
+  --v2-fs-hero:60px;      /* Overview headline */
+  --v2-fw-regular:400; --v2-fw-medium:500; --v2-fw-semibold:600; --v2-fw-bold:700;
+  --v2-ls-caps:.08em;     /* uppercase captions */
+  --v2-ls-tight:-.02em;   /* numbers, h2 */
+  --v2-ls-h3:-.01em;
+  --v2-ls-hero:-.045em;   /* 40 px and up */
+  --v2-lh-body:1.5;
+  --v2-lh-copy:1.55;
+  --v2-lh-hero:1.02;
+
+  /* radii */
+  --v2-r-xs:4px;   /* tags, mono chips */
+  --v2-r-sm:6px;
+  --v2-r-nav:8px;  /* nav item, swatch */
+  --v2-r-btn:9px;  /* button */
+  --v2-r-ctl:10px; /* input, assistant box, small panel */
+  --v2-r-lg:12px;  /* banner, toast */
+  --v2-r-panel:14px;
+  --v2-r-pill:999px;
+
+  /* spacing (px) */
+  --v2-sp-2:2px;  --v2-sp-4:4px;  --v2-sp-6:6px;  --v2-sp-8:8px;  --v2-sp-10:10px;
+  --v2-sp-12:12px; --v2-sp-14:14px; --v2-sp-16:16px; --v2-sp-18:18px; --v2-sp-20:20px;
+  --v2-sp-24:24px; --v2-sp-28:28px; --v2-sp-32:32px; --v2-sp-36:36px; --v2-sp-40:40px;
+  --v2-sp-48:48px; --v2-sp-56:56px; --v2-sp-64:64px;
+  --v2-page-pad:32px 36px 64px;   /* main area; 20px 16px 48px under 720 px */
+  --v2-hit:32px;                  /* A11: minimum hit area of an icon button */
+  --v2-hit-phone:44px;            /* buttons under 720 px */
+
+  /* motion */
+  --v2-dur-fast:120ms; --v2-dur:180ms; --v2-ease:cubic-bezier(.2,.6,.2,1);
+
+  /* surfaces */
+  --v2-page:#F6F6F3;
+  --v2-surface:#FFFFFF;
+  --v2-hover:#EEF0EC;          /* nav and row hover */
+  --v2-selected:#F1F3EF;       /* selected row, active Go-to row */
+  --v2-count-bg:#E9EBE7;       /* count badge behind a number (text: --v2-text-2) */
+  /* lines */
+  --v2-line:#E4E6E1;           /* row dividers, section rules */
+  --v2-line-ctl:#DADDD7;       /* button and panel outlines (not a form control) */
+  --v2-line-ctl-hover:#B9BEB7;
+  --v2-line-input:#868F89;     /* A3: inputs, selects, toggles, radio rings; 3:1 on page and surface (PLAN had #8A938D: 2.9 on the page) */
+  /* text */
+  --v2-text:#101613;
+  --v2-text-2:#3A4440;         /* A1: secondary text on any tinted background */
+  --v2-muted:#66706B;          /* page and surface only; on any tint or hover fill use --v2-text-2 (A1) */
+  /* tones: text and marks (shape plus word) */
+  --v2-bad:#BE321B;     --v2-bad-tint:#FBEAE6;     --v2-bad-line:#F2C7BD;
+  --v2-unusual:#A85A0A; --v2-unusual-tint:#FCF0E1;
+  --v2-good:#137A47;    --v2-good-tint:#E3F2E9;
+  --v2-on-bad:#FFFFFF;         /* text on a solid --v2-bad badge */
+  --v2-neutral-ink:#4F5A55;     --v2-neutral-tint:#EDEFEC;
+  --v2-sim-ink:#5B47B8;         --v2-sim-tint:#EDE9FB;     /* Simulated world mark */
+  /* brand */
+  --v2-brand:#0E5A37;          /* links, selected states */
+  --v2-brand-hover:#0A4229;
+  --v2-brand-tint:#F1F6F2;     /* the setup-agent / assistant box (text: --v2-text-2) */
+  --v2-focus:#0E5A37;          /* A4: the brand twin for this theme */
+  /* primary button, active nav */
+  --v2-ink-btn:#101613;
+  --v2-ink-btn-text:#FFFFFF;
+  /* banners and toasts */
+  --v2-warn-bg:#FEF6EC;  --v2-warn-line:#F5D9B5;
+  --v2-warn-ink:#6B3A05;       /* on --v2-unusual-tint and --v2-warn-bg */
+  --v2-warn-ink-2:#8A5A1E;     /* mono time stamp on --v2-warn-bg */
+  --v2-toast-bg:#101613;
+  --v2-toast-text:#FFFFFF;
+  --v2-toast-text-2:#C8CEC9;
+  /* A2: dots and marks only, never words */
+  --v2-dot-live:#13A05A;  --v2-halo-live:#DDF1E5;
+  --v2-dot-warn:#D97706;  --v2-halo-warn:#FBEBD5;
+  --v2-dot-idle:#9AA39E;  --v2-halo-idle:#EEF0EC;
+  --v2-dot-sep:#CDD2CC;
+  /* shadows, overlay */
+  --v2-shadow-sm:0 1px 2px rgba(0,0,0,.08);
+  --v2-shadow-toast:0 10px 30px rgba(0,0,0,.18);
+  --v2-shadow-pop:0 20px 50px rgba(0,0,0,.15);
+  --v2-scrim:rgba(16,22,19,.45);
+}
+
+/* dark: the same values twice (the OS setting, or the toggle); edit both */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --v2-page:#0E1311;
+    --v2-surface:#161C19;
+    --v2-hover:#1C2420;
+    --v2-selected:#202A25;
+    --v2-count-bg:#26302B;
+    --v2-line:#26302B;
+    --v2-line-ctl:#3A4440;
+    --v2-line-ctl-hover:#55605A;
+    --v2-line-input:#5F6963;
+    --v2-text:#E9EEEA;
+    --v2-text-2:#C3CBC6;
+    --v2-muted:#8A948E;
+    --v2-bad:#F07A62;     --v2-bad-tint:#3A1A14;     --v2-bad-line:#5C2B21;
+    --v2-unusual:#E9A24D; --v2-unusual-tint:#33230F;
+    --v2-good:#5BC48A;    --v2-good-tint:#16291F;
+    --v2-on-bad:#0E1311;
+    --v2-neutral-ink:#B7C0BA;     --v2-neutral-tint:#232B27;
+    --v2-sim-ink:#B6A9F2;         --v2-sim-tint:#251F3F;
+    --v2-brand:#5BC48A;
+    --v2-brand-hover:#8AD9AE;
+    --v2-brand-tint:#15241C;
+    --v2-focus:#5BC48A;
+    --v2-ink-btn:#E9EEEA;
+    --v2-ink-btn-text:#0E1311;
+    --v2-warn-bg:#2A1E10;  --v2-warn-line:#5A4020;
+    --v2-warn-ink:#F2C58A;
+    --v2-warn-ink-2:#D9A866;
+    --v2-toast-bg:#26302B;
+    --v2-toast-text:#E9EEEA;
+    --v2-toast-text-2:#C3CBC6;
+    --v2-dot-live:#5BC48A;  --v2-halo-live:#1B3A29;
+    --v2-dot-warn:#E9A24D;  --v2-halo-warn:#3A2A12;
+    --v2-dot-idle:#66706B;  --v2-halo-idle:#26302B;
+    --v2-dot-sep:#3A4440;
+    --v2-shadow-sm:0 1px 2px rgba(0,0,0,.40);
+    --v2-shadow-toast:0 10px 30px rgba(0,0,0,.55);
+    --v2-shadow-pop:0 20px 50px rgba(0,0,0,.60);
+    --v2-scrim:rgba(0,0,0,.62);
+  }
+}
+:root[data-theme="dark"] {
+  --v2-page:#0E1311;
+  --v2-surface:#161C19;
+  --v2-hover:#1C2420;
+  --v2-selected:#202A25;
+  --v2-count-bg:#26302B;
+  --v2-line:#26302B;
+  --v2-line-ctl:#3A4440;
+  --v2-line-ctl-hover:#55605A;
+  --v2-line-input:#5F6963;
+  --v2-text:#E9EEEA;
+  --v2-text-2:#C3CBC6;
+  --v2-muted:#8A948E;
+  --v2-bad:#F07A62;     --v2-bad-tint:#3A1A14;     --v2-bad-line:#5C2B21;
+  --v2-unusual:#E9A24D; --v2-unusual-tint:#33230F;
+  --v2-good:#5BC48A;    --v2-good-tint:#16291F;
+  --v2-on-bad:#0E1311;
+  --v2-neutral-ink:#B7C0BA;     --v2-neutral-tint:#232B27;
+  --v2-sim-ink:#B6A9F2;         --v2-sim-tint:#251F3F;
+  --v2-brand:#5BC48A;
+  --v2-brand-hover:#8AD9AE;
+  --v2-brand-tint:#15241C;
+  --v2-focus:#5BC48A;
+  --v2-ink-btn:#E9EEEA;
+  --v2-ink-btn-text:#0E1311;
+  --v2-warn-bg:#2A1E10;  --v2-warn-line:#5A4020;
+  --v2-warn-ink:#F2C58A;
+  --v2-warn-ink-2:#D9A866;
+  --v2-toast-bg:#26302B;
+  --v2-toast-text:#E9EEEA;
+  --v2-toast-text-2:#C3CBC6;
+  --v2-dot-live:#5BC48A;  --v2-halo-live:#1B3A29;
+  --v2-dot-warn:#E9A24D;  --v2-halo-warn:#3A2A12;
+  --v2-dot-idle:#66706B;  --v2-halo-idle:#26302B;
+  --v2-dot-sep:#3A4440;
+  --v2-shadow-sm:0 1px 2px rgba(0,0,0,.40);
+  --v2-shadow-toast:0 10px 30px rgba(0,0,0,.55);
+  --v2-shadow-pop:0 20px 50px rgba(0,0,0,.60);
+  --v2-scrim:rgba(0,0,0,.62);
+}
