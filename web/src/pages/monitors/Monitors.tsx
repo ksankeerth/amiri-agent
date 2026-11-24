@@ -53,7 +53,8 @@ export function MonitorHelp({ status }: { status: MonitorsStatus | null }) {
 }
 
 /** The buttons for a monitor's state. Any Risk Manager approves (prototype: no separate approver role). */
-export function MonitorActions({ m, onChange, compact }: { m: MonitorRow; onChange: () => void; compact?: boolean }) {
+/** `only="pending"`: just the actions on a pending version (submit, approve, request changes), for a list of what waits on a person. */
+export function MonitorActions({ m, onChange, compact, only }: { m: MonitorRow; onChange: () => void; compact?: boolean; only?: "pending" }) {
   const toast = useToast();
   const [asking, setAsking] = useState(false);
   const [note, setNote] = useState("");
@@ -84,9 +85,9 @@ export function MonitorActions({ m, onChange, compact }: { m: MonitorRow; onChan
       {pendingSubmitted && <>
         <button className="btn btn--sm btn--primary" type="button" onClick={() => act("approve")}>Approve{m.pending ? ` version ${m.pending.version}` : ""}</button>
         <button className="btn btn--sm" type="button" onClick={() => setAsking(true)}>Request changes</button></>}
-      {m.status === "live" && <button className="btn btn--sm" type="button" onClick={() => act("pause")}>Pause</button>}
-      {m.status === "paused" && <button className="btn btn--sm" type="button" onClick={() => act("resume")}>Resume</button>}
-      {!compact && <button className="btn btn--sm btn--ghost" type="button" onClick={() => act("retire")}>Retire</button>}
+      {!only && m.status === "live" && <button className="btn btn--sm" type="button" onClick={() => act("pause")}>Pause</button>}
+      {!only && m.status === "paused" && <button className="btn btn--sm" type="button" onClick={() => act("resume")}>Resume</button>}
+      {!compact && !only && <button className="btn btn--sm btn--ghost" type="button" onClick={() => act("retire")}>Retire</button>}
     </span>
   );
 }
@@ -132,7 +133,10 @@ export function DraftFromProfile({ onClose, only }: { onClose: () => void; only?
 type Run = CheckRow | undefined;
 type Show = "all" | "draft" | "submitted" | "live" | "paused" | "retired";
 const waitsApproval = (m: MonitorRow) => m.status === "submitted" || m.pending?.status === "submitted";
-const isDraft = (m: MonitorRow) => m.status === "draft";
+// a draft not sent yet: a new monitor, or the next version of a live or paused one
+const isDraft = (m: MonitorRow) => m.status === "draft" || m.pending?.status === "draft";
+/** A person has to act on it: approve it, or finish the draft and send it. Live ones are also listed under "Watching the news". */
+const needsYou = (m: MonitorRow) => m.status !== "retired" && (waitsApproval(m) || isDraft(m));
 /** The value every monitor in a group shares, or null when they differ (then each line says its own). */
 const shared = <T,>(xs: MonitorRow[], f: (m: MonitorRow) => T) => (xs.length && xs.every(m => f(m) === f(xs[0])) ? f(xs[0]) : null);
 
@@ -145,7 +149,7 @@ function lastWords(m: MonitorRow, run: Run, found: MonitorFinding[] | undefined)
   return run?.summary ? `Nothing new. ${run.summary}` : "Nothing new";
 }
 
-function MonitorLine({ m, run, found, onChange, common }: { m: MonitorRow; run: Run; found?: MonitorFinding[]; onChange: () => void; common: { owner: string | null; every: number | null } }) {
+function MonitorLine({ m, run, found, onChange, common, waiting }: { m: MonitorRow; run: Run; found?: MonitorFinding[]; onChange: () => void; common: { owner: string | null; every: number | null }; waiting?: boolean }) {
   const now = useNow(30_000);
   const toast = useToast();
   const [open, setOpen] = useState(false);
@@ -157,19 +161,21 @@ function MonitorLine({ m, run, found, onChange, common }: { m: MonitorRow; run: 
     } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
   };
   const differs = [common.every === null && everyText(m.check_frequency), common.owner === null && m.owner].filter(Boolean) as string[];
-  const id = `mon-${m.monitor_id}`, watching = m.status === "live";
+  // under "Waiting for you" a line is about its pending version (a live monitor's next version too); elsewhere, about its checks
+  const id = `mon-${m.monitor_id}${waiting ? "-w" : ""}`, watching = m.status === "live" && !waiting;
+  const next = m.pending?.version ?? m.latest_version;
   return (
     <li className={`mon-line ${m.status}`}>
       <button type="button" className="mon-t" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
         <span className="mon-name">{m.name}</span>
         {differs.length > 0 && <span className="mon-sub">{differs.join(" · ")}</span>}</button>
-      <span className="mon-what">{watching || m.status === "paused" ? lastWords(m, run, found)
-        : waitsApproval(m) ? `Version ${m.pending?.version ?? m.latest_version} sent for approval ${ago(m.updated_at, now)}${m.pending?.note ? `: “${m.pending.note}”` : ""}`
-        : `A draft, last edited ${ago(m.updated_at, now)}`}</span>
+      <span className="mon-what">{!waiting ? lastWords(m, run, found)
+        : waitsApproval(m) ? `Version ${next} sent for approval ${ago(m.updated_at, now)}${m.pending?.note ? `: “${m.pending.note}”` : ""}${m.status === "live" ? `; version ${m.live_version} keeps running` : ""}`
+        : m.status === "draft" ? `A draft, last edited ${ago(m.updated_at, now)}` : `Version ${next} is being edited, not sent yet; version ${m.live_version} keeps running`}</span>
       <span className="mon-end">
         {m.review_due && <span className="mon-due">Review due</span>}
         {watching && m.last_check && <time dateTime={m.last_check.at}>{ago(m.last_check.at, now)}</time>}
-        {!watching && <MonitorActions m={m} onChange={onChange} compact />}
+        {(waiting || m.status !== "live") && <MonitorActions m={m} onChange={onChange} compact only={waiting ? "pending" : undefined} />}
       </span>
       {watching && m.pending && <p className="mon-note">Version {m.pending.version} {m.pending.status === "submitted" ? "is waiting for approval" : "is being edited"}; version {m.live_version} keeps running.</p>}
       {open && <div className="mon-x" id={id}>
@@ -193,8 +199,10 @@ export function MonitorsPage() {
   const { role } = useRole();
   const { status, reload: reloadStatus } = useMonitorsStatus();
   const [items, setItems] = useState<MonitorRow[] | null>(null);
-  const [runs, setRuns] = useState<Record<string, Run>>({});
-  const [found, setFound] = useState<Record<string, MonitorFinding[]>>({});
+  // each monitor's last check and findings, tagged with the check they belong to: a newer check shows its own count at once,
+  // never beside the previous check's headline, while its details load
+  const [runs, setRuns] = useState<Record<string, { at: string; v: Run }>>({});
+  const [found, setFound] = useState<Record<string, { at: string; v: MonitorFinding[] }>>({});
   const [err, setErr] = useState<unknown>(null);
   const [drafting, setDrafting] = useState(false);
   const [show, setShow] = useState<Show>("all");
@@ -204,8 +212,8 @@ export function MonitorsPage() {
       const xs = await monitorsApi.list(); setItems(xs); setErr(null); reloadStatus();
       const checked = xs.filter(m => m.last_check);
       const [r, f] = await Promise.all([
-        Promise.all(checked.map(m => monitorsApi.runs(m.monitor_id).then(rs => [m.monitor_id, rs.find(x => x.world === "live") ?? rs[0]] as const).catch(() => null))),
-        Promise.all(checked.filter(m => m.findings_30d).map(m => monitorsApi.findings(m.monitor_id).then(fs => [m.monitor_id, fs] as const).catch(() => null))),
+        Promise.all(checked.map(m => monitorsApi.runs(m.monitor_id).then(rs => [m.monitor_id, { at: m.last_check!.at, v: rs.find(x => x.world === "live") ?? rs[0] }] as const).catch(() => null))),
+        Promise.all(checked.filter(m => m.findings_30d).map(m => monitorsApi.findings(m.monitor_id).then(fs => [m.monitor_id, { at: m.last_check!.at, v: fs }] as const).catch(() => null))),
       ]);
       setRuns(Object.fromEntries(r.filter(x => x !== null))); setFound(Object.fromEntries(f.filter(x => x !== null)));
     } catch (e) { setErr(e); }
@@ -218,9 +226,10 @@ export function MonitorsPage() {
   const down = !!status && !status.connected;
 
   // the answer: how many are watching, what waits for a person, what the last check found
-  const allLive = xs.filter(m => m.status === "live"), approve = xs.filter(waitsApproval), drafts = xs.filter(isDraft);
-  const fired = allLive.filter(m => m.last_check?.status === "fired");
-  const lastAt = allLive.map(m => m.last_check?.at).filter(Boolean).sort().pop();
+  const allLive = xs.filter(m => m.status === "live"), approve = xs.filter(m => m.status !== "retired" && waitsApproval(m)), drafts = xs.filter(m => m.status !== "retired" && isDraft(m));
+  // the latest check across the live monitors: its time, its monitor and its result are said together
+  const latest = allLive.filter(m => m.last_check).sort((a, b) => (a.last_check!.at < b.last_check!.at ? 1 : -1))[0];
+  const lc = latest?.last_check;
   const title = items === null ? "Monitors" : !allLive.length ? "No monitor is watching the news yet"
     : <><span className="mon-n">{count(allLive.length, "monitor")}</span> {down ? "live, checks on hold" : allLive.length === 1 ? "is watching the news" : "are watching the news"}</>;
   const asks = [approve.length > 0 && <><b>{approve.length}</b> {approve.length === 1 ? "waits" : "wait"} for your approval</>,
@@ -228,18 +237,25 @@ export function MonitorsPage() {
   // whether the news service is connected is the side bar's system status; the Platform Admin also gets the server's own notes
   const said = items === null || empty ? "" : <>
     {asks.length ? <>{asks.map((a, i) => <span key={i}>{i ? " and " : ""}{a}</span>)}. </> : null}
-    {lastAt && <>The last check was {ago(lastAt, now)}{fired.length ? <>: <Link className="mon-ev" to={`/monitors/${fired[0].monitor_id}`}>{fired[0].name}</Link> found {count(fired[0].last_check!.findings, "thing")}.</> : ", and nothing new turned up."}</>}
+    {lc && <>The last check was {ago(lc.at, now)}{lc.status === "fired" ? <>: <Link className="mon-ev" to={`/monitors/${latest.monitor_id}`}>{latest.name}</Link> found {count(lc.findings, "thing")}.</>
+      : lc.status === "error" ? <>: <Link className="mon-ev" to={`/monitors/${latest.monitor_id}`}>{latest.name}</Link> couldn't check the news; it tries again within the hour.</>
+      : ", and nothing new turned up."}</>}
     {role === "platform_admin" && status?.notes.length ? <span className="mon-down"> {status.notes.join(" ")}</span> : null}</>;
 
-  const n = (s: string) => xs.filter(m => m.status === s).length;
-  const pick = (m: MonitorRow) => show === "all" || m.status === show;
-  const yours = xs.filter(m => (waitsApproval(m) || isDraft(m)) && m.status !== "live" && m.status !== "paused" && pick(m));
-  const live = xs.filter(m => m.status === "live" && pick(m)), paused = xs.filter(m => m.status === "paused" && pick(m));
+  // Draft and Waiting for approval count pending versions too (a live monitor's next version), as "Waiting for you" lists them
+  const inStep = (m: MonitorRow, s: Show) => s === "all" || (s === "draft" ? m.status !== "retired" && isDraft(m) : s === "submitted" ? m.status !== "retired" && waitsApproval(m) : m.status === s);
+  const n = (s: Show) => xs.filter(m => inStep(m, s)).length;
+  const pick = (m: MonitorRow) => inStep(m, show);
+  const yours = xs.filter(m => needsYou(m) && (show === "all" || show === "draft" || show === "submitted") && pick(m));
+  const live = xs.filter(m => m.status === "live" && (show === "all" || show === "live")), paused = xs.filter(m => m.status === "paused" && (show === "all" || show === "paused"));
   const retired = show === "retired" ? xs.filter(m => m.status === "retired") : [];
   const common = { owner: shared(live, m => m.owner), every: shared(live, m => m.check_frequency) };
   const commonAll = { owner: shared(xs, m => m.owner), every: shared(xs, m => m.check_frequency) };
   const next = live.map(m => m.next_check_at).filter(Boolean).sort()[0];
-  const line = (m: MonitorRow, c = commonAll) => <MonitorLine key={m.monitor_id} m={m} run={runs[m.monitor_id]} found={found[m.monitor_id]} onChange={load} common={c} />;
+  // details only from the check the row shows: a newer check waits for its own instead of borrowing the last one's
+  const mine = <T,>(x: { at: string; v: T } | undefined, m: MonitorRow) => (x && x.at === m.last_check?.at ? x.v : undefined);
+  const line = (m: MonitorRow, c = commonAll, waiting = false) => <MonitorLine key={m.monitor_id} m={m} run={mine(runs[m.monitor_id], m)}
+    found={mine(found[m.monitor_id], m)} onChange={load} common={c} waiting={waiting} />;
   return (
     <div className="page mon">
       <PageHeader eyebrow="Monitors" title={title} status={said} actions={empty ? undefined : actions} help={<MonitorHelp status={status} />} />
@@ -257,7 +273,7 @@ export function MonitorsPage() {
         <div className="mon-groups">
           {yours.length > 0 && <section aria-labelledby="mon-y"><h2 id="mon-y">Waiting for you <span>{yours.length}</span></h2>
             <p className="mon-sub2">Nothing runs until a Risk Manager approves it. In this prototype the person who sent it can also approve it.</p>
-            <ol className="mon-lines">{yours.map(m => line(m))}</ol></section>}
+            <ol className="mon-lines">{yours.map(m => line(m, commonAll, true))}</ol></section>}
           {live.length > 0 && <section aria-labelledby="mon-w"><h2 id="mon-w">Watching the news <span>{live.length}</span></h2>
             <p className="mon-sub2">{[common.every && everyText(common.every), common.owner && `owned by ${common.owner}`].filter(Boolean).join(", ") || "Each line says how often and who owns it"}.
               {down ? " Not being checked right now; nothing is lost, the next check reads everything since the last." : next ? ` Next check ${due(next, now)}.` : ""}</p>
