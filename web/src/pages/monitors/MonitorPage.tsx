@@ -11,7 +11,7 @@ import { monitorsOf } from "../../components/fillJson";
 import { Places } from "../../components/blocks";
 import { Fold, GoLink, PageTitle, Section, TextButton } from "../../components/rd";
 import { useNow, useToast, PageSkeleton, LoadError } from "../../components/ui";
-import { ago, day, dayTime, person, plainError } from "../../format";
+import { ago, day, dayTime, person, plainError, ZONE_LABEL } from "../../format";
 import { eventTitle, longWhen, MONITOR_STATUS, setAsideReason } from "../../plain";
 import type { Installation } from "../../App";
 import { ChipsInput, Field, PlacesField } from "../institution/fields";
@@ -286,24 +286,20 @@ function MonitorForm({ m, profile, status, onSaved, onCancel }: { m: Monitor | n
 
 // ---------------------------------------------------------------- the monitor, read
 
-/** The one status line: "Live · approved by Nadeesha · Treasury · checked every hour · last check 21 h ago: nothing new". */
-function StatusLine({ m, now }: { m: Monitor; now: Date }) {
+/** The one status line: "Live · Treasury · checked every hour". Who approved and the last check are in the folds below;
+ *  an overdue check is said once, in the page's warning. */
+function StatusLine({ m }: { m: Monitor }) {
   const sp = m.live_spec ?? m.spec;
-  const running = m.versions.find(v => v.version === m.live_version);
-  const submitted = [...m.versions].reverse().find(v => v.status === "submitted");
-  const parts: ReactNode[] = [<b key="s" className="mn-state">{MONITOR_STATUS[m.status][0]}</b>];
-  if ((m.status === "live" || m.status === "paused") && running?.approved_by) parts.push(`approved by ${person(running.approved_by)}`);
-  if (submitted && m.status === "submitted") parts.push(`sent by ${person(submitted.submitted_by)}${submitted.submitted_at ? `, ${dayTime(submitted.submitted_at)}` : ""}`);
-  else if (m.pending?.status === "submitted") parts.push(`version ${m.pending.version} waiting for approval`);
-  parts.push(sp.about.owner);
+  const parts: ReactNode[] = [<b key="s" className="mn-state">{MONITOR_STATUS[m.status][0]}</b>, sp.about.owner];
   if (m.status !== "retired") parts.push(m.status === "live" || m.status === "paused" ? `checked ${everyWords(sp.about.check_frequency)}` : `will be checked ${everyWords(sp.about.check_frequency)}`);
-  if (m.last_check) {
-    const c = m.last_check;
-    const result = c.status === "fired" ? `found ${c.findings}` : c.status === "quiet" ? "nothing new" : "couldn't check, it tries again soon";
-    parts.push(<span key="l">last check {ago(c.at, now)}: {c.status === "error" ? <span className="rd-warn"><span aria-hidden="true">◆ </span>{result}</span> : result}</span>);
-  } else if (m.status !== "draft") parts.push("not checked yet");
-  if (isOverdue(m, now)) parts.push(<span key="o" className="rd-warn"><span aria-hidden="true">◆</span> overdue</span>);
   return <>{parts.map((p, i) => <span key={i}>{p}</span>)}</>;
+}
+
+/** The last check in a few words: "20 h ago: nothing new". */
+function lastCheckWords(m: Monitor, now: Date): string {
+  if (!m.last_check) return m.status === "draft" ? "" : "not checked yet";
+  const c = m.last_check;
+  return `${ago(c.at, now)}: ${c.status === "fired" ? `found ${c.findings}` : c.status === "quiet" ? "nothing new" : "couldn't check, it tries again soon"}`;
 }
 
 /** Waiting for approval, or ready to submit: what, who sent it, and the buttons. */
@@ -363,7 +359,8 @@ function Found({ items, events }: { items: MonitorFinding[]; events: Record<stri
     <Section title="What it found" meta={items.length ? <span className="rd-dots"><span>{items.length > SHOW_FOUND ? `${SHOW_FOUND} newest of ${items.length}` : items.length}</span><span>Colombo time</span></span> : undefined}
       action={items.length ? <GoLink to="/findings">All in Findings</GoLink> : undefined}>
       {!items.length ? <p className="mn-empty">Nothing yet. What it finds appears here and goes to the investigation.</p>
-        : <ul className="mn-found" aria-label="Newest findings">{newest.map(f => {
+        : <><div className="mn-found-h rd-colh" aria-hidden="true"><span /><span /><span>In event</span></div>
+          <ul className="mn-found" aria-label="Newest findings">{newest.map(f => {
           const h = f.evidence?.headlines?.[0];
           const url = h?.url ?? f.evidence?.web?.[0]?.url;
           const title = h?.title ?? f.title;
@@ -371,12 +368,12 @@ function Found({ items, events }: { items: MonitorFinding[]; events: Record<stri
           const note = f.status === "new" || f.status === "grouped" ? "Being investigated" : f.outcome?.reason ? `No impact found: ${setAsideReason(f.outcome.reason)}` : "";
           return (
             <li key={f.finding_id}>
-              <span className="mn-ft">{url
+              <span className="mn-ft rd-clamp1" title={title}>{url
                 ? <a className="rd-name" href={url} target="_blank" rel="noreferrer">{title}<span aria-hidden="true"> ↗</span><span className="sr"> (opens the article)</span></a> : title}</span>
               <span className="mn-fm">{f.world === "sandbox" ? "Test" : h?.outlet ?? "News"} · {dayTime(at(f))}</span>
-              <span className="mn-fe">{ev ? <><span className="rd-fine">In event: </span><Link className="rd-name" to={`/events/${ev}`}>{events[ev] ?? "open it"}</Link></> : <span className="rd-fine">{note}</span>}</span>
+              <span className="mn-fe rd-clamp1" title={ev ? events[ev] : note}>{ev ? <Link className="rd-name" to={`/events/${ev}`}>{events[ev] ?? "open it"}</Link> : <span className="rd-fine">{note}</span>}</span>
             </li>);
-        })}</ul>}
+        })}</ul></>}
     </Section>
   );
 }
@@ -390,11 +387,12 @@ function checksSummary(runs: CheckRow[]): string {
   return `${runs.length}: ${[found && `${found} found something`, quiet && `${quiet} nothing new`, running && `${running} running`, failed && `${failed} couldn't check`].filter(Boolean).join(", ")}`;
 }
 
-function Checks({ m, runs }: { m: Monitor; runs: CheckRow[] }) {
+function Checks({ m, runs, now }: { m: Monitor; runs: CheckRow[]; now: Date }) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const live = m.status === "live";
   return (
-    <Fold title="Recent checks" summary={checksSummary(runs)} remember="monitor-checks">
+    <Fold title="Recent checks" summary={m.last_check ? `last ${lastCheckWords(m, now)}` : checksSummary(runs)} remember="monitor-checks">
+      {runs.length > 0 && <p className="rd-fine mn-ck-sum">{checksSummary(runs)} · {ZONE_LABEL} time</p>}
       {!runs.length ? <p className="mn-empty">No checks yet.{live && m.next_check_at ? ` The first is due ${dayTime(m.next_check_at)}.` : ""}</p>
         : <ul className="mn-ck-list">{runs.map((r, i) => {
           const same = r.status === "failed" && i > 0 && runs[i - 1].status === "failed" && runs[i - 1].error === r.error;
@@ -541,11 +539,11 @@ export function MonitorPage() {
       <PageTitle title={m ? m.spec.about.name || m.name : "New monitor"}
         crumbs={<><Link to="/monitors">Monitors</Link> <span aria-hidden="true">/</span> {m ? m.name : "New monitor"}</>}
         actions={actions}
-        status={m ? <span className="rd-dots"><StatusLine m={m} now={now} /></span> : undefined}
+        status={m ? <span className="rd-dots"><StatusLine m={m} /></span> : undefined}
         lede={m ? undefined : "Say in plain words what to watch for. It runs once a Risk Manager approves it."}
         help={<MonitorHelp status={status} id={help.id} open={help.open} />} />
       {err != null && <LoadError error={err} onRetry={load} what="this monitor" />}
-      <MonitorBanners status={status} />
+      <MonitorBanners status={status} extra={m && isOverdue(m, now) && m.last_check ? <>This one is overdue: last checked {ago(m.last_check.at, now)}.</> : undefined} />
       {editMode && m && m.drafted_fields.length > 0 && <p className="rd-fine mn-fineblock">Filled in for you from your profile. Check the marked fields before you submit.</p>}
 
       {m && approving && <Approval m={m} onChange={load} editing={!!editMode} />}
@@ -559,7 +557,7 @@ export function MonitorPage() {
           <Found items={findings} events={eventTitles} />
         </>}
       {m && <div className="mn-folds">
-        <Checks m={m} runs={runs} />
+        <Checks m={m} runs={runs} now={now} />
         {!editMode && <MoreAbout m={m} profile={profile} />}
         <Versions m={m} onChange={load} />
       </div>}

@@ -34,7 +34,7 @@
 .rd-monitors .mn-state { color:var(--ink); font-weight:700; }
 .rd-monitors .mn-hero { margin-top:32px; }
 .rd-monitors .mn-about { margin:0; font-size:16px; color:var(--ink-3); }
-.rd-monitors .mn-hq { margin:4px 0 0; font-size:28px; line-height:1.25; font-weight:650; color:var(--ink); letter-spacing:-.01em; max-width:900px; }
+.rd-monitors .mn-hq { margin:4px 0 0; font-size:23px; line-height:1.25; font-weight:650; color:var(--ink); letter-spacing:-.01em; max-width:900px; }
 
 .rd-monitors .mn-tellsec .rd-sec-m { margin-left:auto; }
 .rd-monitors .mn-tell { list-style:none; margin:0; padding:0; }
@@ -46,8 +46,11 @@
 .rd-monitors .mn-c.mn-hit { color:var(--ink); font-size:24px; }
 
 .rd-monitors .mn-found { list-style:none; margin:0; padding:0; }
-.rd-monitors .mn-found li { display:grid; grid-template-columns:minmax(0, 1fr) auto minmax(0, 250px); column-gap:24px; align-items:baseline; padding:10px 0; }
-.rd-monitors .mn-ft { font-size:17px; font-weight:600; line-height:1.4; color:var(--ink); overflow-wrap:anywhere; }
+.rd-monitors .mn-found li, .rd-monitors .mn-found-h { display:grid; grid-template-columns:minmax(0, 1fr) auto minmax(0, 250px); column-gap:24px; align-items:baseline; padding:10px 0; }
+.rd-monitors .mn-found-h { padding:0 0 2px; }
+.rd-monitors .mn-found-h > span:nth-child(2) { min-width:160px; }
+.rd-monitors .mn-ft { font-size:17px; font-weight:600; line-height:1.4; color:var(--ink); min-width:0; }
+.rd-monitors .mn-ck-sum { margin:0 0 8px; }
 .rd-monitors .mn-fm { font-size:15px; color:var(--ink-3); white-space:nowrap; }
 .rd-monitors .mn-fe { font-size:15px; color:var(--ink-2); }
 
@@ -108,6 +111,7 @@
   .rd-monitors .mn-row { grid-template-columns:minmax(0, 1fr) 130px; row-gap:10px; }
   .rd-monitors .mn-side { grid-column:1 / -1; flex-direction:row; flex-wrap:wrap; gap:8px 20px; align-items:center; }
   .rd-monitors .mn-found li { grid-template-columns:minmax(0, 1fr); row-gap:2px; }
+  .rd-monitors .mn-found-h { display:none; }
   .rd-monitors .mn-hq { font-size:22px; }
   .rd-monitors .mn-dl > div { grid-template-columns:minmax(0, 1fr); }
 }
