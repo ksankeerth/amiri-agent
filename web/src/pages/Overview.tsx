@@ -315,7 +315,7 @@ export function OverviewPage() {
               : needsShown.map((a, n) => (
                 <div key={n} className="rd-row">
                   <div className="rd-row-t">{a.link ? <Link className="rd-name" to={a.link}>{plainNote(a.title)}</Link> : plainNote(a.title)}</div>
-                  {a.detail && <div className="rd-row-m">{a.detail}</div>}
+                  {a.detail && <div className="rd-row-m rd-clamp1" title={a.detail}>{a.detail}</div>}
                 </div>))}
             {(rest.length > TOP || o.attention_more > 0) && <p className="rd-ov-note">
               {rest.length > TOP && <TextButton aria-expanded={allNeeds} onClick={() => setAllNeeds(v => !v)}>{allNeeds ? "Show fewer" : `Show ${rest.length - TOP} more`}</TextButton>}
@@ -327,7 +327,7 @@ export function OverviewPage() {
             {!o.findings.length ? <p className="rd-ov-empty">No findings yet. They appear here when a monitor, a market price or Radar notices something.</p>
               : o.findings.slice(0, TOP).map(f => (
                 <div key={f.finding_id} className="rd-row">
-                  <div className="rd-ov-find"><Link className="rd-name" to={f.event_id ? `/events/${f.event_id}` : `/findings#f-${f.finding_id}`}>{f.title}</Link></div>
+                  <div className="rd-ov-find rd-clamp1" title={f.title}><Link className="rd-name" to={f.event_id ? `/events/${f.event_id}` : `/findings#f-${f.finding_id}`}>{f.title}</Link></div>
                   <div className="rd-row-m">{SOURCE_WORD[f.source] ?? f.source} · {dayTime(f.created_at)} · {findingStatus(f)}</div>
                 </div>))}
             <div className="rd-ov-all"><GoLink to="/findings">See all findings</GoLink></div>
@@ -362,7 +362,7 @@ export function OverviewPage() {
           {!o.radar.stories.length ? <p style={{ margin: 0 }}>{s.radar.connected ? "No stories yet." : "Radar isn't connected yet."}</p>
             : o.radar.stories.map(r => (
               <div key={r.story_id} className="rd-row">
-                <div className="rd-ov-find"><Link className="rd-name" to={r.event_id ? `/events/${r.event_id}` : "/radar"}>{r.title}</Link></div>
+                <div className="rd-ov-find rd-clamp1" title={r.title}><Link className="rd-name" to={r.event_id ? `/events/${r.event_id}` : "/radar"}>{r.title}</Link></div>
                 <div className="rd-row-m rd-dots"><span>{ago(r.last_seen_at, now)}</span><span>{plural(r.publishers, "publisher")}</span>
                   <span>{r.status === "sent" ? (r.event_id ? "in an event" : "sent for investigation") : r.status === "below" ? "not sent this run" : "dismissed"}</span>
                   {admin && <span>Radar score {r.score}</span>}</div>
