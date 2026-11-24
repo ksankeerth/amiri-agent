@@ -62,7 +62,7 @@ function EventPage({ d, retryAlerts }: { d: D; retryAlerts: () => void }) {
       <div id={panel} className="ph-panel" hidden={!help}><HowItWorks><p>{open
         ? <>This event stays open until <b>{dayTime(e.open_until)}</b>: new news about the same thing joins it instead of starting a new one.</>
         : <>This event closed {e.closed_at ? dayTime(e.closed_at) : ""}: nothing new about it came in for a while.</>}</p></HowItWorks></div>
-      <p className="evd-lede">{n ? <><span className="ev-n">{count(n, "possible impact")}</span> on <b>{count(d.products.length, "product")}</b>{forYou(d) && `, ${forYou(d)}`}.{" "}
+      <p className="evd-lede">{n ? <><b className="amb">{count(n, "possible impact")}</b> on <b className="amb">{count(d.products.length, "product")}</b>{forYou(d) && `, ${forYou(d)}`}.{" "}
         {!d.alertsFailed && d.teams.length > 0 && <><b>{count(d.teams.length, "team")}</b> {d.teams.length === 1 ? "has" : "have"} an alert
           {d.toReview === d.alerts.length ? `; ${d.alerts.length === 1 ? "not" : "none"} taken on yet` : d.toReview ? `; ${d.toReview} still to review` : ", all taken on"}.</>}</>
         : <>Nothing in it reaches your products. {open ? "It closes on its own when the news stops." : ""}</>}</p>

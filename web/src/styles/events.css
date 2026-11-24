@@ -6,10 +6,8 @@
 .ev .ph-status { font-size:var(--fs-lg); color:var(--ink-2); max-width:72ch; }
 .ev .ph-status b { color:var(--ink); }
 /* the count is underlined; the event it names stays green and bold, not underlined too, and glows on the same beat */
-.ev-n { font-variant-numeric:tabular-nums; background:linear-gradient(var(--medium), var(--medium)) no-repeat 0 100% / 100% 3px; padding-bottom:2px;
-  animation:ovline 5s .6s ease-in-out infinite; }
-.ev .ph-status a.ev-name { font-weight:700; color:var(--accent-ink); text-decoration:none; --c:var(--accent); animation:ovwake 5s 1.4s ease-out infinite; }
-.ev .ph-status a.ev-name:hover { text-decoration:underline; text-underline-offset:3px; }
+.ev-n { color:var(--accent); font-variant-numeric:tabular-nums; }
+.ev .ph-status a.ev-name { font-weight:700; color:var(--accent-ink); text-decoration:none; background:linear-gradient(var(--critical), var(--critical)) no-repeat 0 100% / 100% 2px; padding-bottom:2px; animation:ovline 5s .6s ease-in-out infinite; }
 
 /* the investigation's queue: a hairline on the left, no box; the link to the findings on its own line */
 .ev-note { display:flex; align-items:flex-start; gap:12px; margin:20px 0 0; padding:2px 0 2px 14px; border-left:3px solid var(--line-strong); font-size:15px; color:var(--ink-2); max-width:110ch; }
@@ -123,3 +121,5 @@
 }
 /* an event whose detail could not load: said in the reader, with a retry (Refresh retries too) */
 .ev-fail { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:0; color:var(--ink-2); }
+/* how far an event could reach (possible impacts, products) reads in amber: expected, not yet seen */
+.ev b.amb { color:var(--medium-ink); }

@@ -135,7 +135,7 @@ function Brief({ e, det, failed, onRetry, checks, why, onWhy }: { e: EventRow; d
     {xs.length > 0 ? <>
       {/* folded to one line; opened, it stays open from event to event */}
       <details className="ev-why" open={why} onToggle={x => onWhy((x.target as HTMLDetailsElement).open)}>
-        <summary><h3>Why it matters to you</h3><span><b>{count(e.hypotheses, "possible impact")}</b> on {count(new Set(xs.map(i => i.product)).size, "product")}</span></summary>
+        <summary><h3>Why it matters to you</h3><span><b className="amb">{count(e.hypotheses, "possible impact")}</b> on <b className="amb">{count(new Set(xs.map(i => i.product)).size, "product")}</b></span></summary>
         <ul className="ev-imp">{xs.map(i => <li key={i.id}><b>{i.product}</b>: {lower(i.what)}<span className="muted"> · {i.st}</span></li>)}</ul>
       </details>
     </> : e.hypotheses === 0 && <p>The investigation found nothing in it that reaches your products. It closes on its own when the news stops.</p>}
@@ -209,7 +209,7 @@ export function EventsPage() {
   const said: ReactNode = events === null ? "" : <>
     {hit.length === 1 ? <><Link className="ev-name" to={`/events/${hit[0].event_id}`}>{title(hit[0])}</Link> is {TONE[hit[0].tone]}: </>
       : bad ? <><b>{bad}</b> {bad === 1 ? "is" : "are"} bad for you; </> : null}
-    {hit.length > 0 && <><b>{count(nImp, "possible impact")}</b>{products ? <> on <b>{count(products, "product")}</b></> : null}. </>}
+    {hit.length > 0 && <><b className="amb">{count(nImp, "possible impact")}</b>{products ? <> on <b className="amb">{count(products, "product")}</b></> : null}. </>}
     {rest > 0 && <>{hit.length ? count(rest, "other open event") : count(rest, "open event")} had no impact traced. </>}
     {status && !checks && hit.length > 0 && "None is checked against your own figures yet: the checks are switched off."}</>;
 

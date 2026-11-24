@@ -3,7 +3,7 @@
   --paper:#F2F4F7; --surface:#FFFFFF; --surface-2:#FAFBFC; --sunken:#EEF0F3;
   --hairline:#DDE1E6; --hairline-2:#CDD2D9; --line-strong:#8A919B; /* line-strong: inputs and data marks, 3:1 on white */
   --ink:#1B1D21; --ink-2:#585C64; --ink-3:#656A73; --focus:#0E7A4B; --accent-strong:#15774A; --accent-strong-hover:#0F5E3A;
-  --accent:#1E9D63; --accent-hover:#16804F; --accent-ink:#0E5234;
+  --accent:#1E9D63; --accent-hover:#16804F; --accent-ink:#157A4B;  /* green text: reads green, not black, and keeps 4.5:1 on paper and cards */
   --accent-soft:#E9F6EF; --accent-line:#BFE6D2; --on-accent:#FFFFFF;
   --brand:#0F3D2E; --brand-cream:#F1F5EC; --brand-candle:var(--high); /* one orange */
   --critical:#CF4040; --critical-soft:#FBECEC; --critical-line:#F1CECE; --critical-ink:#8E2626;
@@ -122,9 +122,10 @@ p { margin:0; }
 .side { background:var(--surface); border-right:1px solid var(--hairline); display:flex; flex-direction:column; min-height:0; }
 .nav { padding:12px 8px; display:flex; flex-direction:column; gap:2px; overflow:auto; flex:1; }
 .nav .grp { margin:16px 12px 8px; }
-.nav a { display:flex; align-items:center; gap:12px; height:34px; padding:0 12px; border-radius:var(--r-nav); color:var(--ink-2); font-weight:500; text-decoration:none; }
-/* hover: a green tint with a green label and icon (both themes); the current page keeps its own highlight */
-.nav a:not([aria-current="page"]):hover { background:color-mix(in srgb, var(--accent) 22%, transparent); color:var(--accent-ink); }
+.nav a { display:flex; align-items:center; gap:12px; height:36px; padding:0 12px; border-radius:var(--r-nav); color:var(--ink-2); font-size:var(--fs-lg); font-weight:500; text-decoration:none; }
+/* hover: a green tint with a green label and icon (both themes); the current page keeps its own highlight. The tint stays
+   light enough (12%) for the green label to keep 4.5:1 */
+.nav a:not([aria-current="page"]):hover { background:color-mix(in srgb, var(--accent) 12%, transparent); color:var(--accent-ink); }
 .nav a:not([aria-current="page"]):hover svg { color:var(--accent); }
 .nav a[aria-current="page"] { background:var(--active-bg); color:var(--ink); font-weight:600; }
 .nav a svg { width:18px; height:18px; flex:none; }
@@ -429,6 +430,6 @@ svg.chart .ax line { stroke:var(--hairline); }
 /* every disclosure row is at least a 24 px target */
 details > summary { min-height:24px; }
 .side-foot .seg { width:100%; }
-.side-foot .seg button { flex:1; padding:0 8px; }
+.side-foot .seg button { flex:1; padding:0 4px; font-size:var(--fs-sm); }
 .crumbs a, .sp-toc-list a { display:inline-block; padding:4px 0; } /* 24 px tall targets */
 .sp-toc-list { gap:0; }

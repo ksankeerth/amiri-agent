@@ -116,7 +116,6 @@
   background:linear-gradient(90deg, var(--accent) 50%, transparent 0) repeat-x 0 100% / 8px 2px; animation:ovdash 1s linear infinite; }
 /* the headline on the same beat: the count glows with step 4, then the underline redraws and the arrow nudges.
    (No fill-mode on the underline: until its first beat it simply shows, fully drawn.) */
-.ovx-hero .ovx-n { animation:ovwake var(--beat) calc(var(--t4) + .1s) ease-out infinite; --c:var(--critical); }
 .ovx-hero[data-state="alert"] .ph-status a b { animation:ovline var(--beat) calc(var(--t4) + .3s) ease-in-out infinite; }
 .ovx-hero[data-state="alert"] .ph-cta .btn svg { animation:ovnudge var(--beat) calc(var(--t4) + .9s) ease-in-out infinite; }
 @keyframes ovrun { 0% { opacity:0; transform:translateX(-20%); } 3%,14% { opacity:1; } 14% { transform:translateX(170%); } 16%,100% { opacity:0; transform:translateX(190%); } }

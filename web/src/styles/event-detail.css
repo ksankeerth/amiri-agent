@@ -17,8 +17,6 @@
 .evd-lede { margin:10px 0 0; font-size:18px; line-height:1.5; color:var(--ink-2); max-width:72ch; }
 .evd-lede b { color:var(--ink); }
 /* only the headline number is underlined (the Events list's convention), on the same slow beat */
-.evd .ev-n { font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; padding-bottom:2px;
-  background:linear-gradient(var(--medium), var(--medium)) no-repeat 0 100% / 100% 3px; animation:ovline 5s .6s ease-in-out infinite; }
 .evd-sim { display:flex; align-items:center; gap:8px; margin:12px 0 0; font-size:15px; color:var(--info-ink); }
 .evd-sim svg { width:16px; height:16px; flex:none; }
 
@@ -131,3 +129,5 @@
 .evd-retry:hover { text-decoration:underline; text-underline-offset:3px; }
 /* every check agrees: the shared result once, under the impacts */
 .evd-shared { display:inline-flex; align-items:center; gap:8px; margin-left:6px; }
+/* how far the event could reach reads in amber, as on the Events list */
+.evd b.amb { color:var(--medium-ink); }

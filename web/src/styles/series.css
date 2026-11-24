@@ -15,6 +15,7 @@
 .sc-anom { margin:0; font-size:15px; color:var(--ink-2); }
 .sc-anom a { color:var(--accent-ink); }
 .sc-det summary { cursor:pointer; padding:4px 0; font-size:15px; font-weight:600; color:var(--accent-ink); }
+.sc-det summary::marker { color:var(--accent-ink); }
 .sc-det .facts { margin:10px 0 0; font-size:15px; grid-template-columns:118px minmax(0,1fr); gap:4px 12px; }
 .sc-det .facts dd .badge, .sc-det .facts dd .pill { margin-left:6px; }
 .sc-foot { display:flex; align-items:center; gap:8px; margin-top:12px; padding-top:10px; border-top:1px solid var(--hairline); }

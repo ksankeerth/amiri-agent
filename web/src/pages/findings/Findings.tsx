@@ -116,7 +116,7 @@ export function FindingsPage() {
   return (
     <div className="page fd">
       <PageHeader eyebrow={`The last ${DAYS} days${loadedAt ? ` · updated ${ago(loadedAt.toISOString(), now)}` : ""}`}
-        title={items === null ? "Findings" : <><span className="fd-n">{xs.length}</span> {xs.length === 1 ? "finding" : "findings"} came in this week</>}
+        title={items === null ? "Findings" : <><span className="fd-n">{count(xs.length, "finding")}</span> came in this week</>}
         status={items === null || !xs.length ? undefined : <>{linked ? <><b>{linked}</b> {into}</> : "None went into an event"}{aside.length ? <>; <b>{aside.length}</b> had no impact on your products</> : null}.
           {waiting ? <> <b>{waiting}</b> {waiting === 1 ? "is" : "are"} still being looked at.</> : " Nothing is waiting to be investigated."}</>}
         actions={<button className="btn" type="button" onClick={refresh}><Icon name="refresh" />Refresh</button>}

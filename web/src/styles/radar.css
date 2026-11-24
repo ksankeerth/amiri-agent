@@ -5,12 +5,10 @@
 .rd .ph-title h1 { font-size:44px; line-height:1.08; letter-spacing:-.03em; max-width:20ch; }
 .rd .ph-status { font-size:var(--fs-lg); color:var(--ink-2); max-width:62ch; }
 .rd .btn--lg { border-radius:var(--r-pill); box-shadow:none; }
-/* like the Overview's count: on one 5 s beat the articles read get an underline that draws in, then the number sent glows.
-   The keyframes (ovline, ovwake) live in shell.css; reduced motion leaves both at rest (underlined, green). */
+/* the headline counts are green and still: numbers aren't animated; only a named thing (an event, a monitor) may glow */
 .rd-n { color:var(--ink); font-variant-numeric:tabular-nums; }
-.rd-n.read { background:linear-gradient(var(--accent), var(--accent)) no-repeat 0 100% / 100% 3px; padding-bottom:2px;
-  animation:ovline 5s .6s ease-in-out infinite; }
-.rd-n.ok { color:var(--accent); --c:var(--accent); animation:ovwake 5s 1.4s ease-out infinite; }
+.rd-n.read { color:var(--accent); }
+.rd-n.ok { color:var(--accent); }
 .rd-link { display:inline-flex; align-items:center; gap:6px; padding:6px 0; border:0; background:none; cursor:pointer; font:600 16px/1.4 var(--font-ui); color:var(--accent-ink); }
 .rd-link:hover { text-decoration:underline; text-underline-offset:3px; }
 
@@ -26,7 +24,6 @@
 .rd-pwhy { padding-left:14px; border-left:3px solid var(--accent); color:var(--ink); }
 
 .rd-filters { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin:32px 0 0; }
-.rd-filters .rd-where { width:220px; flex:none; margin-left:auto; }
 
 /* the two panes */
 /* the two panes fill the rest of the screen and scroll inside themselves; the page doesn't move */
@@ -85,7 +82,6 @@
   .rd-split { flex:none; grid-template-columns:1fr; gap:32px; }
   .rd-index > ol { height:70vh; }
   .rd-read { overflow:visible; }
-  .rd-filters .rd-where { margin-left:0; }
 }
 @media (max-width:600px) { .rd .ph-title h1 { font-size:34px; } }
 /* second layer of the chosen story: what happened, places, sources; the headlines sit one layer deeper */

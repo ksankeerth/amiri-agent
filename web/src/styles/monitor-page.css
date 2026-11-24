@@ -23,10 +23,10 @@
 .mp-lede a { color:inherit; }
 /* where the finding went sits on its own line under it */
 .mp-went { display:block; margin-top:2px; }
-/* the named finding: green and bold, never underlined (the Monitors list's convention); the count carries the underline */
+/* the named finding: green and bold, never underlined (the Monitors list's convention); the count is green and still */
 .mp-lede a.mp-named, .mp-lede b.mp-named { font-weight:700; color:var(--accent-ink); text-decoration:none !important; }
 .mp-lede a.mp-named:hover { text-decoration:underline !important; text-underline-offset:3px; }
-.mp-n { font-weight:700; color:var(--ink); padding-bottom:2px; background:linear-gradient(var(--accent), var(--accent)) no-repeat 0 100% / 100% 3px; }
+.mp-n { font-weight:700; color:var(--accent-ink); }
 .mp-note { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; margin:12px 0 0; padding-left:14px; border-left:3px solid var(--info); font-size:16px; color:var(--ink); max-width:84ch; }
 
 /* where it has got to: dots for the agent's steps, amber while a step waits, blue while it checks, a tick only where a person finished */
