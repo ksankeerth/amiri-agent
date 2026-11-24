@@ -5,8 +5,9 @@ import { Icon } from "./Icon";
 import "../styles/polish-daily.css";
 
 // state, when a page gives one and the count isn't 0: queued (amber, pulsing), busy (blue, a turning arc, dots running down the
-// line to the next step), held (blue and still: a person has it), done (green). `toned` (Alerts): a finished step's count gets a tick, and a
-// selected step keeps its colour.
+// line to the next step), held (blue and still: a person has it), done (green). `toned` is for flows a person moves along (Alerts: acknowledge,
+// resolve; Monitors: submit, approve): the finished step's count gets a tick ("done, by one of you"), and a selected step keeps its
+// colour. Flows the system moves along (Findings) leave it off: their finished step is a green ring without the tick.
 // Reduced motion keeps the colours and stops the movement.
 export interface FlowStep<K extends string> { key: K; label: string; count?: number; state?: "queued" | "busy" | "held" | "done" }
 
