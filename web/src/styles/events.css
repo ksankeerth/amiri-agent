@@ -1,0 +1,96 @@
+/* Events, as a reader: an answering headline, the investigation's queue as one line, then the list beside the chosen event.
+   The Findings/Alerts language: hairlines, no boxes, text 15 px and up. */
+.ev { max-width:1180px; }
+.ev .ico16.rot { transform:rotate(90deg); }
+.ev .ph-title h1 { font-size:44px; line-height:1.08; letter-spacing:-.03em; }
+.ev .ph-status { font-size:var(--fs-lg); color:var(--ink-2); max-width:72ch; }
+.ev .ph-status b { color:var(--ink); }
+/* the count is underlined; the event it names stays green and bold, not underlined too, and glows on the same beat */
+.ev-n { font-variant-numeric:tabular-nums; background:linear-gradient(var(--medium), var(--medium)) no-repeat 0 100% / 100% 3px; padding-bottom:2px;
+  animation:ovline 5s .6s ease-in-out infinite; }
+.ev .ph-status a.ev-name { font-weight:700; color:var(--accent-ink); text-decoration:none; --c:var(--accent); animation:ovwake 5s 1.4s ease-out infinite; }
+.ev .ph-status a.ev-name:hover { text-decoration:underline; text-underline-offset:3px; }
+
+/* the investigation's queue: a hairline on the left, no box; the link to the findings on its own line */
+.ev-note { display:flex; align-items:flex-start; gap:12px; margin:20px 0 0; padding:2px 0 2px 14px; border-left:3px solid var(--line-strong); font-size:15px; color:var(--ink-2); max-width:110ch; }
+.ev-note > svg { width:18px; height:18px; flex:none; margin-top:3px; color:var(--ink-3); }
+.ev-note > svg.warn { color:var(--medium-ink); }
+.ev-note > div { flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:4px; }
+.ev-note p { margin:0; }
+.ev-note b { color:var(--ink); }
+.ev-note a { align-self:flex-start; font-weight:600; color:var(--accent-ink); text-decoration:underline; text-underline-offset:3px; }
+.ev .filters.ev-filters { margin-top:24px; }
+.ev-sort { font-size:15px; color:var(--ink-2); }
+
+/* the list beside the chosen event */
+.ev-split { display:grid; grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:48px; margin-top:28px; }
+/* each group starts with a heading that reads as a heading: a coloured mark, a count, a rule under it; events sit under it */
+.ev-index section + section { margin-top:28px; }
+.ev-index h2 { display:flex; align-items:center; gap:10px; margin:0; padding-bottom:8px; border-bottom:2px solid var(--line);
+  font-size:14px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink); }
+.ev-index h2::before { content:""; width:10px; height:10px; border-radius:50%; flex:none; background:var(--line-strong); }
+.ev-index .hit h2::before { background:var(--critical); }
+.ev-index .none h2 { color:var(--ink-2); }
+.ev-index h2 span { font-size:13px; font-weight:700; letter-spacing:0; padding:1px 8px; border-radius:var(--r-pill); background:var(--sunken); color:var(--ink-2); }
+.ev-index ol { list-style:none; margin:0; padding:0; }
+.ev-index li + li button { border-top:1px solid var(--hairline); }
+.ev-index button { display:flex; flex-direction:column; gap:2px; width:100%; padding:12px 12px 12px 20px; border:0;
+  background:none; text-align:left; cursor:pointer; font:inherit; color:inherit; box-shadow:inset 3px 0 0 transparent; }
+.ev-index button:hover { background:var(--hover-bg); }
+.ev-tt { font-size:18px; font-weight:600; line-height:1.35; color:var(--ink); }
+.ev-index .none .ev-tt { font-size:17px; font-weight:500; color:var(--ink-2); }
+.ev-isub { font-size:15px; color:var(--ink-3); }
+.ev-index button[aria-current="true"] { background:var(--accent-soft); box-shadow:inset 3px 0 0 var(--accent); }
+.ev-index button[aria-current="true"] .ev-tt { color:var(--accent-ink); }
+
+.ev-read { min-width:0; }
+.ev-when { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:0; font-size:15px; color:var(--ink-3); font-variant-numeric:tabular-nums; }
+.ev-read h2 { margin:8px 0 0; font-size:30px; line-height:1.15; letter-spacing:-.02em; color:var(--ink); }
+
+/* an event's brief */
+.ev-brief { padding-top:14px; font-size:16px; line-height:1.55; color:var(--ink-2); max-width:80ch; display:flex; flex-direction:column; gap:12px; }
+.ev-brief p { margin:0; }
+.ev-brief h3 { margin:4px 0 0; font-size:14px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
+.ev-imp { margin:0; padding-left:18px; display:flex; flex-direction:column; gap:4px; }
+.ev-imp b { color:var(--ink); }
+.ev-brief .muted { color:var(--ink-3); }
+.ev-brief a { color:var(--accent-ink); }
+.ev-brief .src-ext { width:13px; height:13px; margin-left:4px; vertical-align:-1px; color:var(--ink-3); }
+.ev-src { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 8px; }
+/* where it started and where it is: outlined labels in their own colours, like the source labels on Findings */
+.ev-lab { display:inline-flex; align-items:center; gap:5px; padding:1px 9px; border:1px solid var(--line-strong); border-radius:var(--r-pill);
+  font:600 14px/1.5 var(--font-ui); color:var(--ink-2); white-space:nowrap; }
+.ev-lab svg { width:14px; height:14px; flex:none; }
+.ev-lab.src-radar { border-color:var(--info-line); color:var(--info-ink); background:var(--info-soft); }
+.ev-lab.src-monitor { border-color:var(--high-line); color:var(--high-ink); background:var(--high-soft); }
+.ev-lab.place { border-color:var(--medium-line); color:var(--medium-ink); background:var(--medium-soft); white-space:normal; }
+.ev-where { display:flex; }
+.ev-facts { display:flex; flex-wrap:wrap; align-items:center; gap:6px 20px; font-size:15px; color:var(--ink-3); }
+.ev-go { display:inline-flex; align-items:center; gap:6px; align-self:flex-start; font-weight:600; text-decoration:none; }
+.ev-go:hover { text-decoration:underline; text-underline-offset:3px; }
+.ev-go svg { width:16px; height:16px; }
+
+/* the admin's run log */
+.ev-runs { margin-top:48px; border-top:2px solid var(--line); padding-top:14px; }
+.ev-runs h2 { margin:0 0 4px; font-size:20px; color:var(--ink-2); display:flex; align-items:baseline; gap:12px; }
+.ev-runs h2 span { font-size:16px; font-weight:600; color:var(--ink-3); }
+.ev-sub { margin:0; font-size:15px; color:var(--ink-3); }
+.ev-lines { list-style:none; margin:12px 0 0; padding:0; }
+.ev-run { display:grid; grid-template-columns:112px minmax(0,1fr) auto; column-gap:16px; align-items:baseline; padding:10px 0; border-top:1px solid var(--hairline); font-size:16px; color:var(--ink); }
+.ev-run time { font-size:15px; color:var(--ink-3); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.ev-run .muted { color:var(--ink-3); }
+.ev-err { display:block; margin-top:2px; font:14px/1.45 var(--font-mono, monospace); color:var(--critical-ink); }
+.ev-run-end { display:inline-flex; align-items:center; gap:10px; justify-self:end; }
+.ev-run-end code { font-size:14px; color:var(--ink-3); }
+.ev-st { font-size:15px; }
+.ev-st.failed { color:var(--critical-ink); }
+.ev-st.stopped_early { color:var(--medium-ink); }
+.ev-st.running { color:var(--info-ink); }
+.ev-more { display:inline-flex; align-items:center; gap:6px; margin-top:4px; padding:10px 0; border:0; background:none; cursor:pointer; font:600 16px/1.4 var(--font-ui); color:var(--accent-ink); }
+
+@media (max-width:900px) {
+  .ev .ph-title h1 { font-size:34px; }
+  .ev-split { grid-template-columns:minmax(0,1fr); gap:24px; }
+  .ev-run { grid-template-columns:minmax(0,1fr); row-gap:4px; }
+  .ev-run-end { justify-self:start; flex-wrap:wrap; }
+}
