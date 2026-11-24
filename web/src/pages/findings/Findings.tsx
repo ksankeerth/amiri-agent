@@ -5,7 +5,7 @@ import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "rea
 import { Link, useLocation } from "react-router-dom";
 import { ApiError } from "../../api/client";
 import { investigationApi, type EventRow, type FindingRow } from "../../api/investigation";
-import { GoLink, PageTitle, QuietWarn, Section, TextButton, TextTabs, ToneMark, ToneWord, TONE_WORD } from "../../components/rd";
+import { PageTitle, QuietWarn, Section, SourceMark, TextButton, TextTabs, ToneMark, ToneWord, TONE_WORD } from "../../components/rd";
 import { Icon } from "../../components/Icon";
 import { errText, isDown, LoadError, ListSkeleton, useNow, useToast } from "../../components/ui";
 import { ago, day, dayTime, plural, until, ZONE_LABEL } from "../../format";
@@ -146,10 +146,14 @@ export function FindingsPage() {
     .map(([key, label]) => ({ key, label, count: nOf(key) }));
 
   const lede = !items ? null : !items.length ? `Nothing found in the last ${DAYS} days.` : <>
-    <b>{items.length} found</b> in the last {DAYS} days.{" "}
-    {[nOf("linked") ? `${nOf("linked")} went into ${count(nEvents, "event")}` : "None went into an event",
-      nOf("set_aside") ? `${nOf("set_aside")} didn't` : "",
-      nPending ? `${nPending} ${nPending === 1 ? "is" : "are"} still with the investigation` : ""].filter(Boolean).join("; ")}.{" "}</>;
+    <b>{items.length} found</b> in the last {DAYS} days.{" "}</>;
+
+  // the week as one thin bar: in an event, not in an event, still with the investigation (always labelled in words)
+  const split = !items?.length ? null : [
+    { k: "in", n: nOf("linked"), word: `in ${count(nEvents, "event")}` },
+    { k: "out", n: nOf("set_aside"), word: "not in an event" },
+    { k: "wait", n: nPending, word: "still with the investigation" },
+  ].filter(x => x.n > 0);
 
   // ---- one finding: the headline is the link; source and time on the right; Details opens it in place
   const row = (f: FindingRow, g: Group): ReactNode => {
@@ -158,20 +162,20 @@ export function FindingsPage() {
     const url = (f as WithEvidence).evidence?.headlines?.find(h => h.url)?.url;
     const isOpen = !!opened[f.finding_id];
     const failed = investigationFailed(f.status, f.outcome?.reason);
-    const headline = url
-      ? <a className="rd-name" href={url} target="_blank" rel="noreferrer">{f.title}<span aria-hidden="true"> ↗</span><span className="sr"> (opens the article)</span></a>
-      : src ? <Link className="rd-name" to={src}>{f.title}</Link> : f.title;
     return (
       <li key={f.finding_id} id={id} className={`fd-row${target === id ? " fd-target" : ""}`}>
         <div className="fd-line">
-          <span className="fd-t">{headline}</span>
-          <span className="fd-m" title={longWhen(f.created_at)}>{si.label} · {dayTime(f.created_at)}</span>
-          <TextButton aria-expanded={isOpen} aria-controls={`${id}-d`} onClick={() => setOpened(o => ({ ...o, [f.finding_id]: !o[f.finding_id] }))}>
-            {isOpen ? "Hide" : "Details"}<span className="sr"> for {f.title}</span></TextButton>
+          <SourceMark source={f.source} />
+          <button type="button" className="rd-tgl fd-t" title={f.title} aria-expanded={isOpen} aria-controls={`${id}-d`}
+            onClick={() => setOpened(o => ({ ...o, [f.finding_id]: !o[f.finding_id] }))}>
+            <span className="rd-clamp1 rd-tgl-t">{f.title}</span></button>
+          <span className="fd-m" title={`${si.label}, ${longWhen(f.created_at)}`}>{dayTime(f.created_at)}</span>
+          {url ? <a className="fd-x" href={url} target="_blank" rel="noreferrer" title="Open the article"><span aria-hidden="true">↗</span>
+            <span className="sr">Open the article for {f.title} (opens a new tab)</span></a> : <span className="fd-x" />}
         </div>
         {g.kind === "out" && <div className="fd-what">{failed
-          ? <><ToneWord tone="mixed">Couldn't be investigated</ToneWord><span>· the investigation couldn't run on it</span></>
-          : <><ToneWord tone="neutral">No impact found</ToneWord><span>· {whyText(f)}</span></>}</div>}
+          ? <><ToneWord tone="mixed">Couldn't be investigated</ToneWord><span className="rd-clamp1" title="The investigation couldn't run on it">· the investigation couldn't run on it</span></>
+          : <><ToneWord tone="neutral">No impact found</ToneWord><span className="rd-clamp1" title={whyText(f)}>· {whyText(f)}</span></>}</div>}
         {g.kind === "waiting" && <div className="fd-what">Waiting to be investigated{nextBatch ? `: the next batch goes ${nextBatch}` : ""}</div>}
         {g.kind === "investigating" && <div className="fd-what">Being investigated{f.run_started_at ? `, started ${ago(f.run_started_at, now)}` : ""}
           {f.run_status === "running" && f.run_id && <span className="fd-checks">
@@ -180,6 +184,7 @@ export function FindingsPage() {
         {isOpen && <div id={`${id}-d`} className="rd-open rd-prose fd-opened">
           {f.explanation && <p>{f.explanation}</p>}
           <p className="rd-fine">
+            <span>{si.label}, {longWhen(f.created_at)}</span>
             {src && <Link className="rd-go" to={src}>{SOURCE_GO[f.source] ?? `Open ${si.label}`} →</Link>}
             {sig && <span>{sig[0]}</span>}
           </p>
@@ -187,14 +192,13 @@ export function FindingsPage() {
       </li>);
   };
 
-  const groupView = (g: Group, gi: number): ReactNode => {
+  const groupView = (g: Group): ReactNode => {
     const limit = g.kind === "event" ? SHOW_NEWEST : SHOW_OTHERS;
     const expanded = more[g.key] ?? (g.key === targetGroup);
     const shown = expanded ? g.items : g.items.slice(0, limit);
     const hidden = g.items.length - limit;
     const ev = g.eventId ? events[g.eventId] : undefined;
-    const meta = <span className="rd-dots"><span>{count(g.items.length, "finding")}</span>{g.kind === "event" && <span>{spanOf(g.items)}</span>}
-      {gi === 0 && <span>{ZONE_LABEL} time</span>}</span>;
+    const meta = <span className="rd-dots"><span>{count(g.items.length, "finding")}</span>{g.kind === "event" && <span>{spanOf(g.items)}</span>}</span>;
     const name = g.kind === "event" ? (ev ? eventTitle(ev) : "An event")
       : g.kind === "waiting" ? "Waiting to be investigated" : g.kind === "investigating" ? "Being investigated" : "Not in an event";
     const title = g.kind === "event"
@@ -202,7 +206,7 @@ export function FindingsPage() {
           {g.eventId ? <Link className="rd-name" to={`/events/${g.eventId}`}>{name}</Link> : name}</>
       : name;
     return (
-      <Section key={g.key} className="fd-grp" title={title} meta={meta} action={g.eventId ? <GoLink to={`/events/${g.eventId}`}>Open the event</GoLink> : undefined}>
+      <Section key={g.key} className="fd-grp" title={title} meta={meta}>
         {g.kind === "waiting" && <div className="fd-wait"><span>
           <b>{count(g.items.length, "finding")} waiting</b>{status?.connected && nextBatch ? ` · next batch ${nextBatch}` : ""}</span>
           {status?.connected && <InvestigateNow onDone={refresh} />}</div>}
@@ -221,10 +225,15 @@ export function FindingsPage() {
           <TextButton onClick={refresh}><span aria-hidden="true">↻ </span>Refresh</TextButton></>}
         lede={lede ? <>{lede}<TextButton aria-expanded={help} aria-controls={helpId} onClick={() => setHelp(h => !h)}>How this works</TextButton></> : undefined}
         help={<>
-          {items && items.length > 0 && <p className="rd-fine fd-sources">{sources.join(" · ")}</p>}
+          {split && <div className="fd-splitwrap">
+            <div className="fd-split" role="img" aria-label={split.map(x => `${x.n} ${x.word}`).join(", ")}>
+              {split.map(x => <span key={x.k} className={`fd-seg fd-seg-${x.k}`} style={{ flexGrow: x.n }} />)}</div>
+            <p className="rd-fine fd-legend">{split.map(x => <span key={x.k}><i className={`fd-key fd-seg-${x.k}`} aria-hidden="true" />{x.n} {x.word}</span>)}
+              <span>Times are {ZONE_LABEL} time</span></p></div>}
           <div id={helpId} className="rd-open rd-prose rd-help" hidden={!help}>
             <p>A finding is something a monitor, a market series or Radar noticed. Each one goes to the investigation, which
-              links it to an event or finds no impact on your products. Findings from tests aren't shown.</p></div></>} />
+              links it to an event or finds no impact on your products. Findings from tests aren't shown.</p>
+            {sources.length > 0 && <p className="rd-fine">{sources.join(" · ")}</p>}</div></>} />
       {err != null && (items === null ? <LoadError error={err} onRetry={refresh} what="the findings" />
         : <QuietWarn>Couldn't refresh: {isDown(err) ? "Amiri Agent didn't answer" : errText(err)}. Showing what was loaded.</QuietWarn>)}
 
@@ -234,7 +243,7 @@ export function FindingsPage() {
         : !groups.length ? <div className="rd-empty">
           <p className="rd-lede">{show === "all" ? "When a monitor, a market series or Radar notices something, it appears here." : "None in this group. Choose another above."}</p>
           {show === "all" && <Link className="btn btn--primary" to="/monitors">See your monitors</Link>}</div>
-        : <div className="fd-groups">{groups.map(groupView)}</div>}
+        : <div className="fd-groups">{groups.map(g => groupView(g))}</div>}
     </div>
   );
 }

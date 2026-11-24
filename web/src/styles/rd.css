@@ -197,3 +197,16 @@ a.rd-fig:hover .rd-fig-l { text-decoration:underline; text-underline-offset:3px;
 .rd a.rd-name:not(.btn):not(.strong):not(.chip):hover, .rd a.rd-go:not(.btn):not(.strong):not(.chip):hover { text-decoration:underline; text-underline-offset:3px; }
 .rd a.rd-go { font-weight:600; }
 .rd a:focus-visible { outline:2px solid var(--focus); outline-offset:3px; border-radius:4px; }
+
+/* ---------- text density (24 Nov): long text is clamped, with the full text in a title attribute and reachable in place */
+.rd-clamp1, .rd-clamp2 { display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+.rd-clamp1 { -webkit-line-clamp:1; line-clamp:1; }
+.rd-clamp2 { -webkit-line-clamp:2; line-clamp:2; }
+/* a row's title that opens its details: reads as the title, not as a button */
+.rd-tgl { display:block; width:100%; background:none; border:0; padding:0; margin:0; font:inherit; font-weight:inherit; color:inherit; text-align:left; cursor:pointer; }
+.rd-tgl:hover .rd-tgl-t { text-decoration:underline; text-underline-offset:3px; }
+/* a source said as the sidebar's icon, with its name for screen readers and as a tooltip */
+.rd-src { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; color:var(--ink-3); flex:none; }
+.rd-src svg { width:16px; height:16px; }
+/* a small column heading said once above a list of rows */
+.rd-colh { font-size:14px; font-weight:600; color:var(--ink-3); }

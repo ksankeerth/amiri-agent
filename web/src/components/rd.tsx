@@ -2,7 +2,8 @@
 // and tiles, so the same thing looks and reads the same everywhere.
 import { useId, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { VERDICT_LABEL, type VerdictKey } from "../plain";
+import { VERDICT_LABEL, sourceInfo, type VerdictKey } from "../plain";
+import { Icon } from "./Icon";
 import { readFold, writeFold } from "./foldStore";
 import "../styles/rd.css";
 
@@ -178,4 +179,11 @@ export function TextButton({ children, onClick, disabled, title, ...rest }: {
 /** A navigation link in the action colour, with an arrow ("Open the event →"). For named things use `.rd-name`. */
 export function GoLink({ to, children }: { to: string; children: ReactNode }) {
   return <Link className="rd-go" to={to}>{children} →</Link>;
+}
+
+/** A finding's source as the sidebar's icon (Monitors, Radar, Market series), named for screen readers and as a tooltip. */
+const SOURCE_ICON: Record<string, string> = { monitor: "monitor", radar: "radar", timeseries: "series", studio: "studio" };
+export function SourceMark({ source }: { source: string }) {
+  const label = sourceInfo(source).label;
+  return <span className="rd-src" role="img" aria-label={label} title={label}><Icon name={SOURCE_ICON[source] ?? "info"} /></span>;
 }
