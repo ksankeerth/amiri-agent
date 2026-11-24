@@ -9,6 +9,9 @@ export type Tone = "red" | "amber" | "green" | "grey" | "blue";
 
 /** "finance company" → "Finance company". The one capitaliser: use it rather than writing another. */
 export const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+/** A headline without the date some outlets put on its end ("… today (Nov. 23, 2026)"); the page shows the date beside it. */
+export const undated = (t: string) =>
+  t.replace(/\s*[([]?\s*[-–—|,]?\s*(?:\w{3,9}\.?\s+\d{1,2},?\s+\d{4}|\d{1,2}\s+\w{3,9}\.?,?\s+\d{4}|\d{4}-\d{2}-\d{2})\s*[)\]]?\s*$/, "") || t;
 /** A code as words: "finance_company" → "finance company". */
 export const words = (s: string) => s.replace(/[_-]+/g, " ").trim();
 

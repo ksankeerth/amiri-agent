@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { placeName, placeOrder } from "./format.ts";
-import { alertOrder, checkMove, dateRange, eventTitle, signalStrength, impactText, listText, productAngle, relDay, sizeTiming, splitCheckText, themeLabel, verdictTone } from "./plain.ts";
+import { alertOrder, checkMove, dateRange, eventTitle, signalStrength, impactText, listText, productAngle, relDay, sizeTiming, splitCheckText, themeLabel, undated, verdictTone } from "./plain.ts";
 
 test("themes read as short phrases, not machine text", () => {
   assert.equal(themeLabel({ theme: "commodities", direction: "up", item: "oil" }), "Oil prices up");
@@ -88,4 +88,12 @@ test("a source's score reads as a signal strength in words", () => {
   assert.deepEqual(signalStrength(1), ["Weak signal", "grey"]);  // 1 of 100, not a fraction meaning 100 %
   assert.deepEqual(signalStrength(31), ["Weak signal", "grey"]);
   assert.equal(signalStrength(null), null);
+});
+
+test("headlines drop a trailing date, nothing else", () => {
+  assert.equal(undated("US/Israel-Iran war: What UAE residents need to know today (Nov. 23, 2026)"), "US/Israel-Iran war: What UAE residents need to know today");
+  assert.equal(undated("Oil jumps - 23 November 2026"), "Oil jumps");
+  assert.equal(undated("Rupee report [2026-11-23]"), "Rupee report");
+  assert.equal(undated("Gulf jobs cut by 2026"), "Gulf jobs cut by 2026");
+  assert.equal(undated("Strait of Hormuz closed"), "Strait of Hormuz closed");
 });
