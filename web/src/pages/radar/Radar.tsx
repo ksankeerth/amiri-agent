@@ -4,13 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { inst, type Profile } from "../../api/institutions";
+import { investigationApi } from "../../api/investigation";
 import { gb, radarApi, scheduleText, type RadarStatus, type RadarStory } from "../../api/radar";
 import { ChipFilter } from "../../components/FlowFilter";
 import { Icon } from "../../components/Icon";
 import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
 import { Banner, Empty, useNow, useRole, useToast, ListSkeleton, LoadError } from "../../components/ui";
 import { ago, dayTime, person, placeName, placeOrder, when } from "../../format";
-import type { Tone } from "../../plain";
+import { investigationFailed, setAsideReason, type Tone } from "../../plain";
 import { themeText } from "../events/Events";
 import "../../styles/showcase.css";
 import "../../styles/polish-forms.css";
@@ -28,7 +29,16 @@ function Funnel({ s }: { s: RadarStatus }) {
     <span className="sent"><b>{r.sent ?? 0}</b> sent to you</span></span>;
 }
 
-function StoryCard({ s, names, onChange }: { s: RadarStory; names: Record<string, string | null>; onChange: (s: RadarStory) => void }) {
+/** Where a sent story stands when it isn't in an event. "set_aside" covers both a judgement (no impact) and a run the
+ *  investigation agent refused or lost: the finding's reason tells them apart (unknown when it's older than the list). */
+function sentOutcome(s: RadarStory, reason: string | null | undefined): [string, Tone, string] {
+  if (s.finding_status === "grouped") return ["Being investigated", "blue", "the investigation is running"];
+  if (investigationFailed(s.finding_status, reason)) return ["Couldn't be investigated", "amber", "the investigation agent refused or lost the run"];
+  if (s.finding_status === "set_aside") return reason ? ["No impact found", "grey", setAsideReason(reason)] : ["Not in an event", "grey", "the investigation set it aside"];
+  return ["Sent", "blue", "waiting to be investigated"];
+}
+
+function StoryCard({ s, names, reason, onChange }: { s: RadarStory; names: Record<string, string | null>; reason?: string | null; onChange: (s: RadarStory) => void }) {
   const toast = useToast();
   const { role } = useRole();
   const now = useNow(60_000);
@@ -62,7 +72,7 @@ function StoryCard({ s, names, onChange }: { s: RadarStory; names: Record<string
       <div className="row wrap" style={{ gap: 8 }}>
         {s.status === "sent" ? (s.event_id
           ? <><StatusPill tone="green">In an event</StatusPill><Link className="small" to={`/events/${s.event_id}`}>{s.event_title ?? "Open the event"}</Link></>
-          : <><StatusPill tone="blue">{s.finding_status === "grouped" ? "Being investigated" : "Sent"}</StatusPill><span className="small muted">waiting to be investigated</span></>)
+          : (() => { const [label, tone, note] = sentOutcome(s, reason); return <><StatusPill tone={tone}>{label}</StatusPill><span className="small muted">{note}</span></>; })())
           : s.status === "dismissed" ? <><StatusPill tone="grey">Dismissed</StatusPill><span className="small muted">by {person(s.dismissed_by)} {s.dismissed_at ? ago(s.dismissed_at, now) : ""}</span></>
           : <><StatusPill tone="grey">Not sent</StatusPill><span className="small muted">Radar judged it not important enough for you</span></>}
         {s.status === "sent" && s.sent_by && s.sent_by !== "agent" && <span className="small muted">sent by {person(s.sent_by)}</span>}
@@ -91,11 +101,15 @@ export function RadarPage() {
   const [running, setRunning] = useState<string | null>(null);
   const [why, setWhy] = useState<string | null>(null);  // the watched place whose reason is open
   const [places, setPlaces] = useState(false);  // the watched places, folded to one line until asked
+  const [reasons, setReasons] = useState<Record<string, string | null>>({});  // why each set-aside finding was set aside
 
   const load = useCallback(async () => {
     try {
       const [st, ss] = await Promise.all([radarApi.status(), radarApi.stories({ status: show === "all" ? undefined : show, place: place || undefined })]);
       setStatus(st); setItems(ss); setErr(null);
+      if (ss.some(x => x.finding_status === "set_aside"))  // a failed run and "no impact" share a status: the finding's reason tells them apart
+        investigationApi.findings("?world=live&status=set_aside&limit=200")
+          .then(fs => setReasons(Object.fromEntries(fs.map(f => [f.finding_id, f.outcome?.reason ?? null])))).catch(() => {});
     } catch (e) { setErr(e); }
   }, [show, place]);
   useEffect(() => { load(); const t = setInterval(load, 60_000); return () => clearInterval(t); }, [load]);
@@ -188,7 +202,7 @@ export function RadarPage() {
           : !items.length ? <div className="card"><Empty icon="radar" title={show === "all" ? "No stories yet" : "Nothing here"}
             actions={show === "all" && !status?.connected ? <Link className="btn" to="/institution/agents">See what Radar will read</Link> : undefined}>
             {show === "all" ? (status?.connected ? "Radar hasn't found anything touching your footprint yet. Check now runs it at once." : admin ? "Connect the Radar agent (RADAR_URL) and it starts reading the news." : "Radar starts reading the news once your Platform Admin connects it.") : "No stories in this group."}</Empty></div>
-          : items.map(s => <StoryCard key={s.story_id} s={s} names={names} onChange={x => setItems(xs => xs?.map(y => (y.story_id === x.story_id ? x : y)) ?? null)} />)}
+          : items.map(s => <StoryCard key={s.story_id} s={s} names={names} reason={s.finding_id ? reasons[s.finding_id] : undefined} onChange={x => setItems(xs => xs?.map(y => (y.story_id === x.story_id ? x : y)) ?? null)} />)}
       </div>
     </div>
   );

@@ -28,6 +28,7 @@ const longDate = (now: Date) => new Intl.DateTimeFormat("en-GB", { weekday: "lon
 
 function findingStatus(f: Overview["findings"][number]) {
   if (f.event_id) return "in an event";
+  if (f.status === "set_aside" && f.reason === "investigation_failed") return "couldn't be investigated";
   return { new: "waiting to be investigated", grouped: "being investigated", linked: "in an event", set_aside: `no impact found${f.reason ? `: ${setAsideReason(f.reason)}` : ""}` }[f.status] ?? f.status;
 }
 /** A server note in plain words where it uses series wording ("No new bar since …"). */

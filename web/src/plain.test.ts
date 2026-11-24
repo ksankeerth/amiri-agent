@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { placeName, placeOrder } from "./format.ts";
-import { alertChangeText, alertOrder, anchorLabel, checkMove, dateRange, eventTitle, signalStrength, impactText, listText, productAngle, relDay, sizeTiming, splitCheckText, themeLabel, verdictTone } from "./plain.ts";
+import { alertChangeText, alertOrder, anchorLabel, checkMove, findingOutcome, investigationFailed, dateRange, eventTitle, signalStrength, impactText, listText, productAngle, relDay, sizeTiming, splitCheckText, themeLabel, verdictTone } from "./plain.ts";
 
 test("themes read as short phrases, not machine text", () => {
   assert.equal(themeLabel({ theme: "commodities", direction: "up", item: "oil" }), "Oil prices up");
@@ -104,4 +104,12 @@ test("an event's anchor says what happened then, not that Amiri Agent noticed it
   assert.equal(anchorLabel("move_start"), "Prices moved");
   assert.equal(anchorLabel("effective_from"), "Takes effect");
   assert.equal(anchorLabel(undefined), "Happened");
+});
+
+test("a finding the investigation couldn't take is not shown as 'no impact found'", () => {
+  assert.deepEqual(findingOutcome("set_aside", "investigation_failed"), ["Couldn't be investigated", "amber"]);
+  assert.deepEqual(findingOutcome("set_aside", "not_home_country"), ["No impact found", "grey"]);
+  assert.deepEqual(findingOutcome("linked", null), ["In an event", "green"]);
+  assert.equal(investigationFailed("set_aside", "investigation_failed"), true);
+  assert.equal(investigationFailed("linked", "investigation_failed"), false);
 });

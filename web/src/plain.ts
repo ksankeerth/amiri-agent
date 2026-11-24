@@ -213,6 +213,13 @@ export const ruleText = (k: number) => `flags a move ${k}× bigger than usual`;
 export const FINDING_STATUS: Record<string, [string, Tone]> = {
   new: ["Waiting", "grey"], grouped: ["Being investigated", "blue"], linked: ["In an event", "green"], set_aside: ["No impact found", "grey"],
 };
+/** Set aside because the investigation agent refused or lost the run: nobody judged it, so it isn't "no impact". */
+export const investigationFailed = (status?: string | null, reason?: string | null) => status === "set_aside" && reason === "investigation_failed";
+/** What became of a finding, in words: "set aside" covers both a judgement (no impact) and a failure (not investigated). */
+export function findingOutcome(status: string, reason?: string | null): [string, Tone] {
+  if (investigationFailed(status, reason)) return ["Couldn't be investigated", "amber"];
+  return FINDING_STATUS[status] ?? [words(status), "grey"];
+}
 // why the investigation set a finding aside, in a few words
 export const SET_ASIDE_REASON: Record<string, string> = {
   not_home_country: "not about a place where you operate",

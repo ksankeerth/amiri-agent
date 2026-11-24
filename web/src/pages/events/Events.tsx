@@ -9,7 +9,7 @@ import { FlowFilter } from "../../components/FlowFilter";
 import { Icon } from "../../components/Icon";
 import { Banner, Empty, useNow, useRole, useToast, InlineSkeleton, LoadError } from "../../components/ui";
 import { ago, dayTime, until, plural } from "../../format";
-import { count, eventTitle, longWhen, sourceInfo, themeLabel } from "../../plain";
+import { count, eventTitle, investigationFailed, longWhen, sourceInfo, themeLabel } from "../../plain";
 import { DAYS, useRecentFindings } from "../findings/recent";
 
 /** A theme tag in words ("Oil prices up"): the Overview and Radar use it too. */
@@ -129,6 +129,8 @@ export function EventsPage() {
   const refresh = () => { load(); recent.load(); };
   const inProgress = (recent.items ?? []).filter(f => f.status === "grouped");
   const noEvent = (recent.items ?? []).filter(f => f.status === "set_aside");
+  // "set aside" holds both judgements and runs the agent refused: only the first are "no impact found"
+  const notInvestigated = noEvent.filter(f => investigationFailed(f.status, f.outcome?.reason)).length;
   useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t); }, [load]);
   const nSim = (events ?? []).filter(e => e.world !== "live").length;
   const shown = (events ?? []).filter(e => sim || e.world === "live");  // what the status filter counts
@@ -166,7 +168,9 @@ export function EventsPage() {
         { value: open.length, label: "Open events", sub: open.length ? "news still coming in" : "none right now", tone: open.length ? "blue" : "grey", icon: "events" },
         { value: bad, label: "Bad for you", sub: "open events", tone: bad ? "red" : "grey", icon: "bad" },
         { value: inProgress.length, label: "Being investigated", sub: inProgress.length ? inProgress[0].title : "nothing right now", tone: inProgress.length ? "blue" : "grey", icon: "search" },
-        { value: noEvent.length, label: "No impact found", sub: `last ${DAYS} days`, tone: "grey", icon: "check" },
+        { value: noEvent.length - notInvestigated, label: "No impact found",
+          sub: notInvestigated ? `last ${DAYS} days · ${notInvestigated} couldn't be investigated` : `last ${DAYS} days`,
+          tone: notInvestigated ? "amber" : "grey", icon: "check" },
       ]} />}
       <div className="filters">
         <FlowFilter label="Which events" value={show} onChange={setShow} all={{ key: "all", label: "All", count: shown.length }}

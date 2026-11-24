@@ -9,7 +9,7 @@ import { FlowFilter } from "../../components/FlowFilter";
 import { Icon } from "../../components/Icon";
 import { Banner, Empty, errText, InlineSkeleton, isDown, LoadError, useNow, useToast } from "../../components/ui";
 import { ago, dayTime, until } from "../../format";
-import { count, eventTitle, FINDING_STATUS, longWhen, signalStrength, sourceInfo } from "../../plain";
+import { count, eventTitle, findingOutcome, investigationFailed, longWhen, signalStrength, sourceInfo } from "../../plain";
 import "../../styles/daily.css";
 import "../../styles/polish-daily.css";
 import { InvestigateNowButton, useInvestigationStatus } from "../events/Events";
@@ -73,7 +73,7 @@ export function FindingsPage() {
         </Banner>)}
       <div className="filters"><FlowFilter label="Which findings" value={show} onChange={setShow} all={{ key: "all", label: "All", count: n("all") }}
         steps={[{ key: "new", label: "Waiting", count: n("new") }, { key: "grouped", label: "Being investigated", count: n("grouped") },
-          [{ key: "linked", label: "In an event", count: n("linked") }, { key: "set_aside", label: "No impact found", count: n("set_aside") }]]} /></div>
+          [{ key: "linked", label: "In an event", count: n("linked") }, { key: "set_aside", label: "Not in an event", count: n("set_aside") }]]} /></div>
       <div className="card mt12">
         {items === null ? (err == null && <InlineSkeleton />) : !rows.length ? (
           <Empty icon="search" title={show === "all" ? `Nothing found in the last ${DAYS} days` : "None in this group"}
@@ -81,7 +81,8 @@ export function FindingsPage() {
             {show === "all" ? "When a monitor, a market series or Radar notices something, it appears here." : "Choose another group above."}</Empty>
         ) : (
           <ul className="evlist" aria-label="Findings">{rows.map(f => {
-            const [label, tone] = FINDING_STATUS[f.status];
+            const [label, tone] = findingOutcome(f.status, f.outcome?.reason);
+            const failed = investigationFailed(f.status, f.outcome?.reason);
             const si = sourceInfo(f.source), src = sourceLink(f);
             const ev = f.outcome?.event_id ? events[f.outcome.event_id] : undefined;
             const url = (f as WithEvidence).evidence?.headlines?.find(h => h.url)?.url;
@@ -98,7 +99,9 @@ export function FindingsPage() {
                       {f.status === "new" && <>Waiting to be investigated{nextBatch ? `: the next batch goes ${nextBatch}` : ""}</>}
                       {f.status === "grouped" && <>Being investigated{f.run_started_at ? `, started ${ago(f.run_started_at, now)}` : ""}</>}
                       {f.status === "linked" && f.outcome?.event_id && <>In the event <Link to={`/events/${f.outcome.event_id}`}>{ev ? eventTitle(ev) : "open the event"}</Link></>}
-                      {f.status === "set_aside" && <>No impact found: {reasonText(f) || "no link to your products"}</>}
+                      {f.status === "set_aside" && (failed
+                        ? <>Not investigated: the investigation agent refused or lost the run, so nobody judged it</>
+                        : <>No impact found: {reasonText(f) || "no link to your products"}</>)}
                     </span>
                     {f.explanation && <span className="row-d fd-expl">{f.explanation}</span>}
                     {f.status === "grouped" && f.run_status === "running" && f.run_id && <span className="row wrap">
