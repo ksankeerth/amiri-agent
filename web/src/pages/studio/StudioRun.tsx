@@ -133,9 +133,14 @@ export function StudioRunPage() {
   const exp = sim.summary.stories.filter(s => s.expected);
   const foundN = exp.filter(s => s.found).length;
   const story = timeline.filter(t => STORY.has(t.kind));
-  const rows = [...(showAll ? timeline : story)].reverse();
-  const hasSteps = timeline.length > story.length;
-  const lastHead = heads[heads.length - 1];
+  const rows = [...timeline].reverse();
+  // by default one line per simulated day, newest first; "Show all" opens the full list underneath
+  const days = [...new Set(story.map(t => t.step))].sort((a, b) => b - a).map(d => {
+    const xs = story.filter(t => t.step === d);
+    const hs = xs.filter(t => t.kind === "headline").length, fs = xs.filter(t => t.kind === "finding").length;
+    const evs = xs.filter(t => t.kind === "event");
+    return { day: d, at: xs[0].at, hs, fs, evs };
+  });
 
   return (
     <div className="page rd rd-studio">
@@ -152,7 +157,7 @@ export function StudioRunPage() {
       {active && sim.pending.length > 0 && <p className="rds-quiet">Waiting for {sim.pending.map(p => `the ${p.kind === "check" ? "monitor agent" : "investigation agent"} (${p.seconds} s)`).join(" and ")}. The clock moves on when {sim.pending.length > 1 ? "they answer" : "it answers"}.</p>}
 
       <Figures label="What Amiri Agent has done so far" size={36} items={[
-        { value: heads.length, label: "headlines read", sub: lastHead ? `latest: ${lastHead.data.title}` : "waiting for the first day" },
+        { value: heads.length, label: "headlines read", sub: heads.length ? undefined : "waiting for the first day" },
         { value: findings.length, label: "findings", sub: findingsSplit(timeline) },
         { value: sim.events.length, label: "events traced to you", sub: eventsSplit(sim.events) },
         { value: sim.alerts.length ? <><span className="rd-shape" aria-hidden="true" style={{ fontSize: "0.8em" }}>▲</span>{sim.alerts.length}</> : 0, label: "team alerts", hot: sim.alerts.length > 0,
@@ -186,9 +191,9 @@ export function StudioRunPage() {
         {!sim.alerts.length ? <p className="rd-row-d" style={{ marginTop: 12 }}>{active ? "None yet. An alert appears when an event is traced to a product's risk." : "No event in this run puts a product at risk."}</p>
           : sim.alerts.map((a, n) => (
             <div key={n} className="rd-row">
-              <div className="rd-row-t">{a.title}</div>
-              <div className="rd-row-d">{a.owner} · {listText([...new Set(a.effects.map(x => x.product))])}</div>
-              <div className="rd-row-m">From <Link className="rd-name" to={`/events/${a.event_id}`}>{evName(a.event_id, a.event_title)}</Link></div>
+              <div className="rd-row-t rd-clamp1" title={a.title}>{a.title}</div>
+              <div className="rd-row-d rd-clamp1" title={`${a.owner} · ${listText([...new Set(a.effects.map(x => x.product))])}`}>{a.owner} · {listText([...new Set(a.effects.map(x => x.product))])}</div>
+              <div className="rd-row-m rd-clamp1">From <Link className="rd-name" to={`/events/${a.event_id}`}>{evName(a.event_id, a.event_title)}</Link></div>
             </div>))}
       </Section>
 
@@ -196,25 +201,33 @@ export function StudioRunPage() {
         {!sim.events.length ? <p className="rd-row-d" style={{ marginTop: 12 }}>None yet. The first investigation starts after day 2, so a story's first findings go in together.</p>
           : sim.events.map(e => (
             <div key={e.event_id} className="rd-row">
-              <div className="rd-row-t"><ToneMark tone={e.tone} label={TONE_WORD[e.tone]} /><Link className="rd-name" to={`/events/${e.event_id}`}>{eventTitle({ title: e.title, themes: e.themes })}</Link></div>
-              <div className="rd-row-m">{TONE_WORD[e.tone]}{e.themes.length ? ` · ${[...new Set(e.themes.map(themeLabel))].join(", ")}` : ""} · {plural(e.effects, "possible impact")}{e.developments ? ` · ${plural(e.developments, "later finding")} joined` : ""}</div>
+              <div className="rd-row-t rd-clamp1" title={eventTitle({ title: e.title, themes: e.themes })}><ToneMark tone={e.tone} label={TONE_WORD[e.tone]} /><Link className="rd-name" to={`/events/${e.event_id}`}>{eventTitle({ title: e.title, themes: e.themes })}</Link></div>
+              <div className="rd-row-m rd-clamp1">{[e.themes.length ? [...new Set(e.themes.map(themeLabel))].join(", ") : "", plural(e.effects, "possible impact"), e.developments ? `${plural(e.developments, "later finding")} joined` : ""].filter(Boolean).join(" · ")}</div>
             </div>))}
       </Section>
       </div>
 
       <Section title="What happened" meta={`newest first · ${ZONE_LABEL} time`} className="rds-happ">
         {!rows.length ? <p className="rd-row-d" style={{ marginTop: 12 }}>Press Play or Step: each simulated day's headlines, findings and events appear here.</p>
-          : rows.map(t => {
+          : <ul className="rds-days" aria-label="One line for each simulated day">{days.map(d => (
+            <li key={d.day} className="rd-dots" title={dayTime(d.at)}><b className="rds-dn">Day {d.day}</b>
+              <span>{[d.hs ? plural(d.hs, "headline") : "", d.fs ? plural(d.fs, "finding") : ""].filter(Boolean).join(" · ")}</span>
+              {d.evs.length > 0 && <span className="rds-evf">{d.evs.length === 1 && d.evs[0].ref
+                ? <Link className="rd-name" to={`/events/${d.evs[0].ref}`} title={eventTitle({ title: d.evs[0].data.title, themes: d.evs[0].data.themes })}>event formed</Link>
+                : `${d.evs.length} events formed`}</span>}
+            </li>))}</ul>}
+        {timeline.length > 0 && <p className="rds-showall"><TextButton aria-expanded={showAll} aria-controls="rds-all" onClick={() => setShowAll(a => !a)}>
+          {showAll ? "Show one line per day" : `Show all ${timeline.length}, including the agents' own steps`}</TextButton></p>}
+        {showAll && <div id="rds-all">{rows.map(t => {
             const isStep = !STORY.has(t.kind);
             const tone = t.kind === "event" ? t.data.tone : null;
+            const title = t.kind === "event" && t.ref ? eventTitle({ title: t.data.title, themes: t.data.themes }) : line(t);
             return <div key={t.seq} className={`rd-row${isStep ? " rds-step" : ""}`}>
-              <div className="rd-row-t">{tone && <ToneMark tone={tone} label={TONE_WORD[tone as keyof typeof TONE_WORD]} />}
-                {t.kind === "event" && t.ref ? <Link className="rd-name" to={`/events/${t.ref}`}>{eventTitle({ title: t.data.title, themes: t.data.themes })}</Link> : line(t)}</div>
-              <div className="rd-row-m">Day {t.step} · {dayTime(t.at)}{KIND[t.kind] ? ` · ${KIND[t.kind]}` : ""}{t.kind === "headline" && t.data.outlet ? ` · ${t.data.outlet}` : ""}{t.kind === "event" ? ` · ${plural(t.data.effects, "effect")} to watch` : ""}</div>
+              <div className="rd-row-t rd-clamp1" title={title}>{tone && <ToneMark tone={tone} label={TONE_WORD[tone as keyof typeof TONE_WORD]} />}
+                {t.kind === "event" && t.ref ? <Link className="rd-name" to={`/events/${t.ref}`}>{title}</Link> : title}</div>
+              <div className="rd-row-m">Day {t.step} · {dayTime(t.at)} · {t.kind === "headline" && t.data.outlet ? t.data.outlet : t.kind === "event" ? `${plural(t.data.effects, "effect")} to watch` : KIND[t.kind] || "Note"}</div>
             </div>;
-          })}
-        {hasSteps && <p className="rds-showall"><TextButton aria-expanded={showAll} onClick={() => setShowAll(a => !a)}>
-          {showAll ? "Show only headlines, findings and events" : `Show all ${timeline.length}, including the agents' own steps`}</TextButton></p>}
+          })}</div>}
       </Section>
     </div>
   );

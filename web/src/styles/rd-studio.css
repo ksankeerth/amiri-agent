@@ -117,3 +117,9 @@
 .rd-studio .rds-folds { margin-top: 32px; border-top: 1px solid var(--hairline); padding-top: 16px; }
 .rd-studio .rds-cols > div > .rd-sec:first-child { border-top: 0; margin-top: 24px; padding-top: 0; }
 .rd-studio .rds-line + .rds-cols, .rd-studio .rds-line + .rd-sec { margin-top: 8px; }
+
+/* what happened: one line for each simulated day, newest first */
+.rd-studio .rds-days { list-style:none; margin:0; padding:0; }
+.rd-studio .rds-days li { display:flex; gap:0; align-items:baseline; padding:8px 0; font-size:16px; color:var(--ink-2); }
+.rd-studio .rds-days .rds-dn { flex:none; width:52px; color:var(--ink); font-weight:600; }
+.rd-studio .rds-evf { color:var(--ink); font-weight:600; }
