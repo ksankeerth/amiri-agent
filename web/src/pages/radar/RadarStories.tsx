@@ -18,6 +18,7 @@ export interface Where {
   reasons: Record<string, string | null>;      // finding_id → why it was set aside (set-aside findings only)
   linkedRun: Record<string, string | null>;    // finding_id → the investigation run it went through (null: joined by rule)
   alerts: Record<string, number | null>;       // event_id → teams alerted (null: couldn't be read)
+  titles: Record<string, string>;              // event_id → the event's display title (eventTitle)
 }
 
 const Chev = () => (
@@ -57,7 +58,7 @@ export function sentSteps(s: RadarStory, w: Where): Step[] {
 function sentLine(s: RadarStory, w: Where, again: boolean): ReactNode {
   const reason = s.finding_id ? w.reasons[s.finding_id] : undefined;
   let where: ReactNode;
-  if (s.event_id) where = <>in <Link className="rd-name" to={`/events/${s.event_id}`}>{s.event_title ?? "the event"} →</Link></>;
+  if (s.event_id) where = <>in <Link className="rd-name" to={`/events/${s.event_id}`}>{w.titles[s.event_id] ?? s.event_title ?? "the event"} →</Link></>;
   else if (s.finding_status === "grouped") where = "Being investigated";
   else if (investigationFailed(s.finding_status, reason)) where = "Radar sent it, but the investigation couldn't run on it";
   else if (s.finding_status === "set_aside") where = reason ? `No impact found: ${setAsideReason(reason)}` : "Not in an event";

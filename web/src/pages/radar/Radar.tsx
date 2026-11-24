@@ -5,6 +5,7 @@ import { api, ApiError } from "../../api/client";
 import { inst, type Profile } from "../../api/institutions";
 import { alertsApi } from "../../api/alerts";
 import { investigationApi } from "../../api/investigation";
+import { eventTitle } from "../../plain";
 import { gb, radarApi, scheduleText, type RadarRun, type RadarStatus, type RadarStory } from "../../api/radar";
 import { Icon } from "../../components/Icon";
 import { Figures, Fold, GoLink, PageTitle, QuietWarn, Section, TextButton, TextTabs } from "../../components/rd";
@@ -36,12 +37,14 @@ export function RadarPage() {
   const [reasons, setReasons] = useState<Record<string, string | null>>({});  // why each set-aside finding was set aside
   const [linkedRun, setLinkedRun] = useState<Record<string, string | null>>({});  // a linked finding's investigation run (none: joined by rule)
   const [alerts, setAlerts] = useState<Record<string, number | null>>({});  // teams alerted, per event
+  const [titles, setTitles] = useState<Record<string, string>>({});  // each event's display title
 
   const load = useCallback(async () => {
     try {
       const [st, ss] = await Promise.all([radarApi.status(), radarApi.stories()]);
       setStatus(st); setItems(ss); setErr(null);
       radarApi.runs().then(setRuns).catch(() => {});
+      if (ss.some(x => x.event_id)) investigationApi.events().then(es => setTitles(Object.fromEntries(es.map(e => [e.event_id, eventTitle(e)])))).catch(() => {});
       const start = st.last_run?.created_at;
       const mine = ss.filter(x => x.status === "sent" && start && x.last_seen_at >= start);
       if (ss.some(x => x.finding_status === "set_aside"))  // a failed run and "no impact" share a status: the finding's reason tells them apart
@@ -75,7 +78,7 @@ export function RadarPage() {
 
   const names = useMemo(() => profile?.place_names ?? {}, [profile]);
   const admin = role === "platform_admin";
-  const w: Where = useMemo(() => ({ names, admin, reasons, linkedRun, alerts }), [names, admin, reasons, linkedRun, alerts]);
+  const w: Where = useMemo(() => ({ names, admin, reasons, linkedRun, alerts, titles }), [names, admin, reasons, linkedRun, alerts, titles]);
   const onChange = (x: RadarStory) => setItems(xs => xs?.map(y => (y.story_id === x.story_id ? x : y)) ?? null);
 
   const runNow = async () => {
