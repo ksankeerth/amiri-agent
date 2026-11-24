@@ -2,7 +2,7 @@
 // screen): one status sentence, the one thing to do, three figures and the map of where. Layer 1 (one scroll): the top
 // 3 open events, what else needs you and the latest findings. Layer 2: Markets, Radar and the system's health, folded
 // into one-line summaries. One call; refreshed every minute.
-import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { inst, type Profile } from "../api/institutions";
 import { overviewApi, type Attention, type Overview, type OverviewEvent } from "../api/overview";
@@ -46,13 +46,31 @@ function impactLine(e: OverviewEvent): string {
   return `${plural(e.effects, "possible impact")}: ${products.length ? andList(rest > 0 ? [...products, `${rest} more`] : products) : "on your products"}`;
 }
 
-/** The map's height: the rest of the first screen under the date line, less the key and the hint line under it. */
-function useMapHeight(): number {
-  const calc = () => (typeof window === "undefined" ? 520 : window.innerWidth <= 1000 ? 420
-    : Math.max(380, Math.min(780, window.innerHeight - 56 - 20 - 38 - 34 - 40 - 6)));
-  const [h, setH] = useState(calc);
-  useEffect(() => { const on = () => setH(calc()); window.addEventListener("resize", on); return () => window.removeEventListener("resize", on); }, []);
-  return h;
+/** The map's height: as tall as the words beside it at their natural spacing (title down to the sources line), so the
+ *  words never stretch to fill a tall map and neither column leaves a gap; 340 px at least. */
+function useMapHeight(): [number, (el: HTMLDivElement | null) => void] {
+  const [h, setH] = useState(520);
+  const [el, setEl] = useState<HTMLDivElement | null>(null);
+  const last = useRef(520);
+  useEffect(() => {
+    if (!el) return;
+    const figs = el.querySelector(".rd-figs"), cap = el.querySelector(".rd-ov-cap"), map = el.nextElementSibling;
+    const GAP = 28;  // the space above the sources line
+    const fit = () => {
+      const next = window.innerWidth <= 1000 || !figs || !cap || !map ? 420 : (() => {
+        const words = figs.getBoundingClientRect().bottom - el.getBoundingClientRect().top + GAP + cap.getBoundingClientRect().height;
+        const extra = map.getBoundingClientRect().height - last.current;  // the key under the map and the map's own frame
+        return Math.max(340, Math.round(words - extra));
+      })();
+      if (Math.abs(next - last.current) > 1) { last.current = next; setH(next); }
+    };
+    fit();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(fit) : null;
+    [figs, cap, map].forEach(x => x && ro?.observe(x));
+    window.addEventListener("resize", fit);
+    return () => { ro?.disconnect(); window.removeEventListener("resize", fit); };
+  }, [el]);
+  return [h, setEl];
 }
 
 // ================================================================ first run
@@ -152,7 +170,7 @@ export function OverviewPage() {
   const now = useNow(30_000);
   const { role } = useRole();
   const admin = role === "platform_admin";
-  const mapH = useMapHeight();
+  const [mapH, wordsRef] = useMapHeight();
   const [o, setO] = useState<Overview | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [err, setErr] = useState<unknown>(null);
@@ -248,7 +266,7 @@ export function OverviewPage() {
 
       {/* ---------------- layer 0 */}
       <div className="rd-ov-hero">
-        <div className="rd-ov-words">
+        <div className="rd-ov-words" ref={wordsRef}>
           <h1 className="rd-ov-h1">{head.title}</h1>
           <p className="rd-lede">{head.line}</p>
           <div className="rd-ov-cta">{head.cta}</div>

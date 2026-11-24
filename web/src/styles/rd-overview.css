@@ -13,20 +13,20 @@
 .rd-overview .rd-ov-refresh svg { width:18px; height:18px; }
 
 .rd-overview .rd-ov-hero { display:grid; grid-template-columns:416px minmax(0, 1fr); gap:32px; margin-top:10px; align-items:stretch; }
-/* the words fill the map's height: the line of what it watches settles at the bottom, level with the map's key */
+/* the map takes the words' height (Overview.tsx); when the 420 px floor makes it taller, the sources line settles
+   at the bottom, level with the map's key */
 .rd-overview .rd-ov-words { display:flex; flex-direction:column; }
 .rd-overview .rd-ov-h1 { font-size:36px; line-height:1.12; letter-spacing:-.02em; font-weight:650; }
 .rd-overview .rd-ov-words .rd-lede { margin-top:12px; }
 .rd-overview .rd-lede .rd-name { font-weight:600; }
 .rd-overview .rd-lede .rd-shape { margin-right:4px; }
 .rd-overview .rd-ov-cta { margin-top:20px; }
-/* the figures sit midway between the button and the sources line: the free space splits evenly above and below them */
-.rd-overview .rd-ov-words .rd-figs { --rd-fig:40px; margin-top:auto; padding-top:28px; grid-template-columns:minmax(0, 1fr) minmax(0, .92fr) minmax(0, 1.08fr); }
+.rd-overview .rd-ov-words .rd-figs { --rd-fig:40px; margin-top:28px; grid-template-columns:minmax(0, 1fr) minmax(0, .92fr) minmax(0, 1.08fr); }
 .rd-overview .rd-ov-words .rd-fig { padding-right:10px; }
 .rd-overview .rd-ov-words .rd-fig + .rd-fig { padding-left:14px; border-left:0; }
 .rd-overview .rd-ov-words .rd-fig-l { font-size:16px; white-space:nowrap; }
 .rd-overview .rd-ov-words .rd-fig-s { font-size:14px; }
-.rd-overview .rd-ov-cap { font-size:16px; color:var(--ink-2); margin:auto 0 0; padding-top:24px; }
+.rd-overview .rd-ov-cap { font-size:16px; color:var(--ink-2); margin:auto 0 0; padding-top:28px; }
 .rd-overview .rd-ov-cap .rd-tbtn { margin-left:2px; }
 .rd-overview .rd-ov-hot { margin-right:6px; }
 
