@@ -59,6 +59,9 @@ export function price(x: number | null | undefined): string {
 }
 export const pct = (x: number | null | undefined, d = 2) =>
   x === null || x === undefined ? "—" : `${x > 0 ? "+" : x < 0 ? "−" : ""}${Math.abs(x).toFixed(d)}%`;
+// a pegged rate moves in the fourth decimal: "+0.00%" would hide the very move that was flagged
+export const pctFine = (x: number | null | undefined) =>
+  pct(x, x === null || x === undefined || x === 0 || Math.abs(x) >= 0.1 ? 2 : Math.abs(x) >= 0.01 ? 3 : 4);
 // rounded down, so a move just under the threshold (2.998) never reads as the threshold (3.0×)
 export const zx = (z: number | null | undefined) => (z === null || z === undefined ? "—" : `${(Math.floor(Math.abs(z) * 10) / 10).toFixed(1)}×`);
 

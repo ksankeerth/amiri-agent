@@ -3,11 +3,12 @@ import { Link } from "react-router-dom";
 import { seriesApi, type Series, type SeriesStatus } from "../api/series";
 import { Spark } from "../components/charts";
 import { Icon } from "../components/Icon";
-import { HowItWorks, PageHeader } from "../components/blocks";
+import { HowItWorks, PageHeader, StatusPill } from "../components/blocks";
 import { AddSeriesModal, FetchBadge, RefreshButton, seriesSentence, StateBadge, themeMeaning } from "../components/series";
 import { Banner, Empty, useNow, useRole, ListSkeleton, LoadError } from "../components/ui";
-import { ago, due, pct, price, when, zx, ZONE_LABEL } from "../format";
+import { ago, due, pctFine, price, when, zx, ZONE_LABEL } from "../format";
 import { count, ruleText } from "../plain";
+import "../styles/series.css";
 
 const POLL_MS = 60_000;
 
@@ -41,46 +42,45 @@ export function PricesHelp({ status }: { status: SeriesStatus | null }) {
   );
 }
 
+// an unusual move or a price that stopped updating comes first; the rest keep the order they were added in (sort is stable)
+const concern = (s: Series) => (s.state === "moved" ? 0 : s.state === "stale" ? 1 : 2);
+
+/** Gemini's plan: the card says name, how unusual, price, 1 day, the spark and one line on the latest anomaly;
+ *  the facts, Refresh and the way to the chart wait behind "Series stats & threshold". */
 function SeriesCard({ s, onChange }: { s: Series; onChange: (s: Series) => void }) {
   const now = useNow(30_000);
   const l = s.latest;
-  const sparkColor = s.state === "stale" ? "var(--medium)" : s.state === "moved" ? "var(--high)" : "var(--accent)";
+  const z = l?.max_z === null || l?.max_z === undefined ? null : Math.abs(l.max_z);
+  const unusual = s.state === "moved" || (z !== null && z >= s.detector.z_threshold);
+  const settled = z !== null && (s.state === "normal" || s.state === "moved");  // pending, learning, stale, paused keep their own word
+  const sparkColor = s.state === "stale" ? "var(--medium)" : unusual ? "var(--high)" : "var(--accent)";
+  const anomaly = s.last_finding ? <>Flagged <Link to={`/series/${s.series_id}#findings`}>{when(s.last_finding.at, now)}</Link></>  /* when the flag was raised; how unusual it is now is the pill's job */
+    : settled ? <>Largest recent move {zx(z)} a normal one</> : seriesSentence(s, now);
   return (
-    <div className="card scard">
-      <div className="bd col" style={{ gap: 10 }}>
-        <div className="row">
-          <div style={{ minWidth: 0 }}>
-            <h2><Link to={`/series/${s.series_id}`}>{s.name}</Link></h2>
-            <div className="meta">{themeMeaning(s.theme)}</div>
-          </div>
-          <span className="spacer" />
-          <div className="row" style={{ gap: 6 }}><FetchBadge s={s} /><StateBadge state={s.state} /></div>
-        </div>
-        <div className="row" style={{ alignItems: "flex-end" }}>
-          <div>
-            <div className="price">{price(l?.close)}</div>
-            <div className="small">
-              <span className="flat">{pct(l?.change_1d_pct)}</span> <span className="muted">over one trading day</span>
-            </div>
-          </div>
-          <span className="spacer" />
-          <Spark values={s.spark.map(p => p.close)} color={sparkColor} />
-        </div>
-        <dl className="facts">
-          <div><dt>Latest price</dt><dd>{l ? `hour ending ${when(l.bar_end, now)}` : "none yet"}</dd></div>
-          <div><dt>Normal day</dt><dd>{l?.typical_daily_move_pct ? `±${l.typical_daily_move_pct.toFixed(2)}%` : "not known yet"}</dd></div>
-          <div><dt>Largest recent move</dt><dd>{l?.max_z !== null && l?.max_z !== undefined ? `${zx(l.max_z)} a normal one; flagged at ${s.detector.z_threshold}×` : "not known yet"}</dd></div>
-          <div><dt>Updated</dt><dd>{ago(s.fetch.last_at, now)}</dd></div>
-          {s.last_finding && <div><dt>Last flagged</dt><dd><Link to={`/series/${s.series_id}#findings`}>{when(s.last_finding.at, now)}</Link></dd></div>}
-        </dl>
-        {s.state !== "normal" && s.state !== "stale" && <div className="note small">{seriesSentence(s, now)}</div>}
-        <div className="foot">
-          <RefreshButton s={s} onDone={onChange} />
-          <span className="spacer" />
-          <Link className="small" to={`/series/${s.series_id}`}>Chart and details</Link>
-        </div>
+    <article className="card scard sc" aria-labelledby={`sc-${s.series_id}`}>
+      <div className="sc-top">
+        <h2 id={`sc-${s.series_id}`}><Link to={`/series/${s.series_id}`}>{s.name}</Link></h2>
+        {settled ? <StatusPill tone={unusual ? "red" : "green"}>{zx(z)} normal</StatusPill> : <StateBadge state={s.state} />}
       </div>
-    </div>
+      <div className="sc-mid">
+        <span className="sc-price">{price(l?.close)}</span>
+        <span className={`sc-chg${unusual ? " hot" : ""}`}>{pctFine(l?.change_1d_pct)} <span className="muted">1 day</span></span>
+        <span className="spacer" />
+        <Spark values={s.spark.map(p => p.close)} color={sparkColor} w={120} h={36} />
+      </div>
+      <p className="sc-anom">{anomaly}</p>
+      <details className="sc-det">
+        <summary>Series stats &amp; threshold</summary>
+        <dl className="facts">
+          <div><dt>Normal day</dt><dd>{l?.typical_daily_move_pct ? `±${pctFine(l.typical_daily_move_pct).replace(/^\+/, "")}` : "not known yet"}</dd></div>
+          <div><dt>Flagged at</dt><dd>{s.detector.z_threshold}× a normal move</dd></div>
+          <div><dt>Latest price</dt><dd>{l ? `hour ending ${when(l.bar_end, now)}` : "none yet"}</dd></div>
+          <div><dt>Updated</dt><dd>{ago(s.fetch.last_at, now)} <FetchBadge s={s} /></dd></div>
+          <div><dt>A move means</dt><dd>{themeMeaning(s.theme)}</dd></div>
+        </dl>
+        <div className="sc-foot"><RefreshButton s={s} onDone={onChange} /><span className="spacer" /><Link to={`/series/${s.series_id}`}>Chart and details</Link></div>
+      </details>
+    </article>
   );
 }
 
@@ -123,7 +123,7 @@ export function SeriesList() {
           {isAdmin ? "Add the exchange rates and prices that matter to your institution." : "A Platform Admin adds the series AMIRI Agent watches."}
         </Empty></div>
       )}
-      {items && items.length > 0 && <div className="seriesgrid mt12">{items.map(s => <SeriesCard key={s.series_id} s={s} onChange={replace} />)}</div>}
+      {items && items.length > 0 && <div className="seriesgrid mt12">{[...items].sort((a, b) => concern(a) - concern(b)).map(s => <SeriesCard key={s.series_id} s={s} onChange={replace} />)}</div>}
       {adding && <AddSeriesModal left={left} onClose={() => setAdding(false)}
         onAdded={s => { setAdding(false); setItems(xs => [...(xs ?? []), s]); reloadStatus(); }} />}
     </div>
