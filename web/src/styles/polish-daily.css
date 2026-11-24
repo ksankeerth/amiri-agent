@@ -36,7 +36,7 @@
 .ff.toned .ff-step[data-state="done"] .ff-n { position:relative; }
 .ff-tick { position:absolute; right:-8px; bottom:-6px; width:15px; height:15px; padding:2px; border-radius:50%;
   background:var(--accent); color:var(--surface); box-shadow:0 0 0 2px var(--surface); }
-/* toned (Alerts): selected, a step keeps its colour, a soft fill in its own tone rather than black */
+/* toned (flows a person moves along: Alerts, Monitors): selected, a step keeps its colour, a soft fill in its own tone rather than black */
 .ff.toned .ff-step[data-state][aria-pressed="true"] .ff-n { border-style:solid; font-weight:800; }
 .ff.toned .ff-step[data-state="queued"][aria-pressed="true"] .ff-n { background:var(--medium-soft); border-color:var(--medium); color:var(--medium-ink); }
 .ff.toned .ff-step[data-state="busy"][aria-pressed="true"] .ff-n, .ff.toned .ff-step[data-state="held"][aria-pressed="true"] .ff-n { background:var(--info-soft); border-color:var(--info); color:var(--info-ink); }

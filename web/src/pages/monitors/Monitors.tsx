@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ApiError } from "../../api/client";
-import { EVERY, monitorsApi, type Draftable, type MonitorRow, type MonitorsStatus, type MonitorStatus } from "../../api/monitors";
+import { EVERY, monitorsApi, type CheckRow, type Draftable, type MonitorFinding, type MonitorRow, type MonitorsStatus, type MonitorStatus } from "../../api/monitors";
 import { HowItWorks, PageHeader, StatusPill } from "../../components/blocks";
+import { FlowFilter } from "../../components/FlowFilter";
 import { Icon } from "../../components/Icon";
 import { Banner, Empty, Modal, useNow, useRole, useToast, InlineSkeleton, LoadError } from "../../components/ui";
-import { ago, due, when } from "../../format";
+import { ago, due } from "../../format";
 import { count, everyText, MONITOR_CHECK, MONITOR_STATUS } from "../../plain";
+import "../../styles/monitors.css";
 
 export function StatusBadge({ status }: { status: MonitorStatus }) {
   const [text, tone] = MONITOR_STATUS[status];
@@ -51,7 +53,8 @@ export function MonitorHelp({ status }: { status: MonitorsStatus | null }) {
 }
 
 /** The buttons for a monitor's state. Any Risk Manager approves (prototype: no separate approver role). */
-export function MonitorActions({ m, onChange, compact }: { m: MonitorRow; onChange: () => void; compact?: boolean }) {
+/** `only="pending"`: just the actions on a pending version (submit, approve, request changes), for a list of what waits on a person. */
+export function MonitorActions({ m, onChange, compact, only }: { m: MonitorRow; onChange: () => void; compact?: boolean; only?: "pending" }) {
   const toast = useToast();
   const [asking, setAsking] = useState(false);
   const [note, setNote] = useState("");
@@ -82,9 +85,9 @@ export function MonitorActions({ m, onChange, compact }: { m: MonitorRow; onChan
       {pendingSubmitted && <>
         <button className="btn btn--sm btn--primary" type="button" onClick={() => act("approve")}>Approve{m.pending ? ` version ${m.pending.version}` : ""}</button>
         <button className="btn btn--sm" type="button" onClick={() => setAsking(true)}>Request changes</button></>}
-      {m.status === "live" && <button className="btn btn--sm" type="button" onClick={() => act("pause")}>Pause</button>}
-      {m.status === "paused" && <button className="btn btn--sm" type="button" onClick={() => act("resume")}>Resume</button>}
-      {!compact && <button className="btn btn--sm btn--ghost" type="button" onClick={() => act("retire")}>Retire</button>}
+      {!only && m.status === "live" && <button className="btn btn--sm" type="button" onClick={() => act("pause")}>Pause</button>}
+      {!only && m.status === "paused" && <button className="btn btn--sm" type="button" onClick={() => act("resume")}>Resume</button>}
+      {!compact && !only && <button className="btn btn--sm btn--ghost" type="button" onClick={() => act("retire")}>Retire</button>}
     </span>
   );
 }
@@ -123,62 +126,168 @@ export function DraftFromProfile({ onClose, only }: { onClose: () => void; only?
   );
 }
 
+// ---------------------------------------------------------------- the Monitors page, by state
+// The headline says how many monitors are watching and what waits for a person; then one section per state: waiting for you
+// (the only lines with buttons), watching the news (each line says what its last check found), paused. Facts every monitor in a
+// section shares (how often, who owns it) are said once in its sub-line; a line opens the sentence, what it found, and the rest.
+type Run = CheckRow | undefined;
+type Show = "all" | "draft" | "submitted" | "live" | "paused" | "retired";
+const waitsApproval = (m: MonitorRow) => m.status === "submitted" || m.pending?.status === "submitted";
+// a draft not sent yet: a new monitor, or the next version of a live or paused one
+const isDraft = (m: MonitorRow) => m.status === "draft" || m.pending?.status === "draft";
+/** A person has to act on it: approve it, or finish the draft and send it. Live ones are also listed under "Watching the news". */
+const needsYou = (m: MonitorRow) => m.status !== "retired" && (waitsApproval(m) || isDraft(m));
+/** The value every monitor in a group shares, or null when they differ (then each line says its own). */
+const shared = <T,>(xs: MonitorRow[], f: (m: MonitorRow) => T) => (xs.length && xs.every(m => f(m) === f(xs[0])) ? f(xs[0]) : null);
+
+/** What the last check found, in words: "Found 1: <headline>", or the check's own summary of the quiet. */
+function lastWords(m: MonitorRow, run: Run, found: MonitorFinding[] | undefined) {
+  const c = m.last_check;
+  if (!c) return m.status === "paused" ? "Paused before its first check" : "Not checked yet";
+  if (c.status === "error") return "Couldn't check: it tries again within the hour";
+  if (c.status === "fired") { const t = found?.[0]?.evidence?.headlines?.[0]?.title ?? found?.[0]?.title; return `Found ${c.findings}${t ? `: ${t}` : ""}`; }
+  return run?.summary ? `Nothing new. ${run.summary}` : "Nothing new";
+}
+
+function MonitorLine({ m, run, found, onChange, common, waiting }: { m: MonitorRow; run: Run; found?: MonitorFinding[]; onChange: () => void; common: { owner: string | null; every: number | null }; waiting?: boolean }) {
+  const now = useNow(30_000);
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const act = async (a: "pause" | "retire" | "run") => {
+    try {
+      if (a === "run") { await monitorsApi.runNow(m.monitor_id); toast("Checking now: the result shows here in a minute or two"); }
+      else { await monitorsApi.act(m.monitor_id, a); toast(a === "pause" ? "Paused" : "Retired"); }
+      onChange();
+    } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
+  };
+  const differs = [common.every === null && everyText(m.check_frequency), common.owner === null && m.owner].filter(Boolean) as string[];
+  // under "Waiting for you" a line is about its pending version (a live monitor's next version too); elsewhere, about its checks
+  const id = `mon-${m.monitor_id}${waiting ? "-w" : ""}`, watching = m.status === "live" && !waiting;
+  const next = m.pending?.version ?? m.latest_version;
+  return (
+    <li className={`mon-line ${m.status}`}>
+      <button type="button" className="mon-t" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
+        <span className="mon-name">{m.name}</span>
+        {differs.length > 0 && <span className="mon-sub">{differs.join(" · ")}</span>}</button>
+      <span className="mon-what">{!waiting ? lastWords(m, run, found)
+        : waitsApproval(m) ? `Version ${next} sent for approval ${ago(m.updated_at, now)}${m.pending?.note ? `: “${m.pending.note}”` : ""}${m.status === "live" ? `; version ${m.live_version} keeps running` : ""}`
+        : m.status === "draft" ? `A draft, last edited ${ago(m.updated_at, now)}` : `Version ${next} is being edited, not sent yet; version ${m.live_version} keeps running`}</span>
+      <span className="mon-end">
+        {m.review_due && <span className="mon-due">Review due</span>}
+        {watching && m.last_check && <time dateTime={m.last_check.at}>{ago(m.last_check.at, now)}</time>}
+        {(waiting || m.status !== "live") && <MonitorActions m={m} onChange={onChange} compact only={waiting ? "pending" : undefined} />}
+      </span>
+      {watching && m.pending && <p className="mon-note">Version {m.pending.version} {m.pending.status === "submitted" ? "is waiting for approval" : "is being edited"}; version {m.live_version} keeps running.</p>}
+      {open && <div className="mon-x" id={id}>
+        <p>{m.sentence}</p>
+        {run?.summary && m.last_check?.status === "fired" && <p className="mon-why"><b>Last check, {ago(m.last_check.at, now)}.</b> {run.summary}</p>}
+        {found?.length ? <ul className="mon-found">{found.slice(0, 3).map(f => { const h = f.evidence?.headlines?.[0]; return <li key={f.finding_id}>
+          {h?.url ? <a href={h.url} target="_blank" rel="noreferrer">{h.title}<Icon name="external" className="src-ext" /></a> : f.title}
+          <span> · {f.outcome?.event_id ? <Link to={`/events/${f.outcome.event_id}`}>in an event</Link> : f.status === "set_aside" ? "no impact found" : "being investigated"}</span></li>; })}</ul> : null}
+        <p className="mon-acts">
+          <Link to={`/monitors/${m.monitor_id}`}>Open the monitor<Icon name="arrow" /></Link>
+          {watching && <button type="button" className="mon-quiet" onClick={() => act("run")}><Icon name="play" />Check now</button>}
+          {watching && <button type="button" className="mon-quiet" onClick={() => act("pause")}>Pause</button>}
+          {m.status !== "retired" && <button type="button" className="mon-quiet" onClick={() => act("retire")}>Retire</button>}
+        </p>
+      </div>}
+    </li>);
+}
+
 export function MonitorsPage() {
   const now = useNow(30_000);
   const { role } = useRole();
   const { status, reload: reloadStatus } = useMonitorsStatus();
   const [items, setItems] = useState<MonitorRow[] | null>(null);
+  // each monitor's last check and findings, tagged with the check they belong to: a newer check shows its own count at once,
+  // never beside the previous check's headline, while its details load
+  const [runs, setRuns] = useState<Record<string, { at: string; v: Run }>>({});
+  const [found, setFound] = useState<Record<string, { at: string; v: MonitorFinding[] }>>({});
   const [err, setErr] = useState<unknown>(null);
   const [drafting, setDrafting] = useState(false);
+  const [show, setShow] = useState<Show>("all");
+  // the list, then each checked monitor's latest check and findings: the lines say what it last found
   const load = useCallback(async () => {
-    try { setItems(await monitorsApi.list()); setErr(null); reloadStatus(); }
-    catch (e) { setErr(e); }
+    try {
+      const xs = await monitorsApi.list(); setItems(xs); setErr(null); reloadStatus();
+      const checked = xs.filter(m => m.last_check);
+      const [r, f] = await Promise.all([
+        Promise.all(checked.map(m => monitorsApi.runs(m.monitor_id).then(rs => [m.monitor_id, { at: m.last_check!.at, v: rs.find(x => x.world === "live") ?? rs[0] }] as const).catch(() => null))),
+        Promise.all(checked.filter(m => m.findings_30d).map(m => monitorsApi.findings(m.monitor_id).then(fs => [m.monitor_id, { at: m.last_check!.at, v: fs }] as const).catch(() => null))),
+      ]);
+      setRuns(Object.fromEntries(r.filter(x => x !== null))); setFound(Object.fromEntries(f.filter(x => x !== null)));
+    } catch (e) { setErr(e); }
   }, [reloadStatus]);
   useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t); }, [load]);
   const actions = <>
     <button className="btn" type="button" onClick={() => setDrafting(true)}><Icon name="bank" />Draft from the profile</button>
     <Link className="btn btn--primary" to="/monitors/new"><Icon name="plus" />New monitor</Link></>;
-  const empty = items !== null && !items.length;
-  const live = (items ?? []).filter(m => m.status === "live").length;
-  const waiting = (items ?? []).filter(m => m.status === "submitted" || m.pending?.status === "submitted").length;
+  const xs = items ?? [], empty = items !== null && !items.length;
+  const down = !!status && !status.connected;
+
+  // the answer: how many are watching, what waits for a person, what the last check found
+  const allLive = xs.filter(m => m.status === "live"), approve = xs.filter(m => m.status !== "retired" && waitsApproval(m)), drafts = xs.filter(m => m.status !== "retired" && isDraft(m));
+  // the latest check across the live monitors: its time, its monitor and its result are said together
+  const latest = allLive.filter(m => m.last_check).sort((a, b) => (a.last_check!.at < b.last_check!.at ? 1 : -1))[0];
+  const lc = latest?.last_check;
+  const title = items === null ? "Monitors" : !allLive.length ? "No monitor is watching the news yet"
+    : <><span className="mon-n">{count(allLive.length, "monitor")}</span> {down ? "live, checks on hold" : allLive.length === 1 ? "is watching the news" : "are watching the news"}</>;
+  const asks = [approve.length > 0 && <><b>{approve.length}</b> {approve.length === 1 ? "waits" : "wait"} for your approval</>,
+    drafts.length > 0 && <><b>{drafts.length}</b> {drafts.length === 1 ? "draft isn't" : "drafts aren't"} sent yet</>].filter(Boolean);
+  // whether the news service is connected is the side bar's system status; the Platform Admin also gets the server's own notes
+  const said = items === null || empty ? "" : <>
+    {asks.length ? <>{asks.map((a, i) => <span key={i}>{i ? " and " : ""}{a}</span>)}. </> : null}
+    {lc && <>The last check was {ago(lc.at, now)}{lc.status === "fired" ? <>: <Link className="mon-ev" to={`/monitors/${latest.monitor_id}`}>{latest.name}</Link> found {count(lc.findings, "thing")}.</>
+      : lc.status === "error" ? <>: <Link className="mon-ev" to={`/monitors/${latest.monitor_id}`}>{latest.name}</Link> couldn't check the news; it tries again within the hour.</>
+      : ", and nothing new turned up."}</>}
+    {role === "platform_admin" && status?.notes.length ? <span className="mon-down"> {status.notes.join(" ")}</span> : null}</>;
+
+  // Draft and Waiting for approval count pending versions too (a live monitor's next version), as "Waiting for you" lists them
+  const inStep = (m: MonitorRow, s: Show) => s === "all" || (s === "draft" ? m.status !== "retired" && isDraft(m) : s === "submitted" ? m.status !== "retired" && waitsApproval(m) : m.status === s);
+  const n = (s: Show) => xs.filter(m => inStep(m, s)).length;
+  const pick = (m: MonitorRow) => inStep(m, show);
+  const yours = xs.filter(m => needsYou(m) && (show === "all" || show === "draft" || show === "submitted") && pick(m));
+  const live = xs.filter(m => m.status === "live" && (show === "all" || show === "live")), paused = xs.filter(m => m.status === "paused" && (show === "all" || show === "paused"));
+  const retired = show === "retired" ? xs.filter(m => m.status === "retired") : [];
+  const common = { owner: shared(live, m => m.owner), every: shared(live, m => m.check_frequency) };
+  const commonAll = { owner: shared(xs, m => m.owner), every: shared(xs, m => m.check_frequency) };
+  const next = live.map(m => m.next_check_at).filter(Boolean).sort()[0];
+  // details only from the check the row shows: a newer check waits for its own instead of borrowing the last one's
+  const mine = <T,>(x: { at: string; v: T } | undefined, m: MonitorRow) => (x && x.at === m.last_check?.at ? x.v : undefined);
+  const line = (m: MonitorRow, c = commonAll, waiting = false) => <MonitorLine key={m.monitor_id} m={m} run={mine(runs[m.monitor_id], m)}
+    found={mine(found[m.monitor_id], m)} onChange={load} common={c} waiting={waiting} />;
   return (
-    <div className="page">
-      <PageHeader title="Monitors"
-        status={items === null ? "" : <><b className="ink">{count(live, "live monitor")}</b>
-          {status?.next_check_at ? `, next check ${due(status.next_check_at)}` : ""}{waiting ? ` · ${waiting} waiting for approval` : ""}</>}
-        actions={empty ? undefined : actions} help={<MonitorHelp status={status} />} />
-      {/* with no monitors yet, "can't check the news" changes nothing for a Risk Manager: the empty state says it calmly */}
+    <div className="page mon">
+      <PageHeader eyebrow="Monitors" title={title} status={said} actions={empty ? undefined : actions} help={<MonitorHelp status={status} />} />
       {err != null && <LoadError error={err} onRetry={load} what="the monitors" />}
-      <div className="banners">{(!empty || role === "platform_admin") && <MonitorBanners status={status} />}</div>
-      <div className="card">
-        {items === null ? (err == null && <InlineSkeleton />) : !items.length ? (
-          <Empty icon="monitor" title="No monitors yet" actions={actions}>
-            Monitors watch the news for what you care about: a rival's prices, a regulator's rules, jobs in a remittance corridor.
-            {status && !status.connected && <span className="small" style={{ display: "block", marginTop: 8 }}>News checks are paused right now; a monitor you add starts once they are back.</span>}
-          </Empty>
-        ) : (
-          <ul className="evlist" aria-label="Monitors">{items.map(m => (
-            <li key={m.monitor_id}>
-              <div className="evrow">
-                <span className="evrow-ico"><Icon name="monitor" /></span>
-                <span className="evrow-main">
-                  <span className="row-top"><Link className="row-l" to={`/monitors/${m.monitor_id}`}>{m.name}</Link><StatusBadge status={m.status} />
-                    {m.pending && (m.status === "live" || m.status === "paused") && <StatusPill tone="blue">{m.pending.status === "submitted" ? `Version ${m.pending.version} waiting for approval` : `Version ${m.pending.version} being edited`}</StatusPill>}
-                    {m.review_due && <StatusPill tone="amber">Review due</StatusPill>}</span>
-                  <span className="row-d">{m.sentence}</span>
-                  <span className="mon-facts"><span><Icon name="clock" />{everyText(m.check_frequency)}{m.status === "live" && m.next_check_at ? `, next ${when(m.next_check_at, now)}` : ""}</span>
-                    <span><Icon name="users" />{m.owner}</span>
-                    {m.findings_30d > 0 && <span><Icon name="search" />{count(m.findings_30d, "finding")} in 30 days</span>}</span>
-                </span>
-                <span className="evrow-side">
-                  <LastCheck m={m} now={now} />
-                  <MonitorActions m={m} onChange={load} compact />
-                </span>
-              </div>
-            </li>))}</ul>
-        )}
-      </div>
-      <p className="small muted mt12">Monitors watch the news. Price and rate moves are watched by <Link to="/series">market series</Link>, without a monitor.</p>
+      {items === null ? (err == null && <InlineSkeleton />) : empty ? (
+        <Empty icon="monitor" title="No monitors yet" actions={actions}>
+          Monitors watch the news for what you care about: a rival's prices, a regulator's rules, jobs in a remittance corridor.
+          {down && <span className="small" style={{ display: "block", marginTop: 8 }}>News checks are paused right now; a monitor you add starts once they are back.</span>}
+        </Empty>
+      ) : <>
+        <div className="mon-filters"><FlowFilter toned label="Which monitors" value={show} onChange={setShow} all={{ key: "all", label: "All", count: xs.length }}
+          steps={[{ key: "draft", label: "Draft", count: n("draft"), state: "queued" }, { key: "submitted", label: "Waiting for approval", count: n("submitted"), state: "queued" },
+            [{ key: "live", label: "Live", count: n("live"), state: "done" }, { key: "paused", label: "Paused", count: n("paused") },
+              ...(n("retired") ? [{ key: "retired" as const, label: "Retired", count: n("retired") }] : [])]]} /></div>
+        <div className="mon-groups">
+          {yours.length > 0 && <section aria-labelledby="mon-y"><h2 id="mon-y">Waiting for you <span>{yours.length}</span></h2>
+            <p className="mon-sub2">Nothing runs until a Risk Manager approves it. In this prototype the person who sent it can also approve it.</p>
+            <ol className="mon-lines">{yours.map(m => line(m, commonAll, true))}</ol></section>}
+          {live.length > 0 && <section aria-labelledby="mon-w"><h2 id="mon-w">Watching the news <span>{live.length}</span></h2>
+            <p className="mon-sub2">{[common.every && everyText(common.every), common.owner && `owned by ${common.owner}`].filter(Boolean).join(", ") || "Each line says how often and who owns it"}.
+              {down ? " Not being checked right now; nothing is lost, the next check reads everything since the last." : next ? ` Next check ${due(next, now)}.` : ""}</p>
+            <ol className="mon-lines">{live.map(m => line(m, common))}</ol></section>}
+          {paused.length > 0 && <section className="quiet" aria-labelledby="mon-p"><h2 id="mon-p">Paused <span>{paused.length}</span></h2>
+            <p className="mon-sub2">Not checking the news. Resume picks up within a few minutes.</p>
+            <ol className="mon-lines">{paused.map(m => line(m))}</ol></section>}
+          {retired.length > 0 && <section className="quiet" aria-labelledby="mon-r"><h2 id="mon-r">Retired <span>{retired.length}</span></h2>
+            <p className="mon-sub2">No longer checking. What they found stays in Findings.</p>
+            <ol className="mon-lines">{retired.map(m => line(m))}</ol></section>}
+          {!yours.length && !live.length && !paused.length && !retired.length && <p className="mon-sub2">None in this step. Choose another above.</p>}
+        </div>
+      </>}
+      <p className="mon-foot">Monitors watch the news. Price and rate moves are watched by <Link to="/series">market series</Link>, without a monitor.</p>
       {drafting && <DraftFromProfile onClose={() => setDrafting(false)} />}
     </div>
   );
