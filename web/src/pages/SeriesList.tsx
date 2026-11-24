@@ -54,7 +54,7 @@ function SeriesCard({ s, onChange }: { s: Series; onChange: (s: Series) => void 
   const unusual = s.state === "moved" || (z !== null && z >= s.detector.z_threshold);
   const settled = z !== null && (s.state === "normal" || s.state === "moved");  // pending, learning, stale, paused keep their own word
   const sparkColor = s.state === "stale" ? "var(--medium)" : unusual ? "var(--high)" : "var(--accent)";
-  const anomaly = s.last_finding ? <>Flagged <Link to={`/series/${s.series_id}#findings`}>{when(s.last_finding.at, now)}</Link>{z !== null ? `: ${zx(z)} a normal move` : ""}</>
+  const anomaly = s.last_finding ? <>Flagged <Link to={`/series/${s.series_id}#findings`}>{when(s.last_finding.at, now)}</Link></>  /* when the flag was raised; how unusual it is now is the pill's job */
     : settled ? <>Largest recent move {zx(z)} a normal one</> : seriesSentence(s, now);
   return (
     <article className="card scard sc" aria-labelledby={`sc-${s.series_id}`}>
