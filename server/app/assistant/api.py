@@ -15,6 +15,7 @@ from fastapi import APIRouter, Header, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from app import demo_lock
 from app.assistant.monitor_ops import MonitorOp
 from app.assistant.service import AssistantService
 from app.assistant.tracks import TRACKS
@@ -243,6 +244,7 @@ async def get_proposal(request: Request, proposal_id: str):
              summary="Apply it (only the person it was made for); concludes its track")
 async def confirm(request: Request, proposal_id: str, actor: Actor = None,
                   confirm_deletes: Annotated[int | None, Query(description="Required when it removes 3+ items: their number.")] = None):
+    demo_lock.guard()
     return await svc(request).decide(proposal_id, "confirm", me(actor), confirm_deletes)
 
 

@@ -6,7 +6,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, ConfigDict, Field
 
-from app import settings
+from app import demo_lock, settings
 from app.connect.service import DataConnection
 from app.institutions.api import Actor, who
 
@@ -43,6 +43,7 @@ async def get_connection(request: Request):
 
 @router.put("/data-connection", summary="Set the connection (it needs checking and approving again)")
 async def put_connection(request: Request, body: ConnectionIn, actor: Actor = None):
+    demo_lock.guard()
     return await svc(request).put(body.model_dump(), who(actor, None)[0], public(request))
 
 
@@ -63,9 +64,11 @@ async def report(request: Request, check_id: str):
 
 @router.post("/data-connection:approve", summary="Approve the connection the latest check describes")
 async def approve(request: Request, actor: Actor = None):
+    demo_lock.guard()
     return await svc(request).approve(who(actor, None)[0], public(request))
 
 
 @router.put("/validation", summary="Switch validation against the institution's data on or off")
 async def put_validation(request: Request, body: ValidationIn, actor: Actor = None):
+    demo_lock.guard()
     return await svc(request).set_validation(body.enabled, who(actor, None)[0], public(request))

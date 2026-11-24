@@ -11,7 +11,7 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter, Header, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
-from app import reference, settings, spec
+from app import demo_lock, reference, settings, spec
 from app.institutions.schemas import (
     SECTION_LIMITS,
     SECTIONS,
@@ -194,6 +194,7 @@ async def list_institutions(request: Request, status: Literal["setup", "active",
              summary="Create an institution (status setup); its home country joins the footprint")
 async def create_institution(request: Request, body: InstitutionCreate, response: Response,
                              actor: Actor = None, source: Source = None):
+    demo_lock.guard()
     a, s = who(actor, source)
     out = await svc(request).create(body, a, s)
     if actor:  # the person's setup chat, begun before the institution existed, becomes its chat
@@ -206,6 +207,7 @@ async def create_institution(request: Request, body: InstitutionCreate, response
 @router.post("/institutions:import", response_model=InstitutionView, status_code=201,
              summary="Create an institution with its whole profile in one step (seeds, sandboxes, copies)")
 async def import_institution(request: Request, body: ImportBody, actor: Actor = None):
+    demo_lock.guard()
     a, _ = who(actor, "import")
     out = await svc(request).create(body.institution, a, "import", body.sections)
     if actor:
@@ -224,6 +226,7 @@ async def get_institution(request: Request, institution_id: str, response: Respo
               summary="Change the institution's own fields (If-Match: its version)")
 async def patch_institution(request: Request, institution_id: str, body: InstitutionPatch, response: Response,
                             if_match: IfMatch = None, actor: Actor = None, source: Source = None):
+    demo_lock.guard()
     a, s = who(actor, source)
     data = body.model_dump(mode="json", include=body.model_fields_set)
     await svc(request).batch(institution_id, [Operation(op="update", section="institution", data=data,
@@ -236,6 +239,7 @@ async def patch_institution(request: Request, institution_id: str, body: Institu
 @router.delete("/institutions/{institution_id}", status_code=204,
                summary="Delete an institution still in setup (archive an active one instead)")
 async def delete_institution(request: Request, institution_id: str):
+    demo_lock.guard()
     await svc(request).delete(institution_id)
     return Response(status_code=204)
 
@@ -243,16 +247,19 @@ async def delete_institution(request: Request, institution_id: str):
 @router.post("/institutions/{institution_id}:activate", response_model=InstitutionView,
              summary="Go live: needs every required readiness check to pass")
 async def activate(request: Request, institution_id: str, actor: Actor = None):
+    demo_lock.guard()
     return await svc(request).set_status(institution_id, "activate", who(actor, None)[0])
 
 
 @router.post("/institutions/{institution_id}:archive", response_model=InstitutionView)
 async def archive(request: Request, institution_id: str, actor: Actor = None):
+    demo_lock.guard()
     return await svc(request).set_status(institution_id, "archive", who(actor, None)[0])
 
 
 @router.post("/institutions/{institution_id}:restore", response_model=InstitutionView)
 async def restore(request: Request, institution_id: str, actor: Actor = None):
+    demo_lock.guard()
     return await svc(request).set_status(institution_id, "restore", who(actor, None)[0])
 
 
@@ -260,6 +267,8 @@ async def restore(request: Request, institution_id: str, actor: Actor = None):
              summary="Apply many changes at once, all or nothing; dry_run shows the result without saving")
 async def batch(request: Request, institution_id: str, body: Batch, response: Response,
                 if_match: IfMatch = None, actor: Actor = None, source: Source = None):
+    if not body.dry_run:  # a dry run only shows the result; nothing is saved
+        demo_lock.guard()
     a, s = who(actor, source)
     out = await svc(request).batch(institution_id, body.operations, a, s, body.dry_run,
                                    body.if_profile_version if body.if_profile_version is not None else version_of(if_match))
@@ -343,6 +352,7 @@ def _section_routes(section: str, model: type[BaseModel]) -> None:
     async def create_item(request: Request, institution_id: str, body: model, response: Response,  # type: ignore[valid-type]
                           id: Annotated[str | None, Query(description="Your own id; default from the name.")] = None,
                           actor: Actor = None, source: Source = None):
+        demo_lock.guard()
         a, s = who(actor, source)
         out = await svc(request).batch(institution_id, [Operation(op="create", section=section, id=id,
                                                                   data=body.model_dump(mode="json"))], a, s)
@@ -358,6 +368,7 @@ def _section_routes(section: str, model: type[BaseModel]) -> None:
 
     async def patch_item(request: Request, institution_id: str, item_id: str, body: Patch, response: Response,  # type: ignore[valid-type]
                          if_match: IfMatch = None, actor: Actor = None, source: Source = None):
+        demo_lock.guard()
         a, s = who(actor, source)
         data = body.model_dump(mode="json", include=body.model_fields_set)
         out = await svc(request).batch(institution_id, [Operation(op="update", section=section, id=item_id, data=data,
@@ -369,6 +380,7 @@ def _section_routes(section: str, model: type[BaseModel]) -> None:
     async def delete_item(request: Request, institution_id: str, item_id: str, if_match: IfMatch = None,
                           force: Annotated[bool, Query(description="Also remove references to it from other items.")] = False,
                           actor: Actor = None, source: Source = None):
+        demo_lock.guard()
         a, s = who(actor, source)
         await svc(request).batch(institution_id, [Operation(op="delete", section=section, id=item_id, force=force,
                                                             if_version=version_of(if_match))], a, s)
@@ -468,7 +480,8 @@ async def currencies(scope: Literal["all", "home"] = "all"):
 
 @router.get("/installation", summary="The institution this installation serves (INSTITUTION_ID), for the web app's frame")
 async def installation(request: Request):
-    return {**await _installation(request), "prototype_reset": bool(settings.flag("PROTOTYPE_RESET"))}
+    return {**await _installation(request), "prototype_reset": bool(settings.flag("PROTOTYPE_RESET")),
+            "demo_lock": bool(settings.flag("DEMO_LOCK"))}
 
 
 async def _installation(request: Request) -> dict:

@@ -11,7 +11,7 @@ from fastapi import APIRouter, Header, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from app import spec
+from app import demo_lock, spec
 from app.institutions.api import Actor, who
 from app.mockinst import data
 from app.mockinst.model import FX_TO_BASE, Institution, Metric, Product
@@ -429,4 +429,5 @@ async def list_samples(request: Request):
 
 @admin.put("/mock-institutions/{kind}", summary="Switch a sample on or off and set its conditions")
 async def put_sample(request: Request, kind: str, body: SampleIn, actor: Actor = None):
+    demo_lock.guard()
     return await svc(request).put(kind, body.enabled, body.conditions, who(actor, None)[0])

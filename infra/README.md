@@ -67,6 +67,7 @@ infra/scripts/deploy.sh          # the services and the tick
 | Which is it? | `infra/scripts/awake.sh` |
 | Ship new code | `infra/scripts/build.sh && infra/scripts/deploy.sh` |
 | Change a setting | edit `terraform.tfvars` (`server_env = { … }` for any server setting), then `deploy.sh` |
+| **Lock the app for a live demo** (editing, deleting and the reset are greyed out; alerts and Scenario Studio still work) | `demo_lock = true` in `terraform.tfvars`, then `deploy.sh`; `false` to edit again |
 | Replace a secret | `infra/scripts/secrets.sh RECAPTCHA_SECRET`, then `deploy.sh` (a running service reads secrets when it starts) |
 | Run the tick now | `gcloud scheduler jobs run amiri-tick --location <region>` |
 | Logs | §3: what went wrong recently, one request, one run |

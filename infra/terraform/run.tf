@@ -34,6 +34,7 @@ locals {
     RECAPTCHA_HOSTNAMES   = local.server_hostname
     AUTH_LOCAL_AGENTS     = "false"
     PROTOTYPE_RESET       = tostring(var.prototype_reset)
+    DEMO_LOCK             = tostring(var.demo_lock)
     METRICS_VALIDATION    = var.metrics_validation ? "on" : "off"
     INTERNAL_AUTH         = "id_token"
     INTERNAL_CALLERS      = join(",", local.internal_callers)

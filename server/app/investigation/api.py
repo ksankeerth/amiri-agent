@@ -9,7 +9,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, Header, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
-from app import settings
+from app import demo_lock, settings
 from app.investigation import calendar as cal
 from app.investigation import coverage as cov
 from app.investigation.service import Investigations
@@ -100,6 +100,7 @@ async def events(request: Request, world: World | None = None, status: Literal["
 
 @router.delete("/sandbox", summary="Clear simulated findings and what their investigations found (live data stays)")
 async def clear_sandbox(request: Request):
+    demo_lock.guard()
     return await svc(request).clear_sandbox()
 
 

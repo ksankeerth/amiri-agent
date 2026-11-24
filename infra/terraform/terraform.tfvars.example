@@ -19,3 +19,7 @@ budget_amount      = 20
 # `awake` is set by infra/scripts/awake.sh (awake.auto.tfvars); `image_tag` by build.sh (image.auto.tfvars).
 
 prototype_reset = true
+
+# Switch on for a live demo where many people click around: editing, deleting and the reset are locked (the app
+# greys them out). Alerts can still be acknowledged and Scenario Studio still runs. Switch off to edit again.
+demo_lock = false

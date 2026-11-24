@@ -56,6 +56,12 @@ variable "prototype_reset" {
   default     = false
 }
 
+variable "demo_lock" {
+  description = "Lock editing, deleting and the reset in the app (for a live demo where many people click around). Alerts can still be acknowledged and Scenario Studio still runs."
+  type        = bool
+  default     = false
+}
+
 variable "metrics_validation" {
   description = "Allow checking events against the institution's own data. The Platform Admin still switches it on in the app (Data connections), after approving a connection."
   type        = bool

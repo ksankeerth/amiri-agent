@@ -7,7 +7,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app import settings
+from app import demo_lock, settings
 from app.institutions.api import Actor, who
 from app.studio.service import Studio
 
@@ -104,6 +104,7 @@ async def scenario(request: Request, scenario_id: str):
 @router.patch("/scenarios/{scenario_id}",
               summary="Change the intensity, headlines, price move or title, switch parts off (a new version: record it again)")
 async def update(request: Request, scenario_id: str, body: ScenarioPatch):
+    demo_lock.guard()
     return await svc(request).update_scenario(scenario_id, body.intensity, body.switched_off, body.title, _custom(body.custom))
 
 
@@ -113,6 +114,7 @@ def _custom(c: CustomIn | None) -> dict | None:
 
 @router.delete("/scenarios/{scenario_id}", status_code=204)
 async def delete(request: Request, scenario_id: str):
+    demo_lock.guard()
     await svc(request).delete_scenario(scenario_id)
 
 

@@ -61,7 +61,7 @@ The prototype has no login. `AUTH_MODE=off` (the default) lets everyone in: for 
 `AUTH_MODE=prototype` is for a public URL: a visitor ticks Google reCAPTCHA's "I'm not a robot" box, and the
 app opens; a signed cookie keeps them in for `SESSION_HOURS`. Set `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET`
 and `SESSION_SECRET`; the agents and Cloud Scheduler call with Google ID tokens (`INTERNAL_AUTH=id_token`,
-`INTERNAL_CALLERS`). On a public URL also set `PROTOTYPE_RESET=false`. Search engines and AI crawlers are
+`INTERNAL_CALLERS`). On a public URL also set `PROTOTYPE_RESET=false`. For a live demo set `DEMO_LOCK=true`: every edit, delete and the reset answers 403 `demo_locked` (`app/demo_lock.py`; alerts and Scenario Studio runs still work). Search engines and AI crawlers are
 asked to stay away (`robots.txt`, `noindex`) and known ones are refused (`BLOCK_AI_CRAWLERS`). Each check costs
 one reCAPTCHA verification (10,000 a month are free for an organisation); `LOGIN_CHECKS_PER_DAY` caps them.
 

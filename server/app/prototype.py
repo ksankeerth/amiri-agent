@@ -18,7 +18,7 @@ from typing import Literal
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, ConfigDict
 
-from app import demo, settings
+from app import demo, demo_lock, settings
 from app.institutions.api import Actor, who
 from app.institutions.schemas import InstitutionCreate
 from app.problems import Problem
@@ -55,6 +55,7 @@ async def _load_demo(request: Request, kind: demo.Kind, actor: Actor) -> dict:
 
 @router.post("/prototype:reset", summary="Wipe the institution and all Amiri Agent made for it (prototype only)")
 async def reset(request: Request, body: ResetIn, actor: Actor = None):
+    demo_lock.guard()
     if not settings.flag("PROTOTYPE_RESET"):
         raise Problem(403, "reset_off", "Reset is switched off on this server (PROTOTYPE_RESET).")
     log.warning("prototype reset (then %s) by %s from %s", body.then, who(actor, None)[0],
@@ -83,6 +84,7 @@ async def reset(request: Request, body: ResetIn, actor: Actor = None):
 
 @router.post("/prototype:demo", summary="Load a demo institution on an empty platform (the first screen)")
 async def load_demo(request: Request, body: DemoIn, actor: Actor = None):
+    demo_lock.guard()
     if await request.app.state.institutions.list_institutions(None):
         raise Problem(409, "not_empty", "An institution is already set up. To switch to a demo, reset the prototype "
                                         "(Platform Admin, Settings).")

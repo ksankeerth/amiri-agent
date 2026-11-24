@@ -230,6 +230,8 @@ SETTINGS: dict[str, Setting] = {
         Setting("MONITOR_MIN_FREQUENCY_MINUTES", "60", "The most often a monitor may be checked: 15, 60, 360 or 1440."),
         Setting("PROTOTYPE_RESET", "true", "Allow the prototype reset (wipes the institution and all Amiri Agent made for it; "
                 "keeps market prices and reference data). Switch off for a real deployment."),
+        Setting("DEMO_LOCK", "false", "Lock editing, deleting and the reset in the app (for a live demo where many people "
+                "click around). Alerts can still be acknowledged and Scenario Studio still runs."),
         Setting("MOCK_INSTITUTIONS", "true", "Allow the sample bank and insurer (the Metrics Spec reference API at "
                 "/mock/bank and /mock/insurer, switched on by the Platform Admin). Switch off for a real deployment."),
         # The institution's data (the Metrics Spec reference API) and the connector that checks it

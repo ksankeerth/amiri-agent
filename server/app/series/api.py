@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Header, Query, Request, Response
 
+from app import demo_lock
 from app.series.schemas import (
     BarsPage,
     FindingList,
@@ -48,6 +49,7 @@ async def lookup(request: Request, q: Annotated[str, Query(min_length=1, max_len
 @router.post("/series", response_model=SeriesView, status_code=201,
              summary="Watch a new symbol: checks it with Twelve Data and reads its history")
 async def create_series(request: Request, body: SeriesCreate, response: Response):
+    demo_lock.guard()
     out = await svc(request).create(body.model_dump(exclude_unset=True))
     response.headers["Location"] = f"/api/v1/series/{out['series_id']}"
     response.headers["ETag"] = f'"{out["version"]}"'
@@ -65,6 +67,7 @@ async def get_series(request: Request, series_id: str, response: Response):
               summary="Change name, theme, places, detector settings; pause or resume")
 async def patch_series(request: Request, series_id: str, body: SeriesPatch, response: Response,
                        if_match: Annotated[str | None, Header()] = None):
+    demo_lock.guard()
     out = await svc(request).update(series_id, body.model_dump(), body.model_fields_set, if_match)
     response.headers["ETag"] = f'"{out["version"]}"'
     return out
@@ -73,6 +76,7 @@ async def patch_series(request: Request, series_id: str, body: SeriesPatch, resp
 @router.delete("/series/{series_id}", status_code=204,
                summary="Stop watching: removes the series and its bars; its findings stay")
 async def delete_series(request: Request, series_id: str):
+    demo_lock.guard()
     await svc(request).delete(series_id)
     return Response(status_code=204)
 
