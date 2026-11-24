@@ -52,3 +52,33 @@
 .ovx .ov-step.locked { background:var(--surface-2); box-shadow:none; }
 .ovx .ov-step.locked .n { background:transparent; box-shadow:inset 0 0 0 1px var(--hairline-2); color:var(--ink-3); }
 .ovx .ov-step.locked h3 { color:var(--ink-2); }
+
+/* ---------- The app bar and the sidebar foot: calm and consistent. The status is a quiet outlined line of words (a
+   hollow dot when off), the theme button a ghost icon, the role switch a two-way control whose chosen side says so by
+   weight and an inset ring, not by colour alone. */
+.appbar { box-shadow:none; border-bottom:1px solid var(--hairline); }
+.brand b { letter-spacing:.02em; }
+.brand .inst { font-size:15px; }
+.worldpill { height:36px; padding:0 14px; gap:10px; font-size:15px; background:var(--surface); border-color:var(--hairline-2); color:var(--ink-2); }
+button.worldpill { font-size:15px; }
+button.worldpill:hover { background-image:none; background:var(--surface-2); border-color:var(--ink-3); }
+.worldpill .dot { width:10px; height:10px; box-shadow:none; }
+.worldpill.is-off .dot { box-shadow:inset 0 0 0 2px var(--ink-3); }
+.worldpill.is-ok .dot, .worldpill.is-warn .dot { box-shadow:none; }
+.worldpill.is-ok, .worldpill.is-warn { background:var(--surface); }
+.worldpill.is-warn { border-color:var(--high-ink); }
+.worldpill .wword { font-weight:600; }
+.appbar .themebtn { width:40px; height:40px; border-radius:10px; }
+.seg { border-color:var(--hairline-2); border-radius:10px; padding:2px; gap:2px; background:var(--surface); }
+.seg button { flex:none; height:36px; padding:0 12px; border-radius:8px; font-size:15px; font-weight:500; color:var(--ink-2); }
+.seg button + button { border-left:0; }
+.seg button:hover { background:var(--surface-2); }
+.seg button[aria-pressed="true"] { background:var(--sunken); color:var(--ink); font-weight:600; box-shadow:inset 0 0 0 1.5px var(--ink); }
+.seg button:focus-visible { outline-offset:-3px; }
+.side-foot { border-top:1px solid var(--hairline); padding:10px 12px 12px; gap:6px; }
+.side-foot .label { padding:0 4px; }
+.side-foot .seg { flex-direction:column; flex:none; height:auto; }
+.side-foot .seg button { flex:none; width:100%; height:34px; text-align:left; padding:0 12px; }
+.side-foot > .btn { height:40px; font-size:15px; font-weight:500; border-color:transparent; justify-content:flex-start; }
+.side-user { padding:10px 16px; }
+.side-user b { font-size:15px; }
