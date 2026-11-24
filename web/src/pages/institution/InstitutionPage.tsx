@@ -1,6 +1,6 @@
 // The Institution page (ongoing edits) and its shared loading. Everything here works
 // without the assistant: forms, suggestion pickers and link grids on the profile API.
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError } from "../../api/client";
 import { inst, type HistoryRow, type InstitutionSummary, type Item, type Profile, type Readiness } from "../../api/institutions";
@@ -8,16 +8,18 @@ import type { Installation } from "../../App";
 import { Icon } from "../../components/Icon";
 import { WithChat } from "../../components/SetupChat";
 import { changeWords, countOf, fieldWord, SECTION_ONE, valueText } from "../../components/setupFlow";
-import { PageHeader, StatusPill } from "../../components/blocks";
-import { Banner, DEMOS, InlineSkeleton, LoadError, MenuButton, Modal, PageHead, ResetModal, useRole, useToast, PageSkeleton, StatusIcon } from "../../components/ui";
-import { dayTime, person, plural } from "../../format";
+import { StatusPill } from "../../components/blocks";
+import { PageTitle, Section, TextButton, TextTabs } from "../../components/rd";
+import { ChatToggleCtx, DEMOS, InlineSkeleton, LoadError, Modal, PageHead, ResetModal, useRole, useToast, PageSkeleton, StatusIcon } from "../../components/ui";
+import { dayTime, person, plural, ZONE_LABEL } from "../../format";
 import { cap, words } from "../../plain";
 import { PlaceName, useLoad } from "./fields";
-import { InstitutionFields, InstitutionModal, LABELS, splitErrors, useHiddenErrors, type Ctx } from "./forms";
-import { ProfileMap } from "./ProfileMap";
+import { InstitutionFields, InstitutionModal, splitErrors, useHiddenErrors, type Ctx } from "./forms";
+import { Overview } from "./overview";
 import { LinkGrid, SectionList } from "./sections";
 import { DraftFromProfile } from "../monitors/Monitors";
 import "../../styles/setup.css";
+import "../../styles/rd-institution.css";
 
 // ---------------------------------------------------------------- loading
 
@@ -152,10 +154,6 @@ const mapTitle = (p: Profile) => {
   const home = p.place_names[p.institution.home_country] ?? p.institution.home_country;
   return abroad ? `${home} · money moves with ${plural(abroad, "place")} abroad` : `Where ${p.institution.short_name ?? p.institution.name} operates`;
 };
-const TAB_OF_SECTION: Record<string, string> = {
-  footprint: "footprint", "watch-places": "footprint", flows: "footprint", segments: "customers", products: "customers",
-  regulators: "rules", rivals: "rivals", counterparties: "rivals", "risk-exposures": "risks", institution: "overview",
-};
 
 const SOURCE_WORDS: Record<string, string> = { form: "a form", assistant: "the Setup agent", setup: "guided setup", import: "an import", system: "the system" };
 const who = (actor: string, source: string) => `${actor === "anonymous" || !actor ? "System" : person(actor)} · via ${SOURCE_WORDS[source] ?? source}`;
@@ -202,24 +200,24 @@ function History({ id, pv, onChanged, readOnly, names }: { id: string; pv: numbe
   };
   useEffect(() => { inst.history(id).then(r => { setRows(r.items); setNext(r.next_before); }).catch(() => {}); }, [id, pv]);
   return (
-    <div className="card">
-      <div className="hd"><h2>Every change</h2><span className="small muted">what changed, when, and who made it (a form, the Setup agent, an import)</span></div>
-      <div className="tblwrap"><table className="tbl hist">
-        <thead><tr><th>When</th><th>What changed</th><th>By</th><th><span className="sr">Actions</span></th></tr></thead>
-        <tbody>{batches.map(b => { const r = b[0], k = r.batch_id; return (<Fragment key={k}>
-          <tr>
-            <td className="num small">{dayTime(r.at)}</td>
-            <td>{b.length === 1 ? <ChangeSentence r={r} names={names} />
-              : <>{r.source === "import" ? "Imported" : "Saved"} <b>{plural(b.length, "change")}</b>: {summary(b)}</>}</td>
-            <td className="small muted">{who(r.actor, r.source)}</td>
-            <td><div className="row" style={{ gap: 4, justifyContent: "flex-end" }}><button className="btn btn--sm btn--ghost" type="button" aria-expanded={open === k} onClick={() => setOpen(open === k ? null : k)}>{open === k ? "Hide" : "Details"}</button>
-              {!readOnly && r.op !== "status" && <button className="btn btn--sm" type="button" title="Undo this whole save" onClick={() => askUndo(k)}>Undo</button>}</div></td>
-          </tr>
-          {open === k && <tr><td colSpan={4}>{b.length === 1 ? <BeforeAfter r={r} />
-            : <ul className="hist-items">{b.map(x => <li key={x.change_id}><ChangeSentence r={x} names={names} /></li>)}</ul>}</td></tr>}
-        </Fragment>); })}</tbody>
-      </table></div>
-      {next && <div className="bd"><button className="btn btn--sm" type="button" onClick={() => inst.history(id, next).then(r => { setRows(x => [...x, ...r.items]); setNext(r.next_before); })}>Older changes</button></div>}
+    <Section title="Every change" meta={`what changed, when, and who made it (a form, the Setup agent, an import) · ${ZONE_LABEL} time`} className="ins-hist-sec">
+      {!batches.length ? <p className="rd-row-d ins-none">No changes yet.</p> : (
+        <table className="rd-table ins-hist">
+          <thead><tr><th scope="col">When</th><th scope="col">What changed</th><th scope="col">By</th><th scope="col"><span className="sr">Actions</span></th></tr></thead>
+          <tbody>{batches.map(b => { const r = b[0], k = r.batch_id; return (<Fragment key={k}>
+            <tr>
+              <td className="ins-when">{dayTime(r.at)}</td>
+              <td className="ins-what">{b.length === 1 ? <ChangeSentence r={r} names={names} />
+                : <>{r.source === "import" ? "Imported" : "Saved"} <b>{plural(b.length, "change")}</b>: {summary(b)}</>}</td>
+              <td>{who(r.actor, r.source)}</td>
+              <td><div className="ins-acts"><TextButton aria-expanded={open === k} onClick={() => setOpen(open === k ? null : k)}>{open === k ? "Hide" : "Details"}</TextButton>
+                {!readOnly && r.op !== "status" && <TextButton title="Undo this whole save" onClick={() => askUndo(k)}>Undo</TextButton>}</div></td>
+            </tr>
+            {open === k && <tr className="ins-opened"><td colSpan={4}><div className="rd-open">{b.length === 1 ? <BeforeAfter r={r} />
+              : <ul className="hist-items ins-items">{b.map(x => <li key={x.change_id}><ChangeSentence r={x} names={names} /></li>)}</ul>}</div></td></tr>}
+          </Fragment>); })}</tbody>
+        </table>)}
+      {next && <p className="ins-more"><TextButton onClick={() => inst.history(id, next).then(r => { setRows(x => [...x, ...r.items]); setNext(r.next_before); })}>Older changes</TextButton></p>}
       {undo && <Modal title="Undo this change?" onClose={() => setUndo(null)} footer={<>
         <button className="btn" type="button" onClick={() => setUndo(null)}>Cancel</button>
         <button className="btn btn--primary" type="button" disabled={!undo.valid} onClick={doUndo}>Undo</button></>}>
@@ -227,7 +225,7 @@ function History({ id, pv, onChanged, readOnly, names }: { id: string; pv: numbe
         {undo.valid ? <ul className="small">{undo.changes.map((c, k) => { const w = changeWords(c, "propose", names); return <li key={k}>{c.op === "create" ? "Add back" : c.op === "delete" ? "Remove" : "Restore"} {w.name ? <b>{w.name}</b> : SECTION_ONE[c.section] ?? c.section}{w.name ? ` (${SECTION_ONE[c.section] ?? c.section})` : ""}</li>; })}</ul>
           : <div className="rawerr">Can't be undone as it stands: {undo.errors.map(e => e.message).join("; ")}</div>}
       </Modal>}
-    </div>
+    </Section>
   );
 }
 
@@ -256,29 +254,73 @@ function AgentsView({ id, pv, names, regulators }: { id: string; pv: number; nam
   const s = c.radar_scope;
   const actorName = (a: string) => { const r = regulators.find(x => x.short === a); return r ? `${r.name}${r.name.includes(`(${a})`) ? "" : ` (${a})`}` : a; };
   return (
-    <div className="col gap16">
-      <p className="agents-lead">Radar reads news about these places, topics and names. Code works them out from your profile (version {c.profile_version}); the monitors, the investigation and the Setup agent read the same profile.</p>
-      <div className="card"><div className="hd"><h2>Places Radar watches</h2><span className="count">{s.places.length}</span></div>
-        <div className="tblwrap"><table className="tbl agents-tbl">
-          <thead><tr><th>Place</th><th>Why it is watched</th></tr></thead>
+    <div className="ins-agents">
+      <p className="rd-prose ins-lead">Radar reads news about these places, topics and names. Code works them out from your profile (version {c.profile_version}); the monitors, the investigation and the Setup agent read the same profile.</p>
+      <Section title="Places Radar watches" count={s.places.length}>
+        <table className="rd-table ins-why">
+          <thead><tr><th scope="col">Place</th><th scope="col">Why it is watched</th></tr></thead>
           <tbody>{s.places.map((p: string) => (
-            <tr key={p}><td className="strong"><PlaceName code={p} names={names} /></td>
-              <td><ul className="why">{(s.why?.[p] ?? []).map((w: string, k: number) => { const [tag, text] = whyParts(w, names); return (
-                <li key={k}>{tag && <span className="badge b-noeffect">{tag}</span>}<span>{text}</span></li>); })}</ul></td></tr>))}</tbody>
-        </table></div></div>
-      <div className="grid2">
-        <div className="card"><div className="hd"><h2>Topics</h2></div><div className="bd"><div className="row wrap" style={{ gap: 6 }}>
-          {s.themes.map((t: string) => <span key={t} className="chip">{THEME_WORDS[t] ?? t}</span>)}</div></div></div>
-        <div className="card"><div className="hd"><h2>Names</h2></div><div className="bd"><div className="row wrap" style={{ gap: 6 }}>
-          {s.actors.map((a: string) => <span key={a} className="chip">{actorName(a)}</span>)}</div></div></div>
+            <tr key={p}><td className="rd-strong"><PlaceName code={p} names={names} /></td>
+              <td><ul className="ins-whyl">{(s.why?.[p] ?? []).map((w: string, k: number) => { const [tag, text] = whyParts(w, names); return (
+                <li key={k}>{tag && <b className="ins-k">{tag}: </b>}{text}</li>); })}</ul></td></tr>))}</tbody>
+        </table>
+      </Section>
+      <div className="ins-two">
+        <Section title="Topics" count={s.themes.length}>
+          <ul className="ins-words">{s.themes.map((t: string) => <li key={t}>{THEME_WORDS[t] ?? t}</li>)}</ul></Section>
+        <Section title="Names" count={s.actors.length}>
+          <ul className="ins-words">{s.actors.map((a: string) => <li key={a}>{actorName(a)}</li>)}</ul></Section>
       </div>
-      {role === "platform_admin" && <div className="card"><div className="hd"><h2>The full context</h2><span className="spacer" /><button className="btn btn--sm" type="button" onClick={() => setRaw(!raw)}>{raw ? "Hide" : "Show"} JSON</button></div>
-        {raw && <div className="bd"><pre className="mono small" style={{ whiteSpace: "pre-wrap", margin: 0, maxHeight: 520, overflow: "auto" }}>{JSON.stringify(c, null, 2)}</pre></div>}</div>}
+      {role === "platform_admin" && <Section title="The full context" action={<TextButton aria-expanded={raw} onClick={() => setRaw(!raw)}>{raw ? "Hide" : "Show"} JSON</TextButton>}>
+        {raw && <pre className="ins-json">{JSON.stringify(c, null, 2)}</pre>}</Section>}
     </div>
   );
 }
 
 // ---------------------------------------------------------------- the page
+
+/** A text action that opens a short list of actions (a popover, closed by Escape, a click outside or a choice). */
+function TextMenu({ label, children }: { label: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("mousedown", away); document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
+  }, [open]);
+  return (
+    <div className="menu ins-menu" ref={box}>
+      <button type="button" className="rd-tbtn" aria-haspopup="true" aria-expanded={open} onClick={() => setOpen(o => !o)}>{label} <span aria-hidden="true">▾</span></button>
+      {open && <div className="menu-pop ins-menu-pop" role="group" aria-label={label} onClick={() => setOpen(false)}>{children}</div>}
+    </div>
+  );
+}
+
+/** "Commercial bank in Sri Lanka": the type in plain words. */
+const typeWords = (i: Profile["institution"]) =>
+  `${i.subtype ? `${cap(words(i.subtype))} ${i.institution_type === "bank" ? "bank" : "insurer"}` : i.institution_type === "bank" ? "Bank" : "Insurer"}${i.islamic ? " (Islamic)" : ""}`;
+
+/** Everything about the institution that isn't on the first screen: opened from the status line. */
+function AboutPanel({ profile, id, open }: { profile: Profile; id: string; open: boolean }) {
+  const i = profile.institution, c = i.counts;
+  return (
+    <div id={id} className="rd-open rd-prose ins-about" hidden={!open}>
+      {i.summary && <p>{i.summary}</p>}
+      <dl className="ins-kv">
+        <dt>Time zone</dt><dd>{i.time_zone}</dd>
+        <dt>Owns risk decisions</dt><dd>{i.governance_body ?? "—"}</dd>
+        <dt>Settles abroad in</dt><dd>{i.clearing_currencies?.join(", ") || "—"}</dd>
+        <dt>Also in the profile</dt><dd><Link className="rd-go" to="/institution/footprint">{plural(c.footprint, "place")} in the footprint</Link>{" · "}
+          <Link className="rd-go" to="/institution/footprint">{plural(c["watch-places"], "place")} to watch</Link>{" · "}
+          <Link className="rd-go" to="/institution/rivals">{plural(c.counterparties, "firm")} you depend on</Link></dd>
+        <dt>Version</dt><dd>{i.profile_version} · changed {dayTime(i.updated_at)} ({ZONE_LABEL} time)</dd>
+      </dl>
+      <p className="rd-fine">Amiri Agent reads this profile to decide what matters to you: where you operate, your customers and products, your flows, rules, rivals and risks.</p>
+    </div>
+  );
+}
 
 export function InstitutionPage() {
   const S = useInstitution();
@@ -288,12 +330,14 @@ export function InstitutionPage() {
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState<null | "archive" | "delete">(null);
   const [resetting, setResetting] = useState(false);
+  const [about, setAbout] = useState(false);
+  const aboutId = useId();
   const [drafting, setDrafting] = useState<{ section: string; item_id: string } | null>(null);
   const installation = useLoad(() => api<Installation>("/api/v1/installation"));
   const { profile, readiness, ctx, list } = S;
 
   if (!TABS.some(([k]) => k === tab)) return <Navigate to="/institution" replace />;  // an unknown tab: the overview
-  if (S.error != null && !profile) return <div className="page"><PageHead title="Institution" /><LoadError error={S.error} onRetry={S.reload} what="the institution" /></div>;
+  if (S.error != null && !profile) return <div className="page rd"><PageTitle title="Institution" /><LoadError error={S.error} onRetry={S.reload} what="the institution" /></div>;
   if (list === null) return <PageSkeleton />;
   const follow = (t: { tab: string | null }) => { if (t.tab) nav(`/institution/${t.tab}`); };
   const applied = (p: { kind: string; result: Record<string, any> | null }) => {
@@ -301,8 +345,8 @@ export function InstitutionPage() {
     else S.reload();
   };
   if (!list.length) return (
-    <WithChat institutionId={null} onTrack={follow} onApplied={applied}><div className="page">
-      <PageHead title="Institution" sub="Not set up yet. Fill in the form, or tell the setup agent." actions={<Link className="btn" to="/institution/setup">Guided setup</Link>} />
+    <WithChat institutionId={null} onTrack={follow} onApplied={applied}><div className="page rd rd-inst">
+      <PageTitle title="Institution" lede="Not set up yet. Fill in the form, or tell the Setup agent." actions={<Link className="rd-tbtn" to="/institution/setup">Guided setup</Link>} />
       <CreateInstitution onCreated={id => { S.select(id); S.reloadList(); nav("/institution/setup/where"); }} />
     </div></WithChat>
   );
@@ -311,84 +355,67 @@ export function InstitutionPage() {
   const archived = i.status === "archived";
   // Monitors belong to the institution this installation serves.
   const monitorButton = (section: string) => installation?.institution_id === i.institution_id && !archived
-    ? (it: Item) => <button className="btn btn--sm btn--ghost" type="button" title="Draft a monitor from this item; you check it before it's submitted"
-        onClick={() => setDrafting({ section, item_id: it.id })}><Icon name="monitor" />Draft a monitor</button>
+    ? (it: Item) => <TextButton title="Draft a monitor from this item; you check it before it's submitted"
+        onClick={() => setDrafting({ section, item_id: it.id })}>Draft a monitor</TextButton>
     : undefined;
-  const goFix = (section: string) => nav(`/institution/${TAB_OF_SECTION[section] ?? "overview"}`);
   const act = async (a: "activate" | "archive" | "restore") => {
-    try { await inst.status(i.institution_id, a); toast(a === "activate" ? "Active: the agents now use this profile." : a === "archive" ? "Archived." : "Restored."); S.reload(); }
+    try { await inst.status(i.institution_id, a); toast(a === "activate" ? "Active: Amiri Agent now uses this profile." : a === "archive" ? "Archived." : "Restored."); S.reload(); }
     catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
   };
   const remove = async () => {
     try { await inst.remove(i.institution_id); toast("Deleted."); setConfirm(null); S.reloadList(); }
     catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
   };
+  const setup = i.status === "setup";
+  const stateWords = i.status === "active" ? ["Active:", "Amiri Agent uses this profile"] : archived ? ["Archived:", "Amiri Agent does not use this profile"] : ["Being set up:", "Amiri Agent does not use it until it is activated"];
 
   return (
-    <WithChat institutionId={i.institution_id} onTrack={follow} onApplied={applied} at={{ tab }}><div className="page">
-      <PageHeader
-        title={i.name} pills={<StatusBadge status={i.status} />}
-        status={<>{i.subtype ? `${cap(words(i.subtype))} ${i.institution_type === "bank" ? "bank" : "insurer"}` : i.institution_type === "bank" ? "Bank" : "Insurer"}{i.islamic ? " (Islamic)" : ""} in <PlaceName code={i.home_country} names={profile.place_names} /> · {i.base_currency}</>}
-        help={<div className="col" style={{ gap: 8 }}>{i.summary && <p className="ph-about">{i.summary}</p>}
-          <p className="small muted">Time zone: {i.time_zone}. Amiri Agent reads this profile to decide what matters to you: where you operate, your customers and products, your flows, rules, rivals and risks.</p></div>}
-        helpLabel="About this institution"
+    <WithChat institutionId={i.institution_id} onTrack={follow} onApplied={applied} at={{ tab }}><PageRoot>
+      <PageTitle
+        title={i.name}
         actions={<>
-          <Link className="btn" to="/institution/setup"><Icon name="check" />Guided setup</Link>
-          {!archived && <button className="btn" type="button" onClick={() => setEditing(true)}><Icon name="edit" />Edit details</button>}
-          <MenuButton label="More">
-              <button className="btn btn--ghost" type="button" onClick={() => download(`${i.institution_id}-profile.json`, { institution: pickCreate(i as any), sections: profile.sections })}>Export the profile (JSON)</button>
-              {installation?.prototype_reset !== false && <button className="btn btn--ghost btn--danger" type="button" onClick={() => setResetting(true)}><Icon name="refresh" />Reset the prototype…</button>}
-          </MenuButton>
-          {i.status === "setup" && <button className="btn btn--primary" type="button" disabled={!readiness.ready} title={readiness.ready ? "" : "Required parts are missing"} onClick={() => act("activate")}>Activate</button>}
+          {!archived && <TextButton onClick={() => setEditing(true)}>Edit details</TextButton>}
+          <Link className="rd-tbtn" to="/institution/setup">Guided setup</Link>
+          <TextMenu label="More">
+            <button className="rd-tbtn ins-mi" type="button" onClick={() => download(`${i.institution_id}-profile.json`, { institution: pickCreate(i as any), sections: profile.sections })}>Export the profile (JSON)</button>
+            {installation?.prototype_reset !== false && <button className="rd-tbtn ins-mi ins-danger" type="button" onClick={() => setResetting(true)}>Reset the prototype…</button>}
+            {setup && <button className="rd-tbtn ins-mi ins-danger" type="button" onClick={() => setConfirm("delete")}>Delete this institution…</button>}
+          </TextMenu>
+          <SetupAgentToggle />
+          {setup && <button className="btn btn--primary" type="button" disabled={!readiness.ready} title={readiness.ready ? "" : "Required parts are missing"} onClick={() => act("activate")}>Activate</button>}
           {archived && <button className="btn btn--primary" type="button" onClick={() => act("restore")}>Restore</button>}
-          {i.status === "setup" && <button className="btn btn--danger" type="button" aria-label="Delete this institution" title="Delete this institution" onClick={() => setConfirm("delete")}><Icon name="trash" /></button>}
-        </>} />
-      <div className="banners">
-        {archived && <Banner kind="warn" icon="warn">Archived: the agents don't use this profile and it can't be changed. Restore it to edit.</Banner>}
-        {!archived && !readiness.ready && <Banner kind="warn" icon="warn"><b>{plural(readiness.missing_required, "required part")} missing</b> before it can go live. <Link to="/institution/setup">Continue the guided setup</Link> or use the tabs.</Banner>}
-        {i.status === "setup" && readiness.ready && <Banner kind="info">Everything required is there. <b>Activate</b> to let the agents use this profile{readiness.open_recommendations ? `; ${plural(readiness.open_recommendations, "recommendation")} still open` : ""}.</Banner>}
-      </div>
-      <div className="tabs" role="tablist" aria-label="Parts of the profile">
-        {TABS.map(([k, label, full]) => <button key={k} type="button" role="tab" aria-selected={tab === k} title={full !== label ? full : undefined} onClick={() => nav(`/institution/${k}`)}>{label}</button>)}
-      </div>
+        </>}
+        status={<>
+          <span><b className="ins-state">{stateWords[0]}</b> {stateWords[1]}</span>
+          <span>{typeWords(i)} in <PlaceName code={i.home_country} names={profile.place_names} /></span>
+          <span>{i.base_currency}</span>
+          <TextButton aria-expanded={about} aria-controls={aboutId} onClick={() => setAbout(a => !a)}>About this institution</TextButton></>}
+        help={<AboutPanel profile={profile} id={aboutId} open={about} />} />
+      {archived && <p className="rd-warn ins-banner"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> Archived: Amiri Agent does not use this profile and it can't be changed. Restore it to edit.</p>}
+      {!archived && !readiness.ready && <p className="rd-warn ins-banner"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> <b>{plural(readiness.missing_required, "required part")} missing</b> before it can go live. <Link className="rd-go" to="/institution/setup">Continue the guided setup →</Link></p>}
+      {setup && readiness.ready && <p className="rd-fine ins-banner">Everything required is there. Activate to let Amiri Agent use this profile{readiness.open_recommendations ? `; ${plural(readiness.open_recommendations, "recommendation")} still open` : ""}.</p>}
+      <TextTabs label="Parts of the profile" value={tab} onChange={k => nav(`/institution/${k}`)} items={TABS.map(([key, label]) => ({ key, label }))} />
 
-      {tab === "overview" && <div className="col gap16">
-        <div className="card"><div className="bd"><ProfileMap profile={profile} height={340} title={mapTitle(profile)} /></div></div>
-        <div className="grid2">
-          <div className="card"><div className="hd"><h2>Ready to go live?</h2></div><div className="bd"><ReadinessList r={readiness} onFix={goFix} /></div></div>
-          <div className="card"><div className="hd"><h2>In the profile</h2></div><div className="bd"><div className="kv">
-            {Object.entries(LABELS).map(([s, l]) => <Fragment key={s}><div className="k">{l.many}</div><div className="v"><Link to={`/institution/${TAB_OF_SECTION[s]}`}>{i.counts[s as keyof typeof i.counts]}</Link></div></Fragment>)}
-            <div className="k">Owns risk decisions</div><div className="v">{i.governance_body ?? "—"}</div>
-            <div className="k">Settles abroad in</div><div className="v">{i.clearing_currencies?.join(", ") || "—"}</div>
-            <div className="k">Profile version</div><div className="v">{i.profile_version} · changed {dayTime(i.updated_at)}</div>
-          </div></div></div>
-        </div>
-        {readiness.warnings.length > 0 && <div className="card"><div className="hd"><h2>Worth a look</h2></div><div className="bd col" style={{ gap: 6 }}>
-          {readiness.warnings.map((w, k) => <div key={k} className="small"><span className="badge b-warn">{(w.section ?? "").replace(/-/g, " ")}</span> {w.message}</div>)}</div></div>}
-      </div>}
-      {tab === "customers" && <div className="col gap16">
-        <SectionList section="segments" ctx={ctx} reload={S.reload} suggest />
-        <SectionList section="products" ctx={ctx} reload={S.reload} suggest />
-        <LinkGrid ctx={ctx} rows="products" cols="segments" field="segments" reload={S.reload} title="Who uses which product" />
-      </div>}
-      {tab === "footprint" && <div className="col gap16">
-        <SectionList section="footprint" ctx={ctx} reload={S.reload} />
-        <SectionList section="flows" ctx={ctx} reload={S.reload} suggest itemAction={monitorButton("flows")} />
-        <LinkGrid ctx={ctx} rows="flows" cols="segments" field="segments" reload={S.reload} title="Which customer groups each flow concerns" />
-        <SectionList section="watch-places" ctx={ctx} reload={S.reload} />
-      </div>}
-      {tab === "rules" && <div className="col gap16">
-        <Banner kind="info">Regulators come from a rule table: your home and other countries, the currencies you settle in abroad ({i.clearing_currencies?.join(", ") || "none set; add them in Edit details"}), and global standards for your type. The table still needs review by your compliance team.</Banner>
-        <SectionList section="regulators" ctx={ctx} reload={S.reload} suggest itemAction={monitorButton("regulators")} />
-      </div>}
-      {tab === "rivals" && <div className="col gap16">
-        <SectionList section="rivals" ctx={ctx} reload={S.reload} suggest itemAction={monitorButton("rivals")} />
-        <SectionList section="counterparties" ctx={ctx} reload={S.reload} itemAction={monitorButton("counterparties")} />
-      </div>}
-      {tab === "risks" && <div className="col gap16">
-        <Banner kind="info">The risk finder (Suggestions) checks a library of known hazards against your footprint, customer groups, flows and the sea routes your goods take. Code only; no model. Dismiss what doesn't apply and it won't be offered again.</Banner>
-        <SectionList section="risk-exposures" ctx={ctx} reload={S.reload} suggest itemAction={monitorButton("risk-exposures")} />
-      </div>}
+      {tab === "overview" && <Overview profile={profile} readiness={readiness} setup={setup} mapTitle={mapTitle(profile)} onEdit={() => setEditing(true)} />}
+      {tab === "customers" && <>
+        <SectionList rd section="segments" ctx={ctx} reload={S.reload} suggest />
+        <SectionList rd section="products" ctx={ctx} reload={S.reload} suggest />
+        <LinkGrid rd ctx={ctx} rows="products" cols="segments" field="segments" reload={S.reload} title="Edit who uses which product" summary="the same links as the “For” column, as a grid you can tick" />
+      </>}
+      {tab === "footprint" && <>
+        <SectionList rd section="footprint" ctx={ctx} reload={S.reload} />
+        <SectionList rd section="flows" ctx={ctx} reload={S.reload} suggest itemAction={monitorButton("flows")} />
+        <LinkGrid rd ctx={ctx} rows="flows" cols="segments" field="segments" reload={S.reload} title="Edit which customer groups each flow concerns" summary="a grid you can tick" />
+        <SectionList rd section="watch-places" ctx={ctx} reload={S.reload} />
+      </>}
+      {tab === "rules" && <SectionList rd section="regulators" ctx={ctx} reload={S.reload} suggest itemAction={monitorButton("regulators")}
+        note={`Regulators come from a rule table: your home and other countries, the currencies you settle in abroad (${i.clearing_currencies?.join(", ") || "none set; add them in Edit details"}), and global standards for your type. Your compliance team still needs to review it.`} />}
+      {tab === "rivals" && <>
+        <SectionList rd section="rivals" ctx={ctx} reload={S.reload} suggest itemAction={monitorButton("rivals")} />
+        <SectionList rd section="counterparties" ctx={ctx} reload={S.reload} itemAction={monitorButton("counterparties")} />
+      </>}
+      {tab === "risks" && <SectionList rd section="risk-exposures" ctx={ctx} reload={S.reload} suggest itemAction={monitorButton("risk-exposures")}
+        note="The risk finder (Suggestions) checks a library of known hazards against your footprint, customer groups, flows and the sea routes your goods take. Code only, no model. Dismiss what doesn't apply and it won't be offered again." />}
       {tab === "history" && <History id={i.institution_id} pv={i.profile_version} onChanged={S.reload} readOnly={archived} names={profile.place_names} />}
       {tab === "agents" && <AgentsView id={i.institution_id} pv={i.profile_version} names={profile.place_names} regulators={profile.sections.regulators} />}
 
@@ -398,10 +425,22 @@ export function InstitutionPage() {
       {confirm && <Modal title={confirm === "archive" ? `Archive ${i.name}?` : `Delete ${i.name}?`} onClose={() => setConfirm(null)} footer={<>
         <button className="btn" type="button" onClick={() => setConfirm(null)}>Cancel</button>
         <button className="btn btn--danger" type="button" onClick={() => (confirm === "archive" ? (setConfirm(null), act("archive")) : remove())}>{confirm === "archive" ? "Archive" : "Delete"}</button></>}>
-        <p>{confirm === "archive" ? "The agents stop using this profile and it can't be changed until restored. Nothing is deleted." : "It was never activated, so it is deleted with its whole profile and history."}</p>
+        <p>{confirm === "archive" ? "Amiri Agent stops using this profile and it can't be changed until restored. Nothing is deleted." : "It was never activated, so it is deleted with its whole profile and history."}</p>
       </Modal>}
-    </div></WithChat>
+    </PageRoot></WithChat>
   );
+}
+
+/** The page's root; narrower rules apply while the Setup agent's panel takes a third of the width. */
+function PageRoot({ children }: { children: ReactNode }) {
+  const chat = useContext(ChatToggleCtx);
+  return <div className={`page rd rd-inst${chat?.open ? " ins-narrow" : ""}`}>{children}</div>;
+}
+
+/** "Setup agent", among the title's actions while its panel is closed. */
+function SetupAgentToggle() {
+  const chat = useContext(ChatToggleCtx);
+  return chat && !chat.open ? <TextButton onClick={chat.toggle}>Setup agent</TextButton> : null;
 }
 
 /** Setting up another institution (scenario S41): the form, with a fresh setup chat beside it. */

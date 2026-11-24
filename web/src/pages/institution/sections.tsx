@@ -1,15 +1,17 @@
 // Lists of each profile section, with add / edit / delete, suggestion pickers and link grids.
-import { useEffect, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { ApiError } from "../../api/client";
 import { showProposal } from "../../api/assistant";
 import { inst, type Item, type Operation, type SectionName, type Suggestion } from "../../api/institutions";
 import { dayTime, person, plural } from "../../format";
 import { Icon } from "../../components/Icon";
 import { Modal, useToast } from "../../components/ui";
+import { Fold, Section, TextButton } from "../../components/rd";
 import { dimWord, monthsText, PlaceName, usdText, useRoutes, valueWord } from "./fields";
 import { AREA_WORDS, ItemModal, LABELS, splitErrors, type Ctx } from "./forms";
 import { FLOW_WORDS } from "../../components/setupFlow";
 import { cap, productTypeLabel } from "../../plain";
+import { Link } from "react-router-dom";
 import "../../styles/polish-forms.css";
 
 const pn = (ctx: Ctx, c: string) => <PlaceName code={c} names={ctx.profile?.place_names} />;
@@ -36,7 +38,7 @@ function describe(section: SectionName, it: Item, ctx: Ctx): { title: ReactNode;
       return { title: it.name, meta: keep([[null, cw(it.kind)], it.reason && ["Why", it.reason]]) };
     case "segments":
       return { title: it.label, meta: keep([[null, cw(it.kind)], it.places.length && ["Places", places(ctx, it.places)],
-        it.spec_mapping.length && ["In your data", it.spec_mapping.map((m: any) => `${dimWord(m.dimension).toLowerCase()} “${valueWord(m.value)}”`).join(", ")]]),
+        it.spec_mapping.length && ["In your data", it.spec_mapping.map((m: any) => `${dimWord(m.dimension).toLowerCase().replace("isic", "ISIC")} “${valueWord(m.value)}”`).join(", ")]]),
         badges: !it.spec_mapping.length ? <span className="badge b-warn" title="Checks can't be scoped to this group">NO DATA VALUE</span> : undefined };
     case "products":
       return { title: it.name, meta: keep([[null, productTypeLabel(it.product_type)], it.owner && ["Owner", it.owner],
@@ -85,7 +87,7 @@ function MetaLine({ meta }: { meta: Meta }) {
 /** Every section's list, with Add / Edit / Delete. */
 /** Items for a section from a JSON file: a list of items, {items: [...]}, or a whole profile ({sections: {...}}).
  * Checked by the server first (a dry run), shown, and added only when confirmed, all or nothing. */
-function ImportItems({ section, iid, onAdded }: { section: SectionName; iid: string; onAdded: () => void }) {
+function ImportItems({ section, iid, onAdded, text }: { section: SectionName; iid: string; onAdded: () => void; text?: boolean }) {
   const toast = useToast();
   const [ops, setOps] = useState<Operation[] | null>(null);
   const [problems, setProblems] = useState<string[]>([]);
@@ -113,7 +115,7 @@ function ImportItems({ section, iid, onAdded }: { section: SectionName; iid: str
   };
   return (
     <>
-      <label className="btn btn--sm" title={`Import ${LABELS[section].many.toLowerCase()} from a JSON file`}><Icon name="plus" />Import
+      <label className={text ? "rd-tbtn ins-import" : "btn btn--sm"} title={`Import ${LABELS[section].many.toLowerCase()} from a JSON file`}>{!text && <Icon name="plus" />}Import
         <input type="file" accept="application/json" className="sr" onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) read(f); }} /></label>
       {ops !== null && <Modal title={`Import ${LABELS[section].many.toLowerCase()}`} onClose={() => setOps(null)} footer={<>
         <button className="btn" type="button" onClick={() => setOps(null)}>Cancel</button>
@@ -126,14 +128,19 @@ function ImportItems({ section, iid, onAdded }: { section: SectionName; iid: str
   );
 }
 
-export function SectionList({ section, ctx, reload, suggest, extra, compact, itemAction }: {
+export function SectionList({ section, ctx, reload, suggest, extra, compact, itemAction, rd, note }: {
   section: SectionName; ctx: Ctx; reload: () => void; suggest?: boolean; extra?: ReactNode; compact?: boolean;
   itemAction?: (it: Item) => ReactNode;
+  /** The redesigned look (the Institution page): a section under a rule, ruled rows, no cards. The setup steps keep the old one. */
+  rd?: boolean;
+  /** One line of small print under the title (rd only). */
+  note?: ReactNode;
 }) {
   const toast = useToast();
   const [editing, setEditing] = useState<Item | null | "new">(null);
   const [deleting, setDeleting] = useState<{ item: Item; referrers?: { section: string; id: string; field: string }[] } | null>(null);
   const [suggesting, setSuggesting] = useState(false);
+  const [picked, setPicked] = useState<string | null>(null);  // rd products table: the opened row
   const items = ctx.profile?.sections[section] ?? [];
   const archived = ctx.profile?.institution.status === "archived";
   const iid = ctx.profile?.institution.institution_id ?? "";
@@ -147,6 +154,28 @@ export function SectionList({ section, ctx, reload, suggest, extra, compact, ite
       else { toast(e instanceof ApiError ? e.full : String(e)); setDeleting(null); }
     }
   };
+  const modals = (
+    <>
+        {editing && <ItemModal section={section} ctx={ctx} editing={editing === "new" ? null : editing}
+          onClose={() => setEditing(null)} onSaved={() => { setEditing(null); reload(); }}
+          onDelete={rd && editing !== "new" ? () => { setDeleting({ item: editing }); setEditing(null); } : undefined} />}
+        {deleting && (
+          <Modal title={`Delete this ${LABELS[section].one}?`} onClose={() => setDeleting(null)} footer={<>
+            <button className="btn" type="button" onClick={() => setDeleting(null)}>Cancel</button>
+            {deleting.referrers ? <button className="btn btn--danger" type="button" onClick={() => del(true)}>Delete and remove those links</button>
+              : <button className="btn btn--danger" type="button" onClick={() => del(false)}>Delete</button>}</>}>
+            <p><b>{describe(section, deleting.item, ctx).title}</b></p>
+            {deleting.referrers && <div className="note">Other items point at it: {deleting.referrers.map(r => `${LABELS[r.section as SectionName]?.one ?? r.section} “${byId(ctx, r.section as SectionName, r.id, LABELS[r.section as SectionName]?.nameKey ?? "id")}”`).join("; ")}.
+              Deleting it also removes it from them (each change is kept in the history).</div>}
+          </Modal>
+        )}
+        {suggesting && <Modal wide title={`Suggested ${LABELS[section].many.toLowerCase()}`} onClose={() => setSuggesting(false)}>
+          <SuggestionPicker section={section} ctx={ctx} onAdded={() => { setSuggesting(false); reload(); }} />
+        </Modal>}
+    </>
+  );
+  if (rd) return <RdSection section={section} ctx={ctx} items={items} archived={archived} suggest={suggest} note={note} itemAction={itemAction}
+    picked={picked} setPicked={setPicked} onAdd={() => setEditing("new")} onEdit={setEditing} onSuggest={() => setSuggesting(true)} reload={reload} iid={iid} modals={modals} />;
   return (
     <div className="card pf-list">
       <div className="hd"><h2>{LABELS[section].many}</h2><span className="tabs" style={{ border: 0, margin: 0 }}><span className="count">{items.length}</span></span>
@@ -176,22 +205,124 @@ export function SectionList({ section, ctx, reload, suggest, extra, compact, ite
           );
         })}</div>
       )}
-      {editing && <ItemModal section={section} ctx={ctx} editing={editing === "new" ? null : editing}
-        onClose={() => setEditing(null)} onSaved={() => { setEditing(null); reload(); }} />}
-      {deleting && (
-        <Modal title={`Delete this ${LABELS[section].one}?`} onClose={() => setDeleting(null)} footer={<>
-          <button className="btn" type="button" onClick={() => setDeleting(null)}>Cancel</button>
-          {deleting.referrers ? <button className="btn btn--danger" type="button" onClick={() => del(true)}>Delete and remove those links</button>
-            : <button className="btn btn--danger" type="button" onClick={() => del(false)}>Delete</button>}</>}>
-          <p><b>{describe(section, deleting.item, ctx).title}</b></p>
-          {deleting.referrers && <div className="note">Other items point at it: {deleting.referrers.map(r => `${LABELS[r.section as SectionName]?.one ?? r.section} “${byId(ctx, r.section as SectionName, r.id, LABELS[r.section as SectionName]?.nameKey ?? "id")}”`).join("; ")}.
-            Deleting it also removes it from them (each change is kept in the history).</div>}
-        </Modal>
-      )}
-      {suggesting && <Modal wide title={`Suggested ${LABELS[section].many.toLowerCase()}`} onClose={() => setSuggesting(false)}>
-        <SuggestionPicker section={section} ctx={ctx} onAdded={() => { setSuggesting(false); reload(); }} />
-      </Modal>}
+      {modals}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------- the redesigned look (Institution page)
+
+/** What a row says in words where it used to carry a pill: "◆ No data value yet" is a warning, the rest is plain. */
+function flags(section: SectionName, it: Item): { warn: boolean; text: string }[] {
+  const f: { warn: boolean; text: string }[] = [];
+  const add = (text: string, warn = false) => f.push({ warn, text });
+  switch (section) {
+    case "footprint": if (it.role === "home") add("Home"); break;
+    case "segments": if (!it.spec_mapping.length) add("No data value yet, so checks can't be scoped to this group", true); break;
+    case "products":
+      if (it.status !== "active") add(cap(it.status));
+      if (it.islamic) add("Islamic");
+      if (!it.segments.length) add("No customer group", true);
+      break;
+    case "flows": if (it.status === "suggested") add("To check", true); if (it.source.sample) add("Sample figure", true); break;
+    case "regulators": add(it.relation === "home" ? "Home" : it.relation === "reach" ? "Reaches you from abroad" : cap(it.relation)); if (it.basis === "rule") add("From the rule table"); break;
+    case "rivals": add(`${cap(it.overlap)} overlap`); break;
+    case "counterparties": if (it.importance === "critical") add("Critical to you"); break;
+    case "risk-exposures": if (it.status === "dismissed") add("Dismissed"); if (it.source === "finder") add("Found by the risk finder"); break;
+  }
+  return f;
+}
+const RD_TITLE: Partial<Record<SectionName, string>> = { "risk-exposures": "Known risks" };
+
+/** The details line of a row: the facts as small print, labels in ink ("in your data: …"), warnings with ◆. */
+function RdMeta({ section, it, meta }: { section: SectionName; it: Item; meta: Meta }) {
+  const bits: ReactNode[] = [
+    ...meta.map(([k, v], i) => <span key={`m${i}`}>{k && <b className="ins-k">{k.toLowerCase()}: </b>}{v}</span>),
+    ...flags(section, it).map((x, i) => x.warn ? <span key={`f${i}`} className="rd-warn"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> {x.text}</span> : <span key={`f${i}`}>{x.text}</span>),
+  ];
+  if (!bits.length) return null;
+  return <p className="rd-row-m ins-meta">{bits.map((b, i) => <Fragment key={i}>{i > 0 && <span className="ins-sep" aria-hidden="true"> · </span>}{b}</Fragment>)}</p>;
+}
+
+function RdSection({ section, ctx, items, archived, suggest, note, itemAction, picked, setPicked, onAdd, onEdit, onSuggest, reload, iid, modals }: {
+  section: SectionName; ctx: Ctx; items: Item[]; archived: boolean; suggest?: boolean; note?: ReactNode; itemAction?: (it: Item) => ReactNode;
+  picked: string | null; setPicked: (id: string | null) => void; onAdd: () => void; onEdit: (it: Item) => void; onSuggest: () => void;
+  reload: () => void; iid: string; modals: ReactNode;
+}) {
+  const actions = archived ? undefined : <>
+    {suggest && <TextButton onClick={onSuggest}>Suggestions</TextButton>}
+    <ImportItems section={section} iid={iid} onAdded={reload} text />
+    <TextButton onClick={onAdd}>+ Add</TextButton></>;
+  const title = RD_TITLE[section] ?? LABELS[section].many;
+  return (
+    <Section title={title} count={items.length} action={actions} className={`ins-sec ins-${section}`}>
+      {note && <p className="rd-fine rd-prose ins-note">{note}</p>}
+      {!items.length ? <p className="rd-row-d ins-none">None yet.{suggest && !archived ? " Use Suggestions to start from the usual ones, or add your own." : ""}</p>
+        : section === "products" ? <ProductsTable ctx={ctx} items={items} archived={archived} picked={picked} setPicked={setPicked} onEdit={onEdit} itemAction={itemAction} />
+        : <ul className="ins-rows" aria-label={title}>{items.map(it => {
+          const x = describe(section, it, ctx);
+          const what = `${LABELS[section].one} ${typeof x.title === "string" ? x.title : String((it as Record<string, unknown>)[LABELS[section].nameKey] ?? "")}`.trim();
+          return (
+            <li key={it.id} className="rd-row ins-row">
+              <div className="ins-main">
+                <div className="rd-row-t">{x.title}</div>
+                <RdMeta section={section} it={it} meta={x.meta} />
+                <Via rd o={ctx.profile?.origins?.[section]?.[it.id]} />
+              </div>
+              {!archived && <div className="ins-acts">
+                {itemAction?.(it)}
+                <TextButton onClick={() => onEdit(it)} title={`Edit ${what}`} aria-label={`Edit ${what}`}>Edit</TextButton>
+              </div>}
+            </li>);
+        })}</ul>}
+      {modals}
+    </Section>
+  );
+}
+
+/** Products as one table: product · type · owner · for (the customer groups, in full) · book. A row opens to edit it. */
+function ProductsTable({ ctx, items, archived, picked, setPicked, onEdit, itemAction }: {
+  ctx: Ctx; items: Item[]; archived: boolean; picked: string | null; setPicked: (id: string | null) => void; onEdit: (it: Item) => void; itemAction?: (it: Item) => ReactNode;
+}) {
+  const unlinked = items.filter(p => !p.data?.source_id).length;
+  const [lead, rest] = unlinked === 0 ? ["", ""]
+    : unlinked === items.length
+      ? items.length === 1 ? ["This product is not linked to a data connection yet", ", so its checks can't use your numbers."]
+        : [`None of the ${items.length} is linked to a data connection yet`, ", so their checks can't use your numbers."]
+      : [`${unlinked} of the ${items.length} ${unlinked === 1 ? "is" : "are"} not linked to a data connection yet`, `, so ${unlinked === 1 ? "its" : "their"} checks can't use your numbers.`];
+  return (
+    <>
+      {unlinked > 0 && <p className="rd-warn ins-nodata"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> <b>{lead}</b>{rest}{" "}
+        <Link className="rd-go" to="/admin/data">Link {unlinked === 1 ? "it" : "them"} →</Link></p>}
+      <table className="rd-table ins-products">
+        <thead><tr><th scope="col">Product</th><th scope="col">Type</th><th scope="col">Owner</th><th scope="col">For</th><th scope="col" className="rd-num">Book</th></tr></thead>
+        <tbody>{items.map(p => {
+          const open = picked === p.id;
+          const f = flags("products", p);
+          return (
+            <Fragment key={p.id}>
+              <tr className={open ? "ins-picked" : undefined}>
+                <td className="rd-strong"><button type="button" className="ins-pick" aria-expanded={open} onClick={() => setPicked(open ? null : p.id)}>{p.name}</button></td>
+                <td>{productTypeLabel(p.product_type)}</td>
+                <td>{p.owner ?? "—"}</td>
+                <td>{p.segments.length ? p.segments.map((s: string) => byId(ctx, "segments", s, "label")).join("; ") : "—"}</td>
+                <td className="rd-num">{p.book_size ? `${p.book_size.currency} ${(p.book_size.amount / 1e9).toFixed(1)} bn` : "—"}</td>
+              </tr>
+              {open && <tr className="ins-opened"><td colSpan={5}>
+                <div className="rd-open ins-open">
+                  {f.length > 0 && <p className="rd-row-m ins-meta">{f.map((x, i) => <Fragment key={i}>{i > 0 && " · "}{x.warn ? <span className="rd-warn">◆ {x.text}</span> : x.text}</Fragment>)}</p>}
+                  <div className="ins-acts ins-acts-open">
+                    {!archived && <TextButton onClick={() => onEdit(p)}>Edit {p.name}</TextButton>}
+                    {!archived && itemAction?.(p)}
+                    <Via rd o={ctx.profile?.origins?.products?.[p.id]} />
+                  </div>
+                </div>
+              </td></tr>}
+            </Fragment>);
+        })}</tbody>
+      </table>
+      {!archived && <p className="rd-fine ins-hint">Select a product to edit it.</p>}
+    </>
   );
 }
 
@@ -278,8 +409,10 @@ export function SuggestionPicker({ section, ctx, onAdded, inline }: { section: S
 }
 
 /** A checkbox grid linking rows (e.g. products) to columns (e.g. customer groups), saved in one batch. */
-export function LinkGrid({ ctx, rows, cols, field, reload, title }: {
+export function LinkGrid({ ctx, rows, cols, field, reload, title, rd, summary }: {
   ctx: Ctx; rows: SectionName; cols: SectionName; field: string; reload: () => void; title: string;
+  /** The redesigned look: a fold ("Edit who uses which product"), the grid inside it. */
+  rd?: boolean; summary?: ReactNode;
 }) {
   const toast = useToast();
   const R = ctx.profile?.sections[rows] ?? [];
@@ -301,30 +434,44 @@ export function LinkGrid({ ctx, rows, cols, field, reload, title }: {
   };
   const place = (c: string) => ctx.profile?.place_names?.[c] ?? c;
   const rowLabel = (r: Item) => rows === "flows" ? `${cw(FLOW_WORDS[r.kind] ?? r.kind)}${r.goods ? ` (${r.goods})` : ""}: ${place(r.counterpart)}` : r[LABELS[rows].nameKey];
+  const grid = (
+    <table className={rd ? "rd-table ins-linkgrid" : "tbl"}>
+      <thead><tr><th><span className="sr">{LABELS[rows].many} and {LABELS[cols].many}</span></th>{C.map(c => <th key={c.id} style={{ textAlign: "center", whiteSpace: "normal", minWidth: 90 }}>{c[LABELS[cols].nameKey]}</th>)}</tr></thead>
+      <tbody>{R.map(r => (
+        <tr key={r.id}><td className={rd ? "rd-strong" : "strong"}>{rowLabel(r)}</td>
+          {C.map(c => <td key={c.id} style={{ textAlign: "center" }}>
+            <input type="checkbox" aria-label={`${rowLabel(r)}: ${c[LABELS[cols].nameKey]}`} style={{ accentColor: "var(--accent)" }} checked={m[r.id]?.has(c.id) ?? false}
+              onChange={e => setM(x => { const n = { ...x, [r.id]: new Set(x[r.id]) }; if (e.target.checked) n[r.id].add(c.id); else n[r.id].delete(c.id); return n; })} /></td>)}
+        </tr>))}</tbody>
+    </table>);
+  if (rd) return (
+    <Fold title={title} summary={dirty.length ? `${plural(dirty.length, "change")} not saved yet` : summary} remember={`inst-grid-${rows}`}>
+      <div className="ins-grid">
+        <div className="ins-grid-bar">{dirty.length > 0 ? <>
+          <TextButton onClick={() => setM(start())}>Undo</TextButton>
+          <button className="btn btn--primary" type="button" disabled={busy} onClick={save}>Save {plural(dirty.length, "change")}</button></>
+          : <span className="rd-fine">Tick the customer groups each row is for. Nothing is saved until you press Save.</span>}</div>
+        <div className="ins-grid-wrap">{grid}</div>
+      </div>
+    </Fold>
+  );
   return (
     <div className="card">
       <div className="hd"><h2>{title}</h2><span className="spacer" />
         {dirty.length > 0 && <><button className="btn btn--sm" type="button" onClick={() => setM(start())}>Undo</button>
           <button className="btn btn--sm btn--primary" type="button" disabled={busy} onClick={save}>Save {plural(dirty.length, "change")}</button></>}</div>
-      <div className="tblwrap"><table className="tbl">
-        <thead><tr><th><span className="sr">{LABELS[rows].many} and {LABELS[cols].many}</span></th>{C.map(c => <th key={c.id} style={{ textAlign: "center", whiteSpace: "normal", minWidth: 90 }}>{c[LABELS[cols].nameKey]}</th>)}</tr></thead>
-        <tbody>{R.map(r => (
-          <tr key={r.id}><td className="strong">{rowLabel(r)}</td>
-            {C.map(c => <td key={c.id} style={{ textAlign: "center" }}>
-              <input type="checkbox" aria-label={`${rowLabel(r)}: ${c[LABELS[cols].nameKey]}`} style={{ accentColor: "var(--accent)" }} checked={m[r.id]?.has(c.id) ?? false}
-                onChange={e => setM(x => { const n = { ...x, [r.id]: new Set(x[r.id]) }; if (e.target.checked) n[r.id].add(c.id); else n[r.id].delete(c.id); return n; })} /></td>)}
-          </tr>))}</tbody>
-      </table></div>
+      <div className="tblwrap">{grid}</div>
     </div>
   );
 }
 
 /** "Via the setup agent": how an item got there, linking to the proposal in the chat. */
-function Via({ o }: { o?: { source: string; by: string; at: string; proposal_id: string | null; last_source: string; last_by: string; last_at: string; last_proposal_id: string | null } }) {
+function Via({ o, rd }: { rd?: boolean; o?: { source: string; by: string; at: string; proposal_id: string | null; last_source: string; last_by: string; last_at: string; last_proposal_id: string | null } }) {
   if (!o) return null;
   const pid = o.last_source === "assistant" ? o.last_proposal_id : o.source === "assistant" ? o.proposal_id : null;
   if (!pid) return null;
   const what = o.source === "assistant" ? `Added by the setup agent (${person(o.by)}) on ${dayTime(o.at)}` : `Last changed by the setup agent on ${dayTime(o.last_at)}`;
+  if (rd) return <button type="button" className="rd-tbtn ins-via" title={`${what}. Click to see it in the chat.`} onClick={() => showProposal(pid)}>Made by the Setup agent</button>;
   return <button type="button" className="badge b-info" style={{ cursor: "pointer" }} title={`${what}. Click to see it in the chat.`} onClick={() => showProposal(pid)}>
     VIA SETUP AGENT</button>;
 }

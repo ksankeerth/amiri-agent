@@ -254,8 +254,10 @@ const META = new Set(["id", "version", "created_at", "updated_at", "updated_by",
 const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
 /** Add or edit one item of a section. */
-export function ItemModal({ section, ctx, editing, initial, onClose, onSaved }: {
+export function ItemModal({ section, ctx, editing, initial, onClose, onSaved, onDelete }: {
   section: SectionName; ctx: Ctx; editing: Item | null; initial?: Draft; onClose: () => void; onSaved: () => void;
+  /** Editing only: a "Delete" in the footer (the Institution page keeps delete inside the editor); the caller asks before deleting. */
+  onDelete?: () => void;
 }) {
   const toast = useToast();
   const iid = ctx.profile!.institution.institution_id;
@@ -298,6 +300,7 @@ export function ItemModal({ section, ctx, editing, initial, onClose, onSaved }: 
   };
   return (
     <Modal wide title={`${editing ? "Edit" : "Add a"} ${LABELS[section].one}`} onClose={onClose} footer={<>
+      {editing && onDelete && <button className="btn btn--danger" type="button" onClick={onDelete}>Delete this {LABELS[section].one}</button>}
       <span className="small muted" style={{ marginRight: "auto" }}><span className="req">*</span> required; the rest is optional</span>
       <button className="btn" type="button" onClick={onClose}>Cancel</button>
       <button className="btn btn--primary" type="button" onClick={save} disabled={busy}>{editing ? "Save" : "Add"}</button></>}>
