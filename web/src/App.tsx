@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { Icon } from "./components/Icon";
-import { Empty, isDown, PageHead, PageSkeleton, useNow, useRole, type Role } from "./components/ui";
+import { PageTitle } from "./components/rd";
+import { isDown, PageSkeleton, useNow, useRole, type Role } from "./components/ui";
 import { api, ME } from "./api/client";
 import { ago, fullNow, setZone, ZONE_LABEL } from "./format";
 import { cap } from "./plain";
@@ -68,13 +69,14 @@ function NeedsInstitution({ title, what, children }: { title: string; what: stri
   const inst = useInstallation();
   if (!inst || inst.profile || inst.unreachable) return <>{children}</>;  // unreachable: the page shows the load error
   return (
-    <div className="page">
-      <PageHead title={title} />
-      <div className="card"><Empty icon="bank" title="Set up your institution first"
-        actions={<Link className="btn btn--primary" to="/institution/setup">Set up the institution</Link>}>
-        {what} come from your institution's profile: who you are, where you operate, your customers, products and
-        risks. Set it up first; it takes a few minutes with the forms or the setup chat.
-      </Empty></div>
+    <div className="page rd">
+      <PageTitle title={title} />
+      <section className="rd-sec" aria-labelledby="needs-inst">
+        <div className="rd-sec-h"><h2 id="needs-inst">Set up your institution first</h2></div>
+        <p className="rd-row-d rd-prose">{what} come from your institution's profile: who you are, where you operate, your customers, products and
+          risks. Set it up first; it takes a few minutes with the forms or the Setup agent.</p>
+        <p style={{ margin: "20px 0 0" }}><Link className="btn btn--primary" to="/institution/setup">Set up the institution</Link></p>
+      </section>
     </div>
   );
 }
@@ -141,11 +143,9 @@ function useRouteA11y(): string {
 
 function NotBuilt({ title }: { title: string }) {
   return (
-    <div className="page">
-      <PageHead title={title} />
-      <div className="card"><Empty icon="info" title="This page isn't available" actions={<Link className="btn" to="/home">Go to the Overview</Link>}>
-        It may have moved, or it isn't part of this version.
-      </Empty></div>
+    <div className="page rd">
+      <PageTitle title={title} lede="This page isn't available. It may have moved, or it isn't part of this version." />
+      <p style={{ margin: "24px 0 0" }}><Link className="btn" to="/home">Go to the Overview</Link></p>
     </div>
   );
 }
