@@ -1,0 +1,45 @@
+/* Findings (the redesign): findings grouped by the event they joined, one-line rows, the rest in place.
+   Everything is scoped to .rd-findings and uses the shared rd system. */
+.rd-findings .rd-tabs .rd-k { font-size:inherit; font-weight:500; }   /* showcase.css's global .rd-k would shrink the tab counts */
+.rd-findings .rd-lede .rd-tbtn { font-size:16px; margin-left:10px; }
+.rd-findings .fd-sources { margin:8px 0 0; }
+.rd-findings .rd-help { margin-top:14px; }
+.rd-findings .rd-help p { margin:0; }
+.rd-findings .fd-note { margin:16px 0 0; }
+
+/* a group: the shared Section, with a hairline under its heading */
+.rd-findings .fd-groups > .rd-sec:first-child { margin-top:24px; }
+.rd-findings .fd-grp .rd-sec-h { margin-bottom:0; padding-bottom:12px; border-bottom:1px solid var(--rd-hair); column-gap:16px; row-gap:2px; }
+.rd-findings .fd-grp .rd-sec-h h2 { display:flex; align-items:baseline; gap:10px; }
+.rd-findings .fd-grp .rd-sec-m { font-size:16px; }
+
+/* the waiting line: today's "N waiting · next batch in … · Investigate now" */
+.rd-findings .fd-wait { display:flex; align-items:center; gap:20px; flex-wrap:wrap; padding:14px 0; border-bottom:1px solid var(--rd-hair); font-size:17px; color:var(--ink); }
+.rd-findings .fd-wait .btn { margin-left:auto; }
+
+/* a finding: the headline is the link; source and time on the right; Details opens it in place */
+.rd-findings .fd-list { list-style:none; margin:0; padding:0; }
+.rd-findings .fd-row { padding:14px 0; scroll-margin-top:72px; }
+.rd-findings .fd-line { display:grid; grid-template-columns:minmax(0, 1fr) auto 84px; column-gap:24px; align-items:baseline; }
+.rd-findings .fd-t { font-size:17px; line-height:1.4; color:var(--ink); min-width:0; overflow-wrap:anywhere; }
+.rd-findings .fd-m { font-size:15px; color:var(--ink-3); white-space:nowrap; text-align:right; }
+.rd-findings .fd-line .rd-tbtn { font-size:15px; font-weight:500; justify-self:end; }
+.rd-findings .fd-what { margin-top:4px; font-size:16px; color:var(--ink-2); display:flex; gap:8px; flex-wrap:wrap; align-items:baseline; }
+.rd-findings .fd-what .rd-toneword { white-space:normal; }
+.rd-findings .fd-opened { margin:12px 0 0 0; }
+.rd-findings .fd-opened p { margin:0 0 8px; }
+.rd-findings .fd-opened p:last-child { margin-bottom:0; }
+.rd-findings .fd-opened .rd-fine { display:flex; gap:20px; flex-wrap:wrap; align-items:baseline; }
+.rd-findings .fd-target { background:var(--hover-bg); box-shadow:inset 3px 0 0 var(--ink); padding-left:14px; margin-left:-14px; }
+.rd-findings .fd-more { padding:14px 0; border-bottom:1px solid var(--rd-hair); }
+.rd-findings .fd-more .rd-tbtn { font-size:16px; }
+.rd-findings .fd-list > li { border-bottom:1px solid var(--rd-hair); }
+.rd-findings .fd-checks { display:flex; gap:20px; align-items:baseline; flex-wrap:wrap; margin-top:6px; }
+.rd-findings .rd-empty { margin-top:28px; }
+.rd-findings .rd-empty .rd-lede { margin:0 0 16px; }
+
+@media (max-width: 760px) {
+  .rd-findings .fd-line { grid-template-columns:minmax(0, 1fr) auto; row-gap:4px; }
+  .rd-findings .fd-t { grid-column:1 / -1; }
+  .rd-findings .fd-m { text-align:left; }
+}
