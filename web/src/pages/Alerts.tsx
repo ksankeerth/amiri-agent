@@ -1,25 +1,26 @@
-// Alerts: what AMIRI Agent found for each team's products, and who has taken it on.
+// Alerts, by event: the headline says how many teams have an alert waiting and where they came from; each event is said once, as a
+// section, with one line per team under it. A line opens why AMIRI Agent expects it and what changed; Acknowledge opens a note in
+// place, with the why still open beside it. Taken-on alerts fold away at the end of All.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { alertsApi, type AlertItem, type AlertSummary, type Effect } from "../api/alerts";
 import { investigationApi, type EventDetail } from "../api/investigation";
-import { HowItWorks, ImpactRow, PageHeader, StatTiles, StatusPill } from "../components/blocks";
+import { HowItWorks, PageHeader, StatusPill } from "../components/blocks";
 import "../styles/daily.css";
 import "../styles/polish-daily.css";
-import { CheckPill } from "../components/checks";
+import "../styles/alerts.css";
 import { ChipFilter, FlowFilter } from "../components/FlowFilter";
 import { Icon } from "../components/Icon";
 import { Empty, ListSkeleton, LoadError, useNow, useToast } from "../components/ui";
 import { ago, dayTime } from "../format";
 import {
-  ACTION_MEANS, alertOrder, ALERT_STATUS, checkMove, count, earliest, eventTitle, impactText, LEVEL_LABEL, LEVEL_TONE, listText, longWhen, onDay, relDay, sizeTiming,
-  sourceInfo, type VerdictKey,
+  ACTION_MEANS, alertOrder, checkMove, count, earliest, eventTitle, impactText, LEVEL_LABEL, LEVEL_TONE, listText, onDay, relDay, sizeTiming, sourceInfo,
 } from "../plain";
 
 type Show = "new" | "acknowledged" | "resolved" | "all";
 const CHANGE: Record<string, string> = {
-  raised: "Raised", escalated: "Level raised", acknowledged: "Acknowledged", resolved: "Resolved", reopened: "Reopened",
+  raised: "Raised", escalated: "More evidence", acknowledged: "Acknowledged", resolved: "Resolved", reopened: "Reopened",
   confirmed: "Confirmed by your data", withdrawn: "Withdrawn", checked: "Checked against your data",
 };
 
@@ -28,19 +29,33 @@ const AGENT = "AMIRI Agent";
 const isAgent = (by: string | null | undefined) => (by ?? "").toLowerCase() === AGENT.toLowerCase();
 // when AMIRI Agent last raised or escalated it: a person acknowledging it doesn't move it on the page
 const changed = (a: AlertItem) => [...a.history].reverse().find(h => isAgent(h.by) && h.change !== "resolved")?.at ?? a.created_at;
-/** The impact in a few words, with the move your data showed when it was checked. */
-function EffectImpact({ e }: { e: Effect }) {
-  const m = e.check ? checkMove(e.check.what) : null;
-  return <>{impactText(e.metric_name, e.direction)}{m && <span className="ir-move"><b>{m.move}</b> {m.against}</span>}</>;
-}
 // "Remittance inflow may fall" → "remittance inflow may fall" after the team's name; "FC deposit…" keeps its capitals
 const lower = (s: string) => (/^[A-Z][a-z]/.test(s) ? s[0].toLowerCase() + s.slice(1) : s);
+// the impact the alert's level rests on leads
+const lead = (a: AlertItem) => a.effects.find(e => e.check?.alert === a.level) ?? a.effects[0];
+const what = (a: AlertItem) => { const e = lead(a); return e ? lower(impactText(e.metric_name, e.direction)) : a.title; };
 
-function AlertCard({ a, next, ev, primary, onChange }: {
-  a: AlertItem; next: string | null; ev: EventDetail | undefined; primary: boolean; onChange: (a: AlertItem) => void;
-}) {
+/** The history in runs: "More evidence 11 times, last 23 Nov 06:30" rather than eleven lines that say the same. */
+function runs(a: AlertItem) {
+  const out: { change: string; by: string; n: number; at: string; text: string }[] = [];
+  for (const h of a.history) {
+    const by = isAgent(h.by) ? "" : h.by ?? "", last = out[out.length - 1];
+    if (last && last.change === h.change && last.by === by) { last.n++; last.at = h.at; last.text = h.text; }
+    else out.push({ change: h.change, by, n: 1, at: h.at, text: h.text });
+  }
+  return out.reverse();
+}
+
+function Impact({ e }: { e: Effect }) {
+  const m = e.check ? checkMove(e.check.what) : null;
+  return <li><b>{e.product}</b>: {lower(impactText(e.metric_name, e.direction))}, because {lower(e.chain_label)}.
+    <span className="muted"> {sizeTiming(e.size, e.timing)}.</span>{m && <span className="ap-move"> Your data: <b>{m.move}</b> {m.against}.</span>}</li>;
+}
+
+function AlertLine({ a, ev, label, primary, onChange }: { a: AlertItem; ev?: EventDetail; label: boolean; primary: boolean; onChange: (a: AlertItem) => void }) {
   const toast = useToast();
   const now = useNow(60_000);
+  const [open, setOpen] = useState(false);
   const [asking, setAsking] = useState<"ack" | "resolve" | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -51,71 +66,45 @@ function AlertCard({ a, next, ev, primary, onChange }: {
     catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
     finally { setBusy(false); }
   };
-  // the impact the alert's level rests on leads; the rest wait in "Why"
-  const lead = a.effects.find(e => e.check?.alert === a.level) ?? a.effects[0];
-  const move = lead?.check ? checkMove(lead.check.what) : null;
   const products = [...new Set(a.effects.map(e => e.product))];
-  const bad = a.effects.filter(e => e.adverse).length;
-  const checks = a.effects.filter(e => e.check).map(e => ({ verdict: e.check!.verdict as VerdictKey, alert: e.check!.alert, adverse: e.adverse }));
-  const same = new Set(checks.map(c => c.verdict)).size <= 1 && checks.length === a.effects.length;
   const src = a.sources?.[0] ? sourceInfo(a.sources[0]) : null;
   const article = ev?.findings.flatMap(f => f.evidence?.headlines ?? []).find(h => h.url && (!a.top_finding || h.title === a.top_finding));
-  const [statusText, statusTone] = ALERT_STATUS[a.status];
-  const title = ev ? eventTitle(ev) : a.event_title;
+  const id = `al-${a.alert_id}`;
   return (
-    <article className={`card alc dl-alc ${a.status !== "new" ? "done" : ""}`} data-lv={a.level} aria-labelledby={`t-${a.alert_id}`}>
-      <div className="dl-alc-hd">
-        <StatusPill tone={LEVEL_TONE[a.level]} icon={a.level === "adverse" ? "bad" : "alert"}>{LEVEL_LABEL[a.level]}</StatusPill>
-        {a.status !== "new" && <StatusPill tone={statusTone}>{statusText}</StatusPill>}
-        <span className="spacer" />
-        <span className="alc-time" title={longWhen(changed(a))}><Icon name="clock" />{ago(changed(a), now)}</span>
-      </div>
-      <h2 className="dl-alc-t" id={`t-${a.alert_id}`}><span className="dl-team">{a.owner}</span><span className="dl-dot" aria-hidden="true">·</span>
-        <span className="dl-what">{lead ? lower(impactText(lead.metric_name, lead.direction)) : a.title}</span></h2>
-      <ul className="dl-alc-meta" aria-label="In short">
-        <li><Icon name="box" /><span>{listText(products, 2)}</span></li>
-        {move && <li className="dl-move"><Icon name="data" /><span>Your data: <b>{move.move}</b> {move.against}</span></li>}
-        {a.effects.length > 1 && <li><Icon name="bad" /><span>{bad === a.effects.length ? `${count(a.effects.length, "impact")}, all bad for you` : `${bad} of ${a.effects.length} impacts bad for you`}</span></li>}
-        {next && <li><Icon name="calendar" /><span>{checks.some(c => c.verdict !== "not_yet") ? "Next check" : "First check"} <b>{onDay(next)}</b> <span className="muted">({relDay(next)})</span></span></li>}
-      </ul>
-      {a.status === "acknowledged" && <div className="alc-note"><Icon name="check" /><span><b>{a.acknowledged_by}</b> is on it{a.acknowledged_at ? `, ${ago(a.acknowledged_at, now)}` : ""}{a.ack_note ? `: “${a.ack_note}”` : ""}</span></div>}
-      {a.status === "resolved" && <div className="alc-note"><Icon name="check" /><span>Resolved by <b>{isAgent(a.resolved_by) ? AGENT : a.resolved_by}</b>{a.resolved_at ? `, ${ago(a.resolved_at, now)}` : ""}{a.resolved_note ? `: “${a.resolved_note}”` : ""}</span></div>}
-      {asking ? (
-        <div className="dl-alc-act">
+    <li className={`ap-line ${a.status}`} id={id}>
+      <span className="ap-team">{a.owner}</span>
+      <button type="button" className="ap-t" aria-expanded={open} aria-controls={`${id}-x`} onClick={() => setOpen(!open)}><span className="ap-w">{what(a)}</span>
+        <span className="ap-sub">{listText(products, 2)}{a.effects.length > 1 ? ` · ${count(a.effects.length, "impact")}` : ""}</span></button>
+      <span className="ap-end">
+        {label && <StatusPill tone={LEVEL_TONE[a.level]} icon={a.level === "adverse" ? "bad" : "alert"}>{LEVEL_LABEL[a.level]}</StatusPill>}
+        {asking ? <span className="ap-act">
           <input className="input" autoFocus aria-label={asking === "ack" ? "A note for your team (optional)" : "Why it's resolved (optional)"}
-            placeholder={asking === "ack" ? "A note for your team (optional): who is looking, what next" : "Why it's resolved (optional)"}
-            value={note} onChange={e => setNote(e.target.value)} onKeyDown={e => { if (e.key === "Enter") act(asking); }} />
+            placeholder={asking === "ack" ? "A note for your team (optional)" : "Why it's resolved (optional)"}
+            value={note} onChange={e => setNote(e.target.value)} onKeyDown={e => { if (e.key === "Enter") act(asking); if (e.key === "Escape") { setAsking(null); setNote(""); } }} />
           <button className="btn btn--primary btn--sm" type="button" disabled={busy} onClick={() => act(asking)}>{asking === "ack" ? "Acknowledge" : "Resolve"}</button>
-          <button className="btn btn--sm" type="button" onClick={() => { setAsking(null); setNote(""); }}>Cancel</button>
-        </div>
-      ) : (
-        <div className="dl-alc-act">
+          <button className="btn btn--sm btn--ghost" type="button" onClick={() => { setAsking(null); setNote(""); }}>Cancel</button>
+        </span> : <span className="ap-act">
           {a.status === "new" && <button className={`btn btn--sm${primary ? " btn--primary" : ""}`} type="button" title={ACTION_MEANS.ack} onClick={() => setAsking("ack")}><Icon name="check" />Acknowledge</button>}
           {a.status !== "resolved" && <button className="btn btn--sm btn--ghost" type="button" title={ACTION_MEANS.resolve} onClick={() => setAsking("resolve")}>Resolve</button>}
           {a.status !== "new" && <button className="btn btn--sm btn--ghost" type="button" title={ACTION_MEANS.reopen} disabled={busy} onClick={() => act("reopen")}>Reopen</button>}
-          <span className="pd-vr" aria-hidden="true" />
-          <details className="tech dl-why"><summary>Why AMIRI Agent expects this</summary>
-            <div className="tech-bd col gap12">
-              <p className="dl-ai"><span className="dl-ai-chip"><b aria-hidden="true">AI</b>AMIRI Agent's assessment</span>
-                <span className="muted">Sizes and timing are estimates, checked against your own figures as they're published.</span></p>
-              <div className={`alc-impacts irs${same ? "" : " with-status"}`}>{a.effects.map(e => (
-                <ImpactRow key={e.hypothesis_id} product={e.product} impact={<EffectImpact e={e} />} adverse={bad === a.effects.length ? undefined : e.adverse} size={sizeTiming(e.size, e.timing)}
-                  status={!same && e.check ? <CheckPill c={{ verdict: e.check.verdict as VerdictKey, alert: e.check.alert, adverse: e.adverse }} /> : undefined} />))}
-              </div>
-              <ul className="alc-why">{a.effects.map(e => <li key={e.hypothesis_id}><b>{e.product}</b>: {e.chain_label}.</li>)}</ul>
-              {a.top_finding && <div className="alc-src">{src && <Icon name={src.icon} />}<span>{src ? `${src.label}: ` : ""}{article?.url
-                ? <a href={article.url} target="_blank" rel="noreferrer">{a.top_finding}<Icon name="external" className="src-ext" /><span className="sr"> (opens the article)</span></a>
-                : a.top_finding}</span></div>}
-              {a.via_monitor && <span className="alc-via">Sent to you because your team owns <Link to={`/monitors/${a.via_monitor}`}>the monitor</Link> that found it</span>}
-            </div></details>
-          <details className="tech dl-hist"><summary>History ({a.history.length})</summary>
-            <div className="tech-bd"><ol className="alc-hist">{[...a.history].reverse().map((h, i) => (
-              <li key={i}><b>{CHANGE[h.change] ?? h.change}</b><span>{dayTime(h.at)}{h.by && !isAgent(h.by) ? ` · ${h.by}` : ""}</span></li>))}</ol></div></details>
-          <span className="spacer" />
-          <Link className="dl-ev" to={`/events/${a.event_id}`}><span className="muted">From the event</span> <b>{title}</b>{a.event_status === "closed" && <span className="muted"> (closed)</span>}<Icon name="arrow" /></Link>
-        </div>
-      )}
-    </article>
+        </span>}
+      </span>
+      {a.status === "acknowledged" && <p className="ap-done"><Icon name="check" /><span><b>{a.acknowledged_by}</b> is on it{a.acknowledged_at ? `, ${ago(a.acknowledged_at, now)}` : ""}{a.ack_note ? `: “${a.ack_note}”` : ""}</span></p>}
+      {a.status === "resolved" && <p className="ap-done ok"><Icon name="check" /><span>Resolved by <b>{isAgent(a.resolved_by) ? AGENT : a.resolved_by}</b>{a.resolved_at ? `, ${ago(a.resolved_at, now)}` : ""}{a.resolved_note ? `: “${a.resolved_note}”` : ""}</span></p>}
+      {open && <div className="ap-x" id={`${id}-x`}>
+        <h3>Why AMIRI Agent expects this</h3>
+        <p className="dl-ai"><span className="dl-ai-chip"><b aria-hidden="true">AI</b>AMIRI Agent's assessment</span>
+          <span className="muted">Sizes and timing are estimates, checked against your own figures as they're published.</span></p>
+        <ul className="ap-why">{a.effects.map(e => <Impact key={e.hypothesis_id} e={e} />)}</ul>
+        {a.top_finding && <p className="ap-src">{src && <Icon name={src.icon} />}<span>It started from {src ? `${src.label}: ` : ""}{article?.url
+          ? <a href={article.url} target="_blank" rel="noreferrer">{a.top_finding}<Icon name="external" className="src-ext" /><span className="sr"> (opens the article)</span></a>
+          : a.top_finding}</span></p>}
+        {a.via_monitor && <p className="muted">Sent to you because your team owns <Link to={`/monitors/${a.via_monitor}`}>the monitor</Link> that found it.</p>}
+        <h3>What changed</h3>
+        <ol className="ap-hist">{runs(a).map((r, i) => <li key={i}><b>{CHANGE[r.change] ?? r.change}{r.n > 1 ? ` ${r.n} times` : ""}</b>
+          <span>{r.n > 1 ? "last " : ""}{dayTime(r.at)}{r.by ? ` · ${r.by}` : ""}</span></li>)}</ol>
+      </div>}
+    </li>
   );
 }
 
@@ -126,6 +115,7 @@ export function AlertsPage() {
   const [sum, setSum] = useState<AlertSummary | null>(null);
   const [events, setEvents] = useState<Record<string, EventDetail>>({});
   const [err, setErr] = useState<unknown>(null);
+  const [taken, setTaken] = useState(false);  // the taken-on section of All, unfolded
   const load = useCallback(async () => {
     try {
       // the list is the newest 100, so it's asked for one status at a time (older alerts to review still show);
@@ -138,8 +128,7 @@ export function AlertsPage() {
   useEffect(() => { load(); const t = setInterval(load, 60_000); return () => clearInterval(t); }, [load]);
   // an alert acted on here leaves a filter it no longer matches at once, before the next load
   const shown = useMemo(() => items && items.filter(a => show === "all" || a.status === show), [items, show]);
-  const nAt = (k: Show) => sum?.by_team_status?.filter(r => (!team || r.owner === team) && (k === "all" || r.status === k))
-    .reduce((n, r) => n + r.n, 0);
+  const nAt = (k: Show, owner = team) => sum?.by_team_status?.filter(r => (!owner || r.owner === owner) && (k === "all" || r.status === k)).reduce((n, r) => n + r.n, 0);
   // each alert's next check is on its event: one request per event on the page
   const eventIds = useMemo(() => [...new Set((shown ?? []).map(a => a.event_id))].sort().join(","), [shown]);
   useEffect(() => {
@@ -157,15 +146,45 @@ export function AlertsPage() {
   };
   const update = (a: AlertItem) => { setItems(xs => (xs ?? []).map(x => (x.alert_id === a.alert_id ? a : x))); alertsApi.summary().then(setSum).catch(() => {});
     window.dispatchEvent(new Event("amiri:alerts")); };
+  const evName = (a: AlertItem) => (events[a.event_id] ? eventTitle(events[a.event_id]) : a.event_title);
 
-  // one queue, the most serious first (the alert your own data confirms leads), then the latest
+  // the most serious first (the alert your own data confirms leads), then the latest; in All, taken-on ones fold away at the end
   const queue = useMemo(() => [...(shown ?? [])].sort((x, y) => alertOrder({ ...x, at: changed(x) }, { ...y, at: changed(y) })), [shown]);
-  const firstNew = queue.find(a => a.status === "new")?.alert_id;
+  const open = show === "all" ? queue.filter(a => a.status === "new") : queue;
+  const done = show === "all" ? queue.filter(a => a.status !== "new") : [];
+  const groups = useMemo(() => { const m = new Map<string, AlertItem[]>(); open.forEach(a => m.set(a.event_id, [...(m.get(a.event_id) ?? []), a])); return [...m.values()]; }, [open]);
+  const levels = new Set(open.map(a => a.level));
+  const firstNew = open.find(a => a.status === "new")?.alert_id;
+
   const s = sum;
+  const waiting = open.filter(a => a.status === "new");
+  // all early warnings: the headline says so once, and the lines leave the label out; any other mix keeps it on every line
+  const allEarly = waiting.length > 0 && levels.size === 1 && levels.has("warning");
+  const teams = new Set(waiting.map(a => a.owner)).size;
+  const first = earliest(waiting.map(nextCheck));
+  const adverse = waiting.filter(a => a.level === "adverse").length;
+  const g0 = waiting[0];
+  const headline = !s ? "Alerts" : !s.to_review ? "All caught up"
+    : show === "new" || show === "all" ? <><span className="ap-n">{count(teams || s.teams.length, "team")}</span> {(teams || s.teams.length) === 1 ? "has" : "have"} an alert waiting</>
+    : <>{count(s.to_review, "alert")} waiting for review</>;
+  const status = !s ? "" : !s.to_review ? "Nothing is waiting for review." : !waiting.length ? "Choose To review to see them." : <>
+    {new Set(waiting.map(a => a.event_id)).size === 1 && g0 ? <>All from <Link className="ap-ev" to={`/events/${g0.event_id}`}>{evName(g0)}</Link></>
+      : <>From {count(new Set(waiting.map(a => a.event_id)).size, "event")}</>}
+    {adverse ? <>; <b className="dl-crit">{adverse} confirmed by your data</b>, shown first.</>
+      : allEarly ? <>, and all are early warnings: AMIRI Agent expects the impact, your data can't show it yet.</> : "."}
+    {first && <> The first check against your figures is <b>{onDay(first)}</b> ({relDay(first)}).</>}</>;
+
+  const section = (k: string, g: AlertItem[]) => {
+    const a0 = g[0], latest = g.map(changed).reduce((x, y) => (Date.parse(y) > Date.parse(x) ? y : x));  // a0 is the most serious, not the latest
+    return <section key={k} aria-labelledby={`ap-${k}`}>
+    <h2 id={`ap-${k}`}><Link to={`/events/${a0.event_id}`}>{evName(a0)}</Link> <span>{count(g.length, "alert")}</span>{a0.event_status === "closed" && <span>· closed</span>}</h2>
+    <p className="ap-sub2">Raised {onDay(a0.created_at)}{a0.top_finding ? <>, from “{a0.top_finding}”</> : null}. Last new evidence {dayTime(latest)}.</p>
+    <ol className="ap-lines">{g.map(a => <AlertLine key={a.alert_id} a={a} ev={events[a.event_id]} label={!allEarly} primary={a.alert_id === firstNew} onChange={update} />)}</ol>
+  </section>; };
+
   return (
-    <div className="page">
-      <PageHeader title="Alerts"
-        status={!s ? "" : s.to_review ? <><b className="ink">{count(s.to_review, "alert")} waiting for review</b>{s.by_level.adverse ? <>, <b className="dl-crit">{s.by_level.adverse} confirmed by your data</b></> : ""}. Most serious first.</> : "All caught up: nothing waiting for review"}
+    <div className="page ap">
+      <PageHeader eyebrow="Alerts" title={headline} status={status}
         help={<HowItWorks>
           <p>An alert goes to the team that owns each product an event could hit. Someone on that team acknowledges it, so everyone knows it's taken on. The most serious alert is at the top; work down the list.</p>
           <div className="row wrap"><StatusPill tone="amber" icon="alert">Early warning</StatusPill><span>AMIRI Agent expects an impact; your data can't tell yet.</span></div>
@@ -173,24 +192,29 @@ export function AlertsPage() {
           <div className="row wrap"><StatusPill tone="red" icon="bad">Confirmed by your data</StatusPill><span>Your own figures show the impact.</span></div>
         </HowItWorks>} />
       {err != null && <LoadError error={err} onRetry={load} what="the alerts" />}
-      {s && <StatTiles label="Alerts in short" items={[
-        { value: s.to_review, label: "To review", sub: s.to_review ? "acknowledge each one" : "all caught up", tone: s.to_review ? "red" : "green", icon: "alert" },
-        { value: s.teams.length, label: s.teams.length === 1 ? "Team with alerts waiting" : "Teams with alerts waiting", sub: s.teams.length ? listText(s.teams.map(t => t.owner)) : "none", tone: s.teams.length ? "amber" : "grey", icon: "users" },
-        { value: s.acknowledged_week, label: "Acknowledged this week", sub: "by your Risk Managers", tone: "blue", icon: "check" },
-      ]} />}
 
-      {(items !== null || err == null) && <div className="filters">
-        <FlowFilter label="Which alerts" value={show} onChange={setShow} all={{ key: "all", label: "All", count: nAt("all") }}
-          steps={([["new", "To review"], ["acknowledged", "Acknowledged"], ["resolved", "Resolved"]] as const).map(([key, label]) => ({ key, label, count: nAt(key) }))} />
+      {(items !== null || err == null) && <div className="filters ap-filters">
+        <FlowFilter toned label="Which alerts" value={show} onChange={setShow} all={{ key: "all", label: "All", count: nAt("all") }}
+          steps={([["new", "To review", "queued"], ["acknowledged", "Acknowledged", "held"], ["resolved", "Resolved", "done"]] as const)
+            .map(([key, label, state]) => ({ key, label, count: nAt(key), state }))} />
         {s && s.all_teams.length > 1 && <ChipFilter label="Team" value={team} onChange={t => setTeam(t)}
-          options={[{ key: "", label: "All teams" }, ...s.all_teams.map(t => ({ key: t, label: t, count: s.teams.find(x => x.owner === t)?.to_review }))]} />}
+          options={[{ key: "", label: "All teams", count: nAt(show, "") }, ...s.all_teams.map(t => ({ key: t, label: t, count: nAt(show, t) }))]} />}
       </div>}
 
       {shown === null ? (err == null && <div className="mt12"><ListSkeleton rows={3} /></div>)
-        : !shown.length ? <div className="card mt12"><Empty icon="check" title={show === "new" ? "All caught up" : "Nothing here"}
+        : !shown.length ? <Empty icon="check" title={show === "new" ? "All caught up" : "Nothing here"}
           actions={show === "new" ? <Link className="btn" to="/events"><Icon name="events" />See events</Link> : undefined}>
-          {show === "new" ? "When an event could hit your products, the owning team's alert appears here." : "No alerts in this group."}</Empty></div>
-        : <div className="col gap12 mt12">{queue.map(a => <AlertCard key={a.alert_id} a={a} next={nextCheck(a)} ev={events[a.event_id]} primary={a.alert_id === firstNew} onChange={update} />)}</div>}
+          {show === "new" ? "When an event could hit your products, the owning team's alert appears here." : "No alerts in this group."}</Empty>
+        : <div className="ap-groups">
+          {groups.map(g => section(g[0].event_id, g))}
+          {done.length > 0 && <section className="quiet" aria-labelledby="ap-done">
+            <h2 id="ap-done">Already taken on <span>{done.length}</span></h2>
+            <p className="ap-sub2">Acknowledged or resolved: someone has these in hand.</p>
+            {taken && <ol className="ap-lines">{done.map(a => <AlertLine key={a.alert_id} a={a} ev={events[a.event_id]} label primary={false} onChange={update} />)}</ol>}
+            <button type="button" className="ap-more" aria-expanded={taken} onClick={() => setTaken(!taken)}>
+              <Icon name="chevron" className={`ico16 ${taken ? "rot" : ""}`} />{taken ? "Show fewer" : `Show the ${done.length}`}</button>
+          </section>}
+        </div>}
     </div>
   );
 }
