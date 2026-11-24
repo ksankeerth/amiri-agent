@@ -10,7 +10,7 @@ import { WithChat } from "../../components/SetupChat";
 import { changeWords, countOf, fieldWord, SECTION_ONE, valueText } from "../../components/setupFlow";
 import { StatusPill } from "../../components/blocks";
 import { PageTitle, Section, TextButton, TextTabs } from "../../components/rd";
-import { ChatToggleCtx, DEMOS, InlineSkeleton, LoadError, Modal, PageHead, ResetModal, useRole, useToast, PageSkeleton, StatusIcon } from "../../components/ui";
+import { ChatToggleCtx, DEMOS, InlineSkeleton, LoadError, Modal, PageHead, ResetModal, useRole, useToast, PageSkeleton } from "../../components/ui";
 import { dayTime, person, plural, ZONE_LABEL } from "../../format";
 import { cap, words } from "../../plain";
 import { PlaceName, useLoad } from "./fields";
@@ -111,18 +111,23 @@ const pickCreate = (i: Record<string, any>) => Object.fromEntries(CREATE_KEYS.fi
 
 // ---------------------------------------------------------------- shared pieces
 
+/** The go-live checks as ruled rows: what is open first (required, then recommended), what is done last. Each says its state in a
+ *  shape and a word: ◆ required, ○ recommended, ● done. */
 export function ReadinessList({ r, onFix }: { r: Readiness; onFix?: (section: string) => void }) {
+  const rank = (c: Readiness["checks"][number]) => (c.ok ? 2 : c.level === "required" ? 0 : 1);
+  const sorted = [...r.checks].sort((a, b) => rank(a) - rank(b));
   return (
-    <div className="list">{r.checks.map(c => (
-      <div key={c.id} className="li" style={{ padding: "8px 0" }}>
-        <StatusIcon status={c.ok ? "done" : c.level === "required" ? "required" : "open"} />
-        <div className="col" style={{ gap: 2, flex: 1 }}>
-          <span className="small" style={{ color: "var(--ink)" }}>{c.message}</span>
-          {!c.ok && c.fix && <span className="small muted">{c.fix}</span>}
+    <ul className="ins-rows" aria-label="Checks before going live">{sorted.map(c => (
+      <li key={c.id} className="rd-row ins-open-row">
+        <div className="ins-main">
+          <div className="rd-row-t ins-open-t">{c.message}</div>
+          <p className={`rd-row-m${!c.ok && c.level === "required" ? " rd-warn" : ""}`}>
+            <span className="rd-shape" aria-hidden="true">{c.ok ? "●" : c.level === "required" ? "◆" : "○"}</span>{" "}
+            <b className="ins-k">{c.ok ? "Done" : c.level === "required" ? "Required, not done" : "Recommended, not done"}</b>
+            {!c.ok && c.fix ? ` · ${c.fix}` : ""}</p>
         </div>
-        <span className="badge b-noeffect">{c.level === "required" ? "Required" : "Recommended"}</span>
-        {!c.ok && onFix && c.section !== "institution" && <button className="btn btn--sm" type="button" onClick={() => onFix(c.section)}>Fix</button>}
-      </div>))}</div>
+        {!c.ok && onFix && c.section !== "institution" && <div className="ins-acts"><TextButton onClick={() => onFix(c.section)}>Fix</TextButton></div>}
+      </li>))}</ul>
   );
 }
 

@@ -378,16 +378,45 @@ export function SuggestionPicker({ section, ctx, onAdded, inline }: { section: S
   const groups = new Map<string, number[]>();
   data.items.forEach((s, i) => { const g = suggestionText(section, s, ctx, id => routes.find(r => r.route_id === id)?.name ?? id).group ?? ""; groups.set(g, [...(groups.get(g) ?? []), i]); });
   const open = data.items.filter(x => !x.added).length;
+  const textOf = (i: number) => suggestionText(section, data.items[i], ctx, id => routes.find(r => r.route_id === id)?.name ?? id);
+  const tickAll = () => setPicked(new Set(data.items.map((x, i) => (x.added ? -1 : i)).filter(i => i >= 0)));
+  if (inline) return (
+    <div className="wz-pick">
+      <p className="rd-fine rd-prose wz-pick-note">{data.note} {open ? `${open} not added yet.` : "Everything here is already in your profile."}</p>
+      <div className="wz-pick-list" role="group" aria-label="Suggestions">
+        {[...groups.entries()].map(([g, idx]) => (
+          <div key={g} className="wz-pick-group">
+            {g && <h3 className="wz-pick-h">{g.replace(/_/g, " ")}</h3>}
+            {idx.map(i => {
+              const s = data.items[i], t = textOf(i);
+              return (
+                <label key={i} className="wz-pick-row">
+                  <input type="checkbox" disabled={s.added} checked={s.added || picked.has(i)}
+                    onChange={e => setPicked(p => { const n = new Set(p); if (e.target.checked) n.add(i); else n.delete(i); return n; })} />
+                  <span><span className="wz-pick-t">{t.title}{s.added && <span className="wz-pick-added"> · {s.status === "dismissed" ? "dismissed" : "already added"}</span>}</span>
+                    <span className="wz-pick-s">{t.sub}</span></span>
+                </label>);
+            })}
+          </div>))}
+      </div>
+      {err.length > 0 && <p className="rd-warn" role="alert"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> {err.join(" · ")}</p>}
+      <div className="wz-pick-bar">
+        <button className="btn" type="button" disabled={busy || !picked.size} onClick={add}>{picked.size ? `Add the ${picked.size} ticked` : "Add the ticked"}</button>
+        {open > 0 && <TextButton onClick={tickAll}>Tick all</TextButton>}
+        <span className="rd-fine" aria-live="polite">{picked.size} ticked</span>
+      </div>
+    </div>
+  );
   return (
     <div className="col" style={{ gap: 10 }}>
       <p className="small muted" style={{ margin: 0 }}>{data.note} {open ? `${open} not added yet.` : "Everything here is already in your profile."}</p>
-      <div className="results" style={{ maxHeight: inline ? 420 : 460 }}>
+      <div className="results" style={{ maxHeight: 460 }}>
         {[...groups.entries()].map(([g, idx]) => (
           <div key={g}>
             {g && <div className="label" style={{ padding: "8px 12px 2px" }}>{g.replace(/_/g, " ")}</div>}
             {idx.map(i => {
               const s = data.items[i];
-              const t = suggestionText(section, s, ctx, id => routes.find(r => r.route_id === id)?.name ?? id);
+              const t = textOf(i);
               return (
                 <label key={i} className="check" style={{ padding: "8px 12px", borderBottom: "1px solid var(--hairline)" }}>
                   <input type="checkbox" disabled={s.added} checked={s.added || picked.has(i)}
@@ -401,9 +430,8 @@ export function SuggestionPicker({ section, ctx, onAdded, inline }: { section: S
       </div>
       {err.length > 0 && <div className="rawerr">{err.join(" · ")}</div>}
       <div className="row"><span className="small muted">{picked.size} ticked</span><span className="spacer" />
-        {open > 0 && <button className="btn btn--sm" type="button" onClick={() => setPicked(new Set(data.items.map((x, i) => (x.added ? -1 : i)).filter(i => i >= 0)))}>Tick all</button>}
-        {/* in a setup step "Next" is the one primary; in the Suggestions dialog, adding is */}
-        <button className={`btn${inline ? "" : " btn--primary"}`} type="button" disabled={busy || !picked.size} onClick={add}>Add {picked.size || ""}</button></div>
+        {open > 0 && <button className="btn btn--sm" type="button" onClick={tickAll}>Tick all</button>}
+        <button className="btn btn--primary" type="button" disabled={busy || !picked.size} onClick={add}>Add {picked.size || ""}</button></div>
     </div>
   );
 }

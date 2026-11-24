@@ -7,7 +7,7 @@ import { ApiError } from "../../api/client";
 import { monitorsApi, type Draftable, type MonitorRow, type MonitorsStatus, type MonitorStatus } from "../../api/monitors";
 import { StatusPill } from "../../components/blocks";
 import { Fold, PageTitle, QuietWarn, Section, TextButton } from "../../components/rd";
-import { Banner, Modal, useNow, useRole, useToast, ListSkeleton, LoadError } from "../../components/ui";
+import { Modal,useNow, useRole, useToast, ListSkeleton, LoadError } from "../../components/ui";
 import { ago, dayTime, person } from "../../format";
 import { MONITOR_CHECK, MONITOR_STATUS } from "../../plain";
 import "../../styles/rd-monitors.css";
@@ -306,23 +306,23 @@ export function MonitorsStep({ institutionId }: { institutionId: string }) {
   };
   const open = (items ?? []).filter(i => !i.monitor_id);
   return (
-    <div className="col gap16">
-      <Banner kind="info">Monitors watch the news for what your profile says matters. Draft them here, or ask the setup agent ("watch our main rival's deposit rates"). Each one runs after a Risk Manager approves it on the Monitors page. Optional: you can go live without any.</Banner>
-      <div className="card"><div className="hd"><h2>Draft from your profile</h2></div><div className="bd col" style={{ gap: 10 }}>
-        {items === null ? <span className="muted small">Loading…</span> : !open.length ? <span className="small muted">Everything the profile offers is watched, or there is nothing to draft from yet.</span>
+    <>
+      <Section title="Draft from your profile">
+        <p className="rd-fine rd-prose wz-after">Each monitor runs after a Risk Manager approves it on the Monitors page. You can also ask the Setup agent: "watch our main rival's deposit rates".</p>
+        {items === null ? <p className="rd-fine">Loading…</p> : !open.length ? <p className="rd-row-d ins-none">Everything the profile offers is watched, or there is nothing to draft from yet.</p>
           : Object.entries(SECTION_WORDS).map(([s, w]) => {
             const xs = open.filter(i => i.section === s);
-            return xs.length ? <div key={s} className="col" style={{ gap: 6 }}><span className="label">{w}</span>
-              <div className="row wrap" style={{ gap: 6 }}>{xs.map(i => <button key={i.item_id} type="button" className="chip click" disabled={!!busy}
-                onClick={() => draft(i)}>{busy === i.item_id ? "Drafting…" : i.label}</button>)}</div></div> : null;
+            return xs.length ? <div key={s} className="wz-draft"><h3 className="wz-pick-h">{w}</h3>
+              <ul className="wz-draft-list">{xs.map(i => <li key={i.item_id}><TextButton disabled={!!busy} onClick={() => draft(i)}>{busy === i.item_id ? "Drafting…" : `+ ${i.label}`}</TextButton></li>)}</ul></div> : null;
           })}
-      </div></div>
-      <div className="card"><div className="hd"><h2>Monitors</h2><span className="spacer" /><Link className="small" to="/monitors">Monitors page →</Link></div>
-        {!mine.length ? <div className="bd small muted">None yet.</div> : <div className="list">{mine.map(m => (
-          <div key={m.monitor_id} className="li"><div className="col" style={{ gap: 2, flex: 1 }}>
-            <span className="row" style={{ gap: 8 }}><Link className="ttl" to={`/monitors/${m.monitor_id}`}>{m.name}</Link><StatusBadge status={m.status} /></span>
-            <span className="meta">{m.sentence}{m.last_check ? ` · last check ${ago(m.last_check.at, now)}` : ""}</span></div></div>))}</div>}
-      </div>
-    </div>
+      </Section>
+      <Section title="Your monitors" count={mine.length} action={<Link className="rd-go" to="/monitors">Monitors page →</Link>}>
+        {!mine.length ? <p className="rd-row-d ins-none">None yet.</p> : <ul className="ins-rows" aria-label="Monitors so far">{mine.map(m => (
+          <li key={m.monitor_id} className="rd-row">
+            <div className="rd-row-t"><Link className="rd-name" to={`/monitors/${m.monitor_id}`}>{m.name}</Link></div>
+            <p className="rd-row-m"><b className="ins-k">{MONITOR_STATUS[m.status]?.[0] ?? m.status}</b> · {m.sentence}{m.last_check ? ` · last check ${ago(m.last_check.at, now)}` : ""}</p>
+          </li>))}</ul>}
+      </Section>
+    </>
   );
 }

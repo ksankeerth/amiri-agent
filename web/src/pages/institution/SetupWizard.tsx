@@ -1,16 +1,18 @@
 // Guided setup without the assistant: the interview's steps as forms. Each step saves as
 // it goes (every add is its own all-or-nothing change), so leaving keeps what's done.
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "../../api/client";
 import { inst } from "../../api/institutions";
-import { Icon } from "../../components/Icon";
+import { Fold, PageTitle, Section, TextButton, TextTabs } from "../../components/rd";
 import { askSetupAgent, WithChat } from "../../components/SetupChat";
-import { Banner, LoadError, PageHead, useToast, PageSkeleton, StatusIcon, type Status } from "../../components/ui";
+import { ChatToggleCtx, LoadError, useToast, PageSkeleton, type Status } from "../../components/ui";
 import "../../styles/setup.css";
+import "../../styles/rd-setup.css";
 import { CurrenciesField, Field, PlacePicker } from "./fields";
 import { InstitutionModal } from "./forms";
-import { CreateInstitution, ReadinessList, StatusBadge, useInstitution } from "./InstitutionPage";
+import { CreateInstitution, ReadinessList, useInstitution } from "./InstitutionPage";
+import { MAP_KEY } from "./overview";
 import { ProfileMap } from "./ProfileMap";
 import { MonitorsStep } from "../monitors/Monitors";
 import { LinkGrid, SectionList, SuggestionPicker } from "./sections";
@@ -37,17 +39,69 @@ const kindText = (i: { institution_type: string; subtype?: string | null; islami
   const kind = i.subtype ? `${i.subtype.replace(/_/g, " ")} ${i.institution_type === "bank" ? "bank" : "insurer"}` : i.institution_type;
   return `${cap(kind)}${i.islamic ? " (Islamic)" : ""}`;
 };
-const STATE_WORDS: Record<Status, string> = { done: "done", partial: "recommended part still open", required: "required, not done", open: "not started" };
+/** A step's state as a shape and a word, never colour alone: ● done · ◐ part still open · ◆ required · ○ not started. */
+const MARK: Record<Status, [shape: string, word: string]> = { done: ["●", "Done"], partial: ["◐", "Part open"], required: ["◆", "Required"], open: ["○", "Not started"] };
+const STATE_WORDS: Record<Status, string> = { done: "done", partial: "a recommended part is still open", required: "required, not done yet", open: "not started" };
 
-/** The two ways to answer a step, side by side: the form saves at once, the agent's changes wait for Apply. */
+/** The lede under each step's title: what to do here, in one line. */
+const LEDE: Record<Step, string> = {
+  institution: "Check the basics Amiri Agent starts from. Change them any time with Edit details.",
+  where: "Add the countries, states or provinces where you operate. The first one should be your home country.",
+  customers: "Pick the customer groups you serve, then say where each is concentrated and how your data identifies it.",
+  products: "Pick what you sell, then say which customer groups each product is for.",
+  flows: "Money and goods that move between your footprint and places abroad. Each figure shows where it comes from.",
+  rules: "Regulators and rules that reach you, from your home country, where you operate and the currencies you settle in.",
+  rivals: "Firms you compete with, and firms you depend on to do business.",
+  risks: "Known hazards that meet your places, customers, flows and sea routes.",
+  monitors: "Watch the news for what your profile says matters. Optional: you can go live without any.",
+  review: "Check what is still open, then go live. You can keep changing the profile afterwards.",
+};
+
+/** The page's root. Beside the Setup agent's panel the page is about 540 px wide: narrower rules apply then. */
+function Root({ children }: { children: ReactNode }) {
+  const chat = useContext(ChatToggleCtx);
+  return <div className={`page rd rd-inst rd-setup${chat?.open ? " ins-narrow wz-chat" : ""}`}>{children}</div>;
+}
+
+/** The two ways to answer a step. Picking "Ask" opens the Setup agent beside the page; "Fill the form" closes it. */
 function TwoWays() {
+  const chat = useContext(ChatToggleCtx);
+  const ask = !!chat?.open;
   return (
-    <div className="twoway">
-      <span className="tw-opt"><Icon name="edit" /><span><b>Fill the form</b> · saved as you go</span></span>
-      <span className="tw-or">or</span>
-      <button type="button" className="tw-opt tw-ask" onClick={askSetupAgent}><Icon name="chat" />
-        <span><b>Ask the Setup agent</b> · its changes wait for your Apply</span></button>
+    <div className="wz-ways">
+      <TextTabs label="Two ways to answer this step" value={ask ? "ask" : "form"}
+        items={[{ key: "form", label: "Fill the form" }, { key: "ask", label: "Ask the Setup agent" }]}
+        onChange={k => { if (k === "ask") askSetupAgent(); else if (chat?.open) chat.toggle(); }} />
+      <p className="rd-fine wz-ways-s">{ask ? "The Setup agent drafts changes for you. Nothing is saved until you press Apply." : "Each change saves as you go."}</p>
     </div>
+  );
+}
+
+/** The step list. With room it stands beside the form; beside the Setup agent's panel it folds into one line. */
+function Steps({ cur, idx, states, done }: { cur: Step; idx: number; states: Status[]; done: number }) {
+  const chat = useContext(ChatToggleCtx);
+  const list = (
+    <>
+      <ol>{STEPS.map(([k, label], n) => {
+        const [shape, word] = MARK[states[n]];
+        return (
+          <li key={k} data-s={states[n]}><Link to={`/institution/setup/${k}`} aria-current={k === cur ? "step" : undefined}
+            title={`Step ${n + 1}, ${label}: ${STATE_WORDS[states[n]]}`}>
+            <span className="wz-shape" aria-hidden="true">{shape}</span>
+            <span className="wz-n" aria-hidden="true">{n + 1}</span>
+            <span className="wz-l">{label}</span>
+            <span className="wz-w"><span className="sr">, </span>{k === "review" ? (states[n] === "done" ? "Ready" : "Not ready") : word}</span>
+            {k === cur && <span className="sr">, this step</span>}
+          </Link></li>);
+      })}</ol>
+      <p className="rd-fine wz-key">● done · ◐ part still open · ◆ required · ○ not started</p>
+    </>);
+  return (
+    <nav className="wz-steps" aria-label="Setup steps">
+      {chat?.open
+        ? <Fold title={`Step ${idx + 1} of ${STEPS.length}: ${STEPS[idx][1]}`} summary={`${done} of ${STEPS.length} done · all steps`}>{list}</Fold>
+        : <><p className="wz-prog">{done} of {STEPS.length} steps done</p>{list}</>}
+    </nav>
   );
 }
 
@@ -69,15 +123,17 @@ export function SetupWizard() {
     else S.reload();
   };
   // a failed load is not "no institution yet": say the server didn't answer instead of offering to create one
-  if (S.error != null && !profile) return <div className="page"><PageHead title="Set up your institution" crumbs={<Link to="/institution">Institution</Link>} /><LoadError error={S.error} onRetry={S.reload} what="the institution" /></div>;
+  if (S.error != null && !profile) return <div className="page rd"><PageTitle title="Set up your institution" crumbs={<Link to="/institution">Institution</Link>} /><LoadError error={S.error} onRetry={S.reload} what="the institution" /></div>;
   if (S.list === null) return <PageSkeleton />;
   if (!S.list.length || !profile || !readiness) {
     return (
-      <WithChat institutionId={null} onTrack={follow} onApplied={applied} at={{ step: "institution", label: `Step 1 · ${STEPS[0][1]}` }}><div className="page">
-        <PageHead title="Set up your institution" sub={`Step 1 of ${STEPS.length} · Who you are`} crumbs={<Link to="/institution">Institution</Link>} />
+      <WithChat institutionId={null} onTrack={follow} onApplied={applied} at={{ step: "institution", label: `Step 1 · ${STEPS[0][1]}` }}><Root>
+        <PageTitle title="Set up your institution" crumbs={<Link to="/institution">Institution</Link>}
+          status={<><span>Step 1 of {STEPS.length}</span><span>Who you are</span></>}
+          actions={<Link className="rd-tbtn" to="/institution">Leave setup</Link>} />
         <TwoWays />
         <CreateInstitution onCreated={id => { S.select(id); S.reloadList(); nav("/institution/setup/where"); }} />
-      </div></WithChat>
+      </Root></WithChat>
     );
   }
   const i = profile.institution;
@@ -99,105 +155,121 @@ export function SetupWizard() {
     try { await inst.status(i.institution_id, "activate"); toast("Active: the agents now use this profile."); nav("/institution"); }
     catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
   };
+  const stateLine = i.status === "active" ? ["Active:", "Amiri Agent uses this profile"] : i.status === "archived" ? ["Archived:", "Amiri Agent does not use this profile"] : ["Being set up:", "Amiri Agent does not use it until it is activated"];
+  const goStep = (s: string) => nav(`/institution/setup/${s}`);
+  const fixStep = (section: string) => goStep(({ footprint: "where", "watch-places": "where", segments: "customers", products: "products", flows: "flows", regulators: "rules", rivals: "rivals", counterparties: "rivals", "risk-exposures": "risks" } as Record<string, string>)[section] ?? "institution");
 
   return (
-    <WithChat institutionId={i.institution_id} onTrack={follow} onApplied={applied} at={{ step: cur[0], label: `Step ${idx + 1} · ${cur[1]}` }}><div className="page">
-      <PageHead crumbs={<><Link to="/institution">Institution</Link><span>/</span><span>Guided setup</span></>}
-        title={<span className="row" style={{ gap: 10 }}>{cur[2]} <StatusBadge status={i.status} /></span>}
-        sub={`Step ${idx + 1} of ${STEPS.length} · ${i.name}`}
-        actions={<Link className="btn" to="/institution">Leave setup</Link>} />
-      <nav className="stepper" aria-label="Setup steps">
-        <div className="stepper-top">
-          <div className="stepper-bar" role="progressbar" aria-label="Steps done" aria-valuemin={0} aria-valuemax={STEPS.length} aria-valuenow={done}>
-            <span style={{ width: `${(done / STEPS.length) * 100}%` }} /></div>
-          <span className="small muted">{done} of {STEPS.length} done</span>
+    <WithChat institutionId={i.institution_id} onTrack={follow} onApplied={applied} at={{ step: cur[0], label: `Step ${idx + 1} · ${cur[1]}` }}><Root>
+      <PageTitle crumbs={<><Link to="/institution">Institution</Link><span> / </span><span>Guided setup</span></>}
+        title={cur[2]}
+        status={<>
+          <span><b className="ins-state">{stateLine[0]}</b> {stateLine[1]}</span>
+          <span>{i.name}</span></>}
+        lede={cur[0] === "review" && i.status === "active" ? "The profile is live. Check what is still open; you can keep changing it." : LEDE[cur[0]]}
+        actions={<Link className="rd-tbtn" to="/institution">Leave setup</Link>} />
+
+      <div className="wz-layout">
+        <Steps cur={cur[0]} idx={idx} states={states} done={done} />
+
+        <div className="wz-body">
+          <TwoWays />
+          {step === "institution" && <Section title={i.name} action={<TextButton onClick={() => setEditing(true)}>Edit details</TextButton>}>
+            <dl className="ins-kv wz-kv">
+              <dt>Type</dt><dd>{kindText(i)}</dd>
+              <dt>Home</dt><dd>{profile.place_names[i.home_country] ?? i.home_country} · {i.base_currency} · {i.time_zone}</dd>
+              <dt>Owns risk decisions</dt><dd>{i.governance_body ?? "—"}</dd>
+              <dt>Summary</dt><dd>{i.summary ?? "—"}</dd>
+            </dl>
+          </Section>}
+
+          {step === "where" && <>
+            <Section title="Add where you operate">
+              <div className="wz-form grid2">
+                <Field label="Place" hint="Countries, states, provinces or districts."><PlacePicker scope="iso" onPick={p => addFootprint(p.code)} placeholder="e.g. a state, a province or a country" /></Field>
+                <Field label="As"><select className="input" value={role} onChange={e => setRole(e.target.value)}>
+                  {["branches", "subsidiary", "representative_office", "agents", "digital_only", "home"].map(r => <option key={r} value={r}>{r === "home" ? "Home country" : cap(words(r))}</option>)}</select></Field>
+              </div>
+            </Section>
+            <Section title="Your footprint on the map" className="ins-map-sec">
+              <ProfileMap profile={profile} height={340} legend={false} />
+              <p className="rd-fine ins-key">{MAP_KEY}</p>
+            </Section>
+            <SectionList rd section="footprint" ctx={ctx} reload={S.reload} />
+            <SectionList rd section="watch-places" ctx={ctx} reload={S.reload} />
+          </>}
+
+          {step === "customers" && <>
+            <Section title={`Usual customer groups for ${i.institution_type === "bank" ? "a bank" : "an insurer"}`}>
+              <SuggestionPicker inline section="segments" ctx={ctx} onAdded={S.reload} />
+            </Section>
+            <SectionList rd section="segments" ctx={ctx} reload={S.reload} />
+            <p className="rd-fine rd-prose wz-after">Edit each group to say where it is concentrated and how your data identifies it, so checks can look at just that group.</p>
+          </>}
+
+          {step === "products" && <>
+            <Section title="What do you offer?">
+              <SuggestionPicker inline section="products" ctx={ctx} onAdded={S.reload} />
+            </Section>
+            <SectionList rd section="products" ctx={ctx} reload={S.reload} />
+            <LinkGrid rd ctx={ctx} rows="products" cols="segments" field="segments" reload={S.reload} title="Edit who uses which product" summary="a grid you can tick" />
+          </>}
+
+          {step === "flows" && <>
+            <Section title="Published figures for your footprint">
+              <SuggestionPicker inline section="flows" ctx={ctx} onAdded={S.reload} />
+            </Section>
+            <SectionList rd section="flows" ctx={ctx} reload={S.reload} />
+            <LinkGrid rd ctx={ctx} rows="flows" cols="segments" field="segments" reload={S.reload} title="Edit which customer groups each flow concerns" summary="a grid you can tick" />
+          </>}
+
+          {step === "rules" && <>
+            <Section title="Currencies you settle in abroad">
+              <div className="wz-form"><CurrenciesField value={i.clearing_currencies ?? []} onChange={setClearing} /></div>
+              <p className="rd-fine wz-after">USD brings US sanctions (OFAC); EUR the EU's; GBP the UK's.</p>
+            </Section>
+            <Section title="From the rule table">
+              <SuggestionPicker inline section="regulators" ctx={ctx} onAdded={S.reload} />
+            </Section>
+            <SectionList rd section="regulators" ctx={ctx} reload={S.reload} />
+          </>}
+
+          {step === "rivals" && <>
+            <SectionList rd section="rivals" ctx={ctx} reload={S.reload} />
+            <SectionList rd section="counterparties" ctx={ctx} reload={S.reload} />
+          </>}
+
+          {step === "risks" && <>
+            <Section title="The risk finder" meta="known hazards that meet your places, customers, flows and sea routes">
+              <SuggestionPicker inline section="risk-exposures" ctx={ctx} onAdded={S.reload} />
+            </Section>
+            <SectionList rd section="risk-exposures" ctx={ctx} reload={S.reload} />
+          </>}
+
+          {step === "monitors" && <MonitorsStep institutionId={i.institution_id} />}
+
+          {step === "review" && <>
+            <Section title="Your profile on the map" className="ins-map-sec">
+              <ProfileMap profile={profile} height={320} legend={false} />
+              <p className="rd-fine ins-key">{MAP_KEY}</p>
+            </Section>
+            <Section title="Ready to go live?" meta={`${readiness.checks.filter(c => c.level === "required" && c.ok).length} of ${readiness.checks.filter(c => c.level === "required").length} required parts done`}>
+              <ReadinessList r={readiness} onFix={fixStep} />
+            </Section>
+          </>}
+
+          <div className="wz-foot">
+            <div className="wz-foot-in">
+              {prev && <button className="btn" type="button" onClick={() => goStep(prev)}>← Back</button>}
+              <span className="wz-foot-s">Step {idx + 1} of {STEPS.length}</span>
+              {next && <button className="btn btn--primary" type="button" onClick={() => goStep(next)}>Next: {STEPS[idx + 1][1]} →</button>}
+              {!next && i.status === "setup" && <button className="btn btn--primary" type="button" disabled={!readiness.ready}
+                title={readiness.ready ? "" : "Required parts are missing"} onClick={activate}>Activate</button>}
+            </div>
+          </div>
         </div>
-        <ol>{STEPS.map(([k, label], n) => (
-          <li key={k}><button type="button" aria-current={k === step ? "step" : undefined} title={`Step ${n + 1} · ${label}: ${STATE_WORDS[states[n]]}`}
-            onClick={() => nav(`/institution/setup/${k}`)}>
-            <StatusIcon status={states[n]} label={`Step ${n + 1}, ${label}: ${STATE_WORDS[states[n]]}`} /><span className="lbl" aria-hidden="true">{label}</span></button></li>))}
-        </ol>
-      </nav>
-      <TwoWays />
-
-      {step === "institution" && <div className="col gap16">
-        <div className="card"><div className="hd"><h2>{i.name}</h2><span className="spacer" /><button className="btn btn--sm" type="button" onClick={() => setEditing(true)}><Icon name="edit" />Edit details</button></div>
-          <div className="bd"><div className="kv">
-            <div className="k">Type</div><div className="v">{kindText(i)}</div>
-            <div className="k">Home</div><div className="v">{profile.place_names[i.home_country] ?? i.home_country} · {i.base_currency} · {i.time_zone}</div>
-            <div className="k">Owns risk decisions</div><div className="v">{i.governance_body ?? "—"}</div>
-            <div className="k">Summary</div><div className="v">{i.summary ?? "—"}</div>
-          </div></div></div>
-      </div>}
-
-      {step === "where" && <div className="col gap16">
-        <div className="card"><div className="hd"><h2>Add where you operate</h2></div><div className="bd grid2">
-          <Field label="Place" hint="Countries, states, provinces or districts."><PlacePicker scope="iso" onPick={p => addFootprint(p.code)} placeholder="e.g. a state, a province or a country" /></Field>
-          <Field label="As"><select className="input" value={role} onChange={e => setRole(e.target.value)}>
-            {["branches", "subsidiary", "representative_office", "agents", "digital_only", "home"].map(r => <option key={r} value={r}>{r === "home" ? "Home country" : cap(words(r))}</option>)}</select></Field>
-        </div></div>
-        <div className="card"><div className="bd"><ProfileMap profile={profile} height={340} /></div></div>
-        <SectionList section="footprint" ctx={ctx} reload={S.reload} />
-        <SectionList section="watch-places" ctx={ctx} reload={S.reload} />
-      </div>}
-
-      {step === "customers" && <div className="col gap16">
-        <div className="card"><div className="hd"><h2>Usual customer groups for {i.institution_type === "bank" ? "a bank" : "an insurer"}</h2></div>
-          <div className="bd"><SuggestionPicker inline section="segments" ctx={ctx} onAdded={S.reload} /></div></div>
-        <SectionList section="segments" ctx={ctx} reload={S.reload} />
-        <Banner kind="info">Edit each group to say where it is concentrated and how your data identifies it, so checks can look at just that group.</Banner>
-      </div>}
-
-      {step === "products" && <div className="col gap16">
-        <div className="card"><div className="hd"><h2>What do you offer?</h2></div>
-          <div className="bd"><SuggestionPicker inline section="products" ctx={ctx} onAdded={S.reload} /></div></div>
-        <SectionList section="products" ctx={ctx} reload={S.reload} />
-        <LinkGrid ctx={ctx} rows="products" cols="segments" field="segments" reload={S.reload} title="Who uses which product" />
-      </div>}
-
-      {step === "flows" && <div className="col gap16">
-        <div className="card"><div className="hd"><h2>Published figures for your footprint</h2></div>
-          <div className="bd"><SuggestionPicker inline section="flows" ctx={ctx} onAdded={S.reload} /></div></div>
-        <SectionList section="flows" ctx={ctx} reload={S.reload} />
-        <LinkGrid ctx={ctx} rows="flows" cols="segments" field="segments" reload={S.reload} title="Which customer groups each flow concerns" />
-      </div>}
-
-      {step === "rules" && <div className="col gap16">
-        <div className="card"><div className="hd"><h2>Currencies you settle in abroad</h2></div><div className="bd col" style={{ gap: 6 }}>
-          <CurrenciesField value={i.clearing_currencies ?? []} onChange={setClearing} />
-          <span className="small muted">USD brings US sanctions (OFAC); EUR the EU's; GBP the UK's.</span></div></div>
-        <div className="card"><div className="hd"><h2>From the rule table</h2></div>
-          <div className="bd"><SuggestionPicker inline section="regulators" ctx={ctx} onAdded={S.reload} /></div></div>
-        <SectionList section="regulators" ctx={ctx} reload={S.reload} />
-      </div>}
-
-      {step === "rivals" && <div className="col gap16">
-        <SectionList section="rivals" ctx={ctx} reload={S.reload} />
-        <SectionList section="counterparties" ctx={ctx} reload={S.reload} />
-      </div>}
-
-      {step === "risks" && <div className="col gap16">
-        <div className="card"><div className="hd"><h2>The risk finder</h2><span className="small muted">known hazards that meet your places, customers, flows and sea routes</span></div>
-          <div className="bd"><SuggestionPicker inline section="risk-exposures" ctx={ctx} onAdded={S.reload} /></div></div>
-        <SectionList section="risk-exposures" ctx={ctx} reload={S.reload} />
-      </div>}
-
-      {step === "monitors" && <MonitorsStep institutionId={i.institution_id} />}
-
-      {step === "review" && <div className="col gap16">
-        <div className="card"><div className="bd"><ProfileMap profile={profile} height={320} /></div></div>
-        <div className="card"><div className="hd"><h2>Ready to go live?</h2><span className="spacer" />
-          {i.status === "setup" && <button className="btn btn--primary" type="button" disabled={!readiness.ready} onClick={activate}>Activate</button>}
-          {i.status === "active" && <span className="badge b-ok">ACTIVE</span>}</div>
-          <div className="bd"><ReadinessList r={readiness} onFix={s => nav(`/institution/setup/${({ footprint: "where", "watch-places": "where", segments: "customers", products: "products", flows: "flows", regulators: "rules", rivals: "rivals", counterparties: "rivals", "risk-exposures": "risks" } as Record<string, string>)[s] ?? "institution"}`)} /></div></div>
-      </div>}
-
-      <div className="row mt24">
-        {prev && <button className="btn" type="button" onClick={() => nav(`/institution/setup/${prev}`)}>← Back</button>}
-        <span className="spacer" />
-        {next && <button className="btn btn--primary" type="button" onClick={() => nav(`/institution/setup/${next}`)}>Next: {STEPS[idx + 1][1]} →</button>}
       </div>
       {editing && <InstitutionModal profile={profile} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); S.reload(); }} />}
-    </div></WithChat>
+    </Root></WithChat>
   );
 }
