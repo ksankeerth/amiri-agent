@@ -1,0 +1,43 @@
+/* Radar (the redesign): story rows with a progress line, compact rows, the opened story. Scoped to .rd-radar. */
+.rd-radar .rs-how p { margin: 10px 0 0; }
+.rd-radar .rd-figs { margin-top: 16px; }
+.rd-radar .rd-lede .rd-tbtn { font-size: 16px; margin-left: 10px; }
+.rd-radar .rs-warns { margin-top: 6px; }
+.rd-radar .rs-warns .rd-warn { font-size: 16px; }
+.rd-radar .rs-small { margin: 10px 0 0; }
+
+.rd-radar .rs-list { list-style: none; margin: 0; padding: 0; }
+.rd-radar .rs-row { display: grid; grid-template-columns: minmax(0, 1fr) 512px; column-gap: 24px; align-items: start; }
+.rd-radar .rs-row.rs-compact { grid-template-columns: minmax(0, 1fr) auto; }
+.rd-radar .rs-main { min-width: 0; }
+.rd-radar .rs-chain { padding-top: 2px; }
+.rd-radar .rs-chain .rd-step { padding-right: 4px; }
+.rd-radar .rs-panel { grid-column: 1 / -1; margin-top: 12px; }
+.rd-radar .rs-acts { display: flex; gap: 20px; align-items: baseline; padding-top: 2px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* the title is the button that opens the story in place */
+.rd-radar .rs-title { display: flex; align-items: baseline; gap: 10px; width: 100%; text-align: left; background: none; border: 0; padding: 0;
+  font: inherit; font-size: 18px; font-weight: 600; line-height: 1.35; color: var(--ink); cursor: pointer; }
+.rd-radar .rs-title:hover span { text-decoration: underline; text-decoration-color: var(--rd-mark); text-underline-offset: 3px; }
+.rd-radar .rs-chev { flex: none; width: 16px; height: 16px; align-self: center; color: var(--ink-3); transition: transform var(--d-fast); }
+.rd-radar .rs-title[aria-expanded="true"] .rs-chev { transform: rotate(90deg); color: var(--ink); }
+.rd-radar .rs-compact .rs-title { font-size: 17px; }
+.rd-radar .rs-line { margin-top: 4px; padding-left: 26px; }
+.rd-radar .rs-compact .rd-row-m { padding-left: 26px; }
+
+.rd-radar .rs-opened { margin-left: 26px; }
+.rd-radar .rs-opened p { margin: 0 0 10px; }
+.rd-radar .rs-why { font-size: 17px; color: var(--ink); max-width: 680px; }
+.rd-radar .rs-heads { list-style: none; margin: 0; padding: 0; max-width: 760px; }
+.rd-radar .rs-heads li { padding: 6px 0; }
+.rd-radar .rs-heads .rd-fine { display: block; }
+
+.rd-radar .rs-place { width: 200px; }
+.rd-radar .rd-fold-b { padding-left: 0; }
+.rd-radar .rd-fold-b .rs-list .rs-row:last-child { border-bottom: 0; }
+
+@media (max-width: 900px) {
+  .rd-radar .rs-row { grid-template-columns: minmax(0, 1fr); row-gap: 8px; }
+  .rd-radar .rs-chain { padding-left: 26px; }
+}
+@media (prefers-reduced-motion: reduce) { .rd-radar .rs-chev { transition: none; } }
