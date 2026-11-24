@@ -237,8 +237,9 @@ export function EventsPage() {
       <div className="filters ev-filters">
         <FlowFilter label="Which events" value={show} onChange={setShow} all={{ key: "all", label: "All", count: shown.length }}
           steps={[{ key: "open", label: "Open", count: shown.filter(e => e.status === "open").length }, { key: "closed", label: "Closed", count: shown.filter(e => e.status === "closed").length }]} />
-        <label className="sortby ev-sort">Sort <select className="input" value={sort} onChange={e => setSort(e.target.value as Sort)}>
-          <option value="newest">Newest first</option><option value="impacts">Most possible impacts</option></select></label>
+        {/* the groups already put events with impacts first: sorting changes something only when 2 or more could hit products */}
+        {reach.length > 1 && <label className="sortby ev-sort">Sort <select className="input" value={sort} onChange={e => setSort(e.target.value as Sort)}>
+          <option value="newest">Newest first</option><option value="impacts">Most possible impacts</option></select></label>}
         {nSim > 0 && <label className="check ev-sort"><input type="checkbox" checked={sim} onChange={e => setSim(e.target.checked)} /> Also show {plural(nSim, "simulated event")} (from tests; not real)</label>}
         <span className="spacer" />
         {!pipeline && (inProgress.length > 0 || noEvent.length > 0) && <Link className="ev-sort" to="/findings">See all findings</Link>}
