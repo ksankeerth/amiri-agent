@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { placeName, placeOrder } from "./format.ts";
-import { alertOrder, checkMove, dateRange, eventTitle, signalStrength, impactText, listText, productAngle, relDay, sizeTiming, splitCheckText, themeLabel, verdictTone } from "./plain.ts";
+import { alertChangeText, alertOrder, checkMove, dateRange, eventTitle, signalStrength, impactText, listText, productAngle, relDay, sizeTiming, splitCheckText, themeLabel, verdictTone } from "./plain.ts";
 
 test("themes read as short phrases, not machine text", () => {
   assert.equal(themeLabel({ theme: "commodities", direction: "up", item: "oil" }), "Oil prices up");
@@ -88,4 +88,12 @@ test("a source's score reads as a signal strength in words", () => {
   assert.deepEqual(signalStrength(1), ["Weak signal", "grey"]);  // 1 of 100, not a fraction meaning 100 %
   assert.deepEqual(signalStrength(31), ["Weak signal", "grey"]);
   assert.equal(signalStrength(null), null);
+});
+
+test("an alert's history says Updated when only the evidence grew, and Level raised when the level rose", () => {
+  assert.equal(alertChangeText({ change: "escalated", text: "1 more finding; the investigation added to the event" }), "Updated: 1 more finding");
+  assert.equal(alertChangeText({ change: "escalated", text: "2 more effects; 3 more findings" }), "Updated: 2 more effects");
+  assert.equal(alertChangeText({ change: "escalated", text: "Credit-line utilisation: +0.8 pp against the level before the event" }), "Level raised");
+  assert.equal(alertChangeText({ change: "escalated", text: "now developing" }), "Level raised");
+  assert.equal(alertChangeText({ change: "checked", text: "" }), "Checked against your data");
 });

@@ -13,15 +13,11 @@ import { Icon } from "../components/Icon";
 import { Empty, ListSkeleton, LoadError, useNow, useToast } from "../components/ui";
 import { ago, dayTime, person } from "../format";
 import {
-  ACTION_MEANS, alertOrder, ALERT_STATUS, checkMove, count, earliest, eventTitle, impactText, LEVEL_LABEL, LEVEL_TONE, listText, longWhen, onDay, relDay, sizeTiming,
+  ACTION_MEANS, alertChangeText, alertOrder, ALERT_STATUS, checkMove, count, earliest, eventTitle, impactText, LEVEL_LABEL, LEVEL_TONE, listText, longWhen, onDay, relDay, sizeTiming,
   sourceInfo, type VerdictKey,
 } from "../plain";
 
 type Show = "new" | "acknowledged" | "resolved" | "all";
-const CHANGE: Record<string, string> = {
-  raised: "Raised", escalated: "Level raised", acknowledged: "Acknowledged", resolved: "Resolved", reopened: "Reopened",
-  confirmed: "Confirmed by your data", withdrawn: "Withdrawn", checked: "Checked against your data",
-};
 
 // when Amiri Agent last raised or escalated it: a person acknowledging it doesn't move it on the page
 const changed = (a: AlertItem) => [...a.history].reverse().find(h => h.by === "Amiri Agent" && h.change !== "resolved")?.at ?? a.created_at;
@@ -107,7 +103,7 @@ function AlertCard({ a, next, ev, primary, onChange }: {
             </div></details>
           <details className="tech dl-hist"><summary>History ({a.history.length})</summary>
             <div className="tech-bd"><ol className="alc-hist">{[...a.history].reverse().map((h, i) => (
-              <li key={i}><b>{CHANGE[h.change] ?? h.change}</b><span>{dayTime(h.at)}{h.by && h.by !== "Amiri Agent" ? ` · ${person(h.by)}` : ""}</span></li>))}</ol></div></details>
+              <li key={i}><b>{alertChangeText(h)}</b><span>{dayTime(h.at)}{h.by && h.by !== "Amiri Agent" ? ` · ${person(h.by)}` : ""}</span></li>))}</ol></div></details>
           <span className="spacer" />
           <Link className="dl-ev" to={`/events/${a.event_id}`}><span className="muted">From the event</span> <b>{title}</b>{a.event_status === "closed" && <span className="muted"> (closed)</span>}<Icon name="arrow" /></Link>
         </div>

@@ -156,6 +156,16 @@ export function verdictWhy(why: string | null | undefined): string {
 
 // ---------------------------------------------------------------- alerts
 export type LevelKey = "warning" | "developing" | "adverse";
+const ALERT_CHANGE: Record<string, string> = {
+  raised: "Raised", escalated: "Level raised", acknowledged: "Acknowledged", resolved: "Resolved", reopened: "Reopened",
+  confirmed: "Confirmed by your data", withdrawn: "Withdrawn", checked: "Checked against your data",
+};
+/** An alert's history entry in words. The server writes "escalated" both when the level rose and when the event only
+ *  grew ("1 more finding; …") with the level unchanged: the second is an update, not a raise. */
+export function alertChangeText(h: { change: string; text?: string | null }): string {
+  if (h.change === "escalated" && /^\d+ more (finding|effect)/.test(h.text ?? "")) return `Updated: ${(h.text ?? "").split(";")[0]}`;
+  return ALERT_CHANGE[h.change] ?? words(h.change);
+}
 export const LEVEL_LABEL: Record<LevelKey, string> = { warning: "Early warning", developing: "Showing early signs", adverse: "Confirmed by your data" };
 export const LEVEL_TONE: Record<LevelKey, Tone> = { warning: "amber", developing: "amber", adverse: "red" };
 const LEVEL_RANK: Record<string, number> = { adverse: 0, developing: 1, warning: 2 };
