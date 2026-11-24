@@ -105,7 +105,7 @@ export function PriceChart({ points, marks = [], pins = [], height = 260, fmtX, 
         </defs>
         {ticks.map((v, i) => (
           <g className="ax" key={i}><line x1={L} x2={w - R} y1={Y(v)} y2={Y(v)} />
-            <text x={L - 8} y={Y(v) + 3.5} textAnchor="end">{fmtTick(v)}</text></g>
+            <text x={L - 8} y={Y(v) + 5} textAnchor="end">{fmtTick(v)}</text></g>
         ))}
         {xt.map(i => (
           <g className="ax" key={i}><text x={X(i)} y={h - 8} textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"}>{fmtX(points[i].t)}</text></g>
@@ -117,12 +117,15 @@ export function PriceChart({ points, marks = [], pins = [], height = 260, fmtX, 
           if (i < 0) return null;
           return (
             <g key={k}><line x1={X(i)} x2={X(i)} y1={T} y2={h - B} stroke={m.color} strokeDasharray="3 3" />
-              <circle cx={X(i)} cy={Y(points[i].v)} r={5} fill={m.color} stroke="var(--surface)" strokeWidth={1.5}><title>{m.label}</title></circle></g>
+              {/* a flagged move is a diamond (◆); a note that isn't a flagged move is a square (■) */}
+              {m.note
+                ? <rect x={X(i) - 5} y={Y(points[i].v) - 5} width={10} height={10} rx={1} fill={m.color} stroke="var(--surface)" strokeWidth={1.5}><title>{m.label}</title></rect>
+                : <path d={`M${X(i)},${Y(points[i].v) - 8}l8,8l-8,8l-8,-8z`} fill={m.color} stroke="var(--surface)" strokeWidth={1.5} strokeLinejoin="round"><title>{m.label}</title></path>}</g>
           );
         })}
         {tagGroups(marks.map(m => ({ m, x: X(idxOf(m.t)), ok: idxOf(m.t) >= 0 }))).map(({ m, x0, x, n }, k) => {
           const text = n > 1 ? `${m.tag} ×${n}` : m.tag!;
-          const half = text.length * 3.6 + 4;  // about half the label's width at the tag's 12 px bold
+          const half = text.length * 4.3 + 4;  // about half the label's width at the tag's 14 px bold
           const cx = Math.min(Math.max((x0 + x) / 2, L + half), w - R - half);
           return (
             <g key={`t${k}`} className="mk-tag-g">

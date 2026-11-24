@@ -72,7 +72,7 @@
 .rd-studio .rd-figs { --rd-fig: 36px; margin-top: 24px; }
 .rd-studio .rd-fig-v { display: flex; align-items: baseline; gap: 8px; }
 .rd-studio .rds-two { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); column-gap: 48px; align-items: start; }
-.rd-studio .rds-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--high); margin-right: 6px; }
+.rd-studio .rds-dot { display: inline-block; width: 11px; height: 11px; background: var(--high); margin-right: 8px; transform: rotate(45deg) scale(.85); } /* a flagged move is a diamond, as on the chart */
 .rd-studio .rds-score { list-style: none; margin: 0; padding: 0; }
 .rd-studio .rds-score li { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 8px 0; font-size: 17px; color: var(--ink); }
 .rd-studio .rds-score .rds-w { font-weight: 700; color: var(--ink); }
