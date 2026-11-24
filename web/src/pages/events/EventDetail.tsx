@@ -1,6 +1,6 @@
 // One event, read top to bottom: when, bad or good for you, the answer in a sentence and where it has got to; then why it
 // matters by the team that has each impact, what happened, what was set aside, and the report. Detail opens in place.
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError } from "../../api/client";
 import { investigationApi, type EventDetail } from "../../api/investigation";
@@ -27,7 +27,13 @@ function EventLoader({ id }: { id: string }) {
   const [alertsFailed, setAlertsFailed] = useState(false);
   const load = () => investigationApi.event(id).then(x => { setE(x); setErr(null); }).catch(setErr);
   // a failed alerts request is not "no alerts": the page says it couldn't load them and offers to try again
-  const loadAlerts = () => alertsApi.list({ event_id: id }).then(x => { setAlerts(x); setAlertsFailed(false); }).catch(() => { setAlerts([]); setAlertsFailed(true); });
+  // only the latest request may answer: a slow earlier one can't overwrite a retry's result
+  const asked = useRef(0);
+  const loadAlerts = () => {
+    const n = ++asked.current;
+    alertsApi.list({ event_id: id }).then(x => { if (n === asked.current) { setAlerts(x); setAlertsFailed(false); } })
+      .catch(() => { if (n === asked.current) { setAlerts([]); setAlertsFailed(true); } });
+  };
   useEffect(() => { load(); loadAlerts(); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
   if (err instanceof ApiError && err.status === 404) return (
     <div className="page"><PageHeader title="Event not found" crumbs={<Link to="/events">Events</Link>} />
@@ -61,13 +67,13 @@ function EventPage({ d, retryAlerts }: { d: D; retryAlerts: () => void }) {
           {d.toReview === d.alerts.length ? `; ${d.alerts.length === 1 ? "not" : "none"} taken on yet` : d.toReview ? `; ${d.toReview} still to review` : ", all taken on"}.</>}</>
         : <>Nothing in it reaches your products. {open ? "It closes on its own when the news stops." : ""}</>}</p>
       <Progress d={d} />
+      {d.alertsFailed && <p className="evd-once evd-fail"><Icon name="warn" />The alerts for this event couldn't be loaded{n ? ", so the impacts aren't grouped by team" : ""}.
+        <button type="button" className="evd-retry" onClick={retryAlerts}>Try again</button></p>}
       {e.world !== "live" && <p className="evd-sim"><Icon name="info" />Simulated: this event came from a test move, not real news. It stays out of the live picture.</p>}
     </header>
 
     {n > 0 && <section className="evd-sec" aria-labelledby="evd-why">
       <h2 id="evd-why">Why it matters to you{d.alertsFailed ? "" : ", by team"} <span>{n}</span><Link className="evd-all" to="/alerts">All alerts</Link></h2>
-      {d.alertsFailed && <p className="evd-once evd-fail"><Icon name="warn" />The alerts for this event couldn't be loaded, so the impacts aren't grouped by team.
-        <button type="button" className="evd-retry" onClick={retryAlerts}>Try again</button></p>}
       {d.onePhrase && <p className="evd-once">{d.teams.length === 1 ? "The team has" : "Each team has"} {d.onePhrase}.</p>}
       {d.teams.map(t => <div key={t.owner} className="evd-team">
         <h3><Link to="/alerts">{t.owner}<Icon name="arrow" /></Link>
@@ -75,7 +81,7 @@ function EventPage({ d, retryAlerts }: { d: D; retryAlerts: () => void }) {
         <ProductLines d={d} hs={t.hs} /></div>)}
       {d.free.length > 0 && (d.alertsFailed ? <ProductLines d={d} hs={d.free} /> : <div className="evd-team"><h3>No team alerted</h3><ProductLines d={d} hs={d.free} /></div>)}
       <p className="evd-sub">AMIRI Agent's assessment: expectations, not facts yet{d.validation ? "; each is checked against your own figures as they're published" : ""}.
-        {d.validation && d.same && d.checked > 0 && <span className="evd-shared">Your data so far, for all of them: <CheckPill c={d.checks[0]} /></span>}</p>
+        {d.validation && d.same && d.checked > 0 && <span className="evd-shared">Your data so far, for all of them: <CheckPill c={{ ...d.checks[0], adverse: d.sharedAdverse }} /></span>}</p>
     </section>}
 
     <section className="evd-sec" aria-labelledby="evd-what"><h2 id="evd-what">What happened</h2><Story d={d} /></section>

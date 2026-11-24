@@ -52,13 +52,16 @@ export function derive(e: EventDetail, alerts: AlertItem[], alertsFailed = false
     const as = alerts.filter(a => a.owner === owner), ids = new Set(as.flatMap(a => a.effects.map(x => x.hypothesis_id)));
     return { owner, alerts: as, hs: hs.filter(h => ids.has(h.hypothesis_id)) };
   });
+  // checks agree when verdict and alert match and the impacts agree on bad-or-good; then the result is said once
+  const advs = new Set(hs.map(adverse));
+  const same = new Set(checks.map(c => `${c.verdict}|${c.alert}`)).size <= 1 && checks.length === hs.length && advs.size <= 1;
   const alerted = new Set(alerts.flatMap(a => a.effects.map(x => x.hypothesis_id)));
   const phrases = new Set(alerts.map(alertPhrase));
   return {
     e, alerts, alertsFailed, tasks, metric, adverse, nBad, nGood, checks, teams, free: hs.filter(h => !alerted.has(h.hypothesis_id)),
     tone: (nBad && nGood ? "mixed" : nBad ? "bad" : nGood ? "good" : "neutral") as "bad" | "good" | "mixed" | "neutral",
     checked: checks.filter(c => c.verdict !== "not_yet").length,
-    same: new Set(checks.map(c => c.verdict)).size <= 1 && checks.length === hs.length,  // then no per-line result
+    same, sharedAdverse: advs.size === 1 ? adverse(hs[0]) : null,  // same: then no per-line result
     next: earliest(e.tasks.filter(t => !t.check?.final).map(t => t.next_check_after ?? t.check?.next_check_after)),
     products: [...new Set(hs.map(productOf))], toReview: alerts.filter(a => a.status === "new").length,
     onePhrase: phrases.size === 1 ? [...phrases][0] : null,  // said once above the teams when every alert shares it
@@ -125,7 +128,7 @@ function ProductLine({ d, hs }: { d: D; hs: Hypothesis[] }) {
   // every angle of one move shares its bad-or-good; a result shows on the line only when the angles' checks agree
   const mixed = d.nBad > 0 && d.nGood > 0, bads = new Set(hs.map(d.adverse)), bad = bads.size === 1 ? d.adverse(hs[0]) : null;
   const cs = hs.map(h => d.tasks.get(h.hypothesis_id)?.check);
-  const c = cs.every(x => x && x.verdict === cs[0]?.verdict) ? cs[0] : undefined;
+  const c = cs.every(x => x && x.verdict === cs[0]?.verdict && x.alert === cs[0]?.alert) && bads.size === 1 ? cs[0] : undefined;
   return <details className="evd-line">
     <summary><span className="evd-l1"><b>{productOf(hs[0])}</b>: {lower(move)}
       {segs.length > 0 && <span className="muted"> ({listText(hs.length > segs.length ? [...segs, "overall"] : segs)})</span>}
