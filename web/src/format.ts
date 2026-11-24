@@ -121,3 +121,15 @@ export function clockText(iso: string, timeZone: string): string {
   const p = (t: Intl.DateTimeFormatPartTypes) => parts.find(x => x.type === t)?.value ?? "";
   return `${p("weekday")} ${p("day")} ${p("month")} · ${p("hour")}:${p("minute")}`;
 }
+
+/** The zone as the top bar says it: "Central", "Eastern" for the North American zones, else the city ("Colombo",
+ *  "Jakarta"): the long names of other zones mislead ("India Standard Time" for Colombo). */
+export function zoneName(timeZone: string, at = new Date()): string {
+  if (timeZone === "UTC") return "UTC";
+  try {
+    const n = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "long" }).formatToParts(at).find(p => p.type === "timeZoneName")?.value;
+    const short = n?.replace(/ (Standard|Daylight) Time$/, "");
+    if (short && /^(Eastern|Central|Mountain|Pacific|Alaska|Hawaii-Aleutian|Atlantic)$/.test(short)) return short;
+  } catch { /* an unknown zone */ }
+  return timeZone.split("/").pop()!.replace(/_/g, " ");
+}

@@ -1,0 +1,193 @@
+/* Amiri Agent UI v2: the app shell (components/v2/Shell.tsx, LivePill.tsx, GoTo.tsx).
+   Sidebar 232 px, top bar, main; under 720 px the sidebar is a sheet behind a Menu button (A8).
+   Only --v2- tokens. The sidebar's off-white is a mix of the two surface tokens, so it follows the theme. */
+
+.v2-shell {
+  display: grid; grid-template-columns: 232px minmax(0, 1fr);
+  height: 100vh; height: 100dvh; overflow: hidden;
+}
+.v2-sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- sidebar */
+.v2-side {
+  display: flex; flex-direction: column; gap: var(--v2-sp-2); min-height: 0; overflow-y: auto;
+  padding: var(--v2-sp-18) var(--v2-sp-14);
+  border-right: 1px solid var(--v2-line);
+  background: color-mix(in srgb, var(--v2-surface) 55%, var(--v2-page));
+}
+.v2-side__sheethead, .v2-side__tools, .v2-mbar, .v2-sheet-scrim { display: none; }
+
+.v2-logo {
+  flex: none; width: 30px; height: 30px; border-radius: var(--v2-r-nav) ; display: flex; align-items: center; justify-content: center;
+  background: var(--v2-ink-btn); color: var(--v2-ink-btn-text); font-weight: var(--v2-fw-bold); font-size: var(--v2-fs-lead);
+}
+.v2 .v2-brand {
+  display: flex; align-items: center; gap: var(--v2-sp-10); padding: 0 var(--v2-sp-6) var(--v2-sp-14);
+  color: var(--v2-text); font-weight: var(--v2-fw-regular); text-decoration: none; border-radius: var(--v2-r-nav);
+}
+.v2 .v2-brand:hover { color: var(--v2-text); text-decoration: none; }
+.v2-brand__t { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.v2-brand__t b { font-size: var(--v2-fs-lead); }
+.v2-brand__t span { font-size: var(--v2-fs-cap); color: var(--v2-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Live pill */
+.v2-status { margin: 0 var(--v2-sp-4) var(--v2-sp-6); }
+.v2-live {
+  display: flex; align-items: center; gap: var(--v2-sp-8); padding: var(--v2-sp-8) var(--v2-sp-10);
+  border: 1px solid var(--v2-line); border-radius: var(--v2-r-ctl); background: var(--v2-surface);
+  font-size: var(--v2-fs-cap); line-height: 1.4; color: var(--v2-text-2);
+}
+.v2-live b { color: var(--v2-text); font-weight: var(--v2-fw-semibold); }
+.v2-live__dot { flex: none; width: 8px; height: 8px; border-radius: 4px; background: var(--v2-dot-idle); box-shadow: 0 0 0 3px var(--v2-halo-idle); }
+.v2-live.is-live .v2-live__dot { background: var(--v2-dot-live); box-shadow: 0 0 0 3px var(--v2-halo-live); }
+.v2-live.is-late .v2-live__dot { background: var(--v2-dot-warn); box-shadow: 0 0 0 3px var(--v2-halo-warn); }
+.v2-live.is-down .v2-live__dot { background: var(--v2-bad); box-shadow: 0 0 0 3px var(--v2-bad-tint); }
+.v2-demo { margin: var(--v2-sp-6) var(--v2-sp-4) 0; font-size: var(--v2-fs-cap); color: var(--v2-muted); cursor: default; }
+
+/* ---------- menu */
+.v2-nav { display: flex; flex-direction: column; }
+.v2-nav__cap { padding: var(--v2-sp-16) var(--v2-sp-10) var(--v2-sp-6); }
+/* "li a" in app.css underlines every link in a list (specificity 0,3,1): the selectors below beat it */
+.v2 .v2-nav li > a.v2-nav__a {
+  display: flex; align-items: center; gap: var(--v2-sp-10); min-height: 34px; padding: var(--v2-sp-6) var(--v2-sp-10); border-radius: var(--v2-r-nav);
+  color: var(--v2-text-2); font-size: var(--v2-fs-body); font-weight: var(--v2-fw-medium); text-decoration: none;
+}
+.v2 .v2-nav li > a.v2-nav__a:hover { background: var(--v2-hover); color: var(--v2-text); text-decoration: none; }
+.v2 .v2-nav li > a.v2-nav__a[aria-current="page"] { background: var(--v2-ink-btn); color: var(--v2-ink-btn-text); }
+.v2-nav__a svg { flex: none; width: 16px; height: 16px; }
+.v2-count {
+  margin-left: auto; min-width: 20px; padding: 1px var(--v2-sp-6); border-radius: var(--v2-r-pill); text-align: center;
+  font-size: var(--v2-fs-cap); font-weight: var(--v2-fw-bold); line-height: 1.5; font-variant-numeric: tabular-nums;
+  background: var(--v2-count-bg); color: var(--v2-text-2);
+}
+.v2-count.is-hot { background: var(--v2-bad); color: var(--v2-on-bad); }
+
+/* ---------- bottom of the sidebar: user and role switch */
+.v2-side__foot { margin-top: auto; padding-top: var(--v2-sp-16); display: flex; flex-direction: column; gap: var(--v2-sp-2); }
+.v2-user { display: flex; align-items: center; gap: var(--v2-sp-10); padding: var(--v2-sp-10) var(--v2-sp-6); border-top: 1px solid var(--v2-line); font-size: var(--v2-fs-meta); line-height: 1.3; }
+.v2-user div div { color: var(--v2-muted); }
+.v2-avatar {
+  flex: none; width: 30px; height: 30px; border-radius: 15px; display: flex; align-items: center; justify-content: center;
+  background: var(--v2-brand); color: var(--v2-surface); font-weight: var(--v2-fw-semibold); font-size: var(--v2-fs-meta);
+}
+.v2-seg { display: flex; padding: 3px; border-radius: var(--v2-r-btn); background: var(--v2-hover); font-size: var(--v2-fs-cap); }
+.v2-seg button {
+  flex: 1; min-height: var(--v2-hit); padding: 0 var(--v2-sp-4); white-space: nowrap; border: 0; border-radius: 7px; background: transparent; color: var(--v2-text-2);
+  font-size: var(--v2-fs-cap); font-weight: var(--v2-fw-semibold);
+}
+.v2-seg button[aria-pressed="true"] { background: var(--v2-surface); color: var(--v2-text); box-shadow: var(--v2-shadow-sm); }
+.v2-seg button[aria-pressed="false"]:hover { color: var(--v2-text); }
+.v2-seg button:focus-visible { outline-offset: -2px; }  /* inside the track: the track doesn't clip, but neighbours touch */
+
+/* ---------- column: top bar and main */
+.v2-col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.v2-top {
+  flex: none; display: flex; align-items: center; flex-wrap: wrap; gap: var(--v2-sp-14);
+  padding: var(--v2-sp-14) var(--v2-sp-36); border-bottom: 1px solid var(--v2-line); background: var(--v2-page);
+}
+.v2-crumbs { flex-grow: 1; min-width: 0; font-size: var(--v2-fs-meta); color: var(--v2-muted); }
+.v2-crumbs ol { display: flex; flex-wrap: wrap; }
+.v2-crumbs__sep { margin: 0 var(--v2-sp-6); }
+.v2 .v2-crumbs li > a { color: var(--v2-muted); font-weight: var(--v2-fw-regular); text-decoration: none; }
+.v2 .v2-crumbs li > a:hover { color: var(--v2-text); text-decoration: underline; }
+.v2-clock { font-size: var(--v2-fs-meta); color: var(--v2-text-2); white-space: nowrap; }
+
+.v2-gobtn {
+  display: inline-flex; align-items: center; gap: var(--v2-sp-10); min-height: 34px; padding: 0 var(--v2-sp-14);
+  border: 1px solid var(--v2-line-ctl); border-radius: var(--v2-r-btn); background: var(--v2-surface);
+  color: var(--v2-muted); font-size: var(--v2-fs-meta); font-weight: var(--v2-fw-medium);
+}
+.v2-gobtn:hover { border-color: var(--v2-line-ctl-hover); }
+.v2-gobtn svg, .v2-iconbtn svg { width: 16px; height: 16px; flex: none; }
+.v2-gobtn__k { border: 1px solid var(--v2-line); border-radius: 5px; padding: 0 5px; }
+.v2-iconbtn {
+  display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0;
+  border: 1px solid var(--v2-line-ctl); border-radius: var(--v2-r-btn); background: var(--v2-surface); color: var(--v2-text);
+}
+.v2-iconbtn:hover { border-color: var(--v2-line-ctl-hover); }
+
+.v2-main { flex: 1 1 auto; min-height: 0; overflow: auto; padding: var(--v2-page-pad); }
+.v2 .v2-main:focus-visible { outline: none; }  /* a landmark that takes focus after navigation or the skip link, not a control */
+
+/* Pages not yet moved to v2 (removed page by page; P16 deletes this block): they keep the old type and bring no padding
+   of their own, since the main area now has it. */
+.v2-main .page { padding: 0; font: 16px/1.55 var(--font-ui); color: var(--ink-2); }
+:where(.v2-main .page) a { color: var(--accent-ink); font-weight: inherit; }  /* base.css's link colour is for v2 pages */
+:where(.v2-main .page) a:hover { color: var(--accent-ink); }
+.v2-main > .banner { margin: 0 0 var(--v2-sp-16); }
+@media (min-width: 1101px) { .v2-main .chatside { height: calc(100dvh - 62px - 24px - 32px); } }  /* the Setup chat: the viewport minus top bar, its margins and the main padding */
+
+/* ---------- Go to */
+.v2-goto-scrim {
+  position: fixed; inset: 0; z-index: 100; display: flex; justify-content: center; align-items: flex-start;
+  padding: 12vh var(--v2-sp-16) var(--v2-sp-16); background: var(--v2-scrim);
+}
+.v2-goto {
+  width: 520px; max-width: 100%; max-height: 72vh; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--v2-surface); border: 1px solid var(--v2-line); border-radius: var(--v2-r-panel); box-shadow: var(--v2-shadow-pop);
+}
+.v2-goto__bar {
+  flex: none; display: flex; align-items: center; gap: var(--v2-sp-10); padding: var(--v2-sp-14) var(--v2-sp-16);
+  border-bottom: 1px solid var(--v2-line); color: var(--v2-muted);
+}
+.v2-goto__bar:focus-within { box-shadow: inset 0 -2px 0 var(--v2-focus); }
+.v2-goto__bar svg { width: 16px; height: 16px; flex: none; }
+.v2 .v2-goto__input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--v2-text); font-size: var(--v2-fs-lead); padding: var(--v2-sp-4) 0; }
+.v2 .v2-goto__input:focus-visible { outline: none; }
+.v2-goto__input::placeholder { color: var(--v2-muted); opacity: 1; }
+.v2-goto__esc { min-width: var(--v2-hit); height: var(--v2-hit); border: 0; background: transparent; color: var(--v2-muted); font-family: var(--v2-mono); font-size: var(--v2-fs-cap); border-radius: var(--v2-r-sm); }
+.v2-goto__esc:hover { color: var(--v2-text); }
+.v2-goto__list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-bottom: var(--v2-sp-8); }
+.v2-goto__cap { padding: var(--v2-sp-10) var(--v2-sp-16) var(--v2-sp-4); }
+.v2-goto__opt { display: flex; align-items: baseline; gap: var(--v2-sp-8); padding: var(--v2-sp-8) var(--v2-sp-16); font-size: var(--v2-fs-body); cursor: pointer; }
+.v2-goto__opt.is-active { background: var(--v2-selected); }
+.v2-goto__mark { flex: none; }
+.v2-goto__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v2-goto__extra { color: var(--v2-text-2); margin-left: auto; padding-left: var(--v2-sp-12); }
+.v2-goto__none { padding: var(--v2-sp-8) var(--v2-sp-16); font-size: var(--v2-fs-body); color: var(--v2-muted); }
+.v2-goto__foot { flex: none; padding: var(--v2-sp-8) var(--v2-sp-16); border-top: 1px solid var(--v2-line); font-size: var(--v2-fs-cap); color: var(--v2-muted); }
+
+/* ---------- phone (A8): a top bar with the logo, the Live pill and Menu; the menu is a sheet */
+@media (max-width: 719.98px) {
+  .v2-shell { display: flex; flex-direction: column; }
+  .v2-mbar {
+    flex: none; display: flex; align-items: center; gap: var(--v2-sp-10); padding: var(--v2-sp-8) var(--v2-sp-16);
+    border-bottom: 1px solid var(--v2-line); background: color-mix(in srgb, var(--v2-surface) 55%, var(--v2-page));
+  }
+  .v2 .v2-mbar__logo { display: flex; border-radius: var(--v2-r-nav); }
+  .v2-mbar .v2-live { flex: 0 1 auto; min-width: 0; padding: var(--v2-sp-6) var(--v2-sp-10); }
+  .v2-live.is-compact .v2-live__why { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .v2-live.is-compact .v2-live__t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .v2-menubtn {
+    margin-left: auto; display: inline-flex; align-items: center; gap: var(--v2-sp-8); min-height: var(--v2-hit-phone); padding: 0 var(--v2-sp-16);
+    border: 1px solid var(--v2-line-ctl); border-radius: var(--v2-r-btn); background: var(--v2-surface); color: var(--v2-text);
+    font-size: var(--v2-fs-meta); font-weight: var(--v2-fw-semibold);
+  }
+  .v2-menubtn svg { width: 16px; height: 16px; }
+
+  .v2-top { display: none; }
+  .v2-col { flex: 1 1 auto; }
+  .v2-main { padding: 20px var(--v2-sp-16) var(--v2-sp-48); }
+
+  .v2-side {
+    position: fixed; z-index: 60; top: 0; bottom: 0; left: 0; width: min(320px, 86vw);
+    transform: translateX(-100%); visibility: hidden; box-shadow: var(--v2-shadow-pop);
+    transition: transform var(--v2-dur) var(--v2-ease), visibility 0s linear var(--v2-dur);
+  }
+  .v2-side[data-open="true"] { transform: none; visibility: visible; transition-delay: 0s; }
+  .v2-sheet-scrim { display: block; position: fixed; inset: 0; z-index: 55; background: var(--v2-scrim); }
+  .v2-side__sheethead { display: flex; align-items: center; justify-content: space-between; padding: 0 var(--v2-sp-4) var(--v2-sp-8) var(--v2-sp-10); }
+  .v2-side__tools { display: flex; gap: var(--v2-sp-8); margin: 0 var(--v2-sp-4) var(--v2-sp-6); }
+  .v2-side__tools .v2-gobtn { flex: 1; min-width: 0; }
+  .v2-side__tools .v2-gobtn__k { display: none; }
+  .v2-gobtn__t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .v2-side .v2-iconbtn, .v2-side .v2-gobtn { min-height: var(--v2-hit-phone); }
+  .v2-side .v2-iconbtn { width: var(--v2-hit-phone); height: var(--v2-hit-phone); }
+  .v2 .v2-nav li > a.v2-nav__a { min-height: var(--v2-hit-phone); }
+  .v2-seg button { min-height: var(--v2-hit-phone); }
+  .v2-goto-scrim { padding-top: var(--v2-sp-48); }
+}
+@media (prefers-reduced-motion: reduce) { .v2-side { transition: none; } }

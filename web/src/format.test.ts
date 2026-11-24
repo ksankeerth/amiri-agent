@@ -1,7 +1,7 @@
 // Run with `npm test` (Node runs the TypeScript directly).
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { clockText, moveSize, person, placeName, zx } from "./format.ts";
+import { clockText, moveSize, person, placeName, zoneName, zx } from "./format.ts";
 
 test("a move vs typical is rounded down, so one under the threshold never reads as it", () => {
   assert.equal(zx(-2.998), "2.9×");
@@ -43,4 +43,15 @@ test("an actor reads as a name, never an email address", () => {
   assert.equal(person("Amiri Agent"), "Amiri Agent");
   assert.equal(person(null), "");
   assert.doesNotMatch(person("x.y@bank.example.com and a@b.io"), /@/);
+});
+
+test("the top bar names a North American zone by its short name and any other by its city", () => {
+  const winter = new Date("2026-11-24T17:20:00Z"), summer = new Date("2026-07-01T12:00:00Z");
+  assert.equal(zoneName("America/Chicago", winter), "Central");
+  assert.equal(zoneName("America/Chicago", summer), "Central");  // not "Central Daylight"
+  assert.equal(zoneName("Asia/Colombo", winter), "Colombo");  // not "India"
+  assert.equal(zoneName("America/New_York", winter), "Eastern");
+  assert.equal(zoneName("Europe/Berlin", winter), "Berlin");
+  assert.equal(zoneName("UTC", winter), "UTC");
+  assert.equal(zoneName("Not/AZone", winter), "AZone");
 });

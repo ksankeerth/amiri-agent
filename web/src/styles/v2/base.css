@@ -43,17 +43,18 @@
   :root:not([data-theme="light"]) .v2 { color-scheme: dark; }
 }
 
-/* Reset, scoped. */
-.v2 *, .v2 *::before, .v2 *::after { box-sizing: border-box; }
-.v2 h1, .v2 h2, .v2 h3, .v2 h4, .v2 h5, .v2 h6, .v2 p, .v2 figure, .v2 blockquote { margin: 0; }
-.v2 ul, .v2 ol { margin: 0; padding: 0; list-style: none; }
-.v2 button, .v2 input, .v2 select, .v2 textarea { font: inherit; color: inherit; }
-.v2 button { cursor: pointer; }
-.v2 button:disabled, .v2 [aria-disabled="true"] { cursor: not-allowed; }
-.v2 a { color: var(--v2-brand); font-weight: var(--v2-fw-semibold); text-decoration: none; }
-.v2 a:hover { color: var(--v2-brand-hover); text-decoration: underline; }
+/* Reset, scoped. `:where(.v2)` keeps these at element-selector strength: a v2 class always beats them, and the old
+   pages that still sit inside the shell (their .btn, .tbl, links, lists) keep the old styles until they are replaced. */
+:where(.v2) *, :where(.v2) *::before, :where(.v2) *::after { box-sizing: border-box; }
+:where(.v2) h1, :where(.v2) h2, :where(.v2) h3, :where(.v2) h4, :where(.v2) h5, :where(.v2) h6, :where(.v2) p, :where(.v2) figure, :where(.v2) blockquote { margin: 0; }
+:where(.v2) ul, :where(.v2) ol { margin: 0; padding: 0; list-style: none; }
+:where(.v2) button, :where(.v2) input, :where(.v2) select, :where(.v2) textarea { font: inherit; color: inherit; }
+:where(.v2) button { cursor: pointer; }
+:where(.v2) button:disabled, :where(.v2) [aria-disabled="true"] { cursor: not-allowed; }
+:where(.v2) a { color: var(--v2-brand); font-weight: var(--v2-fw-semibold); text-decoration: none; }
+:where(.v2) a:hover { color: var(--v2-brand-hover); text-decoration: underline; }
 .v2 [hidden] { display: none !important; }
-.v2 b, .v2 strong { font-weight: var(--v2-fw-semibold); }
+:where(.v2) b, :where(.v2) strong { font-weight: var(--v2-fw-semibold); }
 
 /* Focus ring (A4): the brand twin for the theme, 2 px, offset 2 px. Mouse clicks don't show it. */
 .v2 :focus-visible { outline: 2px solid var(--v2-focus); outline-offset: 2px; }

@@ -1,14 +1,13 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Icon } from "./components/Icon";
-import { DemoLockCtx, LockTip } from "./components/lock";
 import { PageTitle } from "./components/rd";
-import { isDown, PageSkeleton, useNow, useRole, type Role } from "./components/ui";
-import { api, ME } from "./api/client";
-import { ago, fullNow, setZone, ZONE_LABEL } from "./format";
-import { cap } from "./plain";
-import { OVERVIEW_EVENT, overviewApi, type Overview } from "./api/overview";
-import "./styles/shell.css";
+import { PageSkeleton } from "./components/ui";
+import { api } from "./api/client";
+import { setZone } from "./format";
+import "./styles/shell.css";  // still used by the Overview page (.ovx, .ph-cta, .btn--lg); the shell itself is styles/v2/shell.css
+import { Shell } from "./components/v2/Shell";
+import { BUILT, NAV } from "./components/v2/nav";
 import { InstitutionPage, NewInstitutionPage } from "./pages/institution/InstitutionPage";
 import { SetupWizard } from "./pages/institution/SetupWizard";
 import { EventDetailPage } from "./pages/events/EventDetail";
@@ -29,31 +28,7 @@ import { SettingsPage } from "./pages/admin/Settings";
 import { FindingsPage } from "./pages/findings/Findings";
 import { SpecPage } from "./pages/spec/Spec";
 import { SpecPrintPage } from "./pages/spec/SpecPrint";
-import { alertsApi, type AlertSummary } from "./api/alerts";
 
-// The menu follows the day: what needs me, what Amiri Agent found, what it watches, who I am, and the what-if tool.
-const GROUPS: [string, string[]][] = [
-  ["Today", ["/home", "/alerts"]],
-  ["What it found", ["/events", "/findings"]],
-  ["What it watches", ["/radar", "/monitors", "/series"]],
-  ["Your institution", ["/institution", "/spec"]],
-  ["Try it", ["/studio"]],
-];
-
-const NAV: Record<Role, [string, string, string][]> = {
-  risk_manager: [
-    ["home", "Overview", "/home"], ["alert", "Alerts", "/alerts"], ["search", "Findings", "/findings"], ["events", "Events", "/events"],
-    ["radar", "Radar", "/radar"], ["monitor", "Monitors", "/monitors"], ["series", "Market series", "/series"],
-    ["bank", "Institution", "/institution"], ["studio", "Scenario Studio", "/studio"], ["book", "Metrics Spec", "/spec"],
-  ],
-  platform_admin: [
-    ["health", "Health", "/admin/health"], ["usage", "Usage", "/admin/usage"], ["cost", "Costs", "/admin/costs"],
-    ["data", "Data connections", "/admin/data"], ["series", "Market series", "/series"], ["bank", "Institution", "/institution"],
-    ["jobs", "Schedules and queues", "/admin/jobs"], ["studio", "Scenario Studio", "/studio"],
-    ["users", "Users and roles", "/admin/users"], ["audit", "Audit log", "/admin/audit"], ["settings", "Settings", "/admin/settings"],
-    ["book", "Metrics Spec", "/spec"],
-  ],
-};
 export interface Installation {
   institution_id: string; profile: boolean; name: string | null; short_name?: string | null; home_country?: string;
   country_name?: string | null; base_currency?: string; time_zone: string; notes: string[];
@@ -83,65 +58,6 @@ function NeedsInstitution({ title, what, children }: { title: string; what: stri
   );
 }
 
-const BUILT = new Set(["/home", "/events", "/radar", "/monitors", "/series", "/studio", "/alerts", "/institution", "/admin/data", "/admin/settings", "/spec", "/findings"]);
-
-function useTheme() {
-  const [theme, setTheme] = useState<string | null>(() => { try { return localStorage.getItem("amiri.theme"); } catch { return null; } });
-  useEffect(() => {
-    if (theme) document.documentElement.dataset.theme = theme; else delete document.documentElement.dataset.theme;
-  }, [theme]);
-  const dark = theme ? theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  const toggle = () => {
-    const next = dark ? "light" : "dark";
-    setTheme(next);
-    try { localStorage.setItem("amiri.theme", next); } catch { /* private mode */ }
-  };
-  return { dark, toggle };
-}
-
-/** The top bar's status, from what the Overview call already says: green only when updates run and prices are fresh. */
-function pulse(o: Overview | null, now: Date, down: boolean): { tone: "ok" | "warn" | "off"; word: string; why: string } | null {
-  if (down) return { tone: "off", word: "No answer", why: "Amiri Agent didn't answer the last check. It tries again every minute." };
-  if (!o) return null;
-  if (o.first_run || !o.services) return { tone: "off", word: "Not watching yet", why: "Set up an institution and Amiri Agent starts watching for it." };
-  const t = o.services.tick;
-  if (!t.ok) return { tone: "off", word: "Paused", why: t.last_at ? `Updates are late: they last ran ${ago(t.last_at, now)}.` : "Updates haven't run yet, so no news or prices arrive." };
-  const late = (o.markets ?? []).filter(m => m.state === "stale");
-  if (late.length) return { tone: "warn", word: "Prices late", why: `Updates run, but ${late.map(m => m.name).join(", ")} ${late.length === 1 ? "hasn't" : "haven't"} updated${late[0].state_reason ? `: ${late[0].state_reason.replace(/^No new bar since (.+?) \(.*$/, "no new price since $1")}` : ""}.` };
-  return { tone: "ok", word: "Live", why: `Updates ran ${t.last_at ? ago(t.last_at, now) : "recently"}; prices are up to date.` };
-}
-
-/** Each page's heading becomes the tab title; after a navigation focus moves to the page and a screen reader
- *  hears where it is (a single-page app does neither by itself). */
-function useRouteA11y(): string {
-  const { pathname, hash } = useLocation();
-  const first = useRef(true);
-  const [said, setSaid] = useState("");
-  useEffect(() => {
-    const name = () => {
-      if (pathname === "/home") return "Overview";
-      const h = document.querySelector("main h1")?.cloneNode(true) as HTMLElement | undefined;  // the heading without its badges
-      h?.querySelectorAll(".badge").forEach(b => b.remove());
-      return (h?.textContent ?? "").replace(/\s+/g, " ").trim();
-    };
-    // a table wider than its box scrolls sideways: it must be reachable and named for keyboard users
-    const scrollers = () => document.querySelectorAll<HTMLElement>(".tblwrap").forEach(el => {
-      if (el.scrollWidth > el.clientWidth) { el.tabIndex = 0; el.setAttribute("role", "region"); el.setAttribute("aria-label", "Table (scrolls sideways)"); }
-    });
-    const set = () => { const n = name(); document.title = n ? `${n} · Amiri Agent` : "Amiri Agent"; return n; };
-    const t1 = setTimeout(() => {
-      const n = set();
-      if (first.current) { first.current = false; return; }
-      setSaid(n);
-      const m = document.querySelector<HTMLElement>("main");
-      if (m) { if (!hash) m.scrollTop = 0; m.focus({ preventScroll: true }); }  // a #link: the page scrolls to it itself
-    }, 250);
-    const t2 = setTimeout(() => { set(); scrollers(); }, 1500);  // headings that wait for data (an event's or a monitor's name)
-    const t3 = setTimeout(scrollers, 4000);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, [pathname]);
-  return said;
-}
 
 function NotBuilt({ title }: { title: string }) {
   return (
@@ -192,143 +108,37 @@ function Installed() {
 }
 
 function Frame({ inst }: { inst: Installation }) {
-  const { role, setRole } = useRole();
-  const { dark, toggle: toggleTheme } = useTheme();
-  const now = useNow(30_000);
-  const nav = NAV[role].filter(([, , to]) => BUILT.has(to));  // a page that isn't built isn't offered
-  const said = useRouteA11y();
-  const [menu, setMenu] = useState(false);
-  const { pathname } = useLocation();
-  useEffect(() => setMenu(false), [pathname]);
-  useEffect(() => {
-    if (!menu) return;
-    const k = (e: KeyboardEvent) => e.key === "Escape" && setMenu(false);
-    window.addEventListener("keydown", k);
-    return () => window.removeEventListener("keydown", k);
-  }, [menu]);
-  useEffect(() => {  // an admin page is the Platform Admin's: show its menu, so the page is selected in it
-    if (pathname.startsWith("/admin/") && role !== "platform_admin") setRole("platform_admin");
-  }, [pathname]);  // eslint-disable-line react-hooks/exhaustive-deps
-  const [ov, setOv] = useState<Overview | null>(null);
-  const [down, setDown] = useState(false);
-  useEffect(() => {  // the Live pill: the same one call the Overview makes, once a minute
-    let last = 0;  // when it last asked, or an answer came in from the Overview page
-    const got = (x: Overview) => { last = Date.now(); setOv(x); setDown(false); };
-    const load = () => { last = Date.now(); overviewApi.get().catch(e => setDown(isDown(e))); };  // the answer comes back through the event
-    // the Overview page already asks every minute: take its answer rather than ask a second time
-    const heard = (e: Event) => got((e as CustomEvent<Overview>).detail);
-    window.addEventListener(OVERVIEW_EVENT, heard);
-    window.addEventListener("amiri:installation", load);  // "Try again" on a page checks again here too
-    // ask only when nothing has come in for over a minute: on the Overview page its own minute's answer always has
-    // (looking every 10 s, not every 60, so the two timers can't line up and both ask)
-    const t = setInterval(() => { if (Date.now() - last > 65_000) load(); }, 10_000);
-    load();
-    return () => { clearInterval(t); window.removeEventListener("amiri:installation", load); window.removeEventListener(OVERVIEW_EVENT, heard); };
-  }, []);
-  const live = pulse(ov, now, down);
-  const [why, setWhy] = useState(false);
-  const [alerts, setAlerts] = useState<AlertSummary | null>(null);
-  useEffect(() => {  // the menu badge: alerts to review
-    const load = () => alertsApi.summary().then(setAlerts).catch(() => {});
-    load(); const t = setInterval(load, 60_000);
-    window.addEventListener("amiri:alerts", load);
-    return () => { clearInterval(t); window.removeEventListener("amiri:alerts", load); };
-  }, []);
   return (
-    <DemoLockCtx.Provider value={inst.demo_lock === true}>
-    <div className="app">
-      <LockTip />
-      <a className="skip" href="#main" onClick={e => { e.preventDefault(); document.querySelector<HTMLElement>("main")?.focus(); }}>Skip to the page</a>
-      <div className="sr" role="status" aria-live="polite">{said}</div>
-      <header className="appbar">
-        <button className="btn btn--ghost btn--icon menubtn" type="button" aria-label="Menu" aria-expanded={menu} aria-controls="sidenav"
-          onClick={() => setMenu(m => !m)}><Icon name={menu ? "x" : "menu"} /></button>
-        <Link className="brand" to="/home" aria-label="Amiri Agent home">
-          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0F3D2E" /><path d="M9.2 25 15 7h2l5.8 18h-3.1L16 13.1 12.3 25z" fill="#F1F5EC" /><rect x="15.4" y="13.5" width="1.2" height="10" fill="#F05A28" /><rect x="14.2" y="16" width="3.6" height="5.2" fill="#F05A28" /></svg>
-          <b>Amiri Agent</b>
-          <span className="inst">{inst.name ?? (inst.unreachable ? "" : "No institution profile yet")}</span>
-        </Link>
-        {/* why it says Paused or Prices late: a click, a tap or keyboard focus shows it, not a hover-only tooltip */}
-        <span className="worldwrap">
-          <button type="button" className={`worldpill${live ? ` is-${live.tone}` : ""}`} aria-expanded={why} aria-describedby="world-why"
-            onClick={() => setWhy(o => !o)} onBlur={() => setWhy(false)} onKeyDown={e => e.key === "Escape" && setWhy(false)}>
-            <span className="dot" aria-hidden="true" />{live && <b className="wword">{live.word}</b>}<span className="wtxt">{fullNow(now)} {ZONE_LABEL}</span>
-          </button>
-          <span id="world-why" className={`world-why${why ? " open" : ""}`}>{live ? `${live.why} ` : ""}Times in {ZONE_LABEL}.</span>
-        </span>
-        <span className="spacer" />
-        <span className="seg" role="group" aria-label="View as">
-          <button type="button" aria-pressed={role === "risk_manager"} onClick={() => setRole("risk_manager")}>Risk Manager</button>
-          <button type="button" aria-pressed={role === "platform_admin"} onClick={() => setRole("platform_admin")}>Platform Admin</button>
-        </span>
-        <button className="btn btn--ghost btn--icon themebtn" type="button" aria-label={dark ? "Switch to light" : "Switch to dark"} onClick={toggleTheme}><Icon name={dark ? "sun" : "moon"} /></button>
-      </header>
-      {menu && <div className="scrim" onClick={() => setMenu(false)} />}
-      <div className="body">
-        <aside className="side" id="sidenav" aria-label="Menu" data-open={menu}>
-          <nav className="nav" aria-label="Main">
-            {role === "platform_admin" && <div className="grp label">Platform Admin</div>}
-            {(role === "risk_manager" ? GROUPS : [["", nav.map(n => n[2])] as [string, string[]]]).map(([group, paths]) => {
-              const items = nav.filter(n => paths.includes(n[2]));
-              return items.length === 0 ? null : (
-              <div key={group || "all"} className="navgroup">
-                {group && <div className="grp label" id={`g-${group.replace(/\W+/g, "")}`}>{group}</div>}
-            {items.map(([icon, label, to]) => (
-              <NavLink key={to} to={to}>
-                <Icon name={icon} /><span>{label}</span>
-                {to === "/alerts" && alerts?.to_review ? <span className={`count ${alerts.by_level.warning ? "hot" : ""}`}>{alerts.to_review}<span className="sr"> {alerts.to_review === 1 ? "alert" : "alerts"} to review</span></span> : null}
-              </NavLink>
-            ))}
-              </div>);
-            })}
-          </nav>
-          <div className="side-user" title={ME}>
-            <span className="avatar" aria-hidden="true">{ME[0].toUpperCase()}</span>
-            <span className="col" style={{ gap: 0, minWidth: 0 }}><b>{cap(ME.split("@")[0])}</b>
-              <span className="small muted">{role === "risk_manager" ? "Risk Manager" : "Platform Admin"}</span></span>
-          </div>
-          <div className="side-foot">
-            <span className="label">View as</span>
-            <span className="seg" role="group" aria-label="View as">
-              <button type="button" aria-pressed={role === "risk_manager"} onClick={() => setRole("risk_manager")}>Risk Manager</button>
-              <button type="button" aria-pressed={role === "platform_admin"} onClick={() => setRole("platform_admin")}>Platform Admin</button>
-            </span>
-            <button className="btn btn--sm" type="button" onClick={toggleTheme}><Icon name={dark ? "sun" : "moon"} />{dark ? "Light theme" : "Dark theme"}</button>
-          </div>
-        </aside>
-        <main className="main" id="main" tabIndex={-1}>
-          {inst.notes.map(n => <div key={n} className="banner warn" style={{ margin: "16px 24px 0" }}><Icon name="warn" /><div>{n}</div></div>)}
-          <Routes>
-            <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route path="/home" element={<OverviewPage />} />
-            <Route path="/radar" element={<NeedsInstitution title="Radar" what="What Radar watches"><RadarPage /></NeedsInstitution>} />
-            <Route path="/alerts" element={<NeedsInstitution title="Alerts" what="Alerts"><AlertsPage /></NeedsInstitution>} />
-            <Route path="/findings" element={<NeedsInstitution title="Findings" what="Findings"><FindingsPage /></NeedsInstitution>} />
-            <Route path="/events" element={<NeedsInstitution title="Events" what="Events"><EventsPage /></NeedsInstitution>} />
-            <Route path="/events/:id" element={<NeedsInstitution title="Events" what="Events"><EventDetailPage /></NeedsInstitution>} />
-            <Route path="/monitors" element={<NeedsInstitution title="Monitors" what="Monitors"><MonitorsPage /></NeedsInstitution>} />
-            <Route path="/monitors/:id" element={<NeedsInstitution title="Monitors" what="Monitors"><MonitorPage /></NeedsInstitution>} />
-            <Route path="/studio" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><StudioPage /></NeedsInstitution>} />
-            <Route path="/studio/run/:id" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><StudioRunPage /></NeedsInstitution>} />
-            <Route path="/studio/:id" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><ScenarioPage /></NeedsInstitution>} />
-            <Route path="/series" element={<SeriesList />} />
-            <Route path="/series/:id" element={<SeriesDetail />} />
-            <Route path="/institution" element={<InstitutionPage />} />
-            <Route path="/institution/new" element={<NewInstitutionPage />} />
-            <Route path="/institution/setup" element={<SetupWizard />} />
-            <Route path="/institution/setup/:step" element={<SetupWizard />} />
-            <Route path="/institution/:tab" element={<InstitutionPage />} />
-            <Route path="/admin/data" element={<DataConnectionsPage />} />
-            <Route path="/admin/settings" element={<SettingsPage />} />
-            <Route path="/spec" element={<SpecPage />} />
-            {[...NAV.risk_manager, ...NAV.platform_admin].filter(([, , to]) => !BUILT.has(to)).map(([, label, to]) => (
-              <Route key={to} path={to} element={<NotBuilt title={label} />} />
-            ))}
-            <Route path="*" element={<NotBuilt title="Page not found" />} />
-          </Routes>
-        </main>
-      </div>
-    </div>
-    </DemoLockCtx.Provider>
+    <Shell inst={inst}>
+      {inst.notes.map(n => <div key={n} className="banner warn"><Icon name="warn" /><div>{n}</div></div>)}
+      <Routes>
+        <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="/home" element={<OverviewPage />} />
+        <Route path="/radar" element={<NeedsInstitution title="Radar" what="What Radar watches"><RadarPage /></NeedsInstitution>} />
+        <Route path="/alerts" element={<NeedsInstitution title="Alerts" what="Alerts"><AlertsPage /></NeedsInstitution>} />
+        <Route path="/findings" element={<NeedsInstitution title="Findings" what="Findings"><FindingsPage /></NeedsInstitution>} />
+        <Route path="/events" element={<NeedsInstitution title="Events" what="Events"><EventsPage /></NeedsInstitution>} />
+        <Route path="/events/:id" element={<NeedsInstitution title="Events" what="Events"><EventDetailPage /></NeedsInstitution>} />
+        <Route path="/monitors" element={<NeedsInstitution title="Monitors" what="Monitors"><MonitorsPage /></NeedsInstitution>} />
+        <Route path="/monitors/:id" element={<NeedsInstitution title="Monitors" what="Monitors"><MonitorPage /></NeedsInstitution>} />
+        <Route path="/studio" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><StudioPage /></NeedsInstitution>} />
+        <Route path="/studio/run/:id" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><StudioRunPage /></NeedsInstitution>} />
+        <Route path="/studio/:id" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><ScenarioPage /></NeedsInstitution>} />
+        <Route path="/series" element={<SeriesList />} />
+        <Route path="/series/:id" element={<SeriesDetail />} />
+        <Route path="/institution" element={<InstitutionPage />} />
+        <Route path="/institution/new" element={<NewInstitutionPage />} />
+        <Route path="/institution/setup" element={<SetupWizard />} />
+        <Route path="/institution/setup/:step" element={<SetupWizard />} />
+        <Route path="/institution/:tab" element={<InstitutionPage />} />
+        <Route path="/admin/data" element={<DataConnectionsPage />} />
+        <Route path="/admin/settings" element={<SettingsPage />} />
+        <Route path="/spec" element={<SpecPage />} />
+        {[...NAV.risk_manager, ...NAV.platform_admin].filter(([, , to]) => !BUILT.has(to)).map(([, label, to]) => (
+          <Route key={to} path={to} element={<NotBuilt title={label} />} />
+        ))}
+        <Route path="*" element={<NotBuilt title="Page not found" />} />
+      </Routes>
+    </Shell>
   );
 }
