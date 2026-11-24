@@ -252,7 +252,7 @@ export function OverviewPage() {
           <h1 className="rd-ov-h1">{head.title}</h1>
           <p className="rd-lede">{head.line}</p>
           <div className="rd-ov-cta">{head.cta}</div>
-          <Figures size={48} label="What Amiri Agent found, traced to you, and who must act" items={[
+          <Figures size={40} label="What Amiri Agent found, traced to you, and who must act" items={[
             { value: <CountUp value={f24} />, label: "new findings", sub: "in the last 24 hours", to: "/findings" },
             { value: <CountUp value={c.open_events} />, label: "open events", sub: c.open_events ? `${bad.length} bad for you` : "none open", to: "/events" },
             { value: <>{alerts > 0 && <span className="rd-ov-hot" aria-hidden="true">▲</span>}<CountUp value={alerts} /></>, label: "alerts to review",
@@ -291,8 +291,7 @@ export function OverviewPage() {
           <div className="rd-ov-all"><GoLink to="/events">{events.length > TOP ? `See all ${events.length} open events` : "See all events"}</GoLink></div>
         </Section>
 
-        <div>
-          <Section id="ov-needs" title={alerts ? "Also needs you" : "Needs you"} count={more || undefined}>
+        <Section id="ov-needs" title={alerts ? "Also needs you" : "Needs you"} count={more || undefined}>
             {!rest.length ? <div className="rd-row"><div className="rd-row-t">{alerts ? "Nothing else needs you" : "Nothing needs you right now"}</div>
               <div className="rd-row-m">Approvals, failed checks, prices that stop updating and gaps in your profile appear here.</div></div>
               : needsShown.map((a, n) => (
@@ -315,7 +314,6 @@ export function OverviewPage() {
                 </div>))}
             <div className="rd-ov-all"><GoLink to="/findings">See all findings</GoLink></div>
           </Section>
-        </div>
       </div>
 
       {/* ---------------- layer 2 */}

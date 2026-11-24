@@ -13,7 +13,7 @@
 .rd-event .ev-chain { margin-top:16px; }
 /* "6 possible impacts" needs a little more room than the other steps */
 .rd-event .ev-chain-n .rd-chain { grid-template-columns:1fr 1fr 1.3fr 1fr 1fr; }
-.rd-event .ev-chain + .rd-sec { margin-top:26px; }
+.rd-event .ev-chain + .rd-sec { margin-top:32px; border-top:0; padding-top:0; }
 .rd-event .ev-chain .rd-step-l { font-size:16px; }
 .rd-event .ev-chain .rd-step-s a { white-space:nowrap; }
 
@@ -25,38 +25,37 @@
 .rd-event .ev-row > td:first-child { white-space:nowrap; }
 .rd-event .ev-impacts td:last-child { padding-right:0; }
 .rd-event .ev-opener { display:inline-flex; align-items:center; gap:10px; background:none; border:0; padding:0; margin:0; font:inherit;
-  color:var(--ink); font-weight:600; cursor:pointer; text-align:left; text-decoration:underline; text-decoration-color:var(--rd-mark);
-  text-underline-offset:4px; }
-.rd-event .ev-opener:hover { text-decoration-color:var(--ink); }
+  color:var(--ink); font-weight:600; cursor:pointer; text-align:left; text-decoration:none; }
+.rd-event .ev-opener:hover { text-decoration:underline; text-underline-offset:4px; }
 .rd-event .ev-chev { width:16px; height:16px; flex:none; transition:transform var(--d-fast); }
 .rd-event .ev-opener[aria-expanded="true"] .ev-chev { transform:rotate(90deg); }
 .rd-event .ev-row.is-open td { border-bottom-color:transparent; }
 .rd-event .ev-openrow > td { padding:0 0 20px; }
 .rd-event .ev-none p { margin:0 0 8px; }
-.rd-event .ev-none-h { font-size:18px; font-weight:600; color:var(--ink); }
+.rd-event .ev-none-h { font-size:17px; font-weight:600; color:var(--ink); }
 
 /* ---------- an impact opened: expected vs your data */
-.rd-event .ev-verif { padding:8px 0 4px 24px; margin:0; }
+.rd-event .ev-verif { padding:24px 28px 26px; margin:0; }
 .rd-event .ev-verif-h { display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; }
 .rd-event .ev-verif-h h3 { font-size:22px; font-weight:700; }
 .rd-event .ev-verif-m { font-weight:500; color:var(--ink-2); }
 .rd-event .ev-verif-close { margin-left:auto; }
-.rd-event .ev-vs { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); column-gap:72px; row-gap:24px; margin-top:24px; }
+.rd-event .ev-vs { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); column-gap:72px; row-gap:24px; margin-top:20px; }
 .rd-event .ev-vs p { margin:0; }
 .rd-event .ev-vs-l { font-size:17px; color:var(--ink-2); font-weight:500; }
 .rd-event .ev-vs-l b { color:var(--ink); font-weight:700; }
 .rd-event .ev-exp { font-size:28px; font-weight:700; color:var(--ink); line-height:1.2; margin-top:12px !important; letter-spacing:-.01em; }
 .rd-event .ev-exp-s { font-size:18px; color:var(--ink-2); margin-top:6px !important; }
 .rd-event .ev-exp-why { font-size:17px; color:var(--ink-2); margin-top:14px !important; max-width:440px; }
-.rd-event .ev-fig { font-size:60px; font-weight:700; color:var(--ink); line-height:1.05; margin-top:8px !important; letter-spacing:-.02em;
+.rd-event .ev-fig { font-size:36px; font-weight:700; color:var(--ink); line-height:1.05; margin-top:8px !important; letter-spacing:-.02em;
   font-variant-numeric:tabular-nums; }
-.rd-event .ev-early { font-size:40px; font-weight:700; color:var(--ink); line-height:1.1; margin-top:10px !important; letter-spacing:-.02em; }
+.rd-event .ev-early { font-size:36px; font-weight:700; color:var(--ink); line-height:1.1; margin-top:10px !important; letter-spacing:-.02em; }
 .rd-event .ev-res { font-size:20px; margin-top:12px !important; }
 .rd-event .ev-res-big { font-size:28px; }
 .rd-event .ev-scale { margin-top:32px; max-width:880px; }
 .rd-event .ev-period-l { display:flex; justify-content:space-between; font-size:14px; color:var(--ink-3); margin-top:-18px; padding:0 8px; }
 .rd-event .ev-tests { margin-top:28px; }
-.rd-event .ev-tests h4 { font-size:18px; font-weight:700; color:var(--ink); margin:0; }
+.rd-event .ev-tests h4 { font-size:17px; font-weight:600; color:var(--ink); margin:0; }
 .rd-event .ev-tests-l { margin:4px 0 0; }
 .rd-event .ev-tests-t { max-width:880px; margin-top:4px; }
 .rd-event .ev-tests-t td { font-size:17px; }
@@ -64,7 +63,7 @@
 .rd-event .ev-met { color:var(--ink-2); white-space:nowrap; text-align:right; padding-right:0; }
 .rd-event .ev-planned { margin:8px 0 0; padding-left:22px; font-size:17px; color:var(--ink); }
 .rd-event .ev-planned li + li { margin-top:6px; }
-.rd-event .ev-quiet { font-size:15px; color:var(--ink-3); margin:28px 0 0; padding-top:12px; border-top:1px solid var(--rd-hair); }
+.rd-event .ev-quiet { font-size:15px; color:var(--ink-3); margin:24px 0 0; }
 .rd-event .ev-quiet .rd-go { font-size:15px; }
 .rd-event .ev-verif .rd-fold:last-child { border-bottom:0; }
 .rd-event .ev-verif .rd-fold > button { padding:12px 0; }
@@ -72,7 +71,7 @@
 .rd-event .ev-verif .rd-fold-s { font-size:15px; }
 
 /* ---------- set aside */
-.rd-event .ev-reason { font-size:18px; color:var(--ink); margin:6px 0 0; }
+.rd-event .ev-reason { font-size:17px; color:var(--ink); margin:6px 0 0; }
 .rd-event .ev-links { margin:8px 0 0; padding-left:22px; color:var(--ink-2); }
 .rd-event .ev-links li + li { margin-top:2px; }
 .rd-event #set-aside .rd-row-d { margin-top:8px; }
@@ -81,16 +80,15 @@
 .rd-event .rd-row h3.rd-row-t { margin:0; }
 .rd-event .rd-row-d { margin-bottom:0; }
 .rd-event .ev-devs { list-style:none; margin:0; padding:0; }
-.rd-event .ev-devs li { padding:8px 0; border-bottom:1px solid var(--rd-hair); }
-.rd-event .ev-devs li:last-child { border-bottom:0; }
+.rd-event .ev-devs li { padding:7px 0; }
 .rd-event .ev-dev-t { color:var(--ink); }
 .rd-event .ev-more { margin:12px 0 0; }
 .rd-event .ev-themes { margin:12px 0 0; }
 
 /* ---------- folds at the end */
-.rd-event .ev-end { margin-top:36px; border-top:2px solid var(--ink); }
+.rd-event .ev-end { margin-top:32px; border-top:1px solid var(--hairline); padding-top:16px; }
 .rd-event .ev-report .md { font-size:16px; }
-.rd-event .ev-report .md h1, .rd-event .ev-report .md h2, .rd-event .ev-report .md h3 { font-size:18px; }
+.rd-event .ev-report .md h1, .rd-event .ev-report .md h2, .rd-event .ev-report .md h3 { font-size:17px; }
 .rd-event .ev-facts { display:grid; grid-template-columns:140px minmax(0, 1fr); gap:6px 16px; margin:0; font-size:15px; }
 .rd-event .ev-facts > div { display:contents; }
 .rd-event .ev-facts dt { color:var(--ink-3); }
@@ -102,3 +100,26 @@
   .rd-event .ev-fig { font-size:44px; }
 }
 @media (prefers-reduced-motion: reduce) { .rd-event .ev-chev { transition:none; } }
+
+/* warm look: named things and "go" links sit in ink and are underlined only on hover (app.css underlines every link in a paragraph at rest) */
+.rd-event a.rd-name:not(.btn):not(.strong):not(.chip), .rd-event a.rd-go:not(.btn):not(.strong):not(.chip) { text-decoration:none; }
+.rd-event a.rd-name:not(.btn):not(.strong):not(.chip):hover, .rd-event a.rd-go:not(.btn):not(.strong):not(.chip):hover { text-decoration:underline; text-underline-offset:3px; }
+
+/* an opened item (help, details, verification) is a very light soft surface, not a rule on the left */
+.rd-event .rd-open { border-left:0; background:var(--surface-2); border-radius:12px; padding:16px 20px 18px; margin:8px 0 12px; }
+
+/* the progress line: ink dots joined by a soft grey line */
+.rd-event .rd-step::after { height:2px; border-radius:2px; background:var(--hairline-2); }
+.rd-event .rd-step[data-to="next"]::after { background:var(--hairline-2); opacity:.6; }
+
+/* no lines inside the page body: the impacts keep one faint line under their column headings, nothing else */
+.rd-event .ev-impacts td, .rd-event .ev-impacts tr:last-child td { border-bottom:0; }
+.rd-event .ev-impacts td { padding-top:12px; padding-bottom:12px; }
+.rd-event .ev-impacts th { padding-bottom:10px; }
+.rd-event .ev-verif .rd-table th, .rd-event .ev-verif .rd-table td { border-bottom:0; }
+.rd-event .ev-verif .rd-table td { padding-top:6px; padding-bottom:6px; }
+.rd-event .ev-verif .rd-table th { padding-bottom:4px; }
+.rd-event .ev-verif .rd-fold, .rd-event .ev-verif .rd-fold:last-child { border:0; }
+.rd-event .rd-row, .rd-event .rd-fold { border:0; }
+.rd-event .rd-row + .rd-row { margin-top:12px; }
+.rd-event .rd-fig + .rd-fig { border-left: 0; }

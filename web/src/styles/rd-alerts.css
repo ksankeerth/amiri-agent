@@ -2,7 +2,7 @@
 
 /* the team select and the fine print beside the tabs */
 .rd-alerts .rd-tabs .rd-tabs-end { padding-bottom:6px; gap:20px; }
-.rd-alerts select.rd-select { width:auto; height:40px; font-size:16px; padding:0 12px; color:var(--ink); border-color:var(--rd-mark); }
+.rd-alerts select.rd-select { width:auto; height:40px; font-size:16px; padding:0 12px; color:var(--ink); border-color:var(--hairline-2); border-radius:10px; }
 
 /* showcase.css's global .rd-k (Radar's small label) also matches the tab counts: keep them tab-sized */
 .rd-alerts .rd-tabs .rd-k { font-size:inherit; font-weight:500; }
@@ -14,21 +14,21 @@
 .rd-alerts .rd-levels li { display:flex; gap:14px; align-items:baseline; padding:4px 0; }
 .rd-alerts .rd-levels li > :first-child { flex:none; min-width:240px; }
 
-/* an event's group: the 2 px rule, the heading, the alerts under it */
-.rd-alerts .rd-groups > .rd-sec:first-child { margin-top:24px; }
-.rd-alerts .rd-grp .rd-sec-h { margin-bottom:0; padding-bottom:12px; border-bottom:1px solid var(--rd-hair); column-gap:16px; row-gap:2px; }
+/* an event's group: a section (one thin divider above), the heading, the alerts under it */
+.rd-alerts .rd-groups > .rd-sec:first-child { margin-top:12px; border-top:0; padding-top:12px; }
+.rd-alerts .rd-grp .rd-sec-h { margin-bottom:12px; padding-bottom:0; border-bottom:0; column-gap:16px; row-gap:2px; }
 .rd-alerts .rd-grp .rd-sec-h h2 { display:flex; align-items:baseline; gap:10px; }
 .rd-alerts .rd-grp .rd-sec-m { font-size:16px; }
 .rd-alerts .rd-grp .rd-sec-m .rd-lv { font-size:16px; }
 .rd-alerts .rd-sec-m .rd-dots > * { display:inline; }
 
-/* one alert: a ruled row, the actions on the right */
-.rd-alerts .rd-al { border-bottom:1px solid var(--rd-hair); }
-.rd-alerts .rd-al:last-child { border-bottom:0; }
-.rd-alerts .rd-alrow { display:flex; align-items:center; gap:24px; border-bottom:0; padding:16px 0; }
+/* one alert: a row held by space, the actions on the right */
+.rd-alerts .rd-al { border-bottom:0; }
+.rd-alerts .rd-al + .rd-al { margin-top:6px; }
+.rd-alerts .rd-alrow { display:flex; align-items:center; gap:24px; border-bottom:0; padding:12px 0; }
 .rd-alerts .rd-alrow-main { flex:1; min-width:0; }
 .rd-alerts .rd-alrow-act { flex:none; display:flex; align-items:center; gap:28px; }
-.rd-alerts .rd-row-t { margin:0; font-size:18px; line-height:1.3; }
+.rd-alerts .rd-row-t { margin:0; font-size:17px; line-height:1.35; font-weight:600; }
 .rd-alerts .rd-row-t .rd-what { font-weight:400; }
 .rd-alerts .rd-row-d { line-height:1.4; margin-top:2px; }
 .rd-alerts .rd-row-d .rd-toneword { white-space:normal; }
@@ -38,9 +38,9 @@
 .rd-alerts .rd-chev { vertical-align:-1px; margin-left:4px; transition:transform var(--d-fast); }
 .rd-alerts .rd-tbtn[aria-expanded="true"] .rd-chev { transform:rotate(90deg); }
 
-/* Details, opened in place */
-.rd-alerts .rd-det { margin:0 0 18px; padding:2px 0 4px 20px; }
-.rd-alerts .rd-det h4 { font-size:18px; font-weight:700; color:var(--ink); margin:0; }
+/* Details, opened in place: the one soft surface on this page */
+.rd-alerts .rd-det, .rd-alerts .rd-open { margin:4px 0 16px; padding:20px 24px 22px; border-left:0; background:var(--surface-2); border-radius:12px; }
+.rd-alerts .rd-det h4 { font-size:17px; font-weight:600; color:var(--ink); margin:0; }
 .rd-alerts .rd-det p { margin:0; }
 .rd-alerts .rd-det > p.rd-fine { margin-top:2px; }
 .rd-alerts .rd-det > h4:not(:first-child) { margin-top:16px; }
@@ -52,9 +52,10 @@
 .rd-alerts .rd-table td { padding:12px 16px 12px 0; }
 .rd-alerts .rd-table td .rd-fine { margin-top:2px; }
 .rd-alerts .rd-scroll { overflow-x:auto; }
-.rd-alerts a.rd-link { color:var(--accent-ink); text-decoration:underline; text-underline-offset:3px; }
+.rd-alerts a.rd-link { color:var(--ink); font-weight:600; text-decoration:none; }
+.rd-alerts a.rd-link:hover { text-decoration:underline; text-underline-offset:3px; }
 .rd-alerts .rd-hist { list-style:none; margin:0; padding:0 8px 0 0; max-height:320px; overflow:auto; max-width:780px; }
-.rd-alerts .rd-hist li { display:flex; gap:16px; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--rd-hair); }
+.rd-alerts .rd-hist li { display:flex; gap:16px; justify-content:space-between; padding:5px 0; }
 .rd-alerts .rd-hist li b { font-weight:500; color:var(--ink); }
 
 /* the note field, in place */
@@ -69,3 +70,7 @@
   .rd-alerts .rd-levels li { flex-direction:column; gap:2px; }
 }
 @media (prefers-reduced-motion: reduce) { .rd-alerts .rd-chev { transition:none; } }
+
+/* warm look: named things and "go" links sit in ink and are underlined only on hover (app.css underlines every link in a paragraph at rest) */
+.rd-alerts a.rd-name:not(.btn):not(.strong):not(.chip), .rd-alerts a.rd-go:not(.btn):not(.strong):not(.chip) { text-decoration:none; }
+.rd-alerts a.rd-name:not(.btn):not(.strong):not(.chip):hover, .rd-alerts a.rd-go:not(.btn):not(.strong):not(.chip):hover { text-decoration:underline; text-underline-offset:3px; }
