@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { placeName, placeOrder } from "./format.ts";
-import { alertChangeText, alertOrder, checkMove, dateRange, eventTitle, signalStrength, impactText, listText, productAngle, relDay, sizeTiming, splitCheckText, themeLabel, verdictTone } from "./plain.ts";
+import { alertChangeText, alertOrder, anchorLabel, checkMove, dateRange, eventTitle, signalStrength, impactText, listText, productAngle, relDay, sizeTiming, splitCheckText, themeLabel, verdictTone } from "./plain.ts";
 
 test("themes read as short phrases, not machine text", () => {
   assert.equal(themeLabel({ theme: "commodities", direction: "up", item: "oil" }), "Oil prices up");
@@ -96,4 +96,12 @@ test("an alert's history says Updated when only the evidence grew, and Level rai
   assert.equal(alertChangeText({ change: "escalated", text: "Credit-line utilisation: +0.8 pp against the level before the event" }), "Level raised");
   assert.equal(alertChangeText({ change: "escalated", text: "now developing" }), "Level raised");
   assert.equal(alertChangeText({ change: "checked", text: "" }), "Checked against your data");
+});
+
+test("an event's anchor says what happened then, not that Amiri Agent noticed it", () => {
+  assert.equal(anchorLabel("published_at"), "News broke");
+  assert.equal(anchorLabel("news_time"), "News broke");
+  assert.equal(anchorLabel("move_start"), "Prices moved");
+  assert.equal(anchorLabel("effective_from"), "Takes effect");
+  assert.equal(anchorLabel(undefined), "Happened");
 });

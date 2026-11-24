@@ -156,6 +156,11 @@ export function verdictWhy(why: string | null | undefined): string {
 
 // ---------------------------------------------------------------- alerts
 export type LevelKey = "warning" | "developing" | "adverse";
+/** What an event's anchor time is, in words: it's when the world moved, not when Amiri Agent noticed. */
+export function anchorLabel(basis?: string | null): string {
+  return ({ published_at: "News broke", news_time: "News broke", move_start: "Prices moved", effective_from: "Takes effect",
+    period_start: "Period began" } as Record<string, string>)[basis ?? ""] ?? "Happened";
+}
 const ALERT_CHANGE: Record<string, string> = {
   raised: "Raised", escalated: "Level raised", acknowledged: "Acknowledged", resolved: "Resolved", reopened: "Reopened",
   confirmed: "Confirmed by your data", withdrawn: "Withdrawn", checked: "Checked against your data",

@@ -13,7 +13,7 @@ import "../../styles/daily.css";
 import "../../styles/polish-daily.css";
 import { dayTime, person } from "../../format";
 import {
-  angleLabel, ALERT_STATUS, checkMove, count, dateRange, earliest, eventTitle, impactText, LEVEL_LABEL, LEVEL_TONE, listText, longWhen, metricWords, onDay,
+  anchorLabel, angleLabel, ALERT_STATUS, checkMove, count, dateRange, earliest, eventTitle, impactText, LEVEL_LABEL, LEVEL_TONE, listText, longWhen, metricWords, onDay,
   productTypeLabel, relDay, SCREENING, sizeTiming, sourceInfo, splitCheckText, themeLabel, verdictWhy, type VerdictKey,
 } from "../../plain";
 
@@ -65,9 +65,11 @@ export function EventDetailPage() {
   const headline = lead?.evidence?.headlines?.[0];
   const src = lead ? sourceInfo(lead.source) : null;
   const title = eventTitle(e);
+  // when Amiri Agent first had it: the earliest finding in the event (the anchor is when the world moved)
+  const pickedUp = earliest(e.findings.map(f => f.created_at));
 
   const steps: Step[] = [
-    { label: "Noticed", detail: onDay(e.anchor.slice(0, 10)), state: "done", icon: "eye" },
+    { label: anchorLabel(e.anchor_basis), detail: onDay(e.anchor.slice(0, 10)), state: "done", icon: "eye" },
     { label: "Investigated", detail: e.run.status === "running" ? "in progress" : "linked to this event", state: e.run.status === "running" ? "now" : "done", icon: "search" },
     { label: e.hypotheses.length ? count(e.hypotheses.length, "possible impact") : "No impacts found", detail: e.hypotheses.length ? count(new Set(e.hypotheses.map(h => h.product_id)).size, "product") : undefined, state: "done", icon: "box" },
     { label: teams.length ? `Alert to ${teams.length === 1 ? teams[0] : count(teams.length, "team")}` : "No alerts", detail: teams.length ? (toReview ? `${toReview} waiting for review` : "all taken on") : e.hypotheses.length ? "none bad for you" : undefined, state: "done", icon: "alert" },
@@ -82,7 +84,7 @@ export function EventDetailPage() {
         title={title}
         pills={<>{TONE_PILL[nBad && nGood ? "mixed" : nBad ? "bad" : nGood ? "good" : "neutral"]}{e.world !== "live" && <StatusPill tone="blue">Simulated</StatusPill>}
           <StatusPill tone={e.status === "open" ? "blue" : "grey"}>{e.status === "open" ? "Open" : "Closed"}</StatusPill></>}
-        status={<>Noticed {longWhen(e.anchor)}{e.places.length ? <> · <Places codes={e.places} max={2} /></> : null}</>}
+        status={<>{anchorLabel(e.anchor_basis)} {longWhen(e.anchor)}{pickedUp ? <> · picked up {longWhen(pickedUp)}</> : null}{e.places.length ? <> · <Places codes={e.places} max={2} /></> : null}</>}
         actions={toReview ? <Link className="btn btn--primary" to="/alerts"><Icon name="alert" />Review {count(toReview, "alert")}</Link> : undefined}
         help={<HowItWorks><p>{e.status === "open"
           ? <>This event stays open until <b>{dayTime(e.open_until)}</b>: new news about the same thing joins it instead of starting a new one.</>

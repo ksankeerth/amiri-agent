@@ -21,6 +21,8 @@ export interface Run {
 export interface EventRow {
   event_id: string; run_id: string; world: "live" | "sandbox" | "studio"; title: string; themes: Theme[]; country: string;
   country_code: string | null; anchor: string; places: string[]; regions: string[]; finding_ids: string[];
+  /** what the anchor time is: when the news was published, the price move started, a rule takes effect… */
+  anchor_basis?: string | null;
   status: "open" | "closed"; open_until: string; closed_at: string | null; hypotheses: number; tasks: number;
   developments: number; size: { value: number; unit: string } | null; tone: "good" | "bad" | "mixed" | "neutral";
 }
