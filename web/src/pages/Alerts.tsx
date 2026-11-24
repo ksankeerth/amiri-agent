@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { alertsApi, type AlertItem, type AlertSummary } from "../api/alerts";
 import { investigationApi, type EventDetail } from "../api/investigation";
-import { GoLink, PageTitle, Result, Section, TextButton, TextTabs, ToneMark, ToneWord } from "../components/rd";
+import { PageTitle, Result, Section, TextButton, TextTabs, ToneMark, ToneWord } from "../components/rd";
 import { ListSkeleton, LoadError, useNow, useToast } from "../components/ui";
 import { ago, dayTime, ZONE_LABEL } from "../format";
 import {
@@ -30,14 +30,15 @@ const Chevron = () => (
   <svg className="rd-chev" viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
     <path d="M7 4l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>);
 
-/** What your data has said so far, in the app's result words: one result when every impact reads alike. */
+/** What your data has said so far, in the app's result words: one result when every impact reads alike. The words
+ *  "Your data" are said once, as the group's column heading (screen readers get them on each row). */
 function DataSoFar({ a }: { a: AlertItem }) {
   const checked = a.effects.filter(e => e.check);
-  if (!checked.length) return <span>Your data: not checked yet</span>;
+  if (!checked.length) return <span><span className="sr">Your data: </span>Not checked yet</span>;
   const lead = checked.find(e => e.check!.alert === a.level) ?? checked[0];
   const kinds = [...new Set(checked.map(e => e.check!.verdict as VerdictKey))];
   const move = a.effects.length === 1 ? checkMove(lead.check!.what)?.move : undefined;
-  return <span>Your data: {kinds.map((v, i) => (
+  return <span><span className="sr">Your data: </span>{kinds.map((v, i) => (
     <span key={v}>{i > 0 && ", "}<Result verdict={v} adverse={checked.find(e => e.check!.verdict === v)!.adverse} figure={kinds.length === 1 ? move : undefined} strong={false} /></span>))}</span>;
 }
 
@@ -75,24 +76,26 @@ function AlertRow({ a, next, ev, primary, showLevel, now, onChange }: {
     <article className="rd-al" aria-labelledby={`t-${a.alert_id}`}>
       <div className="rd-row rd-alrow">
         <div className="rd-alrow-main">
-          <h3 className="rd-row-t" id={`t-${a.alert_id}`}>{a.owner}<span aria-hidden="true"> · </span><span className="sr">, </span>
-            <span className="rd-what">{lead ? lower(impactText(lead.metric_name, lead.direction)) : a.title}</span></h3>
-          <div className="rd-row-d rd-dots">
+          <h3 className="rd-row-t" id={`t-${a.alert_id}`}>
+            <button type="button" className="rd-tgl" title={`${a.owner}, ${lead ? lower(impactText(lead.metric_name, lead.direction)) : a.title}`}
+              aria-expanded={open} aria-controls={`d-${id}`} onClick={() => setOpen(o => !o)}>
+              <span className="rd-clamp1 rd-tgl-t">{a.owner}<span aria-hidden="true"> · </span><span className="sr">, </span>
+                <span className="rd-what">{lead ? lower(impactText(lead.metric_name, lead.direction)) : a.title}</span></span><Chevron /></button></h3>
+          <div className="rd-row-d rd-dots rd-clamp1" title={listText(products, 6)}>
             <span>{listText(products, 2)}</span>
             {showLevel && <span className="rd-lv"><LevelWord level={a.level} /></span>}
-            <DataSoFar a={a} />
           </div>
-          {a.status === "acknowledged" && <div className="rd-row-d rd-who"><b>{a.acknowledged_by}</b> is on it{a.acknowledged_at ? `, ${ago(a.acknowledged_at, now)}` : ""}{a.ack_note ? `: “${a.ack_note}”` : ""}</div>}
+          {a.status === "acknowledged" && <div className="rd-row-d rd-who rd-clamp1"><b>{a.acknowledged_by}</b> is on it{a.acknowledged_at ? `, ${ago(a.acknowledged_at, now)}` : ""}{a.ack_note ? `: “${a.ack_note}”` : ""}</div>}
           {a.status === "resolved" && <div className="rd-row-d rd-who">Resolved by <b>{a.resolved_by}</b>{a.resolved_at ? `, ${ago(a.resolved_at, now)}` : ""}{a.resolved_note ? `: “${a.resolved_note}”` : ""}</div>}
         </div>
-        {!asking && <div className="rd-alrow-act">
+        <div className="rd-alrow-data rd-row-d"><DataSoFar a={a} /></div>
+        {!asking ? <div className="rd-alrow-act">
           {a.status === "new" && (primary
             ? <button className="btn btn--primary" type="button" title={ACTION_MEANS.ack} onClick={() => setAsking("ack")}>Acknowledge</button>
             : <TextButton title={ACTION_MEANS.ack} onClick={() => setAsking("ack")}>Acknowledge</TextButton>)}
           {a.status === "acknowledged" && <TextButton title={ACTION_MEANS.resolve} onClick={() => setAsking("resolve")}>Resolve</TextButton>}
           {a.status !== "new" && <TextButton title={ACTION_MEANS.reopen} disabled={busy} onClick={() => act("reopen")}>Reopen</TextButton>}
-          <TextButton aria-expanded={open} aria-controls={`d-${id}`} onClick={() => setOpen(o => !o)}>Details <Chevron /></TextButton>
-        </div>}
+        </div> : <div className="rd-alrow-act" />}
       </div>
 
       {(open || asking) && <div className="rd-open rd-det" id={`d-${id}`}>
@@ -257,7 +260,8 @@ export function AlertsPage() {
                 <span>raised {dayTime(raised)}{gi === 0 ? ` ${ZONE_LABEL} time` : ""}</span>
                 {reached !== null && <span>reached {count(reached, "team")}</span>}
               </span>}
-              action={<GoLink to={`/events/${eid}`}>Open the event</GoLink>}>
+              >
+              <div className="rd-alhead rd-colh" aria-hidden="true"><span /><span>Your data</span><span /></div>
               {as.map(a => <AlertRow key={a.alert_id} a={a} next={nextCheck(a)} ev={ev} now={now} primary={a.alert_id === firstNew} showLevel={!sameLevel} onChange={update} />)}
             </Section>);
         })}</div>}

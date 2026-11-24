@@ -25,9 +25,15 @@
 /* one alert: a row held by space, the actions on the right */
 .rd-alerts .rd-al { border-bottom:0; }
 .rd-alerts .rd-al + .rd-al { margin-top:6px; }
-.rd-alerts .rd-alrow { display:flex; align-items:center; gap:24px; border-bottom:0; padding:12px 0; }
-.rd-alerts .rd-alrow-main { flex:1; min-width:0; }
-.rd-alerts .rd-alrow-act { flex:none; display:flex; align-items:center; gap:28px; }
+.rd-alerts .rd-alrow, .rd-alerts .rd-alhead { display:grid; grid-template-columns:minmax(0, 1fr) 250px 150px; align-items:start; column-gap:24px; border-bottom:0; padding:12px 0; }
+.rd-alerts .rd-alhead { padding:0 0 2px; }
+.rd-alerts .rd-alrow-main { min-width:0; }
+.rd-alerts .rd-alrow-data { margin-top:0; line-height:1.35; font-size:16px; }
+.rd-alerts .rd-alrow-act { display:flex; align-items:center; justify-content:flex-end; gap:20px; min-height:26px; }
+.rd-alerts .rd-alrow-act .btn { margin:-8px 0; }
+.rd-alerts .rd-tgl { display:flex; align-items:center; gap:8px; width:auto; max-width:100%; }
+.rd-alerts .rd-tgl > .rd-clamp1 { min-width:0; }
+.rd-alerts .rd-tgl .rd-chev { flex:none; margin:0; color:var(--ink-3); }
 .rd-alerts .rd-row-t { margin:0; font-size:17px; line-height:1.35; font-weight:600; }
 .rd-alerts .rd-row-t .rd-what { font-weight:400; }
 .rd-alerts .rd-row-d { line-height:1.4; margin-top:2px; }
@@ -36,7 +42,7 @@
 .rd-alerts .rd-who { color:var(--ink); }
 .rd-alerts .rd-who b { font-weight:700; }
 .rd-alerts .rd-chev { vertical-align:-1px; margin-left:4px; transition:transform var(--d-fast); }
-.rd-alerts .rd-tbtn[aria-expanded="true"] .rd-chev { transform:rotate(90deg); }
+.rd-alerts .rd-tgl[aria-expanded="true"] .rd-chev { transform:rotate(90deg); }
 
 /* Details, opened in place: the one soft surface on this page */
 .rd-alerts .rd-det, .rd-alerts .rd-open { margin:4px 0 16px; padding:20px 24px 22px; border-left:0; background:var(--surface-2); border-radius:12px; }
@@ -66,7 +72,9 @@
 .rd-alerts .rd-empty .rd-lede { margin:0 0 20px; }
 
 @media (max-width: 900px) {
-  .rd-alerts .rd-alrow { flex-direction:column; align-items:flex-start; gap:12px; }
+  .rd-alerts .rd-alrow { grid-template-columns:minmax(0, 1fr); row-gap:6px; }
+  .rd-alerts .rd-alhead { display:none; }
+  .rd-alerts .rd-alrow-act { justify-content:flex-start; }
   .rd-alerts .rd-levels li { flex-direction:column; gap:2px; }
 }
 @media (prefers-reduced-motion: reduce) { .rd-alerts .rd-chev { transition:none; } }
