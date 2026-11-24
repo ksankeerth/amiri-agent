@@ -57,7 +57,7 @@ async def test_a_favourable_effect_raises_no_alert(client, env, sql, clock, agen
     assert "opportunity" not in (await client.get(f"{A}:summary")).json()["by_level"]
 
 
-async def test_acknowledge_then_a_later_finding_escalates_it(client, env, sql, clock, agent):
+async def test_a_later_finding_updates_an_acknowledged_alert_and_keeps_it_acknowledged(client, env, sql, clock, agent):
     await bank(client, env)
     await live_finding(sql, clock, "f-a-3")
     await investigate(client)
@@ -70,8 +70,10 @@ async def test_acknowledge_then_a_later_finding_escalates_it(client, env, sql, c
     await live_finding(sql, clock, "f-a-4")  # the same move: joins the open event
     await client.post("/internal/tick")
     a = (await client.get(f"{A}/{a['alert_id']}")).json()
-    assert a["status"] == "new" and a["history"][-1]["change"] == "escalated"
-    assert "1 more finding" in a["history"][-1]["text"]
+    # more evidence for the same effect: the alert is updated, and the team's acknowledgement stands
+    assert (a["status"], a["acknowledged_by"]) == ("acknowledged", "rm@serendib.lk")
+    assert a["history"][-1]["change"] == "escalated" and "1 more finding" in a["history"][-1]["text"]
+    assert len(a["finding_ids"]) == 2
 
 
 async def test_a_monitor_routes_the_alert_to_its_teams(client, env, sql, clock, agent):

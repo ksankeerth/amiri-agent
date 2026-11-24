@@ -167,11 +167,14 @@ async def sync(conn, event_id: str, now: datetime, why: str = "", checked: bool 
             f"{len(new_effects)} more effect{'s' if len(new_effects) > 1 else ''}" if new_effects else "",
             f"{len(new_findings)} more finding{'s' if len(new_findings) > 1 else ''}" if new_findings else "",
             f"now {level.replace('_', ' ')}" if old["level"] != level else "", why]))
+        # A new possible impact is something new for the team to decide on, so the alert goes back to review. More
+        # findings for the effects it already has only add evidence: an acknowledgement stands (a resolved alert stays
+        # resolved either way), and the history records the update.
         await conn.execute(
             """UPDATE core.alerts SET level = %s, title = %s, effects = %s, product_ids = %s, hypothesis_ids = %s,
-                 finding_ids = %s, status = CASE WHEN status = 'resolved' THEN status ELSE 'new' END,
+                 finding_ids = %s, status = CASE WHEN status = 'resolved' THEN status WHEN %s THEN 'new' ELSE status END,
                  history = history || %s, updated_at = %s WHERE alert_id = %s""",
-            (level, title, Jsonb(xs), a["product_ids"], hyp_ids, findings,
+            (level, title, Jsonb(xs), a["product_ids"], hyp_ids, findings, bool(new_effects),
              Jsonb([{"at": now.isoformat(), "change": "escalated", "by": "Amiri Agent", "text": what}]), now, old["alert_id"]))
         changed += 1
     return changed
