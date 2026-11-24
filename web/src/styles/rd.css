@@ -1,7 +1,9 @@
 /* The redesign's one system ("rd"): every redesigned page puts `rd` on its root (<div className="page rd">).
    Readable at 4 m on a projector: hierarchy from type, spacing and rules, never nested boxes; body 16 px, nothing
    meaningful under 14 px; tone always as a shape and a word, never colour alone; one filled button per screen.
-   Type scale: title 36 · lede 20 · section 22 · row 18 · body 16 · small print 15 (14 at the least). */
+   Enterprise look (24 Nov review): content sits in white panels on the grey page, one level, never nested; light
+   lines between rows only; nothing underlined until hover. Type: title 28 · lede 17 · section 18 · row 16 · body 16 ·
+   small print 15 (14 at the least). */
 
 :root {
   --rd-hair:#A9B0BA;   /* row hairlines, about 2:1 on the page, visible on a projector */
@@ -20,9 +22,9 @@
 .rd-crumb { font-size:14px; color:var(--ink-3); margin-bottom:6px; }
 .rd-crumb a { color:var(--ink-3); text-decoration:underline; text-decoration-color:var(--rd-mark); text-underline-offset:3px; }
 .rd-head { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
-.rd-title { font-size:36px; line-height:1.15; font-weight:700; letter-spacing:-.02em; }
+.rd-title { font-size:28px; line-height:1.2; font-weight:700; letter-spacing:-.01em; }
 .rd-head .rd-actions { margin-left:auto; display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
-.rd-lede { font-size:20px; line-height:1.4; color:var(--ink-2); margin:8px 0 0; max-width:900px; }
+.rd-lede { font-size:17px; line-height:1.45; color:var(--ink-2); margin:6px 0 0; max-width:900px; }
 .rd-lede b { color:var(--ink); font-weight:700; }
 .rd-status { font-size:16px; color:var(--ink-2); margin-top:6px; }
 .rd-dots > * + *::before { content:"·"; margin:0 8px; color:var(--ink-3); }
@@ -30,40 +32,41 @@
 .rd-prose { max-width:680px; }
 
 /* ---------- links and actions: three tiers. Filled (.btn--primary, one per screen), outlined (.btn), text (.rd-tbtn). */
-.rd a.rd-name, .rd .rd-name { color:var(--ink); text-decoration:underline; text-decoration-color:var(--rd-mark); text-underline-offset:3px; }
-.rd a.rd-name:hover { text-decoration-color:var(--ink); }
+.rd a.rd-name, .rd .rd-name { color:var(--ink); text-decoration:none; }
+.rd a.rd-name:hover { text-decoration:underline; text-underline-offset:3px; }
 .rd a.rd-go, .rd .rd-go { color:var(--accent-ink); font-weight:600; text-decoration:none; white-space:nowrap; }
 .rd a.rd-go:hover { text-decoration:underline; text-underline-offset:3px; }
-.rd-tbtn { background:none; border:0; padding:6px 2px; margin:-6px -2px; font:inherit; font-size:16px; font-weight:600; color:var(--ink);
-  text-decoration:underline; text-decoration-color:var(--rd-mark); text-underline-offset:4px; cursor:pointer; white-space:nowrap; }
-.rd-tbtn:hover { text-decoration-color:var(--ink); }
+.rd-tbtn { background:none; border:0; padding:6px 2px; margin:-6px -2px; font:inherit; font-size:15px; font-weight:600; color:var(--accent-ink);
+  text-decoration:none; cursor:pointer; white-space:nowrap; border-radius:6px; }
+.rd-tbtn:hover { text-decoration:underline; text-underline-offset:3px; }
 .rd-tbtn:disabled { color:var(--ink-3); cursor:default; text-decoration:none; }
 .rd .btn { font-size:16px; min-height:44px; }
 .rd .btn.btn--lg { font-size:18px; min-height:52px; padding:0 24px; }
 .rd :focus-visible { outline:2px solid var(--focus); outline-offset:3px; border-radius:4px; }
 
 /* ---------- sections: the 2 px rule sits above the heading, always */
-.rd-sec { margin-top:36px; border-top:2px solid var(--ink); padding-top:12px; }
-.rd-sec-h { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:4px; }
-.rd-sec-h h2 { font-size:22px; font-weight:700; }
+.rd-sec { margin-top:20px; background:var(--surface); border:1px solid var(--hairline); border-radius:10px; padding:18px 24px 10px; box-shadow:var(--e-sm); }
+.rd-sec-h { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:6px; }
+.rd-sec-h h2 { font-size:18px; font-weight:650; }
 .rd-sec-h .rd-sec-m { font-size:15px; color:var(--ink-3); }
 .rd-sec-h .rd-sec-a { margin-left:auto; display:flex; gap:20px; align-items:baseline; }
 
 /* ---------- rows and tables */
-.rd-row { padding:16px 0; border-bottom:1px solid var(--rd-hair); }
-.rd-row:first-child { border-top:0; }
-.rd-row-t { font-size:18px; font-weight:600; color:var(--ink); line-height:1.35; }
+.rd-row { padding:14px 0; border-bottom:1px solid var(--hairline); }
+.rd-row:last-child { border-bottom:0; }
+.rd-row-t { font-size:16px; font-weight:600; color:var(--ink); line-height:1.4; }
 .rd-row-d { font-size:16px; color:var(--ink-2); margin-top:3px; }
 .rd-row-m { font-size:15px; color:var(--ink-3); margin-top:3px; }
 .rd-table { width:100%; border-collapse:collapse; font-size:16px; }
-.rd-table th { text-align:left; font-size:14px; font-weight:600; color:var(--ink-3); padding:8px 16px 8px 0; border-bottom:1px solid var(--rd-hair); }
-.rd-table td { padding:14px 16px 14px 0; border-bottom:1px solid var(--rd-hair); color:var(--ink-2); vertical-align:top; }
+.rd-table th { text-align:left; font-size:14px; font-weight:600; color:var(--ink-3); padding:8px 16px 8px 0; border-bottom:1px solid var(--hairline); }
+.rd-table td { padding:12px 16px 12px 0; border-bottom:1px solid var(--hairline); color:var(--ink-2); vertical-align:top; }
+.rd-table tr:last-child td { border-bottom:0; }
 .rd-table td.rd-strong { color:var(--ink); font-weight:600; }
 .rd-table .rd-num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
 
 /* ---------- text tabs */
-.rd-tabs { display:flex; align-items:flex-end; gap:28px; flex-wrap:wrap; border-bottom:1px solid var(--rd-hair); margin-top:20px; }
-.rd-tabs > [role="tab"] { background:none; border:0; padding:0 0 10px; font:inherit; font-size:18px; color:var(--ink-2); cursor:pointer; }
+.rd-tabs { display:flex; align-items:flex-end; gap:28px; flex-wrap:wrap; border-bottom:1px solid var(--hairline); margin-top:18px; }
+.rd-tabs > [role="tab"] { background:none; border:0; padding:0 0 10px; font:inherit; font-size:16px; color:var(--ink-2); cursor:pointer; }
 .rd-tabs > [role="tab"][aria-selected="true"] { color:var(--ink); font-weight:600; box-shadow:inset 0 -3px 0 var(--ink); }
 .rd-tabs .rd-k { font-size:inherit; color:var(--ink-3); font-weight:500; margin-left:6px; font-variant-numeric:tabular-nums; }  /* inherit: an older global .rd-k (showcase.css) would shrink it */
 .rd-tabs .rd-tabs-end { margin-left:auto; padding-bottom:8px; display:flex; gap:16px; align-items:center; }
@@ -82,9 +85,9 @@
 .rd-moment { display:flex; align-items:baseline; gap:12px; padding:10px 0 10px 16px; border-left:3px solid var(--high); font-size:17px; color:var(--ink); }
 
 /* ---------- figures on one ruled line */
-.rd-figs { display:grid; grid-template-columns:repeat(var(--rd-n, 3), minmax(0, 1fr)); border-top:2px solid var(--ink); margin-top:22px; }
-.rd-fig { padding:14px 16px 0 0; position:relative; }
-.rd-fig + .rd-fig { border-left:1px solid var(--rd-hair); padding-left:20px; }
+.rd-figs { display:grid; grid-template-columns:repeat(var(--rd-n, 3), minmax(0, 1fr)); margin-top:20px; background:var(--surface); border:1px solid var(--hairline); border-radius:10px; padding:16px 0 18px; box-shadow:var(--e-sm); }
+.rd-fig { padding:2px 20px 0 24px; position:relative; }
+.rd-fig + .rd-fig { border-left:1px solid var(--hairline); }
 .rd-figs.rd-flow .rd-fig + .rd-fig { border-left:0; padding-left:30px; }
 .rd-figs.rd-flow .rd-fig + .rd-fig::before { content:"→"; position:absolute; left:2px; top:20px; font-size:22px; color:var(--rd-mark); }
 .rd-fig-v { font-size:var(--rd-fig, 44px); font-weight:700; color:var(--ink); line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
@@ -115,17 +118,18 @@ a.rd-fig:hover .rd-fig-l { text-decoration:underline; text-underline-offset:3px;
 .rd-chain.rd-sm .rd-step-l { font-size:15px; font-weight:500; color:var(--ink-2); }
 
 /* ---------- folds: the whole row is the button */
-.rd-fold { border-bottom:1px solid var(--rd-hair); }
+.rd-fold { border-bottom:1px solid var(--hairline); }
+.rd-fold:last-child { border-bottom:0; }
 .rd-fold > button { display:flex; align-items:baseline; gap:12px; width:100%; text-align:left; background:none; border:0; padding:16px 0;
   font:inherit; color:inherit; cursor:pointer; }
 .rd-fold-chev { flex:none; width:18px; height:18px; align-self:center; transition:transform var(--d-fast); color:var(--ink); }
 .rd-fold > button[aria-expanded="true"] .rd-fold-chev { transform:rotate(90deg); }
-.rd-fold-h { font-size:18px; font-weight:600; color:var(--ink); white-space:nowrap; }
+.rd-fold-h { font-size:16px; font-weight:600; color:var(--ink); white-space:nowrap; }
 .rd-fold-s { font-size:16px; color:var(--ink-3); }
 .rd-fold-b { padding:0 0 20px 30px; }
 
 /* ---------- an opened item: held by a rule on the left, never a box */
-.rd-open { border-left:2px solid var(--ink); padding:4px 0 16px 20px; margin:0 0 8px; }
+.rd-open { border-left:3px solid var(--accent-line); padding:4px 0 16px 20px; margin:0 0 8px; }
 
 /* ---------- a static scale (a range, a value, a threshold) */
 .rd-scale { display:block; max-width:100%; height:auto; overflow:visible; }
@@ -138,3 +142,52 @@ a.rd-fig:hover .rd-fig-l { text-decoration:underline; text-underline-offset:3px;
   .rd-fig + .rd-fig { border-left:0; padding-left:0; }
 }
 @media (prefers-reduced-motion: reduce) { .rd-fold-chev { transition:none; } }
+
+/* ---------- Warm product look (24 Nov): white page, soft rounded panels, near-black text and warm greys, pill
+   filters, rounded buttons, a calm sidebar. Light theme only; the dark theme keeps its own tokens. */
+:root {
+  --paper:#FFFFFF; --surface:#FFFFFF; --surface-2:#F7F7F7; --sunken:#F2F2F2;
+  --hairline:#EBEBEB; --hairline-2:#DDDDDD;
+  --ink:#222222; --ink-2:#484848; --ink-3:#6A6A6A;   /* 6A6A6A: 5.3:1 on white */
+  --rd-hair:#EBEBEB; --rd-mark:#8A8A8A;                /* marks: 3.4:1 on white */
+  --rd-card-shadow:0 1px 2px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --rd-card-shadow:0 6px 20px rgba(0,0,0,.35); } }
+:root[data-theme="dark"] { --rd-card-shadow:0 6px 20px rgba(0,0,0,.35); }
+
+/* sections: no boxes (cards read as AI-generated). Space does the work: a section starts after one thin divider and
+   plenty of room; rows are separated by spacing, not lines. Only real tables keep faint lines. */
+.rd-sec { background:none; border:0; border-top:1px solid var(--hairline); border-radius:0; box-shadow:none; padding:32px 0 8px; margin-top:32px; }
+.rd-pagehead + .rd-sec, .rd-tabs + .rd-sec { border-top:0; margin-top:8px; padding-top:20px; }
+.rd-figs { background:none; border:0; border-radius:0; box-shadow:none; padding:8px 0 4px; }
+.rd-fig + .rd-fig { border-left:1px solid var(--hairline); }
+.rd-sec-h { margin-bottom:12px; }
+.rd-sec-h h2 { font-size:22px; font-weight:600; letter-spacing:-.01em; }
+.rd-title { font-weight:650; letter-spacing:-.02em; }
+.rd-row { padding:14px 0; border-bottom:0; }
+.rd-row + .rd-row { margin-top:4px; }
+.rd-fold { border-bottom:0; }
+.rd-fold > button { padding:14px 0; }
+
+/* filters as pills: black when chosen */
+.rd-tabs { border-bottom:0; gap:10px; margin-top:20px; align-items:center; }
+.rd-tabs > [role="tab"] { padding:9px 18px; border:1px solid var(--hairline-2); border-radius:999px; font-size:15px; font-weight:500; color:var(--ink); background:var(--surface); }
+.rd-tabs > [role="tab"]:hover { border-color:var(--ink); }
+.rd-tabs > [role="tab"][aria-selected="true"] { background:var(--ink); border-color:var(--ink); color:var(--paper); box-shadow:none; font-weight:600; }
+.rd-tabs > [role="tab"][aria-selected="true"] .rd-k { color:inherit; opacity:.8; }
+.rd-tabs .rd-tabs-end { padding-bottom:0; }
+
+/* buttons and text actions: rounded, quiet; text actions in ink, underlined on hover */
+.rd .btn { border-radius:10px; font-weight:600; }
+.rd .btn:not(.btn--primary) { border-color:var(--ink); color:var(--ink); background:var(--surface); }
+.rd-tbtn { color:var(--ink); }
+.rd a.rd-go, .rd .rd-go { color:var(--ink); }
+.rd select { border-radius:10px; }
+
+/* the sidebar: calm labels, the active page as a soft pill */
+.side .nav .grp, .side .label { text-transform:none; letter-spacing:0; font-size:14px; font-weight:600; color:var(--ink-3); }
+.side .nav a { border-radius:12px; height:40px; font-size:15px; color:var(--ink-2); }
+.side .nav a:hover { background:var(--surface-2); }
+.side .nav a[aria-current="page"] { background:var(--sunken); color:var(--ink); font-weight:600; }
+.side { border-right-color:var(--hairline); }
+.appbar { border-bottom-color:var(--hairline); }
