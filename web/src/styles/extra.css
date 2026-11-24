@@ -82,7 +82,7 @@ a.ov-need:hover { background:var(--hover-bg); }
 .ov-step .n { width:26px; height:26px; border-radius:50%; background:var(--accent-soft); color:var(--accent-ink); font-weight:700; display:flex; align-items:center; justify-content:center; font-size:var(--fs-sm); }
 .ov-step.done .n { background:var(--accent); color:var(--on-accent); }
 .ov-step h2 { margin:0; }
-.mappulse { transform-origin:center; animation:mappulse 2.4s ease-out infinite; }
+.mappulse { display:none; }  /* still map */
 @keyframes mappulse { 0% { transform:scale(.6); opacity:.35; } 70% { transform:scale(1.5); opacity:0; } 100% { opacity:0; } }
 @media (prefers-reduced-motion: reduce) { .mappulse { animation:none; } }
 @media (max-width: 1100px) { .ov-strip { grid-template-columns:repeat(3,minmax(0,1fr)); } .ov-grid { grid-template-columns:minmax(0,1fr); } }
@@ -750,18 +750,8 @@ a.evrow:hover .row-l, a.lrow:hover .row-l { text-decoration:underline !important
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --map-particle: rgba(255,255,255,.95); } }
 .mapflow { cursor:default; }
 .mapflow path { transition:stroke-opacity .4s ease; }
-.flowdots { animation:flowdots 1.6s linear infinite; }
-@keyframes flowdots { to { stroke-dashoffset:calc(-1 * var(--cycle)); } }
-.mapflow.is-hit .flowdots { animation-duration:.9s; }
-.flowpulse { animation:flowpulse 2.2s cubic-bezier(.5,0,.6,1) infinite; filter:drop-shadow(0 0 4px currentColor); }
-@keyframes flowpulse { 0% { stroke-dashoffset:10; opacity:0; } 8% { opacity:1; } 88% { opacity:1; } 100% { stroke-dashoffset:-90; opacity:0; } }
-.mapripple { transform-box:fill-box; transform-origin:center; animation:mapripple 2.6s ease-out infinite; opacity:0; }
-@keyframes mapripple { 0% { transform:scale(.7); opacity:.6; } 100% { transform:scale(2.4); opacity:0; } }
-.homeglow { transform-box:fill-box; transform-origin:center; animation:homeglow 2.2s ease-out infinite; }
-@keyframes homeglow { 0%, 60% { transform:scale(.5); opacity:0; } 80% { opacity:.9; } 100% { transform:scale(1.6); opacity:0; } }
-@media (prefers-reduced-motion: reduce) {
-  .flowdots, .mapripple, .homeglow { animation:none; }
-  .flowdots { display:none; }
-  .mapripple:not(:first-child) { display:none; }
-  .flowpulse { animation:none; stroke-dasharray:none; opacity:.55; }
-}
+.flowdots { display:none; }  /* the map is still: no moving dots, ripples or pulses (an enterprise screen, not a show) */
+.flowpulse { stroke-dasharray:none; opacity:.55; }
+.mapripple { opacity:.45; }
+.mapripple:not(:first-child) { display:none; }
+.homeglow { display:none; }
