@@ -272,7 +272,7 @@ function Frame({ inst }: { inst: Installation }) {
             {items.map(([icon, label, to]) => (
               <NavLink key={to} to={to}>
                 <Icon name={icon} /><span>{label}</span>
-                {to === "/alerts" && alerts?.to_review ? <span className={`count ${alerts.by_level.warning ? "hot" : ""}`}>{alerts.to_review}<span className="sr"> to review</span></span> : null}
+                {to === "/alerts" && alerts?.to_review ? <span className={`count ${alerts.by_level.warning ? "hot" : ""}`}>{alerts.to_review}<span className="sr"> {alerts.to_review === 1 ? "alert" : "alerts"} to review</span></span> : null}
               </NavLink>
             ))}
               </div>);

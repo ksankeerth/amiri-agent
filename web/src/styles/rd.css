@@ -184,8 +184,5 @@ a.rd-fig:hover .rd-fig-l { text-decoration:underline; text-underline-offset:3px;
 
 /* the sidebar: calm labels, the active page as a soft pill */
 .side .nav .grp, .side .label { text-transform:none; letter-spacing:0; font-size:14px; font-weight:600; color:var(--ink-3); }
-.side .nav a { border-radius:12px; height:40px; font-size:15px; color:var(--ink-2); }
-.side .nav a:hover { background:var(--surface-2); }
-.side .nav a[aria-current="page"] { background:var(--sunken); color:var(--ink); font-weight:600; }
 .side { border-right-color:var(--hairline); }
 .appbar { border-bottom-color:var(--hairline); }
