@@ -767,3 +767,18 @@ a.evrow:hover .row-l, a.lrow:hover .row-l { text-decoration:underline !important
 .toasts { bottom:24px; }
 .toast { max-width:min(520px, calc(100vw - 32px)); padding:14px 20px; border:0; border-radius:12px; font-size:var(--fs-lg); font-weight:500; line-height:1.4; box-shadow:var(--e-lg); }
 .maptip { padding:10px 14px; border-radius:12px; font-size:15px; line-height:1.4; box-shadow:var(--e-pop); }
+
+/* ---------- Empty, loading and error states: plain words, one action, no icon squares, nothing that moves.
+   (The Empty component draws no icon; the rule below also covers the few hand-written .empty blocks.) */
+.empty { text-align:center; padding:56px 24px; color:var(--ink-2); }
+.empty > svg { display:none; }
+.empty h2 { font-size:20px; font-weight:600; letter-spacing:-.01em; margin-bottom:8px; color:var(--ink); }
+.empty p { font-size:var(--fs-lg); line-height:1.5; max-width:52ch; margin-inline:auto; color:var(--ink-2); }
+.empty .row { justify-content:center; margin-top:20px; gap:12px; }
+.skel { background:var(--hairline); animation:none; }
+.loaderr { max-width:640px; padding:24px 0; }
+.loaderr h2 { font-size:20px; font-weight:600; letter-spacing:-.01em; display:flex; align-items:baseline; gap:10px; }
+.loaderr-mark { color:var(--critical-ink); font-size:.8em; }
+.loaderr p { margin:8px 0 20px; font-size:var(--fs-lg); line-height:1.5; color:var(--ink-2); }
+.page > .loaderr, .ph + .loaderr { margin-top:var(--s-4); }
+.skel-list { padding-top:12px; }

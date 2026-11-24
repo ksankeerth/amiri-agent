@@ -35,14 +35,11 @@ export function LoadError({ error, onRetry, what = "this page" }: { error: unkno
     try { await onRetry(); } finally { setBusy(false); }
   };
   return (
-    <div className="card loaderr" role="alert"><div className="bd">
-      <Icon name="warn" />
-      <div className="col" style={{ gap: 4, flex: 1, minWidth: 0 }}>
-        <h2>{down ? "Amiri Agent didn't answer" : `Couldn't load ${what}`}</h2>
-        <p>{down ? "It may be starting up after a quiet spell, or the connection dropped. Nothing you saved is lost." : errText(error)}</p>
-      </div>
-      <button className="btn btn--primary" type="button" disabled={busy} onClick={retry}><Icon name="refresh" />{busy ? "Trying…" : "Try again"}</button>
-    </div></div>
+    <div className="loaderr" role="alert">
+      <h2><span className="loaderr-mark" aria-hidden="true">▲</span>{down ? "Amiri Agent didn't answer" : `Couldn't load ${what}`}</h2>
+      <p>{down ? "It may be starting up after a quiet spell, or the connection dropped. Nothing you saved is lost." : errText(error)}</p>
+      <button className="btn btn--primary" type="button" disabled={busy} onClick={retry}>{busy ? "Trying…" : "Try again"}</button>
+    </div>
   );
 }
 
@@ -118,9 +115,9 @@ export function Skel({ w = "100%", h = 14, r = 6 }: { w?: number | string; h?: n
 }
 export function ListSkeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="card" role="status" aria-busy="true"><span className="sr">Loading</span>
-      <div className="bd col" style={{ gap: 16 }}>{Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="col" style={{ gap: 8 }}><Skel w={`${55 + ((i * 17) % 30)}%`} h={16} /><Skel w="90%" /><Skel w="70%" /></div>))}</div>
+    <div className="skel-list col" role="status" aria-busy="true" style={{ gap: 24 }}><span className="sr">Loading</span>
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="col" style={{ gap: 10 }}><Skel w={`${45 + ((i * 17) % 30)}%`} h={18} /><Skel w="85%" /><Skel w="60%" /></div>))}
     </div>
   );
 }
@@ -131,8 +128,8 @@ export function PageSkeleton({ bare }: { bare?: boolean }) {
   return (
     <div className={bare ? undefined : "page"} role="status" aria-busy="true"><span className="sr">Loading</span>
       <div className="col" style={{ gap: 10, marginBottom: 20 }}><Skel w={110} h={12} /><Skel w={280} h={28} r={8} /><Skel w="48%" /></div>
-      <div className="skel-strip">{[0, 1, 2, 3].map(i => <div key={i} className="card"><div className="bd col" style={{ gap: 10 }}><Skel w={48} h={28} r={8} /><Skel w="70%" /><Skel w="50%" h={10} /></div></div>)}</div>
-      <div className="mt16"><ListSkeleton rows={3} /></div>
+      <div className="skel-strip">{[0, 1, 2, 3].map(i => <div key={i} className="col" style={{ gap: 10 }}><Skel w={64} h={32} r={8} /><Skel w="70%" /><Skel w="50%" h={14} /></div>)}</div>
+      <div className="mt24"><ListSkeleton rows={3} /></div>
     </div>
   );
 }
@@ -147,8 +144,9 @@ export function Limits({ summary, children, status }: { summary: ReactNode; chil
   );
 }
 
-export function Empty({ icon, title, children, actions }: { icon: string; title: string; children?: ReactNode; actions?: ReactNode }) {
-  return <div className="empty"><Icon name={icon} /><h2>{title}</h2>{children && <p>{children}</p>}{actions && <div className="row">{actions}</div>}</div>;
+/** Nothing here yet: a plain title, a sentence, one action. No icon (the `icon` prop is kept so callers needn't change). */
+export function Empty({ title, children, actions }: { icon?: string; title: string; children?: ReactNode; actions?: ReactNode }) {
+  return <div className="empty"><h2>{title}</h2>{children && <p>{children}</p>}{actions && <div className="row">{actions}</div>}</div>;
 }
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';

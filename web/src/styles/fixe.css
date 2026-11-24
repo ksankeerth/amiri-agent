@@ -1,13 +1,6 @@
 /* Final fix round (audit E): the shared load error, visible hover and press, and small leftovers. */
 
 /* ---------- PE1/PE2: a failed load says what happened and offers one way out */
-.loaderr { border-color:var(--critical-line); }
-.loaderr .bd { display:flex; align-items:flex-start; gap:16px; padding:20px 24px; }
-.loaderr .bd > svg { width:24px; height:24px; flex:none; color:var(--critical); margin-top:2px; }
-.loaderr h2 { font-size:var(--fs-lg); }
-.loaderr p { margin:0; max-width:65ch; color:var(--ink-2); }
-.loaderr .btn { flex:none; align-self:center; }
-.page > .loaderr, .ph + .loaderr { margin-top:var(--s-4); }
 
 /* ---------- PE3: the profile's state is a square chip with an icon, never the app bar's round Live dot */
 .profile-state { display:inline-flex; }
