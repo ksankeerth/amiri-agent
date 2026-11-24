@@ -65,6 +65,18 @@
 .ev-brief { padding-top:14px; font-size:16px; line-height:1.55; color:var(--ink-2); max-width:80ch; display:flex; flex-direction:column; gap:12px; }
 .ev-brief p { margin:0; }
 .ev-brief h3 { margin:4px 0 0; font-size:14px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
+/* "Why it matters to you", folded to one ruled line: the heading, then how many impacts on how many products */
+.ev-why > summary { list-style:none; cursor:pointer; display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; padding:10px 0;
+  border-top:1px solid var(--hairline); border-bottom:1px solid var(--hairline); font-size:16px; color:var(--ink-2); }
+.ev-why > summary::-webkit-details-marker { display:none; }
+.ev-why > summary h3 { margin:0; display:inline-flex; align-items:center; }
+.ev-why > summary h3::before { content:""; display:inline-block; width:7px; height:7px; margin:0 12px 1px 2px; border:solid var(--ink-3); border-width:0 2px 2px 0;
+  transform:rotate(-45deg); transition:transform .15s; }
+.ev-why[open] > summary h3::before { transform:rotate(45deg); }
+.ev-why > summary b { color:var(--ink); }
+.ev-why > summary:hover h3 { color:var(--ink); }
+.ev-why[open] > summary { border-bottom-color:transparent; }
+.ev-why[open] > .ev-imp { padding-bottom:10px; border-bottom:1px solid var(--hairline); }
 .ev-imp { margin:0; padding-left:18px; display:flex; flex-direction:column; gap:4px; }
 .ev-imp b { color:var(--ink); }
 .ev-brief .muted { color:var(--ink-3); }

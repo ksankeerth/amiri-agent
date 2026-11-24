@@ -116,13 +116,16 @@ function Runs({ runs, onChange }: { runs: Run[]; onChange: () => void }) {
 }
 
 /** What an event means for the bank: its impacts by product, where it started (its source, labelled), where it is, and the way in. */
-function Brief({ e, det, checks }: { e: EventRow; det?: EventDetail; checks: boolean }) {
+function Brief({ e, det, checks, why, onWhy }: { e: EventRow; det?: EventDetail; checks: boolean; why: boolean; onWhy: (open: boolean) => void }) {
   const xs = impacts(det), f = det?.findings[0], si = f ? sourceInfo(f.source) : null;
   const url = f?.evidence?.headlines?.find(h => h.url)?.url;
   return <div className="ev-brief">
     {xs.length > 0 ? <>
-      <h3>Why it matters to you</h3>
-      <ul className="ev-imp">{xs.map(i => <li key={i.id}><b>{i.product}</b>: {lower(i.what)}<span className="muted"> · {i.st}</span></li>)}</ul>
+      {/* folded to one line; opened, it stays open from event to event */}
+      <details className="ev-why" open={why} onToggle={x => onWhy((x.target as HTMLDetailsElement).open)}>
+        <summary><h3>Why it matters to you</h3><span><b>{count(e.hypotheses, "possible impact")}</b> on {count(new Set(xs.map(i => i.product)).size, "product")}</span></summary>
+        <ul className="ev-imp">{xs.map(i => <li key={i.id}><b>{i.product}</b>: {lower(i.what)}<span className="muted"> · {i.st}</span></li>)}</ul>
+      </details>
     </> : e.hypotheses === 0 && <p>The investigation found nothing in it that reaches your products. It closes on its own when the news stops.</p>}
     {f && <p className="ev-src"><span>It started from</span>
       {si && <span className={`ev-lab src-${f.source}`}><Icon name={si.icon} />{si.label}</span>}
@@ -145,6 +148,7 @@ export function EventsPage() {
   const [sim, setSim] = useState(false);  // simulated events (from a series' "Simulate a move") stay out of the live picture unless asked for
   const [sel, setSel] = useState<string | null>(null);    // the event picked with a click
   const [peek, setPeek] = useState<string | null>(null);  // the event the mouse rests on: shown until it leaves the list
+  const [why, setWhy] = useState(false);                   // "Why it matters to you" opened: kept as the reader moves between events
   const timer = useRef(0);
   const nav = useRef<HTMLElement>(null);
   // the list ends at the bottom of the screen and scrolls inside itself, like Radar's; measured from where it starts
@@ -257,7 +261,7 @@ export function EventsPage() {
             {cur.hypotheses > 0 && <TonePill tone={cur.tone} />}
             {cur.world !== "live" && <span className="pill t-blue">Simulated</span>}</p>
           <h2 id="ev-read-h">{title(cur)}</h2>
-          <Brief e={cur} det={ev[cur.event_id]} checks={checks} />
+          <Brief e={cur} det={ev[cur.event_id]} checks={checks} why={why} onWhy={setWhy} />
         </article>
       </div>}
       {admin && <Runs runs={runs} onChange={load} />}
