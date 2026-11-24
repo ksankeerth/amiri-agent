@@ -1,6 +1,6 @@
 // The Overview: the Risk Manager's first page, laid out like the front page of a briefing. Layer 0 (the first
-// screen): one status sentence, the one thing to do, three figures and the map of where. Layer 1 (one scroll): the top
-// 3 open events, what else needs you and the latest findings. Layer 2: Markets, Radar and the system's health, folded
+// screen): one status sentence, the one thing to do, three figures, the top 3 open events and, beside them, the map of
+// where. Layer 1 (one scroll): what else needs you and the latest findings. Layer 2: Markets, Radar and the system's health, folded
 // into one-line summaries. One call; refreshed every minute.
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -46,13 +46,21 @@ function impactLine(e: OverviewEvent): string {
   return `${plural(e.effects, "possible impact")}: ${products.length ? andList(rest > 0 ? [...products, `${rest} more`] : products) : "on your products"}`;
 }
 
-/** The map's height: the rest of the first screen under the date line, less the key and the hint line under it. */
-function useMapHeight(): number {
-  const calc = () => (typeof window === "undefined" ? 520 : window.innerWidth <= 1000 ? 420
-    : Math.max(380, Math.min(780, window.innerHeight - 56 - 20 - 38 - 34 - 40 - 6)));
-  const [h, setH] = useState(calc);
-  useEffect(() => { const on = () => setH(calc()); window.addEventListener("resize", on); return () => window.removeEventListener("resize", on); }, []);
-  return h;
+/** The map's height: as tall as the words and open events beside it, so neither column leaves a gap; 420 px at least. */
+function useMapHeight(): [number, (el: HTMLDivElement | null) => void] {
+  const narrow = () => typeof window !== "undefined" && window.innerWidth <= 1000;
+  const [h, setH] = useState(520);
+  const [el, setEl] = useState<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!el) return;
+    const KEY = 40;  // the map's key line under it
+    const fit = () => setH(narrow() ? 420 : Math.max(420, Math.round(el.getBoundingClientRect().height) - KEY));
+    fit();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(fit) : null;
+    ro?.observe(el); window.addEventListener("resize", fit);
+    return () => { ro?.disconnect(); window.removeEventListener("resize", fit); };
+  }, [el]);
+  return [h, setEl];
 }
 
 // ================================================================ first run
@@ -152,7 +160,7 @@ export function OverviewPage() {
   const now = useNow(30_000);
   const { role } = useRole();
   const admin = role === "platform_admin";
-  const mapH = useMapHeight();
+  const [mapH, wordsRef] = useMapHeight();
   const [o, setO] = useState<Overview | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [err, setErr] = useState<unknown>(null);
@@ -206,7 +214,6 @@ export function OverviewPage() {
           cta: <Link className="btn btn--primary btn--lg" to="/studio">See how it responds: try a what-if →</Link> };
   const watching = andList([plural(c.monitors_live, "monitor"), plural(c.series_watched, "market price"), ...(s.radar.connected ? ["Radar"] : [])]);
   const hint = [
-    events.length > 0 && <a key="e" href="#ov-events">{plural(events.length, "open event")}</a>,
     more > 0 && <a key="n" href="#ov-needs">{plural(more, alerts ? "more thing" : "thing")} need{more === 1 ? "s" : ""} you</a>,
     o.findings.length > 0 && <a key="f" href="#ov-findings">latest findings</a>,
   ].filter(Boolean);
@@ -248,7 +255,7 @@ export function OverviewPage() {
 
       {/* ---------------- layer 0 */}
       <div className="rd-ov-hero">
-        <div className="rd-ov-words">
+        <div className="rd-ov-words" ref={wordsRef}>
           <h1 className="rd-ov-h1">{head.title}</h1>
           <p className="rd-lede">{head.line}</p>
           <div className="rd-ov-cta">{head.cta}</div>
@@ -261,6 +268,17 @@ export function OverviewPage() {
           <p className="rd-ov-cap">Watching {plural(sources, "source")}: {watching}.
             {c.monitors_waiting_approval > 0 && <> {plural(c.monitors_waiting_approval, "monitor")} {c.monitors_waiting_approval === 1 ? "is" : "are"} waiting for approval.</>}
             {" "}<TextButton aria-expanded={how} aria-controls={howId} onClick={() => setHow(h => !h)}>How this works</TextButton></p>
+          <Section id="ov-events" title="Open events" count={events.length || undefined}>
+            {!events.length ? <p className="rd-ov-empty">No open events. When Amiri Agent traces news or a price move to your products, it appears here.</p>
+              : events.slice(0, TOP).map(e => (
+                <div key={e.event_id} className="rd-row">
+                  <div className="rd-row-t rd-ov-evt"><ToneMark tone={e.tone} /><Link className="rd-name" to={`/events/${e.event_id}`}>{eventTitle(e)}</Link>
+                    {/* the shape is already at the start of the line: the word stands alone at the end */}
+                    <span className={`rd-toneword rd-w-${e.tone}`}>{TONE_WORD[e.tone]}</span></div>
+                  <div className="rd-row-d">{impactLine(e)}</div>
+                </div>))}
+            <div className="rd-ov-all"><GoLink to="/events">{events.length > TOP ? `See all ${events.length} open events` : "See all events"}</GoLink></div>
+          </Section>
         </div>
         <div className="rd-ov-map">
           <h2 className="sr">Where it's happening</h2>
@@ -279,17 +297,6 @@ export function OverviewPage() {
 
       {/* ---------------- layer 1 */}
       <div className="rd-ov-l1">
-        <Section id="ov-events" title="Open events" count={events.length || undefined}>
-          {!events.length ? <p className="rd-ov-empty">No open events. When Amiri Agent traces news or a price move to your products, it appears here.</p>
-            : events.slice(0, TOP).map(e => (
-              <div key={e.event_id} className="rd-row">
-                <div className="rd-row-t rd-ov-evt"><ToneMark tone={e.tone} /><Link className="rd-name" to={`/events/${e.event_id}`}>{eventTitle(e)}</Link>
-                  {/* the shape is already at the start of the line: the word stands alone at the end */}
-                  <span className={`rd-toneword rd-w-${e.tone}`}>{TONE_WORD[e.tone]}</span></div>
-                <div className="rd-row-d">{impactLine(e)}</div>
-              </div>))}
-          <div className="rd-ov-all"><GoLink to="/events">{events.length > TOP ? `See all ${events.length} open events` : "See all events"}</GoLink></div>
-        </Section>
 
         <Section id="ov-needs" title={alerts ? "Also needs you" : "Needs you"} count={more || undefined}>
             {!rest.length ? <div className="rd-row"><div className="rd-row-t">{alerts ? "Nothing else needs you" : "Nothing needs you right now"}</div>

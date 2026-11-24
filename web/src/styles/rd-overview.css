@@ -50,8 +50,10 @@
 /* ---------- layer 1: two columns, 7 : 5 */
 /* three lists side by side when there is room (no short column beside a long one), one under another when there is not */
 .rd-overview .rd-ov-l1 { display:grid; grid-template-columns:minmax(0, 1fr); gap:0; align-items:start; }
-@media (min-width: 1180px) { .rd-overview .rd-ov-l1 { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:0 36px; } }
-@media (min-width: 1440px) { .rd-overview .rd-ov-l1 { gap:0 48px; } }
+@media (min-width: 1001px) { .rd-overview .rd-ov-l1 { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0 48px; } }
+
+/* open events sit in the words column, beside the map that shows them: no rule above, just space */
+.rd-overview .rd-ov-words .rd-sec { border-top:0; margin-top:36px; padding-top:0; }
 .rd-overview .rd-ov-l1 .rd-sec { scroll-margin-top:16px; }
 .rd-overview .rd-ov-evt { display:flex; align-items:baseline; gap:8px; font-size:17px; }
 .rd-overview .rd-ov-evt .rd-name { min-width:0; }
