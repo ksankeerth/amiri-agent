@@ -42,7 +42,7 @@
 .rd-tbtn:disabled { color:var(--ink-3); cursor:default; text-decoration:none; }
 .rd .btn { font-size:16px; min-height:44px; }
 .rd .btn.btn--lg { font-size:18px; min-height:52px; padding:0 24px; }
-.rd :focus-visible { outline:2px solid var(--focus); outline-offset:3px; border-radius:4px; }
+.rd :focus-visible { outline:2px solid var(--focus); outline-offset:3px; }
 
 /* ---------- sections: the 2 px rule sits above the heading, always */
 .rd-sec { margin-top:20px; background:var(--surface); border:1px solid var(--hairline); border-radius:10px; padding:18px 24px 10px; box-shadow:var(--e-sm); }
@@ -178,8 +178,6 @@ a.rd-fig:hover .rd-fig-l { text-decoration:underline; text-underline-offset:3px;
 .rd-tabs .rd-tabs-end { padding-bottom:0; }
 
 /* buttons and text actions: rounded, quiet; text actions in ink, underlined on hover */
-.rd .btn { border-radius:10px; font-weight:600; }
-.rd .btn:not(.btn--primary) { border-color:var(--ink); color:var(--ink); background:var(--surface); }
 .rd-tbtn { color:var(--ink); }
 .rd a.rd-go, .rd .rd-go { color:var(--ink); }
 .rd select { border-radius:10px; }

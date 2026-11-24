@@ -17,8 +17,8 @@
 .ovx .ph-status { font-size:var(--fs-lg); color:var(--ink-2); }
 .ovx .ph-status a b { color:inherit; }
 .ph-cta { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:8px; }
-.btn--lg { height:44px; padding:0 20px; font-size:var(--fs-lg); }
-.btn--lg svg { width:18px; height:18px; }
+.btn--lg { height:52px; padding:0 24px; font-size:18px; }
+.btn--lg svg { width:20px; height:20px; }
 .ovx-warn { display:inline-flex; align-items:baseline; gap:8px; color:var(--high-ink); font-weight:600; }
 .ovx-warn svg { width:18px; height:18px; flex:none; align-self:center; }
 

@@ -60,8 +60,7 @@
 /* ---- Add / Edit dialogs: grouped fields, more room, larger labels */
 .modal .grid2 { gap:20px 24px; }
 .modal .field { gap:8px; }
-.modal .field > span, .modal .field > label { font-size:var(--fs-sm); color:var(--ink); }
-.modal .field .hint, .modal .field .errtext { font-size:var(--fs-sm); line-height:1.5; }
+.modal .field .hint, .modal .field .errtext { line-height:1.5; }
 .pf-group { grid-column:1 / -1; margin:8px 0 -8px; padding-top:20px; border-top:1px solid var(--hairline);
   font-size:var(--fs-xs); font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-3); }
 .pf-group.first { margin-top:0; padding-top:0; border-top:0; }
