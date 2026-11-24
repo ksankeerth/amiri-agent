@@ -1,0 +1,86 @@
+/* Platform Admin pages (Data connections, Settings) in the rd system: sections under one rule, calm rows, words for
+   states, no cards or badges. Scoped under .rd-admin. */
+
+.rd-admin .rd-pagehead + .rd-sec { padding-top: 24px; }
+.rd-admin .ad-mono { font-family: var(--font-mono); font-size: 15px; overflow-wrap: anywhere; }
+.rd-admin .rd-fine .ad-mono, .rd-admin .rd-fine.ad-mono { font-size: 14px; }
+.rd-admin .rd-sec-a { gap: 20px; align-items: center; }
+
+/* label and value rows */
+.rd-admin .ad-kv { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px 24px; margin: 8px 0 0; max-width: 860px; }
+.rd-admin .ad-kv dt { color: var(--ink-3); }
+.rd-admin .ad-kv dd { margin: 0; color: var(--ink); }
+.rd-admin .ad-switch { display: inline-flex; align-items: center; gap: 10px; }
+.rd-admin .ad-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 22px; }
+.rd-admin .ad-act { margin-top: 18px; }
+.rd-admin .ad-status { margin: 10px 0 0; min-height: 0; }
+.rd-admin .ad-status:empty { display: none; }
+.rd-admin .rd-warn .rd-shape + b, .rd-admin .hint.rd-warn { font-weight: 600; }
+
+/* the connection form: open fields, labels above */
+.rd-admin .ad-form { max-width: 760px; }
+.rd-admin .ad-form .rd-tabs { margin-top: 4px; }
+.rd-admin .ad-form .field { margin-top: 20px; gap: 8px; }
+.rd-admin .ad-form .grid2 { gap: 20px 24px; margin-top: 20px; }
+.rd-admin .ad-form .grid2 .field { margin-top: 0; }
+.rd-admin .field > label, .rd-admin .field > span:not(.hint):not(.errtext) { font-size: 16px; font-weight: 600; color: var(--ink); }
+.rd-admin .field .hint, .rd-admin .field .errtext { font-size: 15px; }
+.rd-admin .input, .rd-admin select.input { font-size: 16px; border-radius: 12px; }
+.rd-admin .input.mono { font-size: 15px; }
+
+/* the check */
+.rd-admin .ad-old { margin: 0 0 8px; }
+.rd-admin .ad-head { margin: 4px 0 0; font-size: 18px; color: var(--ink); }
+.rd-admin .ad-sub { margin: 4px 0 0; }
+.rd-admin .ad-pick { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--ink-3); }
+.rd-admin .ad-pick .input { width: auto; max-width: 100%; height: 40px; font-size: 15px; border-radius: 10px; }
+.rd-admin .ad-steps { list-style: none; margin: 14px 0 0; padding: 0; }
+.rd-admin .ad-step-t { color: var(--ink); font-weight: 500; }
+.rd-admin .ad-h3 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 34px 0 6px; font-size: 18px; font-weight: 600; }
+.rd-admin .ad-list { margin: 6px 0 0; padding-left: 20px; font-size: 15px; color: var(--ink-2); }
+.rd-admin .ad-list li { padding: 1px 0; }
+.rd-admin .ad-fmt { margin: 0 0 10px; }
+.rd-admin .ad-tbl { overflow-x: auto; }
+.rd-admin .ad-calls { max-height: 360px; overflow-y: auto; }
+.rd-admin .ad-tbl .rd-table td, .rd-admin .ad-tbl .rd-table th { padding-right: 20px; }
+.rd-admin .ad-tbl .rd-table th:last-child, .rd-admin .ad-tbl .rd-table td:last-child { padding-right: 0; }
+
+/* the sample institutions: two ruled blocks, conditions folded */
+.rd-admin .dc-samples { margin-top: 8px; }
+.rd-admin .dc-sample { padding: 20px 0; }
+.rd-admin .dc-sample + .dc-sample { border-top: 1px solid var(--hairline); }
+.rd-admin .dc-sample-hd { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.rd-admin .dc-sample-t { flex: 1 1 320px; min-width: 0; }
+.rd-admin .dc-sample-t h3 { font-size: 18px; font-weight: 600; display: flex; align-items: baseline; gap: 10px; }
+.rd-admin .dc-state { font-size: 15px; font-weight: 600; color: var(--ink-3); }
+.rd-admin .dc-sample-t p { margin: 2px 0 0; }
+.rd-admin .dc-sample-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-left: auto; }
+.rd-admin .dc-sample .rd-fold { margin-top: 6px; }
+.rd-admin .dc-conds { border: 0; margin: 0 0 22px; padding: 0; min-width: 0; }
+.rd-admin .dc-conds legend { padding: 0; margin-bottom: 4px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+.rd-admin .dc-conds legend b { color: var(--ink); font-size: 16px; font-weight: 600; }
+.rd-admin .dc-conds ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 2px 32px; }
+.rd-admin .dc-conds li { padding: 8px 0; }
+.rd-admin .dc-cond { display: flex; gap: 14px; align-items: flex-start; cursor: pointer; }
+.rd-admin .dc-cond input { flex: none; width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--ink); }
+.rd-admin .dc-cond > span { min-width: 0; }
+.rd-admin .dc-cond-t { display: block; font-size: 16px; font-weight: 600; color: var(--ink); line-height: 1.4; }
+.rd-admin .dc-cond-d { display: block; margin-top: 2px; font-size: 15px; color: var(--ink-3); line-height: 1.45; }
+.rd-admin .dc-cond-opts { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 8px 0 0 34px; }
+.rd-admin .dc-cond-opts label { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--ink-2); }
+.rd-admin .dc-cond-opts .input { width: auto; height: 44px; font-size: 16px; border-radius: 10px; }
+.rd-admin .dc-cond-opts .dc-num { width: 110px; }
+.rd-admin .dc-sample-ft { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin-top: 8px; }
+.rd-admin .dc-sample-ft .fillfile { grid-column: auto !important; flex: 0 1 auto; }
+.rd-admin .dc-sample-ft .fillfile .btn { border: 0; background: none; padding: 0; min-height: 0; height: auto; font-size: 15px; font-weight: 600; color: var(--ink); }
+.rd-admin .dc-sample-ft .fillfile .btn:hover { background: none; text-decoration: underline; text-underline-offset: 3px; }
+.rd-admin .dc-sample-ft .fillfile .btn svg { display: none; }
+.rd-admin .dc-spacer { flex: 1 1 0; }
+
+@media (max-width: 760px) {
+  .rd-admin .ad-kv { grid-template-columns: minmax(0, 1fr); gap: 2px 0; }
+  .rd-admin .ad-kv dd { margin-bottom: 10px; }
+}
+.rd-admin .field .hint.rd-warn { color: var(--high-ink); }
+.rd-admin .ad-form { margin-top: 18px; }
+.rd-admin .ad-steps .rd-row-m .rd-toneword { font-weight: 600; }

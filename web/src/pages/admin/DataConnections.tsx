@@ -1,26 +1,23 @@
 // Platform Admin: where Amiri Agent reads the institution's own numbers. Set the connection (an address,
 // or a sample institution), Check it, read the report, Approve it, and switch validation on. The sample
 // bank and insurer are switched on, and given conditions, here too.
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { connectApi, type CheckState, type CheckStatus, type Condition, type Connection, type Report, type Sample } from "../../api/connect";
 import { FillFromJson } from "../../components/FillFromJson";
 import type { Candidate } from "../../components/fillJson";
-import { Icon } from "../../components/Icon";
-import { PageHeader } from "../../components/blocks";
-import { Banner, Empty, errText, ListSkeleton, LoadError, PageHead, useToast } from "../../components/ui";
+import { Fold, PageTitle, QuietWarn, Section, TextButton, TextTabs, ToneWord, type ToneKey } from "../../components/rd";
+import { errText, ListSkeleton, LoadError, useToast } from "../../components/ui";
 import { ago, dayTime, person, plural } from "../../format";
-import "../../styles/polish-forms.css";
+import "../../styles/rd-admin.css";
 
-const STATUS_BADGE: Record<CheckStatus, [string, string]> = {
-  ready: ["b-ok", "READY"], ready_with_gaps: ["b-warn", "READY WITH GAPS"], not_ready: ["b-down", "NOT READY"],
-};
-const STATE_BADGE: Record<CheckState, [string, string]> = {
-  pass: ["b-ok", "PASS"], fail: ["b-down", "FAIL"], not_applicable: ["b-noeffect", "N/A"], not_run: ["b-noeffect", "NOT RUN"],
-};
-const STEP_ICON: Record<string, [string, string]> = { pass: ["check", "var(--accent)"], warn: ["warn", "var(--medium-ink)"], fail: ["x", "var(--critical-ink)"] };
+/** A check's overall result as a tone and a word. */
+const STATUS_TONE: Record<CheckStatus, [ToneKey, string]> = { ready: ["good", "Ready"], ready_with_gaps: ["mixed", "Ready with gaps"], not_ready: ["bad", "Not ready"] };
+const STATE_TONE: Record<CheckState, [ToneKey, string]> = { pass: ["good", "Passed"], fail: ["bad", "Failed"], not_applicable: ["neutral", "Not applicable"], not_run: ["neutral", "Not run"] };
+const STEP_TONE: Record<string, [ToneKey, string]> = { pass: ["good", "Passed"], warn: ["mixed", "Warning"], fail: ["bad", "Failed"] };
 const SPEC = "1.0.0";
 
+/** A real switch with its state said in a word beside it. */
 function Switch({ on, label, disabled, onChange }: { on: boolean; label: string; disabled?: boolean; onChange: (v: boolean) => void }) {
   return <button type="button" className="switch" role="switch" aria-checked={on} aria-label={label} disabled={disabled}
     onClick={() => onChange(!on)} />;
@@ -60,35 +57,36 @@ export function DataConnectionsPage() {
     catch (e) { toast(errText(e)); }
   };
 
-  if (error != null && !conn) return <div className="page"><PageHead title="Data connections" /><LoadError error={error} onRetry={load} what="the data connection" /></div>;
-  if (!conn || !samples) return <div className="page"><PageHead title="Data connections" /><div className="card"><ListSkeleton rows={4} /></div></div>;
+  if (error != null && !conn) return <div className="page rd rd-admin"><PageTitle title="Data connections" /><LoadError error={error} onRetry={load} what="the data connection" /></div>;
+  if (!conn || !samples) return <div className="page rd rd-admin"><PageTitle title="Data connections" /><ListSkeleton rows={4} /></div>;
+  const latest = conn.latest_check;
+  const state = !conn.configured ? "Not connected" : conn.approved ? "Connected and approved" : latest ? (latest.current ? `Checked: ${STATUS_TONE[latest.status][1].toLowerCase()}, not approved yet` : "Changed since the last check") : "Connected, not checked yet";
   return (
-    <div className="page">
-      <PageHeader title="Data connections" pills={<span className="badge b-info" title="The version this server implements">Spec {SPEC}</span>}
-        status={conn.latest_check ? "Where Amiri Agent reads your own figures to check each possible impact" : "No connection checked yet"}
-        help={<p className="ph-about">Amiri Agent checks each possible impact against your institution's own figures, read from a Metrics Spec reference API. Only that API is accepted. Connect it, run the check, then approve it and switch checks on.</p>} />
-      <div className="col gap16">
-        <ConnectionCard conn={conn} samples={samples} checking={checking} onSaved={c => { setConn(c); setReport(null); load(); }}
-          onCheck={run} onApprove={approve} onValidation={validation} />
-        {report ? <ReportCard report={report} history={history} current={!!conn.latest_check?.current && conn.latest_check.check_id === report.check_id}
-          onPick={async id => { try { setReport(await connectApi.report(id)); } catch (e) { toast(errText(e)); } }} />
-          : conn.configured && <div className="card"><Empty icon="data" title="Not checked yet">Press <b>Check</b> to see whether the API is the reference API and what your profile is missing.</Empty></div>}
-        <section className="card pf-samples" aria-labelledby="dc-samples">
-          <div className="hd"><h2 id="dc-samples">Sample institutions</h2></div>
-          <div className="bd">
-            <p className="pf-lead">A sample bank and insurer that serve the Metrics Spec exactly, shaped by your profile. Use one as a test API;
-              conditions make its data show an effect, or make it break a rule on purpose.</p>
-            <div className="pf-sample-list">
-              {samples.map(s => <SampleCard key={s.kind} sample={s} onSaved={x => setSamples(ss => ss!.map(y => (y.kind === x.kind ? x : y)))}
-                onUse={async () => { try { const c = await connectApi.put({ source: "sample", sample: s.kind }); setConn(c); setReport(null); toast(`Connected to the sample ${s.kind}: check it next.`); } catch (e) { toast(errText(e)); } }} />)}
-            </div>
-          </div></section>
-      </div>
+    <div className="page rd rd-admin rd-dc">
+      <PageTitle title="Data connections"
+        status={<><span>{state}</span><span>Metrics Spec {SPEC}</span></>}
+        lede="Amiri Agent checks each possible impact against your institution's own figures, read from a Metrics Spec reference API. Only that API is accepted. Connect it, run the check, then approve it and switch checks on." />
+      <ConnectionSection conn={conn} samples={samples} checking={checking} onSaved={c => { setConn(c); setReport(null); load(); }}
+        onCheck={run} onApprove={approve} onValidation={validation} />
+      {report ? <ReportSection report={report} history={history} current={!!conn.latest_check?.current && conn.latest_check.check_id === report.check_id}
+        onPick={async id => { try { setReport(await connectApi.report(id)); } catch (e) { toast(errText(e)); } }} />
+        : conn.configured && <Section title="The check"><p className="rd-row-d rd-prose">Not checked yet. Press <b>Check</b> to see whether the API is the reference API and what your profile is missing.</p></Section>}
+      <Section title="Sample institutions" id="dc-samples">
+        <p className="rd-row-d rd-prose">A sample bank and insurer that serve the Metrics Spec exactly, shaped by your profile. Use one as a test API;
+          conditions make its data show an effect, or make it break a rule on purpose.</p>
+        <div className="dc-samples">
+          {samples.map(s => <SampleRow key={s.kind} sample={s} onSaved={x => setSamples(ss => ss!.map(y => (y.kind === x.kind ? x : y)))}
+            onUse={async () => { try { const c = await connectApi.put({ source: "sample", sample: s.kind }); setConn(c); setReport(null); toast(`Connected to the sample ${s.kind}: check it next.`); } catch (e) { toast(errText(e)); } }} />)}
+        </div>
+      </Section>
     </div>
   );
 }
 
-function ConnectionCard({ conn, samples, checking, onSaved, onCheck, onApprove, onValidation }: {
+/** "Source  The sample bank": a label and its value, one per line. */
+const Row = ({ k, children }: { k: string; children: ReactNode }) => <><dt>{k}</dt><dd>{children}</dd></>;
+
+function ConnectionSection({ conn, samples, checking, onSaved, onCheck, onApprove, onValidation }: {
   conn: Connection; samples: Sample[]; checking: boolean; onSaved: (c: Connection) => void; onCheck: () => void;
   onApprove: () => void; onValidation: (v: boolean) => void;
 }) {
@@ -123,70 +121,69 @@ function ConnectionCard({ conn, samples, checking, onSaved, onCheck, onApprove, 
   const validationWhy = !conn.validation_allowed ? "Validation is switched off on this server (METRICS_VALIDATION)."
     : !conn.approved ? "Approve a checked connection first." : null;
   return (
-    <div className="card">
-      <div className="hd"><h2>The connection</h2>{conn.configured && !editing && <button className="btn btn--sm btn--ghost" type="button" style={{ marginLeft: "auto" }} onClick={() => setEditing(true)}><Icon name="edit" />Change</button>}</div>
-      <div className="bd col gap12">
-        {conn.auth_allowed === false && <Banner kind="warn" icon="warn"><b>Prototype: no authorization.</b> Use only the sample institutions or a test API with no real data.</Banner>}
-        {conn.configured && !editing && <div className="col gap8">
-          <div className="row wrap"><b>{conn.source === "sample" ? `The sample ${conn.sample}` : "Your institution's API"}</b>
-            {conn.source === "sample" ? <span className="small muted" title={conn.base_url ?? undefined}>hosted with Amiri Agent</span>
-              : <span className="mono small" style={{ wordBreak: "break-all" }}>{conn.base_url}</span>}
-            {conn.auth_set && <span className="badge">key stored ({conn.auth_header})</span>}</div>
-          {latest?.server_version && <div className="small">{latest.server_version.split(".")[0] === SPEC.split(".")[0]
-            ? <>Compatible with Metrics Spec {SPEC.split(".")[0]}.x <span className="muted">(the API serves {latest.server_version})</span></>
-            : <b style={{ color: "var(--critical-ink)" }}>Not compatible: the API serves Metrics Spec {latest.server_version}, and Amiri Agent reads {SPEC.split(".")[0]}.x</b>}</div>}
-          <div className="small">{conn.approved ? <>Approved by {person(conn.approved.by)} {ago(conn.approved.at)}.</> : latest
-            ? latest.current ? <>Checked {ago(latest.started_at)}: <b>{STATUS_BADGE[latest.status][1].toLowerCase()}</b>. Not approved yet.</> : <>Changed since the last check: check it again.</>
-            : <>Not checked yet.</>}</div>
-        </div>}
-        {editing && <div className="col gap12">
-          <span className="seg" role="group" aria-label="Where the data comes from">
-            <button type="button" aria-pressed={source === "sample"} onClick={() => setSource("sample")}>A sample institution</button>
-            <button type="button" aria-pressed={source === "url"} onClick={() => setSource("url")}>Your institution's API</button>
-          </span>
-          {source === "sample" ? <div className="field"><label htmlFor="dc-sample">Sample</label>
-            <select id="dc-sample" className="input" style={{ maxWidth: 280 }} value={sample} onChange={e => setSample(e.target.value as "bank" | "insurer")}>
-              <option value="bank">The sample bank</option><option value="insurer">The sample insurer</option></select>
-            {sampleOff && <span className="small" style={{ color: "var(--medium-ink)" }}>It's switched off: switch it on under Sample institutions below.</span>}</div>
-            : <div className="grid2">
-              <div className="field" style={{ gridColumn: "1 / -1" }}><label htmlFor="dc-base">Address <span className="req" aria-hidden="true">*</span></label>
-                <input id="dc-base" className="input mono" placeholder="https://data.bank.example/metrics/v1" value={base} onChange={e => setBase(e.target.value)} />
-                <span className="small muted">The reference API's base, ending in /metrics/v1. https only.</span></div>
-              <div className="field" style={{ gridColumn: "1 / -1" }}><label htmlFor="dc-openapi">OpenAPI document (optional)</label>
-                <input id="dc-openapi" className="input mono" placeholder="Default: the address without /metrics/v1, then /openapi.json" value={openapi} onChange={e => setOpenapi(e.target.value)} /></div>
-              {conn.auth_allowed !== false && <>
-              <div className="field"><label htmlFor="dc-header">Key header (optional)</label>
-                <input id="dc-header" className="input mono" placeholder="Authorization" value={header} onChange={e => setHeader(e.target.value)} /></div>
-              <div className="field"><label htmlFor="dc-secret">Key or token</label>
-                <input id="dc-secret" className="input mono" type="password" autoComplete="off"
-                  placeholder={conn.auth_set ? "Stored; type to replace" : "e.g. Bearer …"} value={secret} onChange={e => setSecret(e.target.value)} />
-                <span className="small muted">Stored encrypted, never shown again.</span></div>
-              </>}
-            </div>}
-          <div className="row"><button className="btn btn--primary" type="button" onClick={save} disabled={busy || (source === "url" && !base.trim())}>Save</button>
-            {conn.configured && <button className="btn" type="button" onClick={() => setEditing(false)}>Cancel</button>}
-            <span className="small muted">Saving a change means checking and approving it again.</span></div>
-        </div>}
-        {conn.configured && !editing && <div className="row wrap" style={{ gap: 12 }}>
-          <button className="btn btn--primary" type="button" onClick={onCheck} disabled={checking}><Icon name="refresh" />{checking ? "Checking…" : "Check"}</button>
+    <Section title="The connection" action={conn.configured && !editing ? <TextButton onClick={() => setEditing(true)}>Change</TextButton> : undefined}>
+      {conn.auth_allowed === false && <QuietWarn><b>Prototype: no authorization.</b> Use only the sample institutions or a test API with no real data.</QuietWarn>}
+      {conn.configured && !editing && <>
+        <dl className="ad-kv">
+          <Row k="Source"><b>{conn.source === "sample" ? `The sample ${conn.sample}` : "Your institution's API"}</b>{" "}
+            {conn.source === "sample" ? <span className="rd-fine" title={conn.base_url ?? undefined}>hosted with Amiri Agent</span>
+              : <span className="ad-mono">{conn.base_url}</span>}
+            {conn.auth_set && <span className="rd-fine"> · key stored ({conn.auth_header})</span>}</Row>
+          {latest?.server_version && <Row k="Version">{latest.server_version.split(".")[0] === SPEC.split(".")[0]
+            ? <>Compatible with Metrics Spec {SPEC.split(".")[0]}.x <span className="rd-fine">(the API serves {latest.server_version})</span></>
+            : <span className="rd-warn"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> <b>Not compatible:</b> the API serves Metrics Spec {latest.server_version}, and Amiri Agent reads {SPEC.split(".")[0]}.x</span>}</Row>}
+          <Row k="State">{conn.approved ? <>Approved by {person(conn.approved.by)} {ago(conn.approved.at)}.</> : latest
+            ? latest.current ? <>Checked {ago(latest.started_at)}: <b>{STATUS_TONE[latest.status][1].toLowerCase()}</b>. Not approved yet.</> : <>Changed since the last check: check it again.</>
+            : <>Not checked yet.</>}</Row>
+          <Row k="Validation">
+            <span className="ad-switch"><Switch on={conn.validation_enabled} label="Validation against the institution's data" disabled={!!validationWhy && !conn.validation_enabled} onChange={onValidation} />
+              <b>{conn.validation_enabled ? "On" : "Off"}</b></span>
+            {validationWhy && !conn.validation_enabled ? <span className="rd-fine"> · {validationWhy}</span> : <span className="rd-fine"> · new tasks are checked against the institution's data</span>}</Row>
+        </dl>
+        <div className="ad-acts">
+          <button className="btn btn--primary" type="button" onClick={onCheck} disabled={checking}>{checking ? "Checking…" : "Check"}</button>
           <button className="btn" type="button" onClick={onApprove} disabled={!canApprove}
-            title={canApprove ? "Approve this connection for validation" : conn.approved ? "Already approved" : "Check it first; a connection that isn't ready can't be approved"}><Icon name="check" />Approve</button>
-          <span className="row" style={{ marginLeft: "auto", gap: 8 }}>
-            <Switch on={conn.validation_enabled} label="Validation against the institution's data" disabled={!!validationWhy && !conn.validation_enabled} onChange={onValidation} />
-            <span className="small"><b>Validation {conn.validation_enabled ? "on" : "off"}</b>{validationWhy && !conn.validation_enabled ? <span className="muted"> · {validationWhy}</span> : null}</span>
-          </span>
-        </div>}
-        <div role="status" aria-live="polite" className="small muted">{checking ? "Checking the API: about 70 calls, a few seconds…" : ""}</div>
-      </div>
-    </div>
+            title={canApprove ? "Approve this connection for validation" : conn.approved ? "Already approved" : "Check it first; a connection that isn't ready can't be approved"}>Approve</button>
+        </div>
+      </>}
+      {editing && <div className="ad-form">
+        <TextTabs label="Where the data comes from" value={source} onChange={setSource}
+          items={[{ key: "sample", label: "A sample institution" }, { key: "url", label: "Your institution's API" }]} />
+        {source === "sample" ? <div className="field"><label htmlFor="dc-sample">Sample</label>
+          <select id="dc-sample" className="input" style={{ maxWidth: 320 }} value={sample} onChange={e => setSample(e.target.value as "bank" | "insurer")}>
+            <option value="bank">The sample bank</option><option value="insurer">The sample insurer</option></select>
+          {sampleOff && <span className="hint rd-warn"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> It's switched off: switch it on under Sample institutions below.</span>}</div>
+          : <div className="grid2">
+            <div className="field" style={{ gridColumn: "1 / -1" }}><label htmlFor="dc-base">Address <span className="req" aria-hidden="true">*</span></label>
+              <input id="dc-base" className="input mono" placeholder="https://data.bank.example/metrics/v1" value={base} onChange={e => setBase(e.target.value)} />
+              <span className="hint">The reference API's base, ending in /metrics/v1. https only.</span></div>
+            <div className="field" style={{ gridColumn: "1 / -1" }}><label htmlFor="dc-openapi">OpenAPI document (optional)</label>
+              <input id="dc-openapi" className="input mono" placeholder="Default: the address without /metrics/v1, then /openapi.json" value={openapi} onChange={e => setOpenapi(e.target.value)} /></div>
+            {conn.auth_allowed !== false && <>
+            <div className="field"><label htmlFor="dc-header">Key header (optional)</label>
+              <input id="dc-header" className="input mono" placeholder="Authorization" value={header} onChange={e => setHeader(e.target.value)} /></div>
+            <div className="field"><label htmlFor="dc-secret">Key or token</label>
+              <input id="dc-secret" className="input mono" type="password" autoComplete="off"
+                placeholder={conn.auth_set ? "Stored; type to replace" : "e.g. Bearer …"} value={secret} onChange={e => setSecret(e.target.value)} />
+              <span className="hint">Stored encrypted, never shown again.</span></div>
+            </>}
+          </div>}
+        <div className="ad-acts">
+          <button className="btn btn--primary" type="button" onClick={save} disabled={busy || (source === "url" && !base.trim())}>Save</button>
+          {conn.configured && <TextButton onClick={() => setEditing(false)}>Cancel</TextButton>}
+          <span className="rd-fine">Saving a change means checking and approving it again.</span>
+        </div>
+      </div>}
+      <div role="status" aria-live="polite" className="rd-fine ad-status">{checking ? "Checking the API: about 70 calls, a few seconds…" : ""}</div>
+    </Section>
   );
 }
 
 // the spec's capability levels (section 3) by name
 const LEVEL: Record<string, string> = { L1: "Values", L2: "Checkable values", L3: "Timed and deep", L4: "Vintages", L5: "Change concentration" };
 
-function ReportCard({ report, history, current, onPick }: { report: Report; history: Awaited<ReturnType<typeof connectApi.checks>>; current: boolean; onPick: (id: string) => void }) {
-  const [badge, label] = STATUS_BADGE[report.status];
+function ReportSection({ report, history, current, onPick }: { report: Report; history: Awaited<ReturnType<typeof connectApi.checks>>; current: boolean; onPick: (id: string) => void }) {
+  const [tone, label] = STATUS_TONE[report.status];
   const [open, setOpen] = useState<string | null>(null);
   const failed = report.checks.filter(c => c.status === "fail");
   const others = report.checks.filter(c => c.status !== "fail");
@@ -194,61 +191,66 @@ function ReportCard({ report, history, current, onPick }: { report: Report; hist
     const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: "application/json" }));
     const a = document.createElement("a"); a.href = url; a.download = `${report.check_id}.json`; a.click(); URL.revokeObjectURL(url);
   };
+  const row = (c: Report["checks"][number]) => { const [t, l] = STATE_TONE[c.status]; const isOpen = open === c.id; return (
+    <tr key={c.id}><td className="rd-strong">{c.title} <Link className="ad-mono rd-fine" to={`/spec#check-${c.id}`} title="This check in the Metrics Spec">{c.id}</Link></td>
+      <td>{LEVEL[c.level] ?? c.level} <span className="rd-fine">{c.level}</span></td>
+      <td><ToneWord tone={t}>{l}</ToneWord></td>
+      <td>{c.status === "fail" ? <>
+        {c.findings[0]}{(c.findings.length > 1 || c.more > 0) && <> <TextButton aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : c.id)}>{isOpen ? "Less" : `${c.findings.length - 1 + c.more} more`}</TextButton></>}
+        {isOpen && <ul className="ad-list">{c.findings.slice(1).map((x, i) => <li key={i}>{x}</li>)}{c.more > 0 && <li>and {c.more} more</li>}</ul>}
+        <div className="rd-fine"><b className="ins-k">Fix:</b> {c.fix}</div></> : c.note ?? ""}</td></tr>); };
   return (
-    <div className="card">
-      <div className="hd" style={{ flexWrap: "wrap" }}><h2>The check</h2><span className={`badge ${badge}`}>{label}</span>
-        {!current && <span className="badge b-noeffect" title="The connection changed after this check">OLDER CHECK</span>}
-        <span className="row wrap" style={{ marginLeft: "auto", gap: 8, maxWidth: "100%" }}>
-          {history.length > 1 && <label className="row small" style={{ gap: 6 }}><span className="muted">Check</span>
-            <select className="input" style={{ width: "auto", maxWidth: "100%" }} value={report.check_id} onChange={e => onPick(e.target.value)}>
-              {history.map(h => <option key={h.check_id} value={h.check_id}>{dayTime(h.started_at)} · {STATUS_BADGE[h.status][1].toLowerCase()}</option>)}</select></label>}
-          <button className="btn btn--sm" type="button" onClick={download}>Download JSON</button></span></div>
-      <div className="bd col gap16">
-        {report.withdrawn && <Banner kind="warn" icon="warn">{report.withdrawn}</Banner>}
-        <div><b>{report.headline}</b><div className="small muted">{report.target} · {dayTime(report.started_at)} by {person(report.run_by)} ·
-          {" "}{plural(report.summary.calls, "call")} in {report.summary.seconds} s · checked against Metrics Spec {report.spec_version}{report.server_version ? `, the API says ${report.server_version}` : ""}</div></div>
-        <ol className="col gap8" style={{ listStyle: "none", padding: 0, margin: 0 }} aria-label="Steps">
-          {report.steps.map((s, i) => { const [ico, color] = STEP_ICON[s.status]; return (
-            <li key={i} className="row" style={{ alignItems: "flex-start" }}><span style={{ color }} role="img" aria-label={s.status}><Icon name={ico} className="ico16" /></span>
-              <div><span>{s.title}</span>{s.detail && <span className="small muted"> · {s.detail}</span>}
-                {s.items.length > 0 && <ul className="small" style={{ margin: "4px 0 0", paddingLeft: 18 }}>{s.items.slice(0, 12).map((x, j) => <li key={j}>{x}</li>)}</ul>}
-                {s.fix && <div className="small muted"><b>Fix:</b> {s.fix}</div>}</div></li>); })}
-        </ol>
-        {report.missing_for_profile.length > 0 && <div><h3 className="small" style={{ margin: "0 0 6px" }}>What's missing for your profile</h3>
-          <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>{report.missing_for_profile.map((x, i) => <li key={i}>{x}</li>)}</ul></div>}
-        {report.formats.length > 0 && <div><h3 className="small" style={{ margin: "0 0 6px" }}>Answers that don't match the spec's formats</h3>
-          {report.formats.slice(0, 10).map((f, i) => <div key={i} className="small" style={{ marginBottom: 6 }}><span className="mono">{f.where}</span>
-            <ul style={{ margin: "2px 0 0", paddingLeft: 18 }}>{f.errors.map((e, j) => <li key={j} className="mono">{e}</li>)}{f.more > 0 && <li>and {f.more} more</li>}</ul></div>)}
-          {report.formats.length > 10 && <div className="small muted">and {report.formats.length - 10} more answers</div>}</div>}
-        <div><h3 className="small" style={{ margin: "0 0 6px" }}>Conformance checks · {report.summary.passed} of {report.summary.passed + report.summary.failed} passed</h3>
-          <div className="tblwrap" tabIndex={0} role="region" aria-label="Conformance checks (scrolls sideways)"><table className="tbl">
-            <thead><tr><th scope="col">Check</th><th scope="col">Level</th><th scope="col">Result</th><th scope="col">What was found</th></tr></thead>
-            <tbody>{[...failed, ...others].map(c => { const [b, l] = STATE_BADGE[c.status]; const isOpen = open === c.id; return (
-              <tr key={c.id}><td>{c.title} <Link className="mono small muted" to={`/spec#check-${c.id}`} title="This check in the Metrics Spec">{c.id}</Link></td><td>{LEVEL[c.level] ?? c.level} <span className="small muted">{c.level}</span></td><td><span className={`badge ${b}`}>{l}</span></td>
-                <td className="small">{c.status === "fail" ? <>
-                  {c.findings[0]}{(c.findings.length > 1 || c.more > 0) && <> <button className="btn btn--sm btn--ghost" type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : c.id)}>{isOpen ? "Less" : `${c.findings.length - 1 + c.more} more`}</button></>}
-                  {isOpen && <ul style={{ margin: "4px 0", paddingLeft: 18 }}>{c.findings.slice(1).map((x, i) => <li key={i}>{x}</li>)}{c.more > 0 && <li>and {c.more} more</li>}</ul>}
-                  <div className="muted"><b>Fix:</b> {c.fix}</div></> : c.note ?? ""}</td></tr>); })}</tbody></table></div></div>
-        {report.coverage && report.coverage.products.length > 0 && <div><h3 className="small" style={{ margin: "0 0 6px" }}>Coverage for your profile</h3>
-          <div className="tblwrap" tabIndex={0} role="region" aria-label="Coverage (scrolls sideways)"><table className="tbl">
-            <thead><tr><th scope="col">Product</th><th scope="col">In the catalog as</th><th scope="col">Required metrics</th><th scope="col">Missing or reduced</th></tr></thead>
-            <tbody>{report.coverage.products.map(p => <tr key={p.profile_product_id}>
-              <td>{p.name} <span className={`badge ${p.status === "full" ? "b-ok" : p.status === "partial" ? "b-warn" : "b-down"}`}>{p.status.toUpperCase()}</span></td>
-              <td className="mono small">{p.catalog_product_id ?? "—"}</td><td className="small">{p.required.length - p.missing.length} of {p.required.length}</td>
-              <td className="small">{p.missing.length || p.reduced.length ? [...p.missing.map(m => [m, "missing"]), ...p.reduced.map(r => [r.key, `served ${r.grain_served} (spec: ${r.grain_spec})`])]
-                .map(([k, what], i) => <Fragment key={k}>{i ? "; " : ""}<Link className="mono" to={`/spec#metric-${k}`}>{k}</Link> {what}</Fragment>) : "—"}</td></tr>)}</tbody></table></div>
-          {report.coverage.unmapped_catalog_products.length > 0 && <div className="small muted">In the catalog but not in your profile: {report.coverage.unmapped_catalog_products.map(p => p.name || p.product_id).join(", ")}.</div>}</div>}
-        <details><summary className="small">The calls ({report.calls.length})</summary>
-          <div className="tblwrap" tabIndex={0} role="region" aria-label="The calls (scrolls)" style={{ maxHeight: 320, overflow: "auto" }}><table className="tbl small">
-            <thead><tr><th scope="col">Call</th><th scope="col">Status</th><th scope="col">Time</th></tr></thead>
-            <tbody>{report.calls.map((c, i) => <tr key={i}><td className="mono" style={{ wordBreak: "break-all" }}>{c.method} {c.path}{Object.keys(c.query).length ? "?" + new URLSearchParams(Object.entries(c.query).map(([k, v]) => [k, String(v)])).toString() : ""}</td>
-              <td>{c.status ?? c.error}</td><td>{c.ms} ms</td></tr>)}</tbody></table></div></details>
-      </div>
-    </div>
+    <Section title="The check" meta={<ToneWord tone={tone}>{label}</ToneWord>}
+      action={<>{history.length > 1 && <label className="ad-pick"><span>Check</span>
+        <select className="input" value={report.check_id} onChange={e => onPick(e.target.value)}>
+          {history.map(h => <option key={h.check_id} value={h.check_id}>{dayTime(h.started_at)} · {STATUS_TONE[h.status][1].toLowerCase()}</option>)}</select></label>}
+        <TextButton onClick={download}>Download JSON</TextButton></>}>
+      {!current && <p className="rd-fine ad-old">This is an older check: the connection changed after it.</p>}
+      {report.withdrawn && <QuietWarn>{report.withdrawn}</QuietWarn>}
+      <p className="ad-head"><b>{report.headline}</b></p>
+      <p className="rd-fine ad-sub">{report.target} · {dayTime(report.started_at)} by {person(report.run_by)} · {plural(report.summary.calls, "call")} in {report.summary.seconds} s · checked against Metrics Spec {report.spec_version}{report.server_version ? `, the API says ${report.server_version}` : ""}</p>
+      <ol className="ad-steps" aria-label="Steps">
+        {report.steps.map((s, i) => { const [t, w] = STEP_TONE[s.status]; return (
+          <li key={i} className="rd-row">
+            <div className="rd-row-t">{s.title}</div>
+            <p className="rd-row-m"><ToneWord tone={t}>{w}</ToneWord>{s.detail && ` · ${s.detail}`}</p>
+            {s.items.length > 0 && <ul className="ad-list">{s.items.slice(0, 12).map((x, j) => <li key={j}>{x}</li>)}</ul>}
+            {s.fix && <p className="rd-row-m"><b className="ins-k">Fix:</b> {s.fix}</p>}
+          </li>); })}
+      </ol>
+      {report.missing_for_profile.length > 0 && <><h3 className="ad-h3">What's missing for your profile</h3>
+        <ul className="ad-list">{report.missing_for_profile.map((x, i) => <li key={i}>{x}</li>)}</ul></>}
+      {report.formats.length > 0 && <Fold title="Answers that don't match the spec's formats" summary={plural(report.formats.length, "answer")} remember="dc-formats">
+        {report.formats.slice(0, 10).map((f, i) => <div key={i} className="ad-fmt"><span className="ad-mono">{f.where}</span>
+          <ul className="ad-list">{f.errors.map((e, j) => <li key={j} className="ad-mono">{e}</li>)}{f.more > 0 && <li>and {f.more} more</li>}</ul></div>)}
+        {report.formats.length > 10 && <p className="rd-fine">and {report.formats.length - 10} more answers</p>}</Fold>}
+      <h3 className="ad-h3">Conformance checks <span className="rd-sec-m">{report.summary.passed} of {report.summary.passed + report.summary.failed} passed</span></h3>
+      {failed.length > 0 && <div className="ad-tbl" tabIndex={0} role="region" aria-label="Failed checks (scrolls sideways)"><table className="rd-table">
+        <thead><tr><th scope="col">Check</th><th scope="col">Level</th><th scope="col">Result</th><th scope="col">What was found</th></tr></thead>
+        <tbody>{failed.map(row)}</tbody></table></div>}
+      {others.length > 0 && <Fold title={failed.length ? `${others.length} other checks` : `All ${others.length} checks`} summary="passed, or not applicable to this API" remember="dc-others">
+        <div className="ad-tbl" tabIndex={0} role="region" aria-label="Other checks (scrolls sideways)"><table className="rd-table">
+          <thead><tr><th scope="col">Check</th><th scope="col">Level</th><th scope="col">Result</th><th scope="col">What was found</th></tr></thead>
+          <tbody>{others.map(row)}</tbody></table></div></Fold>}
+      {report.coverage && report.coverage.products.length > 0 && <><h3 className="ad-h3">Coverage for your profile</h3>
+        <div className="ad-tbl" tabIndex={0} role="region" aria-label="Coverage (scrolls sideways)"><table className="rd-table">
+          <thead><tr><th scope="col">Product</th><th scope="col">In the catalog as</th><th scope="col">Required metrics</th><th scope="col">Missing or reduced</th></tr></thead>
+          <tbody>{report.coverage.products.map(p => <tr key={p.profile_product_id}>
+            <td className="rd-strong">{p.name} <ToneWord tone={p.status === "full" ? "good" : p.status === "partial" ? "mixed" : "bad"}>{p.status === "full" ? "Full" : p.status === "partial" ? "Partial" : "None"}</ToneWord></td>
+            <td className="ad-mono">{p.catalog_product_id ?? "—"}</td><td>{p.required.length - p.missing.length} of {p.required.length}</td>
+            <td>{p.missing.length || p.reduced.length ? [...p.missing.map(m => [m, "missing"]), ...p.reduced.map(r => [r.key, `served ${r.grain_served} (spec: ${r.grain_spec})`])]
+              .map(([k, what], i) => <Fragment key={k}>{i ? "; " : ""}<Link className="rd-name ad-mono" to={`/spec#metric-${k}`}>{k}</Link> {what}</Fragment>) : "—"}</td></tr>)}</tbody></table></div>
+        {report.coverage.unmapped_catalog_products.length > 0 && <p className="rd-fine">In the catalog but not in your profile: {report.coverage.unmapped_catalog_products.map(p => p.name || p.product_id).join(", ")}.</p>}</>}
+      <Fold title="The calls" summary={`${report.calls.length}`} remember="dc-calls">
+        <div className="ad-tbl ad-calls" tabIndex={0} role="region" aria-label="The calls (scrolls)"><table className="rd-table">
+          <thead><tr><th scope="col">Call</th><th scope="col">Status</th><th scope="col" className="rd-num">Time</th></tr></thead>
+          <tbody>{report.calls.map((c, i) => <tr key={i}><td className="ad-mono">{c.method} {c.path}{Object.keys(c.query).length ? "?" + new URLSearchParams(Object.entries(c.query).map(([k, v]) => [k, String(v)])).toString() : ""}</td>
+            <td>{c.status ?? c.error}</td><td className="rd-num">{c.ms} ms</td></tr>)}</tbody></table></div></Fold>
+    </Section>
   );
 }
 
-function SampleCard({ sample, onSaved, onUse }: { sample: Sample; onSaved: (s: Sample) => void; onUse: () => void }) {
+function SampleRow({ sample, onSaved, onUse }: { sample: Sample; onSaved: (s: Sample) => void; onUse: () => void }) {
   const toast = useToast();
   const [conds, setConds] = useState<Condition[]>(sample.conditions);
   const [busy, setBusy] = useState(false);
@@ -281,46 +283,49 @@ function SampleCard({ sample, onSaved, onUse }: { sample: Sample; onSaved: (s: S
   const groups: [string, string, "data" | "fault"][] = [
     ["What the data shows", "Effects in the figures, from a start date you choose", "data"],
     ["What the API gets wrong", "Rule breaks, to show what the checker catches", "fault"]];
+  const nOn = conds.filter(c => c.on !== false).length;
   return (
-    <article className={`pf-sample ${sample.enabled ? "on" : ""}`} aria-label={`The sample ${sample.kind}`}>
-      <header className="pf-sample-hd">
+    <article className="dc-sample" aria-label={`The sample ${sample.kind}`}>
+      <div className="dc-sample-hd">
         <Switch on={sample.enabled} label={`The sample ${sample.kind}`} disabled={busy || !sample.allowed} onChange={v => put(v, conds)} />
-        <div className="pf-sample-t">
-          <h3>The sample {sample.kind} <span className={`badge ${sample.enabled ? "b-ok" : "b-noeffect"}`}>{sample.enabled ? "ON" : "OFF"}</span></h3>
-          <span className="small muted">Shaped by {sample.shaped_by.name} ({sample.shaped_by.source === "installation" ? "your profile" : "a bundled sample"}) · <span className="mono">{sample.base_path}</span></span>
+        <div className="dc-sample-t">
+          <h3>The sample {sample.kind} <span className="dc-state">{sample.enabled ? "On" : "Off"}</span></h3>
+          <p className="rd-fine">Shaped by {sample.shaped_by.name} ({sample.shaped_by.source === "installation" ? "your profile" : "a bundled sample"}) · <span className="ad-mono">{sample.base_path}</span></p>
         </div>
-        <span className="pf-sample-acts">
-          {sample.enabled && <a className="btn btn--sm btn--ghost" href={sample.openapi_path} target="_blank" rel="noreferrer">OpenAPI document</a>}
-          <button className="btn btn--sm" type="button" onClick={onUse} disabled={!sample.enabled} title={sample.enabled ? undefined : "Switch it on first"}>Use it as the connection</button></span>
-      </header>
-      {!sample.allowed && <Banner kind="info">Sample institutions are switched off on this server (MOCK_INSTITUTIONS).</Banner>}
-      {groups.map(([title, note, group]) => (
-        <fieldset key={group} className="pf-conds">
-          <legend><b>{title}</b><span className="muted">{note}</span></legend>
-          <ul>{sample.presets.filter(p => p.group === group).map(p => { const c = byId[p.id]; const on = !!c && c.on !== false; return (
-            <li key={p.id} className={on ? "on" : ""}>
-              <label className="pf-cond">
-                <input type="checkbox" checked={on} onChange={e => set(p.id, e.target.checked ? { on: true } : null)} />
-                <span><span className="pf-cond-t">{p.label}</span>{p.note && <span className="pf-cond-d">{p.note}</span>}</span></label>
-              {on && group === "data" && <div className="pf-cond-opts">
-                <label className="row small" style={{ gap: 8 }}>From
-                  <input type="date" className="input" style={{ width: "auto" }} value={c?.start ?? ""} aria-label={`${p.label}: from`}
-                    onChange={e => set(p.id, { start: e.target.value || null })} />
-                  {!c?.start && <span className="muted">({p.start_days_ago} days ago)</span>}</label>
-                {p.size_label && <label className="row small" style={{ gap: 8 }}>{p.size_label}
-                  <input type="number" className="input" style={{ width: 96 }} value={c?.size ?? ""} placeholder={String(p.size ?? "")} aria-label={`${p.label}: ${p.size_label}`}
-                    onChange={e => set(p.id, { size: e.target.value === "" ? null : Number(e.target.value) })} /></label>}
-              </div>}
-            </li>); })}</ul>
-        </fieldset>))}
-      <footer className="pf-sample-ft">
-        <button className="btn btn--sm" type="button" onClick={download}>Download as JSON</button>
-        <FillFromJson what="the conditions" read={read} onFill={c => setConds((c.data as { conditions: Condition[] }).conditions)}
-          example={'{"conditions": [{"id": "floods", "start": "2026-10-01", "size": 600}]}'} />
-        <span className="spacer" />
-        {dirty && <span className="small muted">Unsaved changes</span>}
-        <button className="btn btn--primary btn--sm" type="button" disabled={busy || !dirty} onClick={() => put(sample.enabled, conds)}>Save conditions</button>
-      </footer>
+        <span className="dc-sample-acts">
+          {sample.enabled && <a className="rd-go" href={sample.openapi_path} target="_blank" rel="noreferrer">OpenAPI document</a>}
+          <button className="btn" type="button" onClick={onUse} disabled={!sample.enabled} title={sample.enabled ? undefined : "Switch it on first"}>Use it as the connection</button></span>
+      </div>
+      {!sample.allowed && <QuietWarn>Sample institutions are switched off on this server (MOCK_INSTITUTIONS).</QuietWarn>}
+      <Fold title="Conditions" summary={nOn ? `${nOn} on` : "none on"} remember={`dc-conds-${sample.kind}`}>
+        {groups.map(([title, note, group]) => (
+          <fieldset key={group} className="dc-conds">
+            <legend><b>{title}</b><span className="rd-fine">{note}</span></legend>
+            <ul>{sample.presets.filter(p => p.group === group).map(p => { const c = byId[p.id]; const on = !!c && c.on !== false; return (
+              <li key={p.id}>
+                <label className="dc-cond">
+                  <input type="checkbox" checked={on} onChange={e => set(p.id, e.target.checked ? { on: true } : null)} />
+                  <span><span className="dc-cond-t">{p.label}</span>{p.note && <span className="dc-cond-d">{p.note}</span>}</span></label>
+                {on && group === "data" && <div className="dc-cond-opts">
+                  <label>From
+                    <input type="date" className="input" value={c?.start ?? ""} aria-label={`${p.label}: from`}
+                      onChange={e => set(p.id, { start: e.target.value || null })} />
+                    {!c?.start && <span className="rd-fine">({p.start_days_ago} days ago)</span>}</label>
+                  {p.size_label && <label>{p.size_label}
+                    <input type="number" className="input dc-num" value={c?.size ?? ""} placeholder={String(p.size ?? "")} aria-label={`${p.label}: ${p.size_label}`}
+                      onChange={e => set(p.id, { size: e.target.value === "" ? null : Number(e.target.value) })} /></label>}
+                </div>}
+              </li>); })}</ul>
+          </fieldset>))}
+        <div className="dc-sample-ft">
+          <TextButton onClick={download}>Download as JSON</TextButton>
+          <FillFromJson what="the conditions" read={read} onFill={c => setConds((c.data as { conditions: Condition[] }).conditions)}
+            example={'{"conditions": [{"id": "floods", "start": "2026-10-01", "size": 600}]}'} />
+          <span className="dc-spacer" />
+          {dirty && <span className="rd-fine">Unsaved changes</span>}
+          <button className="btn" type="button" disabled={busy || !dirty} onClick={() => put(sample.enabled, conds)}>Save conditions</button>
+        </div>
+      </Fold>
     </article>
   );
 }
