@@ -10,6 +10,7 @@ import { Icon } from "../../components/Icon";
 import { HowItWorks, PageHeader } from "../../components/blocks";
 import { Banner, Empty, ListSkeleton, LoadError, useNow, useRole, useToast } from "../../components/ui";
 import { ago, dateKey, day, dayTime, placeName, placeOrder, plural, when } from "../../format";
+import { eventTitle, undated } from "../../plain";
 import { themeText } from "../events/Events";
 import "../../styles/radar.css";
 
@@ -25,7 +26,7 @@ const outlets = (s: RadarStory) => [...new Set(s.headlines.map(h => h.outlet).fi
 /** Where a sent story went, with the link when there is one. */
 function Outcome({ s }: { s: RadarStory }) {
   if (s.status !== "sent") return null;
-  return s.event_id ? <span className="rd-out">In the event <Link to={`/events/${s.event_id}`}>{s.event_title ?? "Open the event"}</Link></span>
+  return s.event_id ? <span className="rd-out">In the event <Link to={`/events/${s.event_id}`}>{s.event_title ? eventTitle({ title: s.event_title }) : "Open the event"}</Link></span>
     : <span className="rd-out wait">{s.finding_status === "grouped" ? "Being investigated" : "Waiting to be investigated"}</span>;
 }
 
@@ -38,7 +39,7 @@ function Reader({ s, place, act, admin }: { s: RadarStory; place: (p: string) =>
   const os = outlets(s);
   return <article ref={box} className={`rd-read ${s.status}`} aria-labelledby="rd-read-h">
     <span className="label">{dayTime(s.last_seen_at)} · {STATE[s.status]}{s.status === "sent" && s.sent_by && s.sent_by !== "agent" ? ` by ${s.sent_by}` : ""} · {REL[s.relevance]}</span>
-    <h2 id="rd-read-h">{s.title}</h2>
+    <h2 id="rd-read-h">{undated(s.title)}</h2>
     <div className="rd-acts">
       <Outcome s={s} />
       {s.status === "below" && <><span className="rd-out quiet rd-full">Relevant, but Radar judged it not important enough to investigate.</span>
@@ -272,9 +273,9 @@ export function RadarPage() {
                     onMouseEnter={() => { clearTimeout(peek.current); peek.current = window.setTimeout(() => setSel(s.story_id), 180); }}
                     onMouseLeave={() => clearTimeout(peek.current)}>
                     <span className="rd-dot" aria-hidden="true" />
-                    <span className="rd-it"><span className="rd-tt">{s.title}</span>
+                    <span className="rd-it"><span className="rd-tt">{undated(s.title)}</span>
                       <span className="rd-sub">{placeOrder(s.places).slice(0, 2).map(place).join(", ")}{s.places.length > 2 ? ` +${s.places.length - 2}` : ""}
-                        {" · "}{s.status === "sent" ? (s.event_title ?? "sent") : s.status === "below" ? "held back" : "dismissed"}</span></span>
+                        {" · "}{s.status === "sent" ? (s.event_title ? eventTitle({ title: s.event_title }) : "sent") : s.status === "below" ? "held back" : "dismissed"}</span></span>
                   </button></li>)}</ol>
                 {rest.length > 0 && <button type="button" className="rd-link rd-fold" aria-expanded={isOpen} onClick={() => fold(d)}>
                   <Icon name="chevron" className={`ico16 ${isOpen ? "rot" : ""}`} />

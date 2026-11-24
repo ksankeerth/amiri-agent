@@ -9,20 +9,12 @@ import { FlowFilter } from "../../components/FlowFilter";
 import { Icon } from "../../components/Icon";
 import { Banner, Empty, Modal, useNow, useRole, useToast, InlineSkeleton, LoadError } from "../../components/ui";
 import { ago, due } from "../../format";
-import { count, everyText, MONITOR_CHECK, MONITOR_STATUS } from "../../plain";
+import { count, everyText, MONITOR_STATUS, undated } from "../../plain";
 import "../../styles/monitors.css";
 
 export function StatusBadge({ status }: { status: MonitorStatus }) {
   const [text, tone] = MONITOR_STATUS[status];
   return <StatusPill tone={tone}>{text}</StatusPill>;
-}
-
-/** The last check in words: "Found 1 · 26 min ago", "Nothing new · 2 h ago", "Couldn't check (tries again soon)". */
-export function LastCheck({ m, now }: { m: MonitorRow; now: Date }) {
-  if (!m.last_check) return <span className="small muted">Not checked yet</span>;
-  const c = m.last_check;
-  const [text, tone] = MONITOR_CHECK[c.status](c.findings);
-  return <span className="lastck"><StatusPill tone={tone}>{text}</StatusPill><span className="small muted">{ago(c.at, now)}</span></span>;
 }
 
 export const ORIGIN: Record<string, string> = { profile: "drafted from the profile", setup: "drafted in setup", radar_story: "from a Radar story", template: "from a template" };
@@ -32,14 +24,6 @@ export function useMonitorsStatus() {
   const load = useCallback(() => monitorsApi.status().then(setStatus).catch(() => {}), []);
   useEffect(() => { load(); }, [load]);
   return { status, reload: load };
-}
-
-/** Notes about the monitor service: the Platform Admin reads the server's own words; a Risk Manager reads what it means. */
-export function MonitorBanners({ status }: { status: MonitorsStatus | null }) {
-  const { role } = useRole();
-  if (!status) return null;
-  if (role === "platform_admin") return <>{status.notes.map(n => <Banner key={n} kind="warn" icon="warn">{n}</Banner>)}</>;
-  return !status.connected ? <Banner kind="warn" icon="warn">Monitors can't check the news right now. Your Platform Admin has been told.</Banner> : null;
 }
 
 /** How monitor checks work: behind the page's "How this works" link. */
@@ -145,7 +129,7 @@ function lastWords(m: MonitorRow, run: Run, found: MonitorFinding[] | undefined)
   const c = m.last_check;
   if (!c) return m.status === "paused" ? "Paused before its first check" : "Not checked yet";
   if (c.status === "error") return "Couldn't check: it tries again within the hour";
-  if (c.status === "fired") { const t = found?.[0]?.evidence?.headlines?.[0]?.title ?? found?.[0]?.title; return `Found ${c.findings}${t ? `: ${t}` : ""}`; }
+  if (c.status === "fired") { const t0 = found?.[0]?.evidence?.headlines?.[0]?.title, t = t0 ? undated(t0) : found?.[0]?.title; return `Found ${c.findings}${t ? `: ${t}` : ""}`; }
   return run?.summary ? `Nothing new. ${run.summary}` : "Nothing new";
 }
 
@@ -182,7 +166,7 @@ function MonitorLine({ m, run, found, onChange, common, waiting }: { m: MonitorR
         <p>{m.sentence}</p>
         {run?.summary && m.last_check?.status === "fired" && <p className="mon-why"><b>Last check, {ago(m.last_check.at, now)}.</b> {run.summary}</p>}
         {found?.length ? <ul className="mon-found">{found.slice(0, 3).map(f => { const h = f.evidence?.headlines?.[0]; return <li key={f.finding_id}>
-          {h?.url ? <a href={h.url} target="_blank" rel="noreferrer">{h.title}<Icon name="external" className="src-ext" /></a> : f.title}
+          {h?.url ? <a href={h.url} target="_blank" rel="noreferrer">{undated(h.title)}<Icon name="external" className="src-ext" /></a> : f.title}
           <span> · {f.outcome?.event_id ? <Link to={`/events/${f.outcome.event_id}`}>in an event</Link> : f.status === "set_aside" ? "no impact found" : "being investigated"}</span></li>; })}</ul> : null}
         <p className="mon-acts">
           <Link to={`/monitors/${m.monitor_id}`}>Open the monitor<Icon name="arrow" /></Link>

@@ -9,6 +9,9 @@ export type Tone = "red" | "amber" | "green" | "grey" | "blue";
 
 /** "finance company" → "Finance company". The one capitaliser: use it rather than writing another. */
 export const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+/** A headline without the date some outlets put on its end ("… today (Nov. 23, 2026)"); the page shows the date beside it. */
+export const undated = (t: string) =>
+  t.replace(/\s*[([]?\s*[-–—|,]?\s*(?:\w{3,9}\.?\s+\d{1,2},?\s+\d{4}|\d{1,2}\s+\w{3,9}\.?,?\s+\d{4}|\d{4}-\d{2}-\d{2})\s*[)\]]?\s*$/, "") || t;
 /** A code as words: "finance_company" → "finance company". */
 export const words = (s: string) => s.replace(/[_-]+/g, " ").trim();
 
@@ -58,9 +61,12 @@ export function themeLabel(t: ThemeTag): string {
  *  A real headline-like title stays as it is. */
 export function eventTitle(e: { title: string; themes?: ThemeTag[] | null; size?: { value: number; unit: string } | null }): string {
   const m = e.title.trim().match(/^(.*?)\s*\((\d+(?:\.\d+)?)\s*(%|bp)\)$/);  // the size the server put at the end
-  const base = m ? m[1] : e.title.trim();
-  const raw = /^[a-z_]+ \([\w ]+\)$/.test(base) || base.split(/\s+/).length <= 2;
-  const t = e.themes?.[0];
+  // "disaster (abroad) in IR and LK": the places the server spelt as codes go; the page shows them
+  const base = (m ? m[1] : e.title.trim()).replace(/ in [A-Z]{2}(?: and [A-Z]{2})*$/, "");
+  const machine = base.match(/^([a-z_]+) \(([\w ]+)\)$/);
+  const raw = !!machine || base.split(/\s+/).length <= 2;
+  // a bare title ("macro (better)") still reads as its theme when the themes didn't come with it
+  const t = e.themes?.[0] ?? (machine ? { theme: machine[1], direction: machine[2] } as ThemeTag : undefined);
   if (!raw || !t) return e.title;
   const size = m ? `${m[2]}${m[3] === "%" ? "%" : " bp"}` : moveSize(e.size);
   return size ? `${themeLabel(t)} ${size}` : themeLabel(t);

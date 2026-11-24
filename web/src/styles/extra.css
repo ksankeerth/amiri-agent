@@ -111,10 +111,6 @@ a.ov-need:hover { background:var(--hover-bg); }
 .limits details { flex:1 1 100%; }
 .limits summary { cursor:pointer; display:inline-flex; align-items:center; gap:8px; font-size:var(--fs-sm); color:var(--accent-ink); font-weight:600; }
 .limits details[open] > div { margin-top:8px; padding:12px 12px; background:var(--sunken); border-radius:8px; color:var(--ink-2); }
-.adv { border:1px solid var(--hairline); border-radius:10px; padding:2px 16px 12px; background:var(--surface-2); display:flex; flex-direction:column; gap:16px; }
-.adv > summary { cursor:pointer; padding:12px 0 2px; font-weight:600; color:var(--ink); }
-.adv[open] > summary { margin-bottom:8px; }
-.savebar { position:sticky; bottom:0; z-index:5; background:var(--surface); padding:12px 0 4px; border-top:1px solid var(--hairline); margin-top:4px; }
 .al-why summary { cursor:pointer; font-size:var(--fs-sm); font-weight:600; color:var(--accent-ink); }
 .al-why ul { margin:8px 0 4px; padding-left:16px; font-size:var(--fs-sm); color:var(--ink-2); display:flex; flex-direction:column; gap:4px; }
 .al-why p { margin:4px 0 0; }
@@ -600,10 +596,7 @@ h2.al-day { font-size:var(--fs-xs); font-weight:700; letter-spacing:.08em; text-
 .alc-more > details { flex:0 1 auto; }
 .alc-more > details[open] { flex:1 1 100%; }
 .alc-via { font-size:var(--fs-sm); color:var(--ink-3); }
-.alc-why, .alc-hist { margin:0; padding-left:16px; display:flex; flex-direction:column; gap:4px; }
-.alc-hist { list-style:none; padding-left:0; }
-.alc-hist li { display:flex; flex-wrap:wrap; gap:4px 12px; }
-.alc-hist li span { color:var(--ink-3); }
+.alc-why { margin:0; padding-left:16px; display:flex; flex-direction:column; gap:4px; }
 @media (max-width: 760px) {
   .alc { padding:16px 16px 12px 16px; }
   .card .alc-t { font-size:var(--fs-lg); }
@@ -672,19 +665,10 @@ details.aside[open] > summary .ir-chev { transform:rotate(90deg); }
 .mon-facts { display:flex; flex-wrap:wrap; gap:4px 16px; font-size:var(--fs-sm); color:var(--ink-3); }
 .mon-facts span { display:inline-flex; align-items:center; gap:4px; }
 .mon-facts svg { width:13px; height:13px; }
-.lastck { display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
 .evrow-side .row.wrap { justify-content:flex-end; }
 
-/* ================= Monitor page ================= */
+/* ================= Sources ================= */
 .src-note { font-size:var(--fs-sm); color:var(--ink-3); }
-.plainlist { margin:0; padding-left:16px; display:flex; flex-direction:column; gap:4px; }
-.cells { display:flex; flex-wrap:wrap; gap:4px; }
-.ck-row { border-top:1px solid var(--hairline); }
-.ck-row:first-child { border-top:0; }
-.ck-row .lrow { border-top:0; padding-bottom:4px; }
-.ck-row .row-d { white-space:normal; }
-.ck-tech { padding:0 16px 12px; }
-.fill-end { padding-top:12px; border-top:1px solid var(--hairline); }
 /* a whole row is one link: no underline on everything inside it (the li-link rule above underlines links in lists) */
 a.evrow, a.evrow *, a.lrow, a.lrow * { text-decoration:none !important; }
 a.evrow:hover .row-l, a.lrow:hover .row-l { text-decoration:underline !important; text-underline-offset:2px; }

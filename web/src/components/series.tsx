@@ -16,7 +16,7 @@ export const StateBadge = ({ state }: { state: SeriesState }) => { const [t, ton
 export function seriesSentence(s: Series, now = new Date()): string {
   const l = s.latest;
   switch (s.state) {
-    case "stale": return `Prices haven't updated since ${l ? when(l.bar_end, now) : "they were added"}; your Platform Admin has been told.`;
+    case "stale": return `Prices haven't updated since ${l ? when(l.bar_end, now) : "they were added"}.`  // the page's one banner says who was told;
     case "moved": return `An unusual move: ${zx(l?.max_z)} a normal move${l?.max_z_days ? ` over ${l.max_z_days} day${l.max_z_days === 1 ? "" : "s"}` : ""}.`;
     case "warming_up": return "Still learning what a normal move is; it can flag moves once it has enough history.";
     case "pending": return "Waiting for its first prices.";

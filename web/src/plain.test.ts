@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { placeName, placeOrder } from "./format.ts";
-import { alertOrder, checkMove, dateRange, eventTitle, signalStrength, impactText, listText, productAngle, relDay, sizeTiming, splitCheckText, themeLabel, verdictTone } from "./plain.ts";
+import { alertOrder, checkMove, dateRange, eventTitle, signalStrength, impactText, listText, productAngle, relDay, sizeTiming, splitCheckText, themeLabel, undated, verdictTone } from "./plain.ts";
 
 test("themes read as short phrases, not machine text", () => {
   assert.equal(themeLabel({ theme: "commodities", direction: "up", item: "oil" }), "Oil prices up");
@@ -69,6 +69,10 @@ test("generic event titles become the theme in words plus the size; real titles 
   assert.equal(eventTitle({ title: "Oil rose", themes: oil, size: null }), "Oil prices up");
   assert.equal(eventTitle({ title: "CBSL holds policy rate", themes: [{ theme: "rates", direction: "steady" }], size: { value: 9, unit: "pct" } }), "CBSL holds policy rate");
   assert.equal(eventTitle({ title: "Oil rose", themes: [] }), "Oil rose");
+  assert.equal(eventTitle({ title: "disaster (abroad) in IR and LK and SA and YE", themes: [{ theme: "disaster", direction: "abroad" }] }), "Disaster abroad");
+  assert.equal(eventTitle({ title: "disaster (abroad) in IR and LK" }), "Disaster abroad");
+  assert.equal(eventTitle({ title: "macro (better)" }), themeLabel({ theme: "macro", direction: "better" }));
+  assert.equal(eventTitle({ title: "Floods in Colombo" }), "Floods in Colombo");
 });
 
 test("an alert queue: open first, then the most serious, then the latest", () => {
@@ -88,4 +92,12 @@ test("a source's score reads as a signal strength in words", () => {
   assert.deepEqual(signalStrength(1), ["Weak signal", "grey"]);  // 1 of 100, not a fraction meaning 100 %
   assert.deepEqual(signalStrength(31), ["Weak signal", "grey"]);
   assert.equal(signalStrength(null), null);
+});
+
+test("headlines drop a trailing date, nothing else", () => {
+  assert.equal(undated("US/Israel-Iran war: What UAE residents need to know today (Nov. 23, 2026)"), "US/Israel-Iran war: What UAE residents need to know today");
+  assert.equal(undated("Oil jumps - 23 November 2026"), "Oil jumps");
+  assert.equal(undated("Rupee report [2026-11-23]"), "Rupee report");
+  assert.equal(undated("Gulf jobs cut by 2026"), "Gulf jobs cut by 2026");
+  assert.equal(undated("Strait of Hormuz closed"), "Strait of Hormuz closed");
 });
