@@ -23,8 +23,8 @@ dates and sources.
 
 ![The Reset the prototype dialog](images/reset-the-prototype.png)
 
-Either way loads the whole profile (steps 01 to 10 below) and makes it live. Market series, monitors, scenarios and the
-Verification condition (steps 11 to 14) are yours to add from the files.
+Either way loads the whole profile (steps 01 to 10 below) and makes it live. Market series, monitors and scenarios
+(steps 11 to 13) are yours to add from the files, and the institution's data comes from the example file (below).
 
 ## File by file
 
@@ -48,8 +48,7 @@ serendib-commercial-bank/                       (samudra-raya-general-insurance/
 ├── 10 Import risk exposures/risk-exposures.json
 ├── 11 Add a series/series.json                 4 market series
 ├── 12 New monitor/01-….json …                  one monitor per file
-├── 13 Write your own scenario/01-….json …      one Scenario Studio scenario per file
-└── 14 The sample bank/conditions.json          (the insurer: 14 The sample insurer/)
+└── 13 Write your own scenario/01-….json …      one Scenario Studio scenario per file
 ```
 
 | Folder | Where in the app | Do this |
@@ -61,7 +60,7 @@ serendib-commercial-bank/                       (samudra-raya-general-insurance/
 | `11 Add a series` | **Market series › Add a series** | **Fill from a JSON file** with `series.json`; it holds 4 series, so pick one at a time, then **Add**. Needs a market data key on the server. |
 | `12 New monitor` | **Monitors › New monitor** | **Fill from a JSON file** with one monitor's file, then **Save and submit for approval**. A second person approves it. |
 | `13 Write your own scenario` | **Scenario Studio**, the template for writing your own | **Fill from a JSON file** with one scenario's file, then **Create**. |
-| `14 The sample bank` / `14 The sample insurer` | **Data connections › Sample institutions** | In that institution's card: **Fill from a JSON file** with `conditions.json`, **Save conditions**, switch the card on, then **Use it as the connection**, **Check**, approve, and switch validation on. The sample API's data then shows the effect (the bank: remittances fall; the insurer: floods, then relief), so Verification has something to confirm. |
+| The institution's data (no file here) | **Data connections › Your institution's data** | **Download an example file**, then **Import a JSON file** with it, **Check**, **Approve**, and switch validation on. The example is the sample bank (or insurer) shaped by the profile, about 15 MB, with the demo's effect planted (the bank: remittances fall; the insurer: floods, then relief), so Verification has something to confirm. Download it on the day: the data ends the day before. |
 
 ![An Import dialog, before anything is added](images/import-dialog.png)
 

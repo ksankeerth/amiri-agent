@@ -232,21 +232,16 @@ SETTINGS: dict[str, Setting] = {
                 "keeps market prices and reference data). Switch off for a real deployment."),
         Setting("DEMO_LOCK", "false", "Lock editing, deleting and the reset in the app (for a live demo where many people "
                 "click around). Alerts can still be acknowledged and Scenario Studio still runs."),
-        Setting("MOCK_INSTITUTIONS", "true", "Allow the sample bank and insurer (the Metrics Spec reference API at "
-                "/mock/bank and /mock/insurer, switched on by the Platform Admin). Switch off for a real deployment."),
-        # The institution's data (the Metrics Spec reference API) and the connector that checks it
-        Setting("DATA_CONNECTION_TIMEOUT_SECONDS", "15", "How long the connector waits for one answer from an "
-                "institution's API (the spec asks for a full history within 30 seconds)."),
-        Setting("DATA_CONNECTION_MAX_CALLS", "200", "Calls one check may make at most (the institution's rate limits)."),
+        # The institution's data (imported as a JSON file, served in-process as the Metrics Spec reference API)
+        Setting("DATA_IMPORT_MAX_MB", "25", "The largest data file an import takes, in MB (the sample bank's example is "
+                "about 15 MB; Cloud Run takes requests up to 32 MB)."),
+        Setting("DATA_CONNECTION_TIMEOUT_SECONDS", "15", "How long the connector and the validator wait for one answer "
+                "from the imported data (the spec asks for a full history within 30 seconds)."),
+        Setting("DATA_CONNECTION_MAX_CALLS", "200", "Calls one check may make at most."),
         Setting("DATA_CONNECTION_MAX_BYTES", "5000000", "The largest answer the connector reads; bigger ones are cut off "
                 "and reported."),
-        Setting("DATA_CONNECTION_ALLOW_LOCAL", "false", "Let the connector call http:// and private or loopback addresses "
-                "(local development only; never on a public deployment)."),
         Setting("VALIDATION_TASKS_PER_TICK", "20", "Validation tasks judged per tick at most (each reads the "
-                "institution's API several times); the rest wait for the next tick."),
-        Setting("DATA_SECRET_KEY", "", "Empty (the prototype): data connections have no authorization. Set it (32+ "
-                "random characters) to let a connection send a key or token, stored encrypted with it; changing it "
-                "means entering the key again.", secret=True),
+                "institution's data several times); the rest wait for the next tick."),
         Setting("SUPPORTED_REGION", "japac", "The regions the prototype is tested for, a comma list of "
                 "app/reference/regions.json ids (japac, us, or japac,us): an institution's home country and base "
                 "currency must be in one of them. An unknown id is ignored (logged). Empty is the default, japac."),

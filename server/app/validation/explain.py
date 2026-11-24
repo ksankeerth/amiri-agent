@@ -26,8 +26,8 @@ WHY = {
     "suppressed": "the institution hides groups this small",
     "zero_base": "nothing to compare against",
     "metric_dropped": "the institution's catalog no longer has this metric",
-    "source_unreachable": "the institution's API didn't answer",
-    "source_rate_limited": "the institution's API asked us to slow down",
+    "source_unreachable": "the institution's data couldn't be read",
+    "source_rate_limited": "reading the institution's data was slowed down",
     "invalid_task": "the check doesn't fit the institution's catalog",
 }
 STAT = {"pct_change": "change", "pp_change": "change", "robust_z": "distance from usual", "percentile": "percentile",

@@ -18,14 +18,13 @@ from app.assistant.agent import make_assistant
 from app.assistant.service import AssistantService
 from app.clock import Clock
 from app.connect import api as connect_api
+from app.connect import imported as imported_api
 from app.connect.service import DataConnection
 from app.institutions import api as institutions_api
 from app.institutions.service import Institutions
 from app.investigation import api as investigation_api
 from app.investigation.client import InvestigationClient, MonitorClient, RadarClient
 from app.investigation.service import Investigations
-from app.mockinst import api as mock_api
-from app.mockinst.service import MockInstitutions
 from app.monitors import api as monitors_api
 from app.monitors.service import Monitors
 from app.problems import Problem, on_problem, on_validation
@@ -49,9 +48,8 @@ scores, schedules and stores, and every number a person reads comes from here.
 - **Watch:** market series (Twelve Data), monitors (checked by the monitor agent) and Radar (world news).
 - **Findings and investigations:** findings are grouped into events and traced to products by the
   investigation agent; **alerts** go to each owning team; **validation** checks the expected effects
-  against the institution's own figures (the Metrics Spec API).
-- **Scenario Studio**, the **setup agent** chat, the **Metrics Spec**, reference data and the prototype's
-  sample institutions.
+  against the institution's own figures (imported as a JSON file, read as the Metrics Spec API).
+- **Scenario Studio**, the **setup agent** chat, the **Metrics Spec** and reference data.
 
 Errors are RFC 9457 problem details. Roles are applied in the web app, not here (prototype).
 """
@@ -82,7 +80,6 @@ def create_app(*, database_url: str | None = None, provider: TwelveDataClient | 
         app.state.radar = Radar(pool, app.state.institutions, radar_client, clock or Clock())
         app.state.monitors.investigations = app.state.radar.investigations = app.state.investigations
         app.state.studio = Studio(pool, app.state.institutions, inv_client, mon_client, clock or Clock())
-        app.state.mock_institutions = MockInstitutions(pool, app.state.institutions, clock or Clock())
         app.state.data_connection = DataConnection(pool, app.state.institutions, clock or Clock())
         app.state.investigations.validation_on = app.state.data_connection.validation_on  # the Platform Admin's switch
         app.state.data_connection.app = app
@@ -127,8 +124,7 @@ def create_app(*, database_url: str | None = None, provider: TwelveDataClient | 
     app.include_router(alerts_api.router)
     app.include_router(overview.router)
     app.include_router(prototype.router)
-    app.include_router(mock_api.router)
-    app.include_router(mock_api.admin)
+    app.include_router(imported_api.router)
     app.include_router(connect_api.router)
     app.include_router(validation_api.router)
     app.include_router(spec_api.router)
@@ -150,7 +146,7 @@ def serve_web(app: FastAPI) -> None:
 
     @app.get("/{path:path}", include_in_schema=False)
     async def web(path: str):
-        if path.split("/")[0] in ("api", "internal", "health", "docs", "openapi.json", "redoc"):
+        if path.split("/")[0] in ("api", "internal", "imported", "health", "docs", "openapi.json", "redoc"):
             raise HTTPException(404)
         f = (dist / path).resolve()
         if path and f.is_file() and dist.resolve() in f.parents:

@@ -1,15 +1,15 @@
 """The US demo bank (demo/austin-tech-bank/bundle.json): its profile imports as it is, reads in Texas and
-California places, and the sample bank (Metrics Spec reference API) serves the figures its stories check.
+California places, and the example data file (the sample bank, shaped by it) has the figures its stories check.
 
-The lead story (tech layoffs, then Austin mortgages) uses figures the sample bank already serves: instalment
+The lead story (tech layoffs, then Austin mortgages) uses figures the example file has: instalment
 collection on the employee mortgages and withdrawals on employee savings, by segment and region. The sample bank
-serves no sector breakdown (for any institution) and no category-level metric, so large_depositor_net_flow is
+has no sector breakdown (for any institution) and no category-level metric, so large_depositor_net_flow is
 not there."""
 
 import json
 
 from app import reference, settings
-from tests.test_mock_institutions import TODAY, api, enable, window
+from tests.datafile import example, send
 
 FOLDER = settings.PROJECT.parent / "demo" / "austin-tech-bank"
 BUNDLE = json.loads((FOLDER / "bundle.json").read_text())
@@ -47,37 +47,35 @@ async def test_the_austin_bank_imports_and_reads_in_us_places(client, env):
     assert kinds["startup-deposits"] == ("savings", "current_account") and kinds["venture-debt"][1] == "working_capital"
 
 
-async def series(client, product_id: str, metric: dict, **filters) -> list[dict]:
-    start, until = window(metric["grain"], TODAY)
-    r = await client.get(f"{api()}/series", params={"product_id": product_id, "metric": metric["key"], "start": start.isoformat(),
-                                                    "until": until.isoformat(), **{f"filter[{k}]": v for k, v in filters.items()}})
-    assert r.status_code == 200, r.text
-    return [x for x in r.json()["rows"] if x["value"] is not None]
+def served(doc: dict, product_id: str, metric: str, **filters) -> list[dict]:
+    """The example file's rows for one series, with a value."""
+    s = next((x for x in doc["series"] if (x["product_id"], x["metric"], x["filter"]) == (product_id, metric, filters)),
+             None)
+    assert s is not None, (product_id, metric, filters)
+    return [r for r in s["rows"] if r["value"] is not None]
 
 
-async def test_the_sample_bank_serves_the_figures_the_stories_check(client, env):
+async def test_the_example_file_has_the_figures_the_stories_check(client, env, app):
     await load(client, env)
-    on = await enable(client)
-    assert on["shaped_by"] == {"name": "Austin Tech Bank", "source": "installation"}
-    cat = (await client.get(f"{api()}/catalog")).json()
+    doc = await example(app)
+    assert "shaped by Austin Tech Bank (your profile)" in doc["about"]
+    cat = doc["catalog"]
     assert cat["profile"]["country"] == "US" and cat["profile"]["base_currency"] == "USD"
     metrics = {p["product_id"]: {m["key"]: m for m in p["metrics"]} for p in cat["products"]}
 
     # the lead story: tech layoffs, then mortgages (retail_loan.repayment_stress.sector) and savings
-    icr = metrics["employee-mortgages"]["installment_collection_rate"]
-    assert await series(client, "employee-mortgages", icr, segment="salaried")
-    assert await series(client, "employee-mortgages", icr, region_l1="US-TX")
-    wd = metrics["employee-savings"]["withdrawals"]
-    assert await series(client, "employee-savings", wd, segment="salaried")
+    assert served(doc, "employee-mortgages", "installment_collection_rate", segment="salaried")
+    assert served(doc, "employee-mortgages", "installment_collection_rate", region_l1="US-TX")
+    assert served(doc, "employee-savings", "withdrawals", segment="salaried")
     # credit lines (business_loan.utilization.*): uncut, and the fund lines by segment non_bank_financial
-    assert await series(client, "chip-supplier-lines", metrics["chip-supplier-lines"]["facility_utilization"])
-    ccl = metrics["capital-call-lines"]["facility_utilization"]
-    assert await series(client, "capital-call-lines", ccl, segment="non_bank_financial")
-    assert await series(client, "dc-contractor-loans", metrics["dc-contractor-loans"]["installment_collection_rate"])
+    assert served(doc, "chip-supplier-lines", "facility_utilization")
+    assert served(doc, "capital-call-lines", "facility_utilization", segment="non_bank_financial")
+    assert served(doc, "dc-contractor-loans", "installment_collection_rate")
 
-    # not served by the sample bank today (acceptance D2 passes as served; see DONE.md)
+    # not in the example file (acceptance D2 passes as served; see DONE.md)
     assert not any("sector" in m.get("breakdowns", {}) for ms in metrics.values() for m in ms.values())
     assert not any("large_depositor_net_flow" in ms for ms in metrics.values())
+    assert (await send(client, doc)).status_code == 200  # and it imports as it is
 
 
 def test_the_bundles_series_and_monitors_are_valid():

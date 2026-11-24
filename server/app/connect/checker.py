@@ -1,5 +1,6 @@
-"""The connector: checks that an institution's API is the Metrics Spec reference API, and says what is
-missing, before anything depends on it.
+"""The connector: checks that the institution's data, read as an API, is the Metrics Spec reference API, and says
+what is missing, before anything depends on it. The data is an imported file served in-process (imported.py); the
+checks are those for any reference API, so a fault an API can have is still caught.
 
 Five steps, stopping at the first one that blocks: reach it; compare its OpenAPI document with the
 reference; validate every answer's body against the reference schemas; run the conformance checks the
@@ -140,7 +141,7 @@ class Report:
         failed = [c for c in self.checks.values() if c["status"] == "fail"]
         partial = sum(p["status"] != "full" for p in (self.coverage or {}).get("products", []))
         if status == "ready":
-            headline = "Ready: the API is the reference API and serves everything this profile needs."
+            headline = "Ready: the data reads as the reference API and serves everything this profile needs."
         elif status == "ready_with_gaps":
             parts = ([f"{', '.join(c['id'] for c in failed)} failed"] if failed else []) + \
                     ([f"{partial} product(s) not fully covered"] if partial else [])
@@ -416,7 +417,7 @@ async def _run(r: Report, data: InstitutionData, profile: dict | None, now: date
         r.step("reach", "fail", f"GET /catalog answered HTTP {a.status}", a.text[:300])
         return
     ms = data.calls[-1].ms
-    r.step("reach", "pass", f"Reached the API ({ms} ms)", None)
+    r.step("reach", "pass", f"Read the data ({ms} ms)", None)
     cat = a.body
     r.server_version = a.headers.get("metrics-spec-version") or cat.get("spec_version")
     if r.server_version and r.server_version.split(".")[0] != SPEC_VERSION.split(".")[0]:

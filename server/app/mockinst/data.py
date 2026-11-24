@@ -1,4 +1,4 @@
-"""The numbers a sample institution serves: grid periods, values per cell, vintages, suppression and the
+"""The numbers a sample institution has: grid periods, values per cell, vintages, suppression and the
 effects of the conditions switched on. Pure functions over model.Institution; no database.
 
 A value is the "mature" one first (what the period settles at). Vintages then say what was known on

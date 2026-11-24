@@ -121,7 +121,6 @@ async def coverage(request: Request, institution_id: str):
     if not await dc.validation_on():
         return assumed
     try:  # what the institution serves, so tasks only ask for that
-        view = await dc.view()
         data, target, _ = await dc.client()
         try:
             ans = await data.catalog()
@@ -129,10 +128,7 @@ async def coverage(request: Request, institution_id: str):
             await data.aclose()
         if ans.status != 200 or not isinstance(ans.body, dict):
             raise ValueError(f"GET /catalog answered {ans.status or ans.error}")
-        sample = view.get("sample")
-        source_id, name = (f"sample-{sample}", f"The sample {sample}") if view.get("source") == "sample" \
-            else ("institution-api", f"Your institution's API ({target})")
-        return cov.narrowed(assumed, ans.body, source_id, name)
+        return cov.narrowed(assumed, ans.body, "institution-data", f"Your institution's data, {target}")
     except Exception as e:
         log.warning("coverage: the connected catalog couldn't be read (%s); assumed from the Metrics Spec", e)
         return assumed

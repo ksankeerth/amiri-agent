@@ -62,10 +62,9 @@ async def test_every_edit_delete_and_reset_is_refused(client, env):
         ("PATCH", "/api/v1/series/usd_lkr", {"enabled": False}),
         ("DELETE", "/api/v1/series/usd_lkr", None),
         # the data connection
-        ("PUT", "/api/v1/data-connection", {"source": "sample", "sample": "bank"}),
+        ("POST", "/api/v1/data-connection:import", {"format": "amiri-institution-data/1"}),
         ("POST", "/api/v1/data-connection:approve", None),
         ("PUT", "/api/v1/validation", {"enabled": True}),
-        ("PUT", "/api/v1/mock-institutions/bank", {"enabled": True, "conditions": []}),
         # Scenario Studio: edit and delete
         ("PATCH", f"{S}/scenarios/{sc['scenario_id']}", {"title": "Renamed"}),
         ("DELETE", f"{S}/scenarios/{sc['scenario_id']}", None),

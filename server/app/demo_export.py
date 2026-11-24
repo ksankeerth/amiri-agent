@@ -25,7 +25,6 @@ SECTION_STEPS = [
     ("counterparties", "Import firms you depend on"),
     ("risk-exposures", "Import risk exposures"),
 ]
-CONDITION = {"bank": "remittances_fall", "insurer": "floods"}  # what the sample API's data shows, for Verification
 # a monitor's exposure names profile items as "<kind>:<id>" (app/monitors/schemas.py Exposure)
 EXPOSURE = {"products": "product", "segments": "segment", "flows": "flow", "rivals": "rival", "regulators": "regulator",
             "counterparties": "counterparty", "risk-exposures": "risk"}
@@ -88,8 +87,6 @@ def files(kind: demo.Kind) -> dict[str, str]:
     f = step("Write your own scenario")
     for i, sc in enumerate(x["scenarios"], 1):
         out[f"{f}/{i:02d}-{_slug(sc['title'])}.json"] = _json(sc)
-    f = step(f"The sample {kind}")
-    out[f"{f}/conditions.json"] = _json({"conditions": [{"id": CONDITION[kind]}]})
     return {f"{d['slug']}/{k}": v for k, v in out.items()}
 
 

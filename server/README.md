@@ -80,6 +80,18 @@ anyway (`app/sleep.py`): the bot check and the web app work, every API call answ
 shows a paused page. While asleep, a request at most every `DB_WAKE_PROBE_SECONDS` tries the database; once it
 answers, the server migrates and wakes without a restart.
 
+## The institution's data
+
+Verification reads the institution's own figures from one imported JSON file, never from an address or a key:
+`POST /api/v1/data-connection:import` with the file as the JSON body (`?file_name=` for the page), at most
+`DATA_IMPORT_MAX_MB` (25 MB), refused under `DEMO_LOCK`. The format, `amiri-institution-data/1`, is a snapshot of what
+a Metrics Spec reference API would answer: [`app/connect/IMPORT_FORMAT.md`](app/connect/IMPORT_FORMAT.md). It is
+checked strictly on upload (each problem says where and what), stored in `ops.imported_data` and
+`ops.imported_series`, and served in-process at `/imported/metrics/v1` to the connector and the validator only. A new
+file replaces the old one and needs **Check** and **Approve** again. `GET /api/v1/data-connection:example` hands out
+a valid file: the sample bank (or insurer) from `app/mockinst/`, shaped by the profile, with the demo's effect
+planted (`?scenario=none` for none).
+
 ## Prototype limits (shown in the UI through `GET /api/v1/series:status`)
 
 | Limit | Default | Setting |

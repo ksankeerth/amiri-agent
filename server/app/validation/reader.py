@@ -43,7 +43,7 @@ def _raise_for(a: Answer, what: str) -> None:
     msg = f"{what}: HTTP {a.status}{f' {code}' if code else ''}: {detail}"
     if a.status in (429, 503):
         raise DataError(msg, transient=True, rate_limited=True)
-    raise DataError(msg, transient=a.status >= 500)
+    raise DataError(msg, transient=a.status >= 500 and a.status != 501)  # 501: not implemented, not down
 
 
 def _grid_start(d: date, grain: str) -> date:

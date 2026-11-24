@@ -12,7 +12,9 @@ In order:
   3. activate it;
   4. add each market series (POST /api/v1/series); a symbol already watched is skipped and reported;
   5. write each monitor (POST /api/v1/monitors); a "live" one is submitted by --actor and approved by --approver;
-  6. switch the sample bank or insurer on (PUT /api/v1/mock-institutions/{kind});
+  6. import the institution's data: the example file (GET /api/v1/data-connection:example, the sample bank or
+     insurer shaped by this profile, with the bundle's sample_data conditions planted), sent as it is to
+     POST /api/v1/data-connection:import; it still needs Check and Approve on Data connections;
   7. unless --skip-after-load: one Radar run and one check of every live monitor. These call Gemini, BigQuery and
      web search, so they cost money.
 
@@ -28,6 +30,7 @@ import argparse
 import json
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any, Protocol
 
@@ -170,15 +173,18 @@ class Loader:
     # 6
     def sample_data(self) -> None:
         sd = self.b.get("sample_data")
-        if not sd:
-            self.say("[6] sample data: not in the bundle")
+        if not sd or not sd.get("enabled"):
+            self.say("[6] sample data: " + ("not in the bundle" if not sd else "not imported (enabled is false)"))
             return
-        kind = self.b["institution"]["institution_type"]
-        _, out = self._call("switch sample data", "PUT", f"/api/v1/mock-institutions/{kind}",
-                            {"enabled": bool(sd.get("enabled")), "conditions": sd.get("conditions", [])})
-        self.done.append(f"sample {kind} {'on' if out.get('enabled') else 'off'}")
-        self.say(f"[6] sample {kind}: {'on' if out.get('enabled') else 'off'}, shaped by "
-                 f"{(out.get('shaped_by') or {}).get('name')}")
+        ids = [c["id"] for c in sd.get("conditions", []) if isinstance(c, dict) and c.get("id")]
+        scenario = urllib.parse.quote(",".join(ids) or "none")
+        _, doc = self._call("download the example data file", "GET", f"/api/v1/data-connection:example?scenario={scenario}")
+        _, out = self._call("import the example data file", "POST",
+                            "/api/v1/data-connection:import?file_name=example-data.json", doc)
+        s = (out.get("imported") or {}).get("summary") or {}
+        self.done.append("example data imported")
+        self.say(f"[6] example data imported: {s.get('institution')}, {s.get('products')} products, "
+                 f"{s.get('from')} to {s.get('until')}; check and approve it on Data connections")
 
     # 7
     def after_load(self) -> None:
@@ -212,10 +218,11 @@ class Loader:
 
 
 def _sample_plan(sd: dict | None) -> str:
-    """What step 6 does: the bundle's sample_data is sent as it is (enabled false switches it off)."""
-    if not sd:
+    """What step 6 does: with sample_data enabled, the example file is imported."""
+    if not sd or not sd.get("enabled"):
         return "unchanged"
-    return "switch on" if sd.get("enabled") else "switch off"
+    ids = [c.get("id") for c in sd.get("conditions", []) if isinstance(c, dict)]
+    return "import the example file" + (f" ({', '.join(ids)} planted)" if ids else " (nothing planted)")
 
 
 def plan(bundle: dict, actor: str, approver: str, after_load: bool) -> list[str]:
@@ -231,7 +238,7 @@ def plan(bundle: dict, actor: str, approver: str, after_load: bool) -> list[str]
         f"4. add {len(bundle.get('series', []))} market series: "
         + ", ".join(x["symbol"] for x in bundle.get("series", [])) + " (a symbol already watched is skipped)",
         f"5. write {len(bundle.get('monitors', []))} monitors; {live} live: submitted by {actor}, approved by {approver}",
-        f"6. sample {i['institution_type']}: " + _sample_plan(bundle.get("sample_data")),
+        f"6. the institution's data (sample {i['institution_type']}): " + _sample_plan(bundle.get("sample_data")),
     ]
     if after_load and (a.get("run_radar") or a.get("check_monitors")):
         out.append("7. " + " and ".join(x for x in (

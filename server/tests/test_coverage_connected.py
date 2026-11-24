@@ -3,6 +3,7 @@ catalog's (only what the institution serves, with its own breakdowns); otherwise
 assumption, as before."""
 
 from app.investigation import coverage as cov
+from tests.datafile import connect
 from tests.test_institutions_api import seed
 
 ME = {"X-Amiri-Actor": "admin@x"}
@@ -10,8 +11,7 @@ COV = "/api/v1/internal/coverage"
 
 
 async def connect_sample(client, env, approve: bool = True, on: bool = True):
-    await client.put("/api/v1/mock-institutions/bank", json={"enabled": True, "conditions": []})
-    await client.put("/api/v1/data-connection", json={"source": "sample", "sample": "bank"}, headers=ME)
+    await connect(client, client._transport.app)
     await client.post("/api/v1/data-connection:check", headers=ME)
     if approve:
         await client.post("/api/v1/data-connection:approve", headers=ME)
@@ -41,7 +41,8 @@ async def test_with_validation_on_coverage_is_what_the_catalog_serves(client, en
     await connect_sample(client, env)
     c = (await client.get(COV, params={"institution_id": "serendib-bank"})).json()
     src = c["data_source"]
-    assert src["assumed"] is False and src["data_source_id"] == "sample-bank" and src["catalog_version"].startswith("1.0.0/")
+    assert src["assumed"] is False and src["data_source_id"] == "institution-data" and src["catalog_version"].startswith("1.0.0/")
+    assert src["name"] == "Your institution's data, the imported file institution-data.json (as of 2026-10-06)"
     lc = metric(c, "trade-finance", "lc_openings")
     assert lc and set(lc["dimensions"]) == {"size_band"} and "sme" in lc["dimensions"]["size_band"]  # no segment
     assert lc["method"] and lc["thresholds"] and lc["history_from"]  # the spec's rules, the catalog's history

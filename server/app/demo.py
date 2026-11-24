@@ -3,7 +3,7 @@
 Their profiles live in app/seeds/ (the one copy: the repository's demo/ folder is written from them by
 `uv run amiri demo-export`, and a test fails when the two drift apart). Everything that loads a demo
 reads it from here: the prototype reset, the empty first screen, the demo-profile download, the CLI and
-the sample institutions' reference APIs (app/mockinst).
+the example data file (app/mockinst), while the installation has no products of its own.
 """
 
 import json

@@ -75,8 +75,9 @@ async def test_the_austin_bundle_loads_on_an_empty_platform(client, us):
                  if x["status"] == "approved")
         assert (v["created_by"], v["submitted_by"], v["approved_by"]) == ("John", "John", "Maya")
         assert v["approved_at"] and v["note"] == "Loaded from bundle"
-    sample = {s["kind"]: s for s in (await client.get("/api/v1/mock-institutions")).json()["items"]}
-    assert sample["bank"]["enabled"] is True and sample["bank"]["shaped_by"]["name"] == "Austin Tech Bank"
+    data = (await client.get("/api/v1/data-connection")).json()
+    assert data["configured"] is True and data["imported"]["summary"]["institution"] == "Austin Tech Bank"
+    assert data["imported"]["file_name"] == "example-data.json" and data["approved"] is None
 
 
 async def test_a_second_run_refuses_and_writes_nothing(client, us):
@@ -118,12 +119,14 @@ def test_the_plan_writes_nothing_and_names_the_costs(capsys):
     assert "no after-load actions" in capsys.readouterr().out
 
 
-@pytest.mark.parametrize("sample, says", [({"enabled": True}, "switch on"), ({"enabled": False}, "switch off"),
-                                          (None, "unchanged")])
+@pytest.mark.parametrize("sample, says", [
+    ({"enabled": True}, "import the example file (nothing planted)"),
+    ({"enabled": True, "conditions": [{"id": "floods"}]}, "import the example file (floods planted)"),
+    ({"enabled": False}, "unchanged"), (None, "unchanged")])
 def test_the_plan_says_what_happens_to_the_sample_data(sample, says):
     lb = script()
     bundle = {k: v for k, v in BUNDLE.items() if k != "sample_data"}
     if sample is not None:
         bundle["sample_data"] = sample
     step6 = next(x for x in lb.plan(bundle, "John", "John", True) if x.startswith("6. "))
-    assert step6 == f"6. sample bank: {says}"
+    assert step6 == f"6. the institution's data (sample bank): {says}"

@@ -1,7 +1,6 @@
 """Prototype reset: wipe the institution and everything Amiri Agent made for it, so the platform
 can be shown again from the start, as for a new institution. That includes the data connection (its approval
-and validation switch describe the old institution), its check reports, and the sample institutions' switches
-and conditions. Kept: market series and their prices (slow and costly to fetch again), the reference data, the
+and validation switch describe the old institution), its check reports, and the imported data. Kept: market series and their prices (slow and costly to fetch again), the reference data, the
 Metrics Spec and the tick log. Off with PROTOTYPE_RESET=false.
 
 Three ways back: `empty` (the Overview's first run: set up an institution from scratch), `demo-bank` (the demo bank,

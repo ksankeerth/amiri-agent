@@ -1,52 +1,16 @@
-"""InstitutionData: reads a Metrics Spec reference API. Used by the connector and the validator.
+"""InstitutionData: reads a Metrics Spec reference API. Used by the connector and the validator, over an
+in-process transport to the institution's imported data (imported.py).
 
 Every call is recorded (method, path, query, status, time, size), with a limit on calls and on answer
-size. A URL someone typed is checked first: https only, and never an internal address (the metadata
-server, private, loopback or link-local networks), with redirects refused."""
+size."""
 
-import ipaddress
-import socket
 import time
 from dataclasses import dataclass, field
 from typing import Any
-from urllib.parse import urlsplit
 
 import httpx
 
 from app import settings
-
-REFUSED_NETS = [ipaddress.ip_network(n) for n in (
-    "0.0.0.0/8", "10.0.0.0/8", "100.64.0.0/10", "127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12",
-    "192.0.0.0/24", "192.168.0.0/16", "198.18.0.0/15", "224.0.0.0/4", "240.0.0.0/4",
-    "::1/128", "fc00::/7", "fe80::/10", "ff00::/8", "::ffff:0:0/96")]
-
-
-class UnsafeURL(ValueError):
-    pass
-
-
-def check_url(url: str) -> None:
-    """Refuses a URL the server shouldn't call. Plain http and internal addresses only with
-    DATA_CONNECTION_ALLOW_LOCAL (local development)."""
-    parts = urlsplit(url)
-    local_ok = settings.flag("DATA_CONNECTION_ALLOW_LOCAL")
-    if parts.scheme not in ("https", "http") or not parts.hostname:
-        raise UnsafeURL("Give a full address starting with https://.")
-    if parts.scheme == "http" and not local_ok:
-        raise UnsafeURL("Use https://; plain http is only allowed for local development.")
-    if parts.username or parts.password:
-        raise UnsafeURL("Don't put a user name or password in the address; use the key field.")
-    host = parts.hostname
-    if host in ("metadata.google.internal", "metadata") and not local_ok:
-        raise UnsafeURL("That address is internal to the cloud platform.")
-    try:
-        infos = socket.getaddrinfo(host, parts.port or (443 if parts.scheme == "https" else 80), proto=socket.IPPROTO_TCP)
-    except socket.gaierror as e:
-        raise UnsafeURL(f"The name {host} doesn't resolve ({e.strerror}).") from e
-    for info in infos:
-        ip = ipaddress.ip_address(info[4][0])
-        if not local_ok and any(ip in n for n in REFUSED_NETS):
-            raise UnsafeURL(f"{host} resolves to {ip}, an internal address; the connector doesn't call those.")
 
 
 @dataclass

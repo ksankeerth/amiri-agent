@@ -1,4 +1,4 @@
-"""The validator against the sample bank: each planted condition gives the verdict a correct validator
+"""The validator against the sample bank's data, imported as a file: each planted condition gives the verdict a correct validator
 should give (confirms, contradicts, no effect, insufficient data, masked, not yet, error), with the
 numbers it rests on; and the tick judges an investigation's tasks once validation is on."""
 
@@ -13,6 +13,7 @@ from app.validation import explain, validate
 from app.validation.contract import ValidationTask
 from app.validation.history import MemoryHistory
 from app.validation.reader import RunReader
+from tests.datafile import connect
 from tests.test_institutions_api import seed
 
 ME = {"X-Amiri-Actor": "admin@x"}
@@ -50,16 +51,15 @@ def task(product: str, category: str, metric: str, expect: str, watch: tuple[str
     })
 
 
-async def reader_for(client, app, conditions=()) -> RunReader:
-    r = await client.put("/api/v1/mock-institutions/bank", json={"enabled": True, "conditions": list(conditions)})
-    assert r.status_code == 200, r.text
-    await client.put("/api/v1/data-connection", json={"source": "sample", "sample": "bank"})
+async def reader_for(client, app, conditions=(), products=None) -> RunReader:
+    await connect(client, app, conditions, products)
     data, target, _ = await app.state.data_connection.client()
     return RunReader(data, target)
 
 
 async def judge(client, app, t: ValidationTask, conditions=(), as_of=TODAY):
-    reader = await reader_for(client, app, conditions)
+    keep = None if t.product_id == "no-such-product" else [t.product_id]  # only the task's product: quick to build
+    reader = await reader_for(client, app, conditions, keep)
     try:
         return await validate.evaluate(t, as_of, reader, MemoryHistory())
     finally:
@@ -112,15 +112,13 @@ async def test_remittances_fall_confirms_on_daily_data(client, app, bank):
     assert r.observation.watch["per_weekday"] is True  # a month of daily flows compared per weekday
 
 
-async def test_one_obligor_driving_the_move_is_insufficient(client, app, bank):
+async def test_without_change_concentration_dominance_is_not_judged(client, app, bank):
+    """An imported file holds aggregates (L4 at most): there is no band for the largest contributor's share, so a
+    move one obligor drives isn't marked dominated, and the result says no band was read."""
     t = task(product="sme-loans", category="business_loan", metric="facility_utilization", expect="rise",
              watch=("2026-08-31", "2026-09-28"), baseline=("2026-08-17", "2026-08-31"))
     r = await judge(client, app, t, [{"id": "dominant_obligor", "start": "2026-08-31", "size": 3.4}])
-    assert r.verdict == "insufficient_data" and "dominated" in r.reasons, r.reasons
-    assert explain.describe(r.model_dump(mode="json"), {"metric": "facility_utilization"})["line"] == (
-        "Credit-line utilisation: not enough data (one customer drives most of the move)")
-    assert r.attention == "dominated" and r.observation is None  # the numbers aren't shown when one obligor drives them
-    assert r.data["top_share_band"] == "from_0.8"
+    assert "dominated" not in r.reasons and r.data.get("top_share_band") is None, (r.verdict, r.reasons)
 
 
 async def test_relief_masks_collections(client, app, bank):
@@ -183,8 +181,7 @@ async def test_the_tick_judges_an_investigations_tasks(client, app, bank, sql, e
     await sql("""INSERT INTO cases.validation_tasks (task_id, hypothesis_id, event_id, run_id, task, created_at)
                  VALUES ('vt-run1-1', 'hy-test-1', 'ev-test-1', 'run1', %s, now())""",
               (Jsonb(t.model_dump(mode="json", by_alias=True)),))
-    await client.put("/api/v1/mock-institutions/bank", json={"enabled": True, "conditions": SLIDE})
-    await client.put("/api/v1/data-connection", json={"source": "sample", "sample": "bank"}, headers=ME)
+    await connect(client, app, SLIDE, ["trade-finance"])
     step = next(s for s in (await client.post("/internal/tick")).json()["ran"] if s["step"] == "validate")
     assert step["evaluated"] == 0 and step["skipped"]  # validation isn't on yet
     await client.post("/api/v1/data-connection:check", headers=ME)

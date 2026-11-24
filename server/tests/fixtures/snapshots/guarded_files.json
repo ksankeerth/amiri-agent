@@ -26,6 +26,7 @@
  "server/app/migrations/0023_data_connection.sql": "df5b4f7407ece087653f951c6357e548938c525fad28f406bbd12f65ddb22024",
  "server/app/migrations/0024_validation.sql": "fe659bc26920330bb7afd00e6673ee85d287c9acda96bc16b5a9487f608d7535",
  "server/app/migrations/0025_flow_source_url.sql": "25ddced4c16a13f3e083ea16b9589c6f3155d953ae26804c97dbfbec67c45baa",
+ "server/app/migrations/0026_imported_data.sql": "ff48edea06a50f8454f5e201bb3f1b1fe4a1122ef21733731fd9f57eaa9a89e1",
  "server/app/spec/reference-openapi-1.0.0.yaml": "7c5769491fd9829aca9e1fe4f6a6aa55aa6a7a33dee2551242026d2fce9f10a8",
  "server/contracts/investigation-agent-openapi.yaml": "13e6c10431b6a839e2c7ecbf475c6e5bbf22de80a7ad7fb26965614c023245c4",
  "server/contracts/radar-agent-openapi.yaml": "434d2c7e90cdd664e2d743520a3f0b90723d87761d2c9ac84edc6876b201554f",

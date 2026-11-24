@@ -96,7 +96,7 @@ Commercial Bank** (invented, Sri Lanka only).
 | 5 | **Monitors** › open one | A plain-language question ("tell me if…"), approved by a person, checked on the web with sources |
 | 6 | **Scenario Studio** › **Replay it** | A three-week what-if, replayed in under a minute, with no AI calls and nothing touching live data |
 | 7 | **Institution** | The profile every agent works from: footprint, customers, products, money flows (each figure with its source), regulators, rivals, risks |
-| 8 | **Data connections** (Platform Admin) | The sample bank's API under the **Metrics Spec**: checked, approved, and feeding Verification |
+| 8 | **Data connections** (Platform Admin) | The institution's own figures, imported as one JSON file in the **Metrics Spec**'s shape: checked, approved, and feeding Verification |
 | 9 | **Metrics Spec** | The open standard for a bank's or insurer's summary figures, with its PDF guide |
 
 **Want the insurer instead?** Settings › **Reset the prototype…** › **Demo insurer: Samudra Raya General
@@ -180,7 +180,7 @@ sequenceDiagram
 |---|---|---|
 | **Amiri server REST API** | [`server/openapi.yaml`](server/openapi.yaml) | Interactive docs at `/docs` · `/openapi.json` |
 | **Metrics Spec 1.0.0**: which summary figures a bank or insurer exposes, per product category | [Guide (Markdown)](server/app/spec/metrics-spec-1.0.0.md) · [PDF](server/app/spec/metrics-spec-1.0.0.pdf) · [YAML](server/app/spec/metrics-spec-1.0.0.yaml) · [Reference API (OpenAPI)](server/app/spec/reference-openapi-1.0.0.yaml) | **Metrics Spec** page (`/spec`) |
-| **Sample bank and insurer**: working Metrics Spec APIs that feed Verification | [`server/app/mockinst/`](server/app/mockinst) | `/mock/bank/openapi.json` · `/mock/insurer/openapi.json` |
+| **The institution's data**: one JSON file (amiri-institution-data/1), served in-process as the Metrics Spec reference API | [Import format](server/app/connect/IMPORT_FORMAT.md) · example generator [`server/app/mockinst/`](server/app/mockinst) | **Data connections** page: import, or download an example file (`GET /api/v1/data-connection:example`) |
 | **Agent contracts** | [`server/contracts/`](server/contracts) · [`agents/event-monitor-agent/openapi.yaml`](agents/event-monitor-agent/openapi.yaml) | Served by each agent, to the server only |
 
 **About the Metrics Spec:**
@@ -292,7 +292,7 @@ context. Another test fails if any migration or API contract changes.
 
 **A US bank:** Austin Tech Bank, [`demo/austin-tech-bank/`](demo/austin-tech-bank/), on a deployment with `SUPPORTED_REGION=japac,us`,
 loaded with `python3 demo/load_bundle.py --file demo/austin-tech-bank/bundle.json`. A
-deployment holds one sample bank at a time.
+deployment holds one institution and its data at a time.
 
 ## Measured, not estimated
 

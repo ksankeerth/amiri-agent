@@ -1,26 +1,19 @@
-"""The connector: a clean sample institution is ready; each fault the sample can act out is caught by
-the check meant for it; coverage speaks about this profile; approval and the validation switch follow
-the rules; addresses someone types are checked; the stored key is never shown."""
+"""The connector on imported data: the sample's example file is ready at L4; what a file can get wrong is caught by
+the check meant for it; faults a reference API can have (version, formats, rate limits) are still caught when the
+answers carry them; coverage speaks about this profile; approval and the validation switch follow the rules."""
 
 import copy
+import json
 
+import httpx
 import pytest
 
 from app import auth
 from app.connect import checker
+from app.connect.client import InstitutionData
 from app.spec import reference_openapi
+from tests.datafile import ME, TODAY, C, connect, example, send
 from tests.test_institutions_api import seed
-
-ME = {"X-Amiri-Actor": "admin@x"}
-C = "/api/v1/data-connection"
-
-
-async def sample(client, kind="bank", conditions=()):
-    r = await client.put(f"/api/v1/mock-institutions/{kind}", json={"enabled": True, "conditions": list(conditions)},
-                         headers=ME)
-    assert r.status_code == 200, r.text
-    r = await client.put(C, json={"source": "sample", "sample": kind}, headers=ME)
-    assert r.status_code == 200, r.text
 
 
 async def run_check(client):
@@ -33,18 +26,21 @@ def check(report, cid):
     return next(c for c in report["checks"] if c["id"] == cid)
 
 
-async def test_a_clean_sample_is_ready(client):
-    await seed(client, "bank-a")  # the installation's institution: the sample bank is shaped by it
-    await sample(client)
+async def test_the_example_file_is_ready_at_l4(client, app):
+    await seed(client, "bank-a")  # the installation's institution: the example is shaped by it
+    await connect(client, app)
     rep = await run_check(client)
     assert rep["status"] == "ready", (rep["headline"], [c for c in rep["checks"] if c["status"] == "fail"],
                                       rep["formats"][:3], rep["missing_for_profile"])
     assert rep["accepted"] is True and rep["server_version"] == "1.0.0"
+    assert rep["target"] == "the imported file institution-data.json (as of 2026-10-06)"
     steps = {s["step"]: s["status"] for s in rep["steps"]}
     assert steps["reach"] == "pass" and steps["reference_api"] == "pass" and steps["formats"] == "pass"
     ran = {c["id"]: c["status"] for c in rep["checks"]}
     assert all(ran[c] == "pass" for c in ("C01", "C02", "C03", "C04", "C05", "C06", "C07", "C09", "C11", "C12",
-                                          "C13", "C14", "C16", "C17", "C18", "C19", "C20")), ran
+                                          "C13", "C14", "C17", "C18", "C19", "C20")), ran
+    # L4: vintages pass; change concentration (L5) needs per-contributor data a file doesn't have
+    assert ran["C16"] == "not_applicable" and "L4 or below" in check(rep, "C16")["note"]
     assert ran["C21"] == "not_applicable" and ran["C08"] == "not_run"
     cov = rep["coverage"]["products"]
     assert cov and all(p["status"] == "full" for p in cov) and not rep["missing_for_profile"]
@@ -55,10 +51,45 @@ async def test_a_clean_sample_is_ready(client):
     assert (await client.get(f"{C}/checks/{rep['check_id']}")).json()["status"] == "ready"
 
 
-async def test_the_insurer_sample_is_ready_too(client):
-    await sample(client, "insurer")
+async def test_the_insurer_example_is_ready_too(client, app):
+    from tests.test_institutions_api import INSURER, new
+    await new(client, {**INSURER, "institution_id": "bank-a"})  # an insurer installation: the sample insurer
+    doc = await example(app)
+    assert doc["catalog"]["profile"]["institution_type"] == "insurer"
+    assert any(r.get("vintages") for s in doc["series"] for r in s["rows"])  # claims develop
+    assert (await send(client, doc)).status_code == 200
     rep = await run_check(client)
-    assert rep["status"] == "ready", [c for c in rep["checks"] if c["status"] == "fail"]
+    assert rep["status"] in ("ready", "ready_with_gaps"), [c for c in rep["checks"] if c["status"] == "fail"]
+    assert check(rep, "C14")["status"] == "pass" and not [c for c in rep["checks"] if c["status"] == "fail"]
+
+
+class Faulty(httpx.AsyncBaseTransport):
+    """The imported data's in-process API with one fault a reference API can have, as the checker sees it."""
+
+    def __init__(self, inner: httpx.AsyncBaseTransport, fault: str):
+        self.inner, self.fault, self.n = inner, fault, 0
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        self.n += 1
+        if self.fault == "rate_limit_no_retry_after" and self.n % 3 == 0:
+            return httpx.Response(429, json={"code": "rate_limited", "detail": "slow down"})
+        r = await self.inner.handle_async_request(request)
+        body = await r.aread()
+        headers = {k: v for k, v in r.headers.items() if k.lower() not in ("content-length", "metrics-spec-version")}
+        version = {"no_version_header": None, "old_major_version": "0.9.0"}.get(self.fault, "1.0.0")
+        if version:
+            headers["Metrics-Spec-Version"] = version
+        if self.fault in ("old_major_version", "wrong_formats") and body[:1] == b"{":
+            doc = json.loads(body)
+            if self.fault == "old_major_version" and "spec_version" in doc:
+                doc["spec_version"] = "0.9.0"
+            if self.fault == "wrong_formats":
+                for row in doc.get("rows") or []:
+                    row["value"] = None if row["value"] is None else str(row["value"])
+                    if row.get("published_at"):
+                        row["published_at"] = row["published_at"].replace("-", "/")
+            body = json.dumps(doc).encode()
+        return httpx.Response(r.status_code, headers=headers, content=body)
 
 
 @pytest.mark.parametrize("fault, expect", [
@@ -67,9 +98,16 @@ async def test_the_insurer_sample_is_ready_too(client):
     ("wrong_formats", ("not_ready", "formats")),
     ("rate_limit_no_retry_after", ("ready_with_gaps", "C18")),
 ])
-async def test_each_fault_is_caught(client, fault, expect):
-    await sample(client, "bank", [{"id": fault}])
-    rep = await run_check(client)
+async def test_each_fault_is_caught(client, app, fault, expect):
+    await connect(client, app)
+    dc = app.state.data_connection
+    good, target, openapi_url = await dc.client()
+    data = InstitutionData(good.base_url, headers=good.headers, transport=Faulty(good.transport, fault))
+    await good.aclose()
+    try:
+        rep = await checker.run(data, None, dc.clock.now(), target, openapi_url)
+    finally:
+        await data.aclose()
     status, where = expect
     assert rep["status"] == status, (fault, rep["headline"])
     if where == "version":
@@ -84,35 +122,46 @@ async def test_each_fault_is_caught(client, fault, expect):
         assert check(rep, where)["status"] == "fail", (fault, check(rep, where))
 
 
-async def test_missing_metric_shows_in_coverage(client):
+async def test_a_missing_metric_shows_in_coverage(client, app):
     await seed(client, "bank-a")
-    await sample(client, "bank", [{"id": "missing_metric"}])
+    doc = await example(app)
+    p = doc["catalog"]["products"][0]
+    gone = next(m["key"] for m in p["metrics"] if m["key"] in ("deposit_inflow", "withdrawals"))
+    p["metrics"] = [m for m in p["metrics"] if m["key"] != gone]
+    doc["series"] = [s for s in doc["series"] if (s["product_id"], s["metric"]) != (p["product_id"], gone)]
+    assert (await send(client, doc)).status_code == 200
     rep = await run_check(client)
     assert rep["status"] == "ready_with_gaps"
-    gaps = [p for p in rep["coverage"]["products"] if p["missing"]]
-    assert len(gaps) == 1 and len(gaps[0]["missing"]) == 1
-    assert gaps[0]["missing"][0] in rep["missing_for_profile"][0]
+    gaps = [x for x in rep["coverage"]["products"] if x["missing"]]
+    assert len(gaps) == 1 and gaps[0]["missing"] == [gone] and gone in rep["missing_for_profile"][0]
     step = next(st for st in rep["steps"] if st["step"] == "coverage")
     assert step["status"] == "warn" and "Serve each missing required metric" in step["fix"]
 
 
-async def test_suppression_off_fails_c09(client):
-    await sample(client, "bank", [{"id": "few_customers"}, {"id": "suppression_off"}])
+async def test_unsuppressed_small_cells_fail_c09(client, app):
+    doc = await example(app, [{"id": "few_customers"}])
+    small = [s for s in doc["series"] if s["rows"] and all(r.get("suppressed") for r in s["rows"])]
+    assert small  # the smallest product's cells are suppressed in the file
+    for s in small:
+        for r in s["rows"]:
+            r.update(suppressed=False, suppression_reason=None, value=1.0, volume=6)
+    assert (await send(client, doc)).status_code == 200
     rep = await run_check(client)
     assert check(rep, "C09")["status"] == "fail" and "below the minimum" in check(rep, "C09")["findings"][0]
 
 
-async def test_data_conditions_keep_it_conformant(client):
-    await sample(client, "bank", [{"id": "currency_slide_importers"}, {"id": "floods"}, {"id": "late_revision"},
-                                  {"id": "dominant_obligor"}, {"id": "reporting_lag"}])
+async def test_planted_scenarios_keep_it_conformant(client, app):
+    await connect(client, app, [{"id": "currency_slide_importers"}, {"id": "floods"}, {"id": "late_revision"},
+                                {"id": "dominant_obligor"}, {"id": "reporting_lag"}])
     rep = await run_check(client)
     fails = [c["id"] for c in rep["checks"] if c["status"] == "fail"]
     assert rep["formats"] == [] and fails in ([], ["C12"]), fails  # a long lag may only make publication late
 
 
-async def test_approval_and_the_validation_switch(client, env):
+async def test_approval_and_the_validation_switch(client, app, env):
     assert (await client.post(f"{C}:approve", headers=ME)).status_code == 409  # nothing to approve
-    await sample(client)
+    assert (await client.post(f"{C}:check", headers=ME)).json()["code"] == "not_configured"
+    await connect(client, app)
     assert (await client.post(f"{C}:approve", headers=ME)).json()["code"] == "not_checked"
     await run_check(client)
     v = (await client.post(f"{C}:approve", headers=ME)).json()
@@ -121,69 +170,47 @@ async def test_approval_and_the_validation_switch(client, env):
     assert r.status_code == 409 and r.json()["code"] == "validation_off"  # METRICS_VALIDATION is off
     env.setenv("METRICS_VALIDATION", "on")
     v = (await client.put("/api/v1/validation", json={"enabled": True}, headers=ME)).json()
-    assert v["validation_enabled"] is True and await client._transport.app.state.data_connection.validation_on()
-    # the approved API breaks: the next check withdraws the approval and switches validation off
-    await client.put("/api/v1/mock-institutions/bank", json={"enabled": True, "conditions": [{"id": "wrong_formats"}]})
-    rep = await run_check(client)
+    assert v["validation_enabled"] is True and await app.state.data_connection.validation_on()
+    # approved data whose check now fails (here: answers that don't match the formats): the approval is withdrawn
+    dc = app.state.data_connection
+    real = dc.client
+
+    async def broken():
+        data, target, openapi_url = await real()
+        return InstitutionData(data.base_url, headers=data.headers, transport=Faulty(data.transport, "wrong_formats")), \
+            target, openapi_url
+    dc.client = broken
+    try:
+        rep = await run_check(client)
+    finally:
+        dc.client = real
     assert rep["status"] == "not_ready" and "withdrawn" in rep
     v = (await client.get(C)).json()
     assert v["approved"] is None and v["validation_enabled"] is False
-    await client.put("/api/v1/mock-institutions/bank", json={"enabled": True, "conditions": []})
     await run_check(client)
     await client.post(f"{C}:approve", headers=ME)
     assert (await client.put("/api/v1/validation", json={"enabled": True}, headers=ME)).json()["validation_enabled"]
-    # a changed connection must be checked and approved again; validation goes off with it
-    v = (await client.put(C, json={"source": "sample", "sample": "insurer"}, headers=ME)).json()
-    assert v["approved"] is None and v["validation_enabled"] is False
-    await sample(client, "insurer", [{"id": "wrong_formats"}])
-    await run_check(client)
-    r = await client.post(f"{C}:approve", headers=ME)
-    assert r.status_code == 409 and r.json()["code"] == "not_ready"
+    # a new import must be checked and approved again; validation goes off with it
+    v = await connect(client, app)
+    assert v["approved"] is None and v["validation_enabled"] is False and v["latest_check"]["current"] is False
+    assert (await client.post(f"{C}:approve", headers=ME)).json()["code"] == "not_checked"
 
 
-async def test_addresses_are_checked_and_the_key_is_never_shown(client, env, sql):
-    bad = [("http://169.254.169.254/metrics/v1", "https"), ("https://127.0.0.1/metrics/v1", "internal"),
-           ("https://data.example.org/api", "/metrics/v1"), ("https://user:pw@data.example.org/metrics/v1", "user name"),
-           ("https://no-such-host.invalid/metrics/v1", "doesn't resolve")]
-    for url, why in bad:
-        r = await client.put(C, json={"source": "url", "base_url": url}, headers=ME)
-        assert r.status_code == 422 and why in r.json()["detail"], (url, r.text)
-    env.setenv("DATA_CONNECTION_ALLOW_LOCAL", "true")  # a local test server, as in development
-    r = await client.put(C, json={"source": "url", "base_url": "http://127.0.0.1:9/metrics/v1",
-                                  "auth_header": "Authorization", "auth_value": "Bearer s3cret-token"}, headers=ME)
-    assert r.status_code == 422 and r.json()["code"] == "auth_off"  # the prototype: no DATA_SECRET_KEY, no keys
-    r = await client.put(C, json={"source": "url", "base_url": "http://127.0.0.1:9/metrics/v1",
-                                  "auth_header": "Authorization"}, headers=ME)
-    assert r.status_code == 422 and r.json()["code"] == "auth_off"
-    v = (await client.put(C, json={"source": "url", "base_url": "http://127.0.0.1:9/metrics/v1"}, headers=ME)).json()
-    assert v["auth_allowed"] is False and v["auth_set"] is False  # connecting without authorization still works
-    env.setenv("DATA_SECRET_KEY", "k" * 40)
-    assert (await client.get(C, headers=ME)).json()["auth_allowed"] is True
-    v = (await client.put(C, json={"source": "url", "base_url": "http://127.0.0.1:9/metrics/v1",
-                                   "auth_header": "Authorization", "auth_value": "Bearer s3cret-token"}, headers=ME)).json()
-    assert v["auth_set"] is True and "s3cret" not in str(v)
-    stored = (await sql("SELECT auth_value FROM ops.data_connection"))[0]["auth_value"]
-    assert b"s3cret" not in bytes(stored)
-    rep = await run_check(client)  # nothing listens on port 9
-    assert rep["status"] == "not_ready" and rep["steps"][0]["step"] == "reach" and rep["steps"][0]["status"] == "fail"
-    v = (await client.put(C, json={"source": "url", "base_url": "http://127.0.0.1:9/metrics/v1",
-                                   "auth_header": "Authorization"}, headers=ME)).json()
-    assert v["auth_set"] is True  # the same header keeps the stored key
-
-
-async def test_through_the_bot_check(client, env):
-    """With the bot check on, the connector still reaches the sample in-process (it carries a session)."""
+async def test_through_the_bot_check(client, app, env):
+    """With the bot check on, the connector still reads the imported data in-process (it carries a session and the
+    process's own token); from outside, /imported/ is gated, and without the token it isn't there."""
+    await connect(client, app)
     env.setenv("AUTH_MODE", "prototype")
     env.setenv("AUTH_LOCAL_AGENTS", "false")
     env.setenv("SESSION_SECRET", "s" * 40)
     env.setenv("RECAPTCHA_SITE_KEY", "test")
     token, _ = auth.issue("person")
     client.cookies.set(auth.COOKIE, token)
-    await sample(client)
     rep = await run_check(client)
     assert rep["steps"][0]["status"] == "pass", rep["steps"][0]
+    assert (await client.get("/imported/metrics/v1/catalog")).status_code == 404  # a session, but not in-process
     client.cookies.clear()
-    assert (await client.get("/mock/bank/metrics/v1/catalog")).status_code == 401
+    assert (await client.get("/imported/metrics/v1/catalog")).status_code == 401
 
 
 def test_openapi_comparison_finds_what_differs():
@@ -199,3 +226,7 @@ def test_openapi_comparison_finds_what_differs():
     assert any("start is missing" in d for d in blocking)
     assert any("value is string" in d for d in blocking)
     assert any("/metrics/v1/breaks isn't in the document" in d for d in blocking)
+
+
+def test_today_is_the_test_clock():
+    assert TODAY.isoformat() == "2026-10-07"

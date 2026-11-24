@@ -1,154 +1,132 @@
 """The installation's data connection (ops.data_connection), the connector's reports (ops.data_checks),
 approval, and the validation switch.
 
-A connection is either a sample institution served by this server (read in-process) or an address
-someone typed (checked by client.check_url before each check). The key or token for an address is
-stored encrypted with DATA_SECRET_KEY and never returned."""
+The institution's data comes from one imported JSON file (importfmt.py), stored in ops.imported_data and
+ops.imported_series and served in-process as the Metrics Spec reference API (imported.py). A new import replaces
+the old data and needs checking and approving again, like any changed connection."""
 
-import base64
 import hashlib
+import json
 import uuid
+from zoneinfo import ZoneInfo
 
 import httpx
-from cryptography.fernet import Fernet, InvalidToken
 from psycopg.types.json import Jsonb
 from psycopg_pool import AsyncConnectionPool
 
 from app import auth, settings
 from app.clock import Clock
-from app.connect import checker
-from app.connect.client import InstitutionData, UnsafeURL, check_url
+from app.connect import checker, importfmt
+from app.connect.client import InstitutionData
+from app.connect.imported import (
+    IN_PROCESS_HEADER,
+    IN_PROCESS_TOKEN,
+    PREFIX,
+    ImportedStore,
+)
 from app.institutions.service import Institutions
 from app.problems import Problem
 
-INTERNAL = "http://amiri.internal"  # the base an in-process call to a sample institution uses
+INTERNAL = "http://amiri.internal"  # the base an in-process call uses
 
 
-def auth_allowed() -> bool:
-    """Calls with a key or token: only once DATA_SECRET_KEY is set to encrypt it. The prototype runs without, so it
-    connects to sample institutions and test APIs with no authorization (the page says so)."""
-    return len(settings.raw("DATA_SECRET_KEY")) >= 32
-
-
-def _fernet() -> Fernet:
-    key = settings.raw("DATA_SECRET_KEY")
-    if len(key) < 32:
-        raise Problem(422, "secret_key_missing", "DATA_SECRET_KEY isn't set (32+ characters), so a key can't be stored. "
-                      "Set it, or connect without a key.")
-    return Fernet(base64.urlsafe_b64encode(hashlib.sha256(key.encode()).digest()))
+def max_bytes() -> int:
+    return int(settings.number("DATA_IMPORT_MAX_MB") * 1024 * 1024)
 
 
 class DataConnection:
     def __init__(self, pool: AsyncConnectionPool, institutions: Institutions, clock: Clock):
         self.pool, self.institutions, self.clock = pool, institutions, clock
-        self.app = None  # set by the app: sample institutions are called in-process
+        self.imported = ImportedStore(pool)
+        self.app = None  # set by the app: the imported data is read in-process
 
     async def _row(self) -> dict | None:
         async with self.pool.connection() as conn:
-            cur = await conn.execute("SELECT * FROM ops.data_connection WHERE id = 1")
+            cur = await conn.execute("SELECT * FROM ops.data_connection WHERE id = 1 AND source = 'imported'")
             return await cur.fetchone()
 
-    @staticmethod
-    def _shown_url(row: dict, public: str) -> str | None:
-        if row["source"] == "sample":
-            return f"{public.rstrip('/')}/mock/{row['sample']}/metrics/v1"
-        return row["base_url"]
-
-    async def view(self, public: str = "") -> dict:
+    async def view(self) -> dict:
         row = await self._row()
+        meta = await self.imported.meta() if row else None
         latest = await self._latest()
-        if latest is not None:  # does it describe the connection as it is now?
+        if latest is not None:  # does it describe the data as it is now?
             latest = {**latest, "current": bool(row) and latest["connection_version"] == row["version"]}
-        if row is None:
-            return {"configured": False, "validation_enabled": False, "validation_allowed": self._validation_allowed(),
-                    "auth_allowed": auth_allowed(), "approved": None, "latest_check": latest}
-        return {"configured": True, "source": row["source"], "sample": row["sample"],
-                "base_url": self._shown_url(row, public), "openapi_url": row["openapi_url"],
-                "auth_header": row["auth_header"], "auth_set": row["auth_value"] is not None,
+        base = {"validation_allowed": self._validation_allowed(), "latest_check": latest,
+                "max_import_mb": settings.number("DATA_IMPORT_MAX_MB")}
+        if row is None or meta is None:
+            return {"configured": False, "validation_enabled": False, "approved": None, **base}
+        return {"configured": True, "source": "imported",
+                "imported": {"file_name": meta["file_name"], "bytes": meta["bytes"], "as_of": meta["as_of"],
+                             "about": meta["about"], "summary": meta["summary"], "at": meta["imported_at"],
+                             "by": meta["imported_by"]},
                 "approved": {"check_id": row["approved_check_id"], "at": row["approved_at"], "by": row["approved_by"]}
                 if row["approved_check_id"] else None,
-                "validation_enabled": row["validation_enabled"], "validation_allowed": self._validation_allowed(),
-                "auth_allowed": auth_allowed(),
-                "latest_check": latest, "updated_at": row["updated_at"], "updated_by": row["updated_by"]}
+                "validation_enabled": row["validation_enabled"], "updated_at": row["updated_at"],
+                "updated_by": row["updated_by"], **base}
 
     @staticmethod
     def _validation_allowed() -> bool:
         return settings.raw("METRICS_VALIDATION") == "on"
 
-    async def put(self, body: dict, actor: str, public: str = "") -> dict:
-        """A new or changed connection. It needs checking and approving again."""
-        source = body["source"]
-        enc = None
-        if source == "sample":
-            if body.get("sample") not in ("bank", "insurer"):
-                raise Problem(422, "validation_error", "Choose the sample bank or the sample insurer.")
-            base = openapi = header = None
-        else:
-            base = (body.get("base_url") or "").strip().rstrip("/")
-            openapi = (body.get("openapi_url") or "").strip() or None
-            if not base.endswith("/metrics/v1"):
-                raise Problem(422, "validation_error", "The address must end with /metrics/v1 (the reference API's base), "
-                              "e.g. https://data.bank.example/metrics/v1.")
-            for u in filter(None, (base, openapi)):
-                try:
-                    check_url(u)
-                except UnsafeURL as e:
-                    raise Problem(422, "unsafe_url", str(e)) from e
-            header = (body.get("auth_header") or "").strip() or None
-            if (header or body.get("auth_value")) and not auth_allowed():
-                raise Problem(422, "auth_off", "This installation connects without authorization: leave the key out.")
-            if body.get("auth_value"):
-                if not header:
-                    raise Problem(422, "validation_error", "Name the header the key goes in (e.g. Authorization).")
-                enc = _fernet().encrypt(body["auth_value"].encode())
-            elif header:
-                old = await self._row()
-                enc = old["auth_value"] if old and old["auth_header"] == header and old["source"] == "url" else None
-                if enc is None:
-                    raise Problem(422, "validation_error", "Give the key or token for that header.")
-        async with self.pool.connection() as conn:
+    def _today(self, doc: object):
+        """Today where the institution is (the catalog's time zone, else UTC), for as_of."""
+        tz = "UTC"
+        if isinstance(doc, dict) and isinstance(doc.get("catalog"), dict):
+            tz = str((doc["catalog"].get("profile") or {}).get("time_zone") or "UTC")
+        try:
+            zone = ZoneInfo(tz)
+        except (ValueError, KeyError):
+            zone = ZoneInfo("UTC")
+        return self.clock.now().astimezone(zone).date()
+
+    async def import_(self, raw: bytes, file_name: str | None, actor: str) -> dict:
+        """Replaces the institution's data with a file. It needs checking and approving again."""
+        if len(raw) > max_bytes():
+            raise too_large(len(raw))
+        try:
+            doc = json.loads(raw)
+        except UnicodeDecodeError as e:
+            raise Problem(422, "invalid_json", "The file isn't UTF-8 text.") from e
+        except json.JSONDecodeError as e:
+            raise Problem(422, "invalid_json", f"The file isn't valid JSON: {e.msg} at line {e.lineno}, "
+                          f"column {e.colno}.") from e
+        try:
+            data = importfmt.read(doc, self._today(doc))
+        except importfmt.Invalid as e:
+            first = e.errors[0]
+            raise Problem(422, "invalid_import", f"The file can't be imported: {first['field']}: {first['message']}"
+                          + (f" (and {len(e.errors) - 1} more)" if len(e.errors) > 1 else ""),
+                          errors=e.errors) from e
+        name = (file_name or "").strip()[:200] or None
+        now = self.clock.now()
+        async with self.pool.connection() as conn, conn.transaction():
+            await self.imported.write(conn, data, name, len(raw), hashlib.sha256(raw).hexdigest(), now, actor)
             await conn.execute(
-                """INSERT INTO ops.data_connection (id, source, sample, base_url, openapi_url, auth_header, auth_value,
-                     approved_check_id, approved_at, approved_by, validation_enabled, updated_at, updated_by)
-                   VALUES (1, %s, %s, %s, %s, %s, %s, NULL, NULL, NULL, false, %s, %s)
-                   ON CONFLICT (id) DO UPDATE SET version = ops.data_connection.version + 1,
-                     source = excluded.source, sample = excluded.sample,
-                     base_url = excluded.base_url, openapi_url = excluded.openapi_url, auth_header = excluded.auth_header,
-                     auth_value = excluded.auth_value, approved_check_id = NULL, approved_at = NULL, approved_by = NULL,
-                     validation_enabled = false, updated_at = excluded.updated_at, updated_by = excluded.updated_by""",
-                (source, body.get("sample") if source == "sample" else None, base, openapi, header, enc,
-                 self.clock.now(), actor))
-        return await self.view(public)
+                """INSERT INTO ops.data_connection (id, source, approved_check_id, approved_at, approved_by,
+                     validation_enabled, updated_at, updated_by)
+                   VALUES (1, 'imported', NULL, NULL, NULL, false, %s, %s)
+                   ON CONFLICT (id) DO UPDATE SET version = ops.data_connection.version + 1, source = 'imported',
+                     approved_check_id = NULL, approved_at = NULL, approved_by = NULL, validation_enabled = false,
+                     updated_at = excluded.updated_at, updated_by = excluded.updated_by""", (now, actor))
+        return await self.view()
 
     async def client(self) -> tuple[InstitutionData, str, str | None]:
-        """The client for the connection as it is now, its target (as shown) and its OpenAPI address."""
+        """The client for the imported data (served in-process), its target as shown, and its OpenAPI address."""
         row = await self._row()
-        if row is None:
-            raise Problem(409, "not_configured", "No data connection yet: enter the address, or use a sample institution.")
-        if row["source"] == "sample":
-            headers = {}
-            if auth.gate_on():  # the bot check covers /mock/: an in-process call carries a fresh session
-                headers["Cookie"] = f"{auth.COOKIE}={auth.issue('internal')[0]}"
-            base = f"{INTERNAL}/mock/{row['sample']}/metrics/v1"
-            data = InstitutionData(base, headers=headers, transport=httpx.ASGITransport(app=self.app))
-            return data, f"the sample {row['sample']}", f"{INTERNAL}/mock/{row['sample']}/openapi.json"
-        for u in filter(None, (row["base_url"], row["openapi_url"])):
-            try:
-                check_url(u)
-            except UnsafeURL as e:
-                raise Problem(422, "unsafe_url", str(e)) from e
-        headers = {}
-        if row["auth_header"] and row["auth_value"]:
-            try:
-                headers[row["auth_header"]] = _fernet().decrypt(bytes(row["auth_value"])).decode()
-            except InvalidToken as e:
-                raise Problem(409, "secret_unreadable", "The stored key can't be read (DATA_SECRET_KEY changed): "
-                              "enter it again.") from e
-        return InstitutionData(row["base_url"], headers=headers), row["base_url"], row["openapi_url"]
+        meta = await self.imported.meta() if row else None
+        if row is None or meta is None:
+            raise Problem(409, "not_configured", "No data yet: import your institution's data as a JSON file.")
+        headers = {IN_PROCESS_HEADER: IN_PROCESS_TOKEN}
+        if auth.gate_on():  # the bot check covers /imported/: an in-process call carries a fresh session
+            headers["Cookie"] = f"{auth.COOKIE}={auth.issue('internal')[0]}"
+        data = InstitutionData(f"{INTERNAL}{PREFIX}/metrics/v1", headers=headers,
+                               transport=httpx.ASGITransport(app=self.app))
+        target = f"the imported file{' ' + meta['file_name'] if meta['file_name'] else ''} (as of {meta['as_of']})"
+        return data, target, f"{INTERNAL}{PREFIX}/openapi.json"
 
     async def check(self, actor: str) -> dict:
-        row = await self._row()
         data, target, openapi_url = await self.client()
+        row = await self._row()
         iid = settings.raw("INSTITUTION_ID")
         try:
             p = await self.institutions.profile(iid)
@@ -168,7 +146,7 @@ class DataConnection:
                 (check_id, row["version"], report["started_at"], report["finished_at"], report["status"], target,
                  report["server_version"], Jsonb(report), actor))
             if report["status"] == "not_ready" and row["approved_check_id"]:
-                # an approved connection that now fails: validation stops until it is fixed and approved again
+                # approved data that now fails: validation stops until it is fixed and approved again
                 await conn.execute("UPDATE ops.data_connection SET approved_check_id = NULL, approved_at = NULL, "
                                    "approved_by = NULL, validation_enabled = false WHERE id = 1")
                 report["withdrawn"] = "The approval was withdrawn and validation switched off: fix the problems, check, approve."
@@ -199,36 +177,42 @@ class DataConnection:
             raise Problem(404, "not_found", f"No check {check_id}.")
         return r["report"]
 
-    async def approve(self, actor: str, public: str = "") -> dict:
+    async def approve(self, actor: str) -> dict:
         row = await self._row()
         latest = await self._latest()
         if row is None or latest is None:
-            raise Problem(409, "not_checked", "Check the connection first.")
+            raise Problem(409, "not_checked", "Check the data first.")
         if latest["connection_version"] != row["version"]:
-            raise Problem(409, "not_checked", "The connection changed since the last check; check it again.")
+            raise Problem(409, "not_checked", "The data changed since the last check; check it again.")
         if latest["status"] == "not_ready":
             raise Problem(409, "not_ready", "The last check found blocking problems; fix them and check again.")
         async with self.pool.connection() as conn:
             await conn.execute("UPDATE ops.data_connection SET approved_check_id = %s, approved_at = %s, approved_by = %s "
                                "WHERE id = 1", (latest["check_id"], self.clock.now(), actor))
-        return await self.view(public)
+        return await self.view()
 
-    async def set_validation(self, enabled: bool, actor: str, public: str = "") -> dict:
+    async def set_validation(self, enabled: bool, actor: str) -> dict:
         row = await self._row()
         if enabled:
             if not self._validation_allowed():
                 raise Problem(409, "validation_off", "Validation is switched off on this server (METRICS_VALIDATION).")
             if row is None or not row["approved_check_id"]:
-                raise Problem(409, "not_approved", "Approve a checked connection first.")
+                raise Problem(409, "not_approved", "Approve checked data first.")
         if row is not None:
             async with self.pool.connection() as conn:
                 await conn.execute("UPDATE ops.data_connection SET validation_enabled = %s, updated_by = %s WHERE id = 1",
                                    (enabled, actor))
-        return await self.view(public)
+        return await self.view()
 
     async def validation_on(self) -> bool:
-        """Validation runs: allowed by the server, switched on, on an approved connection."""
+        """Validation runs: allowed by the server, switched on, on approved data."""
         if not self._validation_allowed():
             return False
         row = await self._row()
         return bool(row and row["validation_enabled"] and row["approved_check_id"])
+
+
+def too_large(size: int) -> Problem:
+    cap = settings.number("DATA_IMPORT_MAX_MB")
+    return Problem(413, "too_large", f"The file is {size / 1024 / 1024:.1f} MB; the most this server takes is "
+                   f"{cap:g} MB (DATA_IMPORT_MAX_MB).")
