@@ -1,7 +1,7 @@
 // Events, as a reader: the headline says which events could hit the bank's products; the list on the left groups them by
 // whether anything was traced to a product, and the chosen one reads in full on the right: why it matters by product,
 // where it started, where it is, and the way into the event. The investigation's queue is one line, not stacked banners.
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../../api/client";
 import { alertsApi } from "../../api/alerts";
@@ -143,7 +143,17 @@ export function EventsPage() {
   const [show, setShow] = useState<Show>("open");
   const [sort, setSort] = useState<Sort>("newest");
   const [sim, setSim] = useState(false);  // simulated events (from a series' "Simulate a move") stay out of the live picture unless asked for
-  const [sel, setSel] = useState<string | null>(null);
+  const [sel, setSel] = useState<string | null>(null);    // the event picked with a click
+  const [peek, setPeek] = useState<string | null>(null);  // the event the mouse rests on: shown until it leaves the list
+  const timer = useRef(0);
+  const nav = useRef<HTMLElement>(null);
+  // the list ends at the bottom of the screen and scrolls inside itself, like Radar's; measured from where it starts
+  useLayoutEffect(() => {
+    const fit = () => { const el = nav.current; if (!el) return;
+      const top = el.getBoundingClientRect().top + (el.closest(".main")?.scrollTop ?? 0);
+      el.style.setProperty("--ev-top", `${Math.round(top)}px`); };
+    fit(); addEventListener("resize", fit); return () => removeEventListener("resize", fit);
+  });
   const { status, reload: reloadStatus } = useInvestigationStatus();
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [runs, setRuns] = useState<Run[]>([]);
@@ -190,9 +200,13 @@ export function EventsPage() {
   const next = status?.next_batch_at && status.connected ? (new Date(status.next_batch_at) <= now ? "very soon" : `in ${until(status.next_batch_at, now)}`) : null;
 
   const reach = rows.filter(e => e.hypotheses > 0), none = rows.filter(e => e.hypotheses === 0);
-  const cur = rows.find(e => e.event_id === sel) ?? reach[0] ?? rows[0];
+  const cur = rows.find(e => e.event_id === peek) ?? rows.find(e => e.event_id === sel) ?? reach[0] ?? rows[0];
   const item = (e: EventRow) => <li key={e.event_id}>
-    <button type="button" aria-current={cur?.event_id === e.event_id} onClick={() => { setSel(e.event_id);  // on a phone the reader is under the list: go to it
+    <button type="button" aria-current={cur?.event_id === e.event_id}
+      // resting on an event previews it, after a moment so passing over rows on the way to the reader doesn't
+      onMouseEnter={() => { clearTimeout(timer.current); timer.current = window.setTimeout(() => setPeek(e.event_id), 180); }}
+      onMouseLeave={() => clearTimeout(timer.current)}
+      onClick={() => { clearTimeout(timer.current); setPeek(null); setSel(e.event_id);  // on a phone the reader is under the list: go to it
       if (matchMedia("(max-width:900px)").matches) requestAnimationFrame(() => document.getElementById("ev-read-h")?.scrollIntoView({ block: "start" })); }}>
       <span className="ev-tt">{title(e)}</span>
       <span className="ev-isub">{e.hypotheses ? `${count(e.hypotheses, "possible impact")} · ` : ""}{dayTime(e.anchor)}{e.status === "closed" && show === "all" ? " · closed" : ""}{e.world !== "live" ? " · simulated" : ""}</span>
@@ -232,7 +246,7 @@ export function EventsPage() {
         <Empty icon="events" title={show === "open" ? "No open events" : "No events here"} actions={<Link className="btn" to="/studio"><Icon name="studio" />Try a what-if in the Scenario Studio</Link>}>
           When AMIRI Agent traces news or a price move to your products, the event appears here.</Empty>
       ) : <div className="ev-split">
-        <nav className="ev-index" aria-label="Events">
+        <nav className="ev-index" aria-label="Events" ref={nav} onMouseLeave={() => { clearTimeout(timer.current); setPeek(null); }}>
           {reach.length > 0 && <section className="hit" aria-labelledby="ev-k-hit"><h2 id="ev-k-hit">Could hit your products <span>{reach.length}</span></h2><ol>{reach.map(item)}</ol></section>}
           {none.length > 0 && <section className="none" aria-labelledby="ev-k-none"><h2 id="ev-k-none">No impact traced <span>{none.length}</span></h2><ol>{none.map(item)}</ol></section>}
         </nav>

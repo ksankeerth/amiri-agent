@@ -24,6 +24,20 @@
 
 /* the list beside the chosen event */
 .ev-split { display:grid; grid-template-columns:minmax(0,5fr) minmax(0,7fr); gap:48px; margin-top:28px; }
+/* the list keeps its place and scrolls inside itself, like Radar's: from where it starts to the bottom of the screen, no box,
+   just a slim scrollbar; the reader beside it stays in view */
+.ev-split { align-items:start; }
+.ev-index { position:sticky; top:16px; max-height:max(320px, calc(100dvh - var(--ev-top, 420px) - 24px)); overflow-y:auto;
+  overscroll-behavior:contain; padding-right:10px; }
+/* a slim scrollbar that stays visible (the standard scrollbar-width would let macOS hide it until you scroll) */
+.ev-index::-webkit-scrollbar { width:6px; }
+.ev-index::-webkit-scrollbar-thumb { background:var(--line-strong); border-radius:3px; }
+.ev-index::-webkit-scrollbar-track { background:var(--hairline); border-radius:3px; }
+@supports not selector(::-webkit-scrollbar) { .ev-index { scrollbar-width:thin; scrollbar-color:var(--line-strong) var(--hairline); } }
+/* a group's heading stays at the top of the list while its events scroll under it */
+.ev-index h2 { position:sticky; top:0; z-index:1; background:var(--paper); padding-top:2px; }
+.ev-index button:focus:not(:focus-visible) { outline:none; }  /* a click shows the green row, not a ring as well */
+.ev-index button:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
 /* each group starts with a heading that reads as a heading: a coloured mark, a count, a rule under it; events sit under it */
 .ev-index section + section { margin-top:28px; }
 .ev-index h2 { display:flex; align-items:center; gap:10px; margin:0; padding-bottom:8px; border-bottom:2px solid var(--line);
@@ -91,6 +105,7 @@
 @media (max-width:900px) {
   .ev .ph-title h1 { font-size:34px; }
   .ev-split { grid-template-columns:minmax(0,1fr); gap:24px; }
+  .ev-index { position:static; max-height:none; overflow:visible; padding-right:0; }
   .ev-run { grid-template-columns:minmax(0,1fr); row-gap:4px; }
   .ev-run-end { justify-self:start; flex-wrap:wrap; }
 }
