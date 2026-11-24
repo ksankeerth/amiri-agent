@@ -1,0 +1,60 @@
+/* Events list (the redesign): events grouped by what they mean for the bank. Scoped to .rd-events, on the rd system. */
+.rd-events .rd-tabs .rd-k { font-size:inherit; font-weight:500; }   /* showcase.css's global .rd-k would shrink the tab counts */
+.rd-events .rd-lede .rd-tbtn { font-size:16px; margin-left:10px; }
+.rd-events .rd-help { margin-top:14px; }
+.rd-events .rd-help p { margin:0; }
+.rd-events .rd-head .rd-actions .btn { white-space:nowrap; }
+
+.rd-events .ev-lines { margin-top:14px; }
+.rd-events .ev-lines > * { margin:6px 0 0; }
+.rd-events .ev-wait { display:flex; align-items:center; gap:20px; flex-wrap:wrap; padding:6px 0; font-size:17px; color:var(--ink); }
+.rd-events .ev-ask { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+.rd-events .rd-tabs .rd-tabs-end { gap:20px; flex-wrap:wrap; }
+.rd-events .ev-sort { font-size:15px; color:var(--ink-3); display:flex; align-items:center; gap:8px; }
+.rd-events .ev-sort .input { font-size:16px; min-height:40px; color:var(--ink); }
+
+/* a group: the shared Section, with a hairline under its heading */
+.rd-events .ev-groups > .rd-sec:first-child { margin-top:24px; }
+.rd-events .ev-none { margin:24px 0 0; }
+.rd-events .ev-grp .rd-sec-h { margin-bottom:0; padding-bottom:12px; border-bottom:1px solid var(--rd-hair); column-gap:16px; row-gap:2px; }
+.rd-events .ev-grp .rd-sec-m { font-size:16px; }
+.rd-events .ev-list { list-style:none; margin:0; padding:0; }
+
+/* an event that could hurt or help: shape, title and small print, the possible impacts as a figure, what the checks say */
+.rd-events .ev-row { display:grid; grid-template-columns:28px minmax(0, 1fr) 190px 250px; column-gap:20px; align-items:center;
+  padding:16px 0; border-bottom:1px solid var(--rd-hair); }
+.rd-events .ev-shape { font-size:20px; line-height:1; text-align:center; align-self:start; padding-top:4px; }
+.rd-events .ev-row .rd-row-t { font-size:19px; }
+.rd-events .ev-n { display:flex; align-items:baseline; gap:8px; white-space:nowrap; }
+.rd-events .ev-n b { font-size:30px; line-height:1; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
+.rd-events .ev-n span { font-size:15px; color:var(--ink-3); }
+.rd-events .ev-ck { font-size:15px; color:var(--ink-2); line-height:1.4; }
+.rd-events .ev-ck .rd-toneword { white-space:normal; font-size:15px; }
+
+/* an event that touches none of your products: one quiet line */
+.rd-events .ev-quiet { display:grid; grid-template-columns:28px minmax(0, 1fr) auto; column-gap:20px; align-items:baseline; padding:12px 0;
+  border-bottom:1px solid var(--rd-hair); font-size:17px; color:var(--ink-2); }
+.rd-events .ev-quiet { align-items:center; }
+.rd-events .ev-quiet .ev-shape { padding-top:0; font-size:17px; align-self:center; }
+.rd-events .ev-quiet .rd-fine { text-align:right; white-space:nowrap; }
+
+.rd-events .ev-findings { margin:32px 0 0; font-size:17px; color:var(--ink); }
+.rd-events .ev-findings .rd-toneword { white-space:normal; }
+.rd-events .ev-folds { margin-top:32px; border-top:2px solid var(--ink); }
+.rd-events .ev-folds .rd-fold:first-child > button { padding-top:16px; }
+.rd-events .ev-folds .rd-fold-b { padding-left:30px; }
+.rd-events .ev-folds .rd-fold-s b { color:var(--high-ink); }
+.rd-events .ev-runs { margin-bottom:12px; }
+.rd-events .ev-runs .ev-when { white-space:nowrap; }
+.rd-events .ev-runs .ev-when .rd-fine { display:block; }
+.rd-events .ev-more { padding:8px 0 12px; }
+
+@media (max-width: 1100px) {
+  .rd-events .ev-row { grid-template-columns:28px minmax(0, 1fr) auto; row-gap:6px; }
+  .rd-events .ev-ck { grid-column:2 / -1; }
+}
+@media (max-width: 700px) {
+  .rd-events .ev-quiet { grid-template-columns:28px minmax(0, 1fr); }
+  .rd-events .ev-quiet .rd-fine { grid-column:2; text-align:left; white-space:normal; }
+}
