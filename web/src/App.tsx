@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, lazy, Suspense, useContext, useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Icon } from "./components/Icon";
 import { PageTitle } from "./components/rd";
@@ -28,6 +28,10 @@ import { SettingsPage } from "./pages/admin/Settings";
 import { FindingsPage } from "./pages/findings/Findings";
 import { SpecPage } from "./pages/spec/Spec";
 import { SpecPrintPage } from "./pages/spec/SpecPrint";
+
+// The v2 component gallery: dev server only. `import.meta.env.DEV` is a constant false in the production build, so the
+// import below is dropped there and /dev/v2 doesn't exist (checked by grepping dist/ for the gallery's words).
+const DevGallery = import.meta.env.DEV ? lazy(() => import("./pages/dev/V2Gallery")) : null;
 
 export interface Installation {
   institution_id: string; profile: boolean; name: string | null; short_name?: string | null; home_country?: string;
@@ -134,6 +138,7 @@ function Frame({ inst }: { inst: Installation }) {
         <Route path="/admin/data" element={<DataConnectionsPage />} />
         <Route path="/admin/settings" element={<SettingsPage />} />
         <Route path="/spec" element={<SpecPage />} />
+        {DevGallery && <Route path="/dev/v2" element={<Suspense fallback={<PageSkeleton bare />}><DevGallery /></Suspense>} />}
         {[...NAV.risk_manager, ...NAV.platform_admin].filter(([, , to]) => !BUILT.has(to)).map(([, label, to]) => (
           <Route key={to} path={to} element={<NotBuilt title={label} />} />
         ))}

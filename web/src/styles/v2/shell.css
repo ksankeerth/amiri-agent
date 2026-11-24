@@ -126,7 +126,7 @@
   padding: 12vh var(--v2-sp-16) var(--v2-sp-16); background: var(--v2-scrim);
 }
 .v2-goto {
-  width: 520px; max-width: 100%; max-height: 72vh; display: flex; flex-direction: column; overflow: hidden;
+  width: 560px; max-width: 100%; max-height: 72vh;  /* board 13 draws 520; the footer line needs 545 to stay on one line */ display: flex; flex-direction: column; overflow: hidden;
   background: var(--v2-surface); border: 1px solid var(--v2-line); border-radius: var(--v2-r-panel); box-shadow: var(--v2-shadow-pop);
 }
 .v2-goto__bar {

@@ -89,6 +89,7 @@
   --v2-toast-bg:#101613;
   --v2-toast-text:#FFFFFF;
   --v2-toast-text-2:#C8CEC9;
+  --v2-toast-muted:#9AA39E;    /* the small mono code on a refusal toast */
   /* A2: dots and marks only, never words */
   --v2-dot-live:#13A05A;  --v2-halo-live:#DDF1E5;
   --v2-dot-warn:#D97706;  --v2-halo-warn:#FBEBD5;
@@ -134,6 +135,7 @@
     --v2-toast-bg:#26302B;
     --v2-toast-text:#E9EEEA;
     --v2-toast-text-2:#C3CBC6;
+    --v2-toast-muted:#A3ACA6;
     --v2-dot-live:#5BC48A;  --v2-halo-live:#1B3A29;
     --v2-dot-warn:#E9A24D;  --v2-halo-warn:#3A2A12;
     --v2-dot-idle:#66706B;  --v2-halo-idle:#26302B;
@@ -175,6 +177,7 @@
   --v2-toast-bg:#26302B;
   --v2-toast-text:#E9EEEA;
   --v2-toast-text-2:#C3CBC6;
+  --v2-toast-muted:#A3ACA6;
   --v2-dot-live:#5BC48A;  --v2-halo-live:#1B3A29;
   --v2-dot-warn:#E9A24D;  --v2-halo-warn:#3A2A12;
   --v2-dot-idle:#66706B;  --v2-halo-idle:#26302B;

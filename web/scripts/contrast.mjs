@@ -66,7 +66,7 @@ const text = [
   ["good", [...surfaces, "good-tint"]],
   ["brand", [...surfaces, "brand-tint", "hover", "selected"]],
   ["brand-hover", surfaces],
-  ["neutral-ink", ["neutral-tint"]],
+  ["neutral-ink", ["neutral-tint", ...surfaces]],   // the dashed Test / Checks off pill sits on the page or a row
   ["sim-ink", ["sim-tint"]],
   ["on-bad", ["bad"]],                           // count badge: text on a solid red
   ["ink-btn-text", ["ink-btn"]],
@@ -74,6 +74,7 @@ const text = [
   ["warn-ink-2", ["warn-bg"]],
   ["toast-text", ["toast-bg"]],
   ["toast-text-2", ["toast-bg"]],
+  ["toast-muted", ["toast-bg"]],
 ];
 // non-text pairs: [token, background]; 3:1
 const nonText = [

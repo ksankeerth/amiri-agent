@@ -4,6 +4,8 @@ import { Icon } from "./Icon";
 import { PageHeader } from "./blocks";
 import { ApiError } from "../api/client";
 import { isDemoLocked, LOCK_TOAST } from "./demoLock";
+import { refusalOf } from "./v2/states";
+import { ToastHost, type ToastData } from "./v2/Toasts";
 import "../styles/fixe.css";
 
 /** Set by a page that has the setup agent beside it: PageHead puts the show/hide button with the page's buttons. */
@@ -198,16 +200,28 @@ export function Modal({ title, onClose, children, footer, wide }: { title: React
 }
 
 // ---------------------------------------------------------------- toasts
+// One list, drawn by v2/Toasts.tsx. `useToast()` is the short note every page already uses (a string: role=status).
+// `useRefusalToast()` is for when the server said no: it shows the problem's detail and, small, its code (role=alert).
+// Neither closes while hovered or focused, and each has a close button (A10).
 const ToastCtx = createContext<(msg: string) => void>(() => {});
 export const useToast = () => useContext(ToastCtx);
+type RefusalPush = (error: unknown, title?: string) => void;
+const RefusalCtx = createContext<RefusalPush>(() => {});
+/** Show a refusal from a failed call: `catch (e) { refuse(e) }`. A title (one bold line above the detail) is optional. */
+export const useRefusalToast = () => useContext(RefusalCtx);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<{ id: number; msg: string }[]>([]);
-  const push = useCallback((msg: string) => {
+  const [items, setItems] = useState<ToastData[]>([]);
+  const add = useCallback((t: Omit<ToastData, "id">) => {
     const id = Date.now() + Math.random();
-    setItems(x => (x.some(t => t.msg === msg) ? x : [...x, { id, msg }]));  // the same words twice at once: once
-    setTimeout(() => setItems(x => x.filter(t => t.id !== id)), 4200);
+    setItems(x => (x.some(o => o.message === t.message && o.code === t.code) ? x : [...x, { ...t, id }]));  // the same words twice at once: once
   }, []);
+  const push = useCallback((message: string) => add({ kind: "info", message }), [add]);
+  const refuse = useCallback<RefusalPush>((error, title) => {
+    const r = refusalOf(error);
+    add({ kind: "refusal", message: r?.message ?? "Something went wrong.", code: r?.code, title });
+  }, [add]);
+  const close = useCallback((id: number) => setItems(x => x.filter(t => t.id !== id)), []);
   useEffect(() => {  // a page that didn't know the demo is locked met the server's 403
     const f = () => push(LOCK_TOAST);
     window.addEventListener("amiri:demo-locked", f);
@@ -215,8 +229,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, [push]);
   return (
     <ToastCtx.Provider value={push}>
-      {children}
-      <div className="toasts" role="status" aria-live="polite">{items.map(t => <div className="toast" key={t.id}>{t.msg}</div>)}</div>
+      <RefusalCtx.Provider value={refuse}>
+        {children}
+        <ToastHost items={items} onClose={close} />
+      </RefusalCtx.Provider>
     </ToastCtx.Provider>
   );
 }

@@ -1,0 +1,30 @@
+/* The dev gallery's own layout (dev only, imported by V2Gallery.tsx). Components bring their own styles (styles/v2/components.css). */
+.gal { display: flex; flex-direction: column; gap: var(--v2-sp-40); max-width: 1320px; }
+.gal-title { margin: 6px 0 0; font-size: var(--v2-fs-stat-lg); letter-spacing: -.04em; font-weight: var(--v2-fw-semibold); }
+.gal-lede { margin: 10px 0 0; max-width: 760px; font-size: var(--v2-fs-body); color: var(--v2-text-2); }
+.gal-sec { display: flex; flex-direction: column; gap: var(--v2-sp-18); padding-top: 22px; border-top: 1px solid var(--v2-text); }
+.gal-sec > .gal-lede { margin: 6px 0 0; }
+.gal-h { margin: 4px 0 0; }
+.gal-grid { display: flex; flex-wrap: wrap; gap: 28px 36px; }
+.gal-spec { flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: var(--v2-sp-10); }
+.gal-spec.is-wide { flex-basis: 100%; }
+.gal-spec__h { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--v2-sp-10); }
+.gal-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-10); }
+.gal-col { display: flex; flex-direction: column; gap: var(--v2-sp-8); }
+.gal-live .v2-live { width: 220px; }
+.gal-more { padding-top: var(--v2-sp-12); }
+.gal-pad { padding: var(--v2-sp-12) 0; }
+.gal-sel { display: flex; align-items: center; gap: var(--v2-sp-8); font-size: var(--v2-fs-meta); color: var(--v2-muted); padding-bottom: var(--v2-sp-8); }
+.gal-sel select { height: 32px; border: 1px solid var(--v2-line-input); border-radius: var(--v2-r-nav); padding: 0 var(--v2-sp-8); background: var(--v2-surface); font-weight: var(--v2-fw-medium); font-size: var(--v2-fs-meta); }
+.gal-name { display: block; font-weight: var(--v2-fw-semibold); }
+.gal .gal-price { --v2-row-py: 10px; }
+.gal .gal-tight { --v2-row-py: 9px; --v2-row-px: 12px; }
+.gal-price .gal-name { font-weight: var(--v2-fw-medium); }
+.gal-late { font-size: var(--v2-fs-cap); }
+.gal-events .v2-row { --v2-row-py: 16px; --v2-row-px: 4px; }
+.gal-maps { display: flex; flex-wrap: wrap; gap: var(--v2-sp-32); align-items: flex-start; }
+.gal-maps > * { flex: 1 1 360px; max-width: 540px; }
+.gal-sample { padding: var(--v2-sp-20); border-radius: var(--v2-r-panel); background: var(--v2-surface); border: 1px solid var(--v2-line); display: flex; flex-direction: column; gap: var(--v2-sp-4); }
+.gal-sample__row { display: flex; align-items: center; gap: var(--v2-sp-12); padding: var(--v2-sp-12) 0; border-bottom: 1px solid var(--v2-line); }
+.gal-sample__row b { flex: 1; }
+.gal-sample .gal-row { padding-top: var(--v2-sp-12); }
