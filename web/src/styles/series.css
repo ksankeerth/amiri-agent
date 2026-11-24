@@ -2,6 +2,8 @@
    one line on the latest anomaly), the stats folded. The detail: the price now, the chart and the flagged moves lead;
    the windows, the sandbox and the fetch log open on demand. */
 .sc { padding:16px 18px; display:flex; flex-direction:column; gap:10px; }
+/* each card is as tall as its own content: opening one card's stats doesn't stretch the others in its row */
+.seriesgrid:has(> .sc) { align-items:start; }
 .sc-top { display:flex; align-items:baseline; gap:12px; }
 .sc-top h2 { margin:0; font-size:18px; min-width:0; flex:1; }
 .sc-top .pill { flex:none; }
