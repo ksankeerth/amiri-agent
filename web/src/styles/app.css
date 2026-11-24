@@ -3,7 +3,7 @@
   --paper:#F2F4F7; --surface:#FFFFFF; --surface-2:#FAFBFC; --sunken:#EEF0F3;
   --hairline:#DDE1E6; --hairline-2:#CDD2D9; --line-strong:#8A919B; /* line-strong: inputs and data marks, 3:1 on white */
   --ink:#1B1D21; --ink-2:#585C64; --ink-3:#656A73; --focus:#0E7A4B; --accent-strong:#15774A; --accent-strong-hover:#0F5E3A;
-  --accent:#1E9D63; --accent-hover:#16804F; --accent-ink:#0E5234;
+  --accent:#1E9D63; --accent-hover:#16804F; --accent-ink:#157A4B;  /* green text: reads green, not black, and keeps 4.5:1 on paper and cards */
   --accent-soft:#E9F6EF; --accent-line:#BFE6D2; --on-accent:#FFFFFF;
   --brand:#0F3D2E; --brand-cream:#F1F5EC; --brand-candle:var(--high); /* one orange */
   --critical:#CF4040; --critical-soft:#FBECEC; --critical-line:#F1CECE; --critical-ink:#8E2626;
