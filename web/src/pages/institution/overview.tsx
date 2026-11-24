@@ -26,7 +26,7 @@ export function ProfileFigures({ profile }: { profile: Profile }) {
 }
 
 /** The map's key in one line. The shapes are the map's own: the marks differ in shape and fill, not only colour. */
-export const MAP_KEY = "Curved lines: money flows, thicker for bigger ones · filled dots: customer groups and rivals · rings: places to watch and parts of the footprint · dashed circles: risk areas · dotted lines: sea routes";
+export const MAP_KEY = "Curved lines: money flows, thicker for bigger ones · filled dots: customer groups · crosses: rivals · rings: places to watch and parts of the footprint · dashed circles: risk areas · dotted lines: sea routes";
 
 const firstNumber = (m: string, re: RegExp) => { const x = re.exec(m); return x ? Number(x[1]) : null; };
 

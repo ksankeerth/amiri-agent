@@ -163,11 +163,15 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
   const path = geoPath(zoomed);
   const xy = (c: [number, number] | null) => (c ? zoomed(c) : null);
   const show = (e: React.MouseEvent, text: string) => { const r = box!.getBoundingClientRect(); setTip({ x: e.clientX - r.left, y: e.clientY - r.top, text }); };
-  const pin = (key: string, code: string, color: string, label: string, r = 5, ring = false) => {
+  // pins differ by shape as well as colour: ring = a place, filled dot = a customer group, cross = a rival
+  const pin = (key: string, code: string, color: string, label: string, r = 5, ring = false, cross = false) => {
     const p = xy(at(code));
     if (!p) return null;
     return <g key={key} transform={`translate(${p[0]},${p[1]})`} onMouseMove={e => show(e, label)} onMouseLeave={() => setTip(null)} style={{ cursor: "default" }}>
-      <circle r={r} fill={ring ? "none" : color} stroke={ring ? color : "var(--surface)"} strokeWidth={ring ? 2 : 1.5} /></g>;
+      {cross ? <>
+        <path d={`M${-r},${-r}L${r},${r}M${r},${-r}L${-r},${r}`} stroke="var(--surface)" strokeWidth={5} strokeLinecap="round" />
+        <path d={`M${-r},${-r}L${r},${r}M${r},${-r}L${-r},${r}`} stroke={color} strokeWidth={2.5} strokeLinecap="round" /></>
+        : <circle r={r} fill={ring ? "none" : color} stroke={ring ? color : "var(--surface)"} strokeWidth={ring ? 2 : 1.5} />}</g>;
   };
   const maxFlow = Math.max(1, ...S.flows.map(f => f.value?.amount ?? 0));
   // Which money flows an open event reaches: its place is the flow's far end (same country), or it sits in a risk zone
@@ -277,14 +281,14 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
         {on.has("footprint") && S.footprint.filter(f => f.code.includes("-")).map(f => pin(`fp${f.id}`, f.code, "var(--map-home)", `Footprint: ${P[f.code]?.name} (${f.role})`, 6, true))}
         {on.has("watch") && S["watch-places"].filter(x => x.code).map(x => pin(`w${x.id}`, x.code, "var(--info)", `Watch: ${x.name}${x.reason ? ` · ${x.reason}` : ""}`, 4.5, true))}
         {on.has("segments") && S.segments.flatMap(s => s.places.map((c: string) => pin(`s${s.id}${c}`, c, "var(--accent)", `${s.label} · ${P[c]?.name ?? c}`, 5)))}
-        {on.has("rivals") && S.rivals.flatMap(r => r.places.map((c: string) => pin(`r${r.id}${c}`, c, "var(--high)", `Rival: ${r.name} (${r.overlap} overlap) · ${P[c]?.name ?? c}`, 4)))}
+        {on.has("rivals") && S.rivals.flatMap(r => r.places.map((c: string) => pin(`r${r.id}${c}`, c, "var(--high)", `Rival: ${r.name} (${r.overlap} overlap) · ${P[c]?.name ?? c}`, 4.5, false, true)))}
         {on.has("regulators") && S.regulators.filter(r => r.country).map(r => {
           const p = xy(at(r.country));
           const n = S.regulators.filter(x => x.country === r.country).findIndex(x => x.id === r.id);  // stack labels per country
-          const t = (r.short ?? r.name).slice(0, 7), hw = 6 + t.length * 3.7;  // a 12 px label (the floor for a projector), kept inside the map
-          return p && <g key={`g${r.id}`} transform={`translate(${Math.min(p[0] + 30, w - hw - 4)},${p[1] - 12 - n * 22})`} onMouseMove={e => show(e, `${r.name} · ${r.relation}`)} onMouseLeave={() => setTip(null)}>
-            <rect x={-hw} y={-10} width={hw * 2} height={19} rx={4} fill="var(--surface)" stroke="var(--line-strong)" />
-            <text textAnchor="middle" y={4} fontSize={12} fontWeight={700} fill="var(--ink-2)">{t}</text></g>;
+          const t = (r.short ?? r.name).slice(0, 7), hw = 8 + t.length * 4.6;  // a 14 px label (the floor), kept inside the map
+          return p && <g key={`g${r.id}`} transform={`translate(${Math.min(p[0] + 30, w - hw - 4)},${p[1] - 12 - n * 26})`} onMouseMove={e => show(e, `${r.name} · ${r.relation}`)} onMouseLeave={() => setTip(null)}>
+            <rect x={-hw} y={-12} width={hw * 2} height={23} rx={6} fill="var(--surface)" stroke="var(--line-strong)" />
+            <text textAnchor="middle" y={4.5} fontSize={14} fontWeight={700} fill="var(--ink-2)">{t}</text></g>;
         })}
         {events.flatMap(e => e.places.map(c => {
           const p = xy(at(c));
@@ -323,7 +327,8 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
         {reached.size > 0 && <span><svg width={16} height={10} aria-hidden="true"><path d="M1 8Q8 0 15 8" fill="none" stroke="var(--critical)" strokeWidth={3} /></svg> flows an open event reaches</span>}
       </div> : <div className="row wrap small muted" style={{ gap: 14, marginTop: 6 }}>
         <span><span className="statusdot" style={{ background: "var(--accent)" }} /> customer groups · remittances</span>
-        <span><span className="statusdot" style={{ background: "var(--high)" }} /> exports · rivals</span>
+        <span><span className="statusdot" style={{ background: "var(--high)" }} /> exports</span>
+        <span><svg width={14} height={14} viewBox="-7 -7 14 14" aria-hidden="true" style={{ verticalAlign: -2 }}><path d="M-5,-5L5,5M5,-5L-5,5" stroke="var(--high)" strokeWidth={2.5} strokeLinecap="round" /></svg> rivals</span>
         <span><span className="statusdot" style={{ background: "var(--medium-stroke)" }} /> imports</span>
         <span><span className="statusdot" style={{ background: "var(--critical)" }} /> risk zones</span>
         <span>Line width: flow size · global standards are listed, not pinned</span>
