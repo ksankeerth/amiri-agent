@@ -1,220 +1,96 @@
-// One event: what happened, why it matters to you, when your data will tell, then the detail on demand.
-import { useEffect, useState, type ReactNode } from "react";
+// One event, read top to bottom: when, bad or good for you, the answer in a sentence and where it has got to; then why it
+// matters by the team that has each impact, what happened, what was set aside, and the report. Detail opens in place.
+import { useEffect, useId, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError } from "../../api/client";
-import { investigationApi, type EventDetail, type Hypothesis } from "../../api/investigation";
+import { investigationApi, type EventDetail } from "../../api/investigation";
 import { alertsApi, type AlertItem } from "../../api/alerts";
-import { FactList, HowItWorks, ImpactMarker, ImpactRow, PageHeader, Places, Row, Section, SourceCard, Steps, StatusPill, TechnicalDetails, type Step } from "../../components/blocks";
-import { CheckPill, CheckSummary } from "../../components/checks";
+import { FactList, HowItWorks, PageHeader, TechnicalDetails, TonePill } from "../../components/blocks";
+import { CheckPill } from "../../components/checks";
 import { Icon } from "../../components/Icon";
-import { Markdown } from "../../components/markdown";
-import { Empty, LoadError, PageSkeleton } from "../../components/ui";
-import "../../styles/daily.css";
-import "../../styles/polish-daily.css";
+import { Empty, LoadError, PageSkeleton, useRole } from "../../components/ui";
 import { dayTime } from "../../format";
-import {
-  angleLabel, ALERT_STATUS, checkMove, count, dateRange, earliest, eventTitle, impactText, LEVEL_LABEL, LEVEL_TONE, listText, longWhen, metricWords, onDay,
-  productTypeLabel, relDay, SCREENING, sizeTiming, sourceInfo, splitCheckText, themeLabel, verdictWhy, type VerdictKey,
-} from "../../plain";
+import { count, longWhen, onDay } from "../../plain";
+import { alertPhrase, derive, forYou, Progress, ProductLines, Report, SetAside, Story, type D } from "./eventParts";
+import "../../styles/event-detail.css";
 
-type Task = EventDetail["tasks"][number];
-// what AMIRI Agent inferred, labelled apart from the sourced facts (rule 7.2)
-const AI_CHIP = <span className="dl-ai-chip"><b aria-hidden="true">AI</b>AMIRI Agent's assessment</span>;
-const AI_WROTE = <span className="dl-ai-chip"><b aria-hidden="true">AI</b>Written by AMIRI Agent</span>;
-const TONE_PILL: Record<"bad" | "good" | "mixed" | "neutral", ReactNode> = {
-  bad: <ImpactMarker adverse={true} />, good: <ImpactMarker adverse={false} />,
-  mixed: <StatusPill tone="amber">Mixed for you</StatusPill>, neutral: <StatusPill tone="grey">Neutral for you</StatusPill>,
-};
-
+// keyed by the event id: moving to another event starts from loading, and the previous event's answers can't land on it
 export function EventDetailPage() {
   const { id = "" } = useParams();
+  return <EventLoader key={id} id={id} />;
+}
+
+function EventLoader({ id }: { id: string }) {
   const [e, setE] = useState<EventDetail | null>(null);
   const [err, setErr] = useState<unknown>(null);
-  const [alerts, setAlerts] = useState<AlertItem[]>([]);
+  const [alerts, setAlerts] = useState<AlertItem[] | null>(null);
+  const [alertsFailed, setAlertsFailed] = useState(false);
   const load = () => investigationApi.event(id).then(x => { setE(x); setErr(null); }).catch(setErr);
-  useEffect(() => { load(); }, [id]);  // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { alertsApi.list({ event_id: id }).then(setAlerts).catch(() => setAlerts([])); }, [id]);
+  // a failed alerts request is not "no alerts": the page says it couldn't load them and offers to try again
+  // only the latest request may answer: a slow earlier one can't overwrite a retry's result
+  const asked = useRef(0);
+  const loadAlerts = () => {
+    const n = ++asked.current;
+    alertsApi.list({ event_id: id }).then(x => { if (n === asked.current) { setAlerts(x); setAlertsFailed(false); } })
+      .catch(() => { if (n === asked.current) { setAlerts([]); setAlertsFailed(true); } });
+  };
+  useEffect(() => { load(); loadAlerts(); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
   if (err instanceof ApiError && err.status === 404) return (
     <div className="page"><PageHeader title="Event not found" crumbs={<Link to="/events">Events</Link>} />
       <div className="card"><Empty icon="events" title="This event isn't here" actions={<Link className="btn" to="/events">See all events</Link>}>
         It may have been removed when the prototype was reset.</Empty></div></div>);
-  if (!e) return <div className="page">{err != null ? <><PageHeader title="Event" crumbs={<Link to="/events">Events</Link>} /><LoadError error={err} onRetry={load} what="this event" /></> : <PageSkeleton bare />}</div>;
-
-  const tasks = new Map(e.tasks.map(t => [t.hypothesis_id, t]));
-  // the spec's metric name and whether the move is bad for you: from the alerts when they carry it, else from the task
-  const effects = new Map(alerts.flatMap(a => a.effects).map(x => [x.hypothesis_id, x]));
-  const metricName = (h: Hypothesis) => effects.get(h.hypothesis_id)?.metric_name
-    ?? (tasks.get(h.hypothesis_id)?.check ? splitCheckText(tasks.get(h.hypothesis_id)!.check!.what)[0] : metricWords(h.expected.metric));
-  const adverseOf = (h: Hypothesis): boolean | null => {
-    const t = tasks.get(h.hypothesis_id);
-    if (t?.adverse_direction) return h.expected.direction === t.adverse_direction;
-    if (effects.has(h.hypothesis_id)) return effects.get(h.hypothesis_id)!.adverse;
-    return e.tone === "bad" ? true : e.tone === "good" ? false : null;
-  };
-  const checks = e.hypotheses.map(h => tasks.get(h.hypothesis_id)?.check).filter(c => !!c)
-    .map(c => ({ verdict: c!.verdict as VerdictKey, alert: c!.alert }));
-  const checkOf = (h: Hypothesis) => { const c = tasks.get(h.hypothesis_id)?.check; return c ? { verdict: c.verdict as VerdictKey, alert: c.alert, adverse: adverseOf(h) } : null; };
-  const same = new Set(checks.map(c => c.verdict)).size <= 1 && checks.length === e.hypotheses.length;
-  const next = earliest(e.tasks.filter(t => !t.check?.final).map(t => t.next_check_after ?? t.check?.next_check_after));
-  const checked = checks.filter(c => c.verdict !== "not_yet").length;
-  const nBad = e.hypotheses.filter(h => adverseOf(h) === true).length, nGood = e.hypotheses.filter(h => adverseOf(h) === false).length;
-  const allBad = e.hypotheses.length > 1 && nBad === e.hypotheses.length;  // then "Bad for you" is said once, not on every row
-  const teams = [...new Set(alerts.map(a => a.owner))];
-  const toReview = alerts.filter(a => a.status === "new").length;
-  const lead = e.findings[0];
-  const headline = lead?.evidence?.headlines?.[0];
-  const src = lead ? sourceInfo(lead.source) : null;
-  const title = eventTitle(e);
-
-  const steps: Step[] = [
-    { label: "Noticed", detail: onDay(e.anchor.slice(0, 10)), state: "done", icon: "eye" },
-    { label: "Investigated", detail: e.run.status === "running" ? "in progress" : "linked to this event", state: e.run.status === "running" ? "now" : "done", icon: "search" },
-    { label: e.hypotheses.length ? count(e.hypotheses.length, "possible impact") : "No impacts found", detail: e.hypotheses.length ? count(new Set(e.hypotheses.map(h => h.product_id)).size, "product") : undefined, state: "done", icon: "box" },
-    { label: teams.length ? `Alert to ${teams.length === 1 ? teams[0] : count(teams.length, "team")}` : "No alerts", detail: teams.length ? (toReview ? `${toReview} waiting for review` : "all taken on") : e.hypotheses.length ? "none bad for you" : undefined, state: "done", icon: "alert" },
-    !e.run.validation ? { label: "Checks", detail: "switched off", state: "next", icon: "data" }
-      : checked ? { label: `${checked} of ${e.hypotheses.length} checked`, detail: next ? `next ${onDay(next)}` : "all done", state: next ? "now" : "done", icon: "data" }
-      : { label: next ? `Checks start ${onDay(next)}` : "Checks", detail: next ? relDay(next) : "waiting for your data", state: "next", icon: "data" },
-  ];
-
-  return (
-    <div className="page pd-event">
-      <PageHeader crumbs={<><Link to="/events">Events</Link><span aria-hidden="true">/</span><span>{title}</span></>}
-        title={title}
-        pills={<>{TONE_PILL[nBad && nGood ? "mixed" : nBad ? "bad" : nGood ? "good" : "neutral"]}{e.world !== "live" && <StatusPill tone="blue">Simulated</StatusPill>}
-          <StatusPill tone={e.status === "open" ? "blue" : "grey"}>{e.status === "open" ? "Open" : "Closed"}</StatusPill></>}
-        status={<>Noticed {longWhen(e.anchor)}{e.places.length ? <> · <Places codes={e.places} max={2} /></> : null}</>}
-        actions={toReview ? <Link className="btn btn--primary" to="/alerts"><Icon name="alert" />Review {count(toReview, "alert")}</Link> : undefined}
-        help={<HowItWorks><p>{e.status === "open"
-          ? <>This event stays open until <b>{dayTime(e.open_until)}</b>: new news about the same thing joins it instead of starting a new one.</>
-          : <>This event closed {e.closed_at ? dayTime(e.closed_at) : ""}: nothing new about it came in for a while.</>}</p></HowItWorks>} />
-
-      <Steps steps={steps} label="Where this event has got to" />
-
-      <div className="ev-sum">
-        <section className="card ev-card" aria-labelledby="ev-what">
-          <h2 id="ev-what" className="ev-k">What happened</h2>
-          {lead ? <>
-            <p className="ev-head">{headline?.url ? <a href={headline.url} target="_blank" rel="noreferrer">{headline.title ?? lead.title}<Icon name="external" className="src-ext" /><span className="sr"> (opens the article)</span></a> : headline?.title ?? lead.title}</p>
-            <p className="ev-meta">{src && <Icon name={src.icon} />}{[src?.label, headline?.outlet, onDay((headline?.published_at ?? lead.created_at).slice(0, 10))].filter(Boolean).join(" · ")}</p>
-          </> : <p className="ev-head">{title}</p>}
-          {e.themes.length > 0 && <div className="ev-chips">{e.themes.map((t, i) => <span key={i} className="chip">{themeLabel(t)}</span>)}</div>}
-        </section>
-        <section className="card ev-card" aria-labelledby="ev-why">
-          <h2 id="ev-why" className="ev-k">Why it matters to you</h2>
-          <p className="ev-big">{e.hypotheses.length}<span>{e.hypotheses.length === 1 ? "possible impact" : "possible impacts"} on your products</span></p>
-          <div className="ev-chips">
-            {nBad > 0 && <StatusPill tone="red" icon="bad">{nBad} bad for you</StatusPill>}
-            {nGood > 0 && <StatusPill tone="green" icon="good">{nGood} good for you</StatusPill>}
-            {teams.length > 0 && <StatusPill tone="blue" icon="users">{count(teams.length, "team")} alerted</StatusPill>}
-          </div>
-        </section>
-        <section className="card ev-card" aria-labelledby="ev-when">
-          <h2 id="ev-when" className="ev-k">When we'll know</h2>
-          {!e.run.validation ? <p className="ev-meta">Checks against your data are switched off.</p>
-            : next ? <p className="ev-big">{onDay(next)}<span>{checked ? "next check" : "first check"} against your data, {relDay(next)}</span></p>
-            : <p className="ev-big">{checked}<span>of {e.hypotheses.length} checked against your data</span></p>}
-          {e.run.validation && e.hypotheses.length > 0 && <CheckSummary checks={checks} total={e.hypotheses.length} />}
-        </section>
-      </div>
-
-      <section className="card sec pd-imp" aria-labelledby="ev-impacts">
-        <div className="sec-hd"><h2 id="ev-impacts">Possible impacts</h2><span className="sec-n">{e.hypotheses.length}</span>{e.hypotheses.length > 0 && AI_CHIP}</div>
-        <div className="sec-bd flush">
-        {!e.hypotheses.length ? <p className="sec-line">None of your products is exposed to this event.</p> : <>
-        <p className="sec-line">Expectations, not facts yet: each is checked against your own figures as they're published.{allBad ? <span className="pd-allbad"> All of them would be <b className="dl-crit">bad for you</b>.</span> : ""}</p>
-        <div className={`irs${same ? "" : " with-status"}`}>
-          <div className="ir-row pd-ir-head" aria-hidden="true"><span>Product</span><span>What may happen</span><span>{allBad ? "How big, how soon" : "For you · how big, how soon"}</span>
-            <span>{same ? "" : "Your data so far"}</span><span /></div>
-          {e.hypotheses.map(h => {
-            const t = tasks.get(h.hypothesis_id), c = checkOf(h), m = t?.check ? checkMove(t.check.what) : null;
-            return (
-              <ImpactRow key={h.hypothesis_id} product={h.product_name ?? h.product_id}
-                impact={<>{impactText(metricName(h), h.expected.direction)}{m && <span className="ir-move"><b>{m.move}</b> {m.against}</span>}</>}
-                adverse={allBad ? undefined : adverseOf(h)} size={sizeTiming(h.expected.size, h.expected.timing)}
-                status={!same && c ? <CheckPill c={c} /> : undefined}>
-                <ImpactDetail h={h} t={t} metric={metricName(h)} />
-              </ImpactRow>);
-          })}
-        </div></>}
-        </div>
-      </section>
-
-      <div className="ev-grid2">
-        <div className="col gap16">
-          {alerts.length > 0 && (
-            <Section title="Alerts raised" count={alerts.length} flush action={<Link className="small" to="/alerts">All alerts</Link>}>
-              {alerts.map(a => {
-                const [st] = ALERT_STATUS[a.status];
-                return <Row key={a.alert_id} to="/alerts" marker={<StatusPill tone={LEVEL_TONE[a.level]}>{LEVEL_LABEL[a.level]}</StatusPill>}
-                  label={a.owner} detail={listText([...new Set(a.effects.map(x => x.product))])}
-                  meta={a.status === "acknowledged" && a.acknowledged_by ? `Taken on by ${a.acknowledged_by}` : st} />;
-              })}
-            </Section>
-          )}
-          {e.set_aside.length > 0 && (
-            <Section title="Considered, no impact" count={e.set_aside.length} flush>
-              {e.set_aside.map((s, i) => (
-                <details key={i} className="ir aside">
-                  <summary className="lrow"><span className="row-main"><b className="row-l">{productTypeLabel(s.product_type)}<span className="dl-angle">{angleLabel(s.angle)}</span></b></span>
-                    <span className="row-meta">{SCREENING[s.decision] ?? "No clear link"}</span><Icon name="chevron" className="row-go ir-chev" /></summary>
-                  <p className="aside-why">{s.reason}</p>
-                </details>))}
-            </Section>
-          )}
-        </div>
-        <Section title="What AMIRI Agent noticed" count={e.findings.length + e.developments.length} flush>
-          {e.findings.map(f => {
-            const h = f.evidence?.headlines?.[0], si = sourceInfo(f.source);
-            const ref = f.source_ref ?? {};
-            return <SourceCard key={f.finding_id} icon={si.icon} source={si.label} title={h?.title ?? f.title} href={h?.url}
-              outlet={h?.outlet} when={longWhen(h?.published_at ?? f.created_at)} detail={f.explanation}
-              to={ref.monitor_id ? `/monitors/${ref.monitor_id}` : ref.series_id ? `/series/${ref.series_id}` : undefined}
-              toLabel={ref.monitor_id ? "Open the monitor" : "Open the price series"} />;
-          })}
-          {e.developments.map(d => <Row key={d.finding_id} icon="news" label={d.title} detail="More news about the same thing" meta={`Joined ${dayTime(d.joined_at)}`} />)}
-        </Section>
-      </div>
-
-      <details className="card rep">
-        <summary><Icon name="book" /><span>Full investigation report</span>{AI_WROTE}<Icon name="chevron" className="ir-chev" /></summary>
-        <div className="rep-bd">{e.run.report ? <Markdown text={e.run.report} /> : <span className="muted small">No report.</span>}</div>
-      </details>
-      <div className="mt16"><TechnicalDetails>
-        <FactList items={[["Event", <span className="mono">{e.event_id}</span>], ["Investigation", <span className="mono">{e.run.run_id}</span>],
-          ["Findings", <span className="mono">{e.findings.map(f => `${f.finding_id} (score ${f.score})`).join(", ")}</span>],
-          ["Places", <span className="mono">{e.places.join(", ")}</span>], ["Open until", dayTime(e.open_until)]]} />
-      </TechnicalDetails></div>
-    </div>
-  );
+  if (!e || !alerts) return <div className="page">{err != null ? <><PageHeader title="Event" crumbs={<Link to="/events">Events</Link>} />
+    <LoadError error={err} onRetry={load} what="this event" /></> : <PageSkeleton bare />}</div>;
+  return <EventPage d={derive(e, alerts, alertsFailed)} retryAlerts={loadAlerts} />;
 }
 
-/** A possible impact opened: why, what is watched and when, the result so far; versions under Technical details. */
-function ImpactDetail({ h, t, metric }: { h: Hypothesis; t: Task | undefined; metric: string }) {
-  const c = t?.check;
-  const next = t?.next_check_after ?? c?.next_check_after;
-  const rest = c ? splitCheckText(c.what)[1] : "";
-  return <>
-    <FactList items={[
-      ["Why", `${h.chain_label}.`],
-      ["What we watch", <>{metric}{t?.watch ? <span className="muted"> · {dateRange(t.watch.from, t.watch.until)}</span> : null}</>],
-      ["Result so far", c ? <span className="ck-sum"><CheckPill c={{ verdict: c.verdict as VerdictKey, alert: c.alert }} />
-        {c.verdict === "not_yet" || c.verdict === "insufficient_data" ? <span>{verdictWhy(c.why) || rest}</span> : rest ? <span>{rest}</span> : null}</span>
-        : t ? "Not checked yet" : "No check for this one"],
-      ["Next check", next && !c?.final ? <>{onDay(next)} <span className="muted">({relDay(next)})</span></> : null],
-      ["How sure", c && !c.final && c.verdict !== "not_yet" && c.verdict !== "error" ? "First look; may change as more data comes in" : null],
-    ]} />
-    {c && <Link className="small" to={c.spec_link}>What this metric means</Link>}
-    {(c || t) && <TechnicalDetails>
-      <FactList items={[
-        ["Check", t ? <span className="mono">{t.task_id}</span> : null],
-        ["Metric", <span className="mono">{h.expected.metric}</span>],
-        ["Watch", t?.watch ? `${t.watch.from} to ${t.watch.until}` : null],
-        ["Scope", t?.scope_note ?? null],
-        ["Tests", c?.checks.length ? c.checks.join("; ") : null],
-        ["Revised", c?.supersedes ? `This ${c.supersedes.text}.` : null],
-        ["Spec", c?.versions.spec ?? null], ["Catalog", c?.versions.catalog ?? null],
-        ["Data", c?.versions.data ?? null], ["Validator", c?.versions.validator ?? null],
-      ]} />
-    </TechnicalDetails>}
-  </>;
+function EventPage({ d, retryAlerts }: { d: D; retryAlerts: () => void }) {
+  const { role } = useRole();
+  const [help, setHelp] = useState(false);
+  const panel = useId();
+  const { e } = d, n = e.hypotheses.length;
+  const open = e.status === "open";
+  return <div className="page evd">
+    <header className="evd-head">
+      <nav className="crumbs" aria-label="Breadcrumb"><Link to="/events">Events</Link><span aria-hidden="true">/</span><span>{d.title}</span></nav>
+      <p className="evd-when"><time dateTime={e.anchor} title={longWhen(e.anchor)}>{dayTime(e.anchor)}</time>
+        {n > 0 && !(d.alertsFailed && d.tone === "neutral") && <TonePill tone={d.tone} />}{e.world !== "live" && <span className="pill t-blue">Simulated</span>}
+        <span>{open ? `Open until ${onDay(e.open_until.slice(0, 10))}` : `Closed${e.closed_at ? ` ${onDay(e.closed_at.slice(0, 10))}` : ""}`}</span>
+        <button type="button" className="ph-help" aria-expanded={help} aria-controls={panel} onClick={() => setHelp(h => !h)}><Icon name="help" />How this works</button></p>
+      <div className="evd-h1row"><h1>{d.title}</h1>
+        {d.toReview > 0 && <Link className="btn btn--primary" to="/alerts"><Icon name="alert" />Review {count(d.toReview, "alert")}</Link>}</div>
+      <div id={panel} className="ph-panel" hidden={!help}><HowItWorks><p>{open
+        ? <>This event stays open until <b>{dayTime(e.open_until)}</b>: new news about the same thing joins it instead of starting a new one.</>
+        : <>This event closed {e.closed_at ? dayTime(e.closed_at) : ""}: nothing new about it came in for a while.</>}</p></HowItWorks></div>
+      <p className="evd-lede">{n ? <><span className="ev-n">{count(n, "possible impact")}</span> on <b>{count(d.products.length, "product")}</b>{forYou(d) && `, ${forYou(d)}`}.{" "}
+        {!d.alertsFailed && d.teams.length > 0 && <><b>{count(d.teams.length, "team")}</b> {d.teams.length === 1 ? "has" : "have"} an alert
+          {d.toReview === d.alerts.length ? `; ${d.alerts.length === 1 ? "not" : "none"} taken on yet` : d.toReview ? `; ${d.toReview} still to review` : ", all taken on"}.</>}</>
+        : <>Nothing in it reaches your products. {open ? "It closes on its own when the news stops." : ""}</>}</p>
+      <Progress d={d} />
+      {d.alertsFailed && <p className="evd-once evd-fail"><Icon name="warn" />The alerts for this event couldn't be loaded{n ? ", so the impacts aren't grouped by team" : ""}.
+        <button type="button" className="evd-retry" onClick={retryAlerts}>Try again</button></p>}
+      {e.world !== "live" && <p className="evd-sim"><Icon name="info" />Simulated: this event came from a test move, not real news. It stays out of the live picture.</p>}
+    </header>
+
+    {n > 0 && <section className="evd-sec" aria-labelledby="evd-why">
+      <h2 id="evd-why">Why it matters to you{d.alertsFailed ? "" : ", by team"} <span>{n}</span><Link className="evd-all" to="/alerts">All alerts</Link></h2>
+      {d.onePhrase && <p className="evd-once">{d.teams.length === 1 ? "The team has" : "Each team has"} {d.onePhrase}.</p>}
+      {d.teams.map(t => <div key={t.owner} className="evd-team">
+        <h3><Link to="/alerts">{t.owner}<Icon name="arrow" /></Link>
+          {!d.onePhrase && <span className="evd-st">{[...new Set(t.alerts.map(alertPhrase))].join("; ")}</span>}</h3>
+        <ProductLines d={d} hs={t.hs} /></div>)}
+      {d.free.length > 0 && (d.alertsFailed ? <ProductLines d={d} hs={d.free} /> : <div className="evd-team"><h3>No team alerted</h3><ProductLines d={d} hs={d.free} /></div>)}
+      <p className="evd-sub">AMIRI Agent's assessment: expectations, not facts yet{d.validation ? "; each is checked against your own figures as they're published" : ""}.
+        {d.validation && d.same && d.checked > 0 && <span className="evd-shared">Your data so far, for all of them: <CheckPill c={{ ...d.checks[0], adverse: d.sharedAdverse }} /></span>}</p>
+    </section>}
+
+    <section className="evd-sec" aria-labelledby="evd-what"><h2 id="evd-what">What happened</h2><Story d={d} /></section>
+    {e.set_aside.length > 0 && <section className="evd-sec" aria-labelledby="evd-set"><h2 id="evd-set">Considered, no impact <span>{e.set_aside.length}</span></h2><SetAside d={d} /></section>}
+
+    <div className="evd-foot"><Report d={d} />
+      {role === "platform_admin" && <TechnicalDetails><FactList items={[["Event", <span className="mono">{e.event_id}</span>],
+        ["Investigation", <span className="mono">{e.run.run_id}</span>],
+        ["Findings", <span className="mono">{e.findings.map(f => `${f.finding_id} (score ${f.score})`).join(", ")}</span>],
+        ["Places", <span className="mono">{e.places.join(", ")}</span>], ["Open until", dayTime(e.open_until)]]} /></TechnicalDetails>}</div>
+  </div>;
 }

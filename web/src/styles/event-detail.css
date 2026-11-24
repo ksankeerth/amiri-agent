@@ -1,0 +1,133 @@
+/* One event, read top to bottom. The Findings/Alerts/Events language: hairlines and sections instead of cards, one line per
+   item, labels only where they differ, text 15 px and up. */
+.evd { max-width:1180px; font-size:16px; }
+.evd .muted { color:var(--ink-3); }
+.evd .facts { font-size:15px; }
+.evd .tech > summary { font-size:15px; }
+.evd .tech-bd, .evd .tech-bd .facts { font-size:14px; }
+.evd .rot { transform:rotate(90deg); }
+
+/* the opening: when, bad or good, the event, the answer in a sentence */
+.evd-head .crumbs { margin-bottom:10px; font-size:14px; }
+.evd-when { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:0; font-size:15px; color:var(--ink-3); font-variant-numeric:tabular-nums; }
+.evd-when .ph-help { font-size:15px; }
+.evd-h1row { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-top:6px; }
+.evd-head h1 { margin:0; font-size:44px; line-height:1.08; letter-spacing:-.03em; color:var(--ink); }
+.evd-head .ph-panel { margin-top:14px; }
+.evd-lede { margin:10px 0 0; font-size:18px; line-height:1.5; color:var(--ink-2); max-width:72ch; }
+.evd-lede b { color:var(--ink); }
+/* only the headline number is underlined (the Events list's convention), on the same slow beat */
+.evd .ev-n { font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; padding-bottom:2px;
+  background:linear-gradient(var(--medium), var(--medium)) no-repeat 0 100% / 100% 3px; animation:ovline 5s .6s ease-in-out infinite; }
+.evd-sim { display:flex; align-items:center; gap:8px; margin:12px 0 0; font-size:15px; color:var(--info-ink); }
+.evd-sim svg { width:16px; height:16px; flex:none; }
+
+/* where the event has got to: dots for the agent's steps, amber while people's step waits, a tick only for a person's finished step */
+.evd-prog { list-style:none; margin:14px 0 0; padding:0; display:flex; flex-wrap:wrap; align-items:center; gap:6px 0; font-size:15px; color:var(--ink-2); }
+.evd-prog li { display:inline-flex; align-items:center; gap:8px; }
+.evd-prog li + li::before { content:""; width:22px; height:1px; margin:0 10px; background:var(--line-strong); }
+.evd-prog i { width:10px; height:10px; border-radius:50%; flex:none; background:var(--ink-3); display:grid; place-items:center; }
+.evd-prog b { font-weight:600; color:var(--ink); }
+.evd-prog b span { font-weight:400; color:var(--ink-3); margin-left:6px; }
+.evd-prog .p-wait i { background:var(--medium); box-shadow:0 0 0 3px var(--medium-soft); }
+.evd-prog .p-wait b span { color:var(--medium-ink); }
+.evd-prog .p-now i { background:var(--info); box-shadow:0 0 0 3px var(--info-soft); }
+.evd-prog .p-person i { width:16px; height:16px; background:var(--accent); color:var(--on-accent); }
+.evd-prog .p-person i svg { width:11px; height:11px; }
+.evd-prog .p-off i { background:none; border:2px solid var(--line-strong); }
+.evd-prog .p-off b { font-weight:500; color:var(--ink-3); }
+
+/* a section: a heading on a rule, no box */
+.evd-sec { margin-top:36px; }
+.evd-sec > h2 { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:0 0 4px; padding-bottom:8px; border-bottom:2px solid var(--line);
+  font-size:14px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink); }
+.evd-sec > h2 > span { font-size:14px; letter-spacing:0; padding:0 8px; border-radius:var(--r-pill); background:var(--sunken); color:var(--ink-2); }
+.evd-all { margin-left:auto; white-space:nowrap; font-size:15px; font-weight:600; letter-spacing:0; text-transform:none; color:var(--accent-ink); }
+.evd-sub { margin:12px 0 0; font-size:15px; color:var(--ink-3); }
+.evd-once { margin:10px 0 0; font-size:15px; color:var(--ink-2); }
+.evd-st { font-size:15px; color:var(--ink-3); white-space:nowrap; }
+
+/* a team, then its impacts */
+.evd-team { margin-top:14px; }
+.evd-team h3 { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; margin:6px 0 0; font-size:18px; color:var(--ink-2); }
+.evd-team h3 a { display:inline-flex; align-items:center; gap:6px; color:var(--ink); text-decoration:none; }
+.evd-team h3 a:hover { text-decoration:underline; text-underline-offset:3px; }
+.evd-team h3 svg { width:16px; height:16px; color:var(--ink-3); }
+
+/* a product's possible impacts as one line, opened in place */
+.evd-line { border-bottom:1px solid var(--hairline); }
+.evd-line > summary { list-style:none; cursor:pointer; display:flex; align-items:baseline; gap:6px 16px; padding:11px 4px 11px 14px; font-size:16px; color:var(--ink-2); }
+.evd-line > summary::-webkit-details-marker { display:none; }
+.evd-line > summary:hover { background:var(--hover-bg); }
+.evd-line > summary b { color:var(--ink); }
+.evd-line > summary .pill { align-self:center; }
+.evd-l1 { flex:1 1 auto; min-width:0; }
+.evd-for.bad { color:var(--critical-ink); font-weight:600; }
+.evd-for.good { color:var(--accent-ink); font-weight:600; }
+.evd-chev { width:16px; height:16px; flex:none; color:var(--ink-3); align-self:center; transition:transform .15s; }
+.evd-line[open] > summary .evd-chev, .evd-fold[open] > summary .evd-chev { transform:rotate(90deg); }
+.evd-det { padding:4px 4px 14px 14px; display:flex; flex-direction:column; gap:10px; }
+.evd-det + .evd-det { border-top:1px dashed var(--hairline); padding-top:12px; }
+.evd-small { font-size:15px; color:var(--accent-ink); align-self:flex-start; }
+
+/* what happened */
+.evd-story { display:flex; flex-direction:column; gap:10px; padding-top:10px; font-size:16px; line-height:1.55; color:var(--ink-2); max-width:80ch; }
+.evd-story p { margin:0; }
+.evd-story b { color:var(--ink); }
+.evd-story a { color:var(--accent-ink); }
+.evd-story .src-ext { width:13px; height:13px; margin-left:4px; vertical-align:-1px; color:var(--ink-3); }
+.evd-src { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 8px; }
+.evd-where { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; font-size:15px; }
+.evd-devs { list-style:none; margin:8px 0 0; padding:0; }
+.evd-devs li { display:grid; grid-template-columns:120px minmax(0,1fr); gap:12px; padding:8px 0; border-top:1px solid var(--hairline); font-size:15px; color:var(--ink); }
+.evd-devs time { color:var(--ink-3); font-variant-numeric:tabular-nums; }
+
+/* where it came from and where it is: outlined labels in their own colours (as on the Events list) */
+.evd .ev-lab { display:inline-flex; align-items:center; gap:5px; padding:1px 9px; border:1px solid var(--line-strong); border-radius:var(--r-pill);
+  font:600 14px/1.5 var(--font-ui); color:var(--ink-2); white-space:nowrap; }
+.evd .ev-lab svg { width:14px; height:14px; flex:none; }
+.evd .ev-lab.src-radar { border-color:var(--info-line); color:var(--info-ink); background:var(--info-soft); }
+.evd .ev-lab.src-monitor { border-color:var(--high-line); color:var(--high-ink); background:var(--high-soft); }
+.evd .ev-lab.place { border-color:var(--medium-line); color:var(--medium-ink); background:var(--medium-soft); white-space:normal; }
+.evd .ev-go { display:inline-flex; align-items:center; gap:6px; align-self:flex-start; font-weight:600; text-decoration:none; color:var(--accent-ink); }
+.evd .ev-go:hover { text-decoration:underline; text-underline-offset:3px; }
+.evd .ev-go svg, .evd .ev-more svg { width:16px; height:16px; }
+.evd .ev-more { display:inline-flex; align-items:center; gap:6px; margin-top:4px; padding:8px 0; border:0; background:none; cursor:pointer;
+  font:600 16px/1.4 var(--font-ui); color:var(--accent-ink); }
+
+/* considered and set aside */
+.evd-aside { list-style:none; margin:4px 0 0; padding:0; }
+.evd-aside li { padding:11px 4px; border-bottom:1px solid var(--hairline); font-size:16px; color:var(--ink-2); }
+.evd-aside b { color:var(--ink); }
+
+/* the report, folded */
+.evd-foot { margin-top:32px; display:flex; flex-direction:column; gap:14px; }
+.evd-fold > summary { display:flex; align-items:center; gap:10px; cursor:pointer; padding:12px 4px; border-top:1px solid var(--hairline); border-bottom:1px solid var(--hairline);
+  font-weight:600; color:var(--ink); list-style:none; }
+.evd-fold > summary::-webkit-details-marker { display:none; }
+.evd-fold > summary:hover { background:var(--hover-bg); }
+.evd-fold > summary > svg:first-child { width:18px; height:18px; color:var(--ink-3); }
+.evd-fold > summary .muted { flex:1 1 auto; font-weight:400; font-size:15px; }
+.evd-rep { padding:8px 0; font-size:16px; max-width:80ch; }
+
+@media (max-width:900px) {
+  .evd-head h1 { font-size:32px; }
+  .evd-h1row { flex-direction:column; }
+  .evd-prog { gap:6px 16px; }
+  .evd-prog li + li::before { display:none; }
+  .evd-line > summary { display:grid; grid-template-columns:minmax(0,1fr) 16px; gap:4px 10px; padding-left:4px; }
+  .evd-line .evd-chev { grid-column:2; grid-row:1; }
+  .evd-line .evd-st, .evd-line > summary .pill { grid-column:1; justify-self:start; white-space:normal; }
+  .evd-det { padding-left:4px; }
+  .evd-devs li { grid-template-columns:minmax(0,1fr); gap:0; }
+  .evd-fold > summary { flex-wrap:wrap; }
+  .evd-fold > summary .muted { order:3; flex-basis:100%; padding-left:28px; }
+}
+.evd-fold > summary .evd-chev { margin-left:auto; }
+/* the alerts didn't load: said in the section, with a retry, instead of filing every impact under "No team alerted" */
+.evd-fail { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; color:var(--medium-ink); }
+.evd-fail svg { width:16px; height:16px; flex:none; }
+.evd-retry { font:inherit; font-weight:600; color:var(--accent-ink); background:none; border:0; padding:0; cursor:pointer; }
+.evd-retry:hover { text-decoration:underline; text-underline-offset:3px; }
+/* every check agrees: the shared result once, under the impacts */
+.evd-shared { display:inline-flex; align-items:center; gap:8px; margin-left:6px; }
