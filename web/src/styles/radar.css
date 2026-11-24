@@ -7,8 +7,8 @@
 .rd .btn--lg { border-radius:var(--r-pill); box-shadow:none; }
 /* the headline counts are green and still: numbers aren't animated; only a named thing (an event, a monitor) may glow */
 .rd-n { color:var(--ink); font-variant-numeric:tabular-nums; }
-.rd-n.read { color:var(--accent-ink); }
-.rd-n.ok { color:var(--accent-ink); }
+.rd-n.read { color:var(--accent); }
+.rd-n.ok { color:var(--accent); }
 .rd-link { display:inline-flex; align-items:center; gap:6px; padding:6px 0; border:0; background:none; cursor:pointer; font:600 16px/1.4 var(--font-ui); color:var(--accent-ink); }
 .rd-link:hover { text-decoration:underline; text-underline-offset:3px; }
 
