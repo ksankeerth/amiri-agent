@@ -24,6 +24,8 @@ export interface EventRow {
   /** what the anchor time is: when the news was published, the price move started, a rule takes effect… */
   anchor_basis?: string | null;
   status: "open" | "closed"; open_until: string; closed_at: string | null; hypotheses: number; tasks: number;
+  /** when the investigation opened the event (the server sends it with every event) */
+  created_at?: string;
   developments: number; size: { value: number; unit: string } | null; tone: "good" | "bad" | "mixed" | "neutral";
 }
 export interface Development { finding_id: string; title: string; joined_at: string; reason: string; created_at: string }
@@ -63,8 +65,9 @@ export const investigationApi = {
   investigateNow: (finding_ids?: string[]) =>
     api<Started>(`${B}/investigations`, { method: "POST", json: finding_ids ? { finding_ids } : {} }),
   clearSandbox: () => api<{ findings: number; investigations: number }>(`${B}/sandbox`, { method: "DELETE" }),
-  runs: () => api<{ items: Run[] }>(`${B}/investigations?limit=20`).then(r => r.items),
+  runs: (limit = 20) => api<{ items: Run[] }>(`${B}/investigations?limit=${limit}`).then(r => r.items),
   collect: (run_id: string) => api<Run>(`${B}/investigations/${encodeURIComponent(run_id)}:collect`, { method: "POST" }),
-  events: () => api<{ items: EventRow[] }>(`${B}/events`).then(r => r.items),
+  run: (run_id: string) => api<Run>(`${B}/investigations/${encodeURIComponent(run_id)}`),
+  events: (limit?: number) => api<{ items: EventRow[] }>(`${B}/events${limit ? `?limit=${limit}` : ""}`).then(r => r.items),
   event: (id: string) => api<EventDetail>(`${B}/events/${encodeURIComponent(id)}`),
 };

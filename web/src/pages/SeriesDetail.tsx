@@ -15,7 +15,7 @@ import { LockNote } from "../components/lock";
 import { InlineSkeleton, LoadError, Modal, PageSkeleton, useNow, useRole, useToast } from "../components/ui";
 import { ago, day, dayTime, due, pct, price, ZONE_LABEL, zx } from "../format";
 import { eventTitle, FINDING_STATUS, ruleText, setAsideReason } from "../plain";
-import { InvestigateNowButton } from "./events/Events";
+import { InvestigateNowButton } from "./events/investigate";
 import { SeriesHelp, Track, useSeriesStatus } from "./series/parts";
 import { moveLine, oneDayZ, seriesNotice, shortMeaning } from "./series/words";
 

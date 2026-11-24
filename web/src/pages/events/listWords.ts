@@ -1,17 +1,13 @@
-// The Events list's own words: how events are grouped and ordered, what the checks say so far, and the
+// The Events list's own words: how events are ordered and what each row and the line under the heading say, and the
 // investigation runs (and why one failed) in plain language. Page-only; the shared words live in plain.ts.
-import { api } from "../../api/client";
 import type { EventDetail, EventRow, Run } from "../../api/investigation";
-import { anchorLabel, earliest, onDay, type VerdictKey } from "../../plain";
+import { plural } from "../../format.ts";
+import { anchorLabel, productTypeLabel } from "../../plain.ts";
 
-// ---------------------------------------------------------------- groups and order
-export type GroupKey = "hurt" | "help" | "none";
-/** What an event means for the institution: bad or mixed could hurt, good could help, neutral touches no product. */
-export const groupOf = (tone: EventRow["tone"]): GroupKey => (tone === "bad" || tone === "mixed" ? "hurt" : tone === "good" ? "help" : "none");
-export const GROUP_TITLE: Record<GroupKey, string> = { hurt: "Could hurt you", help: "Could help you", none: "Touch none of your products" };
-
+// ---------------------------------------------------------------- order
 const TONE_RANK: Record<EventRow["tone"], number> = { bad: 0, mixed: 1, good: 2, neutral: 3 };
 export type Sort = "serious" | "newest" | "impacts";
+export type Show = "open" | "closed" | "all";
 const byNewest = (a: EventRow, b: EventRow) => (a.anchor < b.anchor ? 1 : a.anchor > b.anchor ? -1 : 0);
 /** Most serious first: bad, mixed, good, neutral; then more possible impacts; then newest. */
 export function sortEvents(rows: EventRow[], sort: Sort): EventRow[] {
@@ -20,49 +16,82 @@ export function sortEvents(rows: EventRow[], sort: Sort): EventRow[] {
     : (a: EventRow, b: EventRow) => TONE_RANK[a.tone] - TONE_RANK[b.tone] || b.hypotheses - a.hypotheses || byNewest(a, b);
   return [...rows].sort(cmp);
 }
-export function splitGroups(rows: EventRow[]): Record<GroupKey, EventRow[]> {
-  const out: Record<GroupKey, EventRow[]> = { hurt: [], help: [], none: [] };
-  for (const e of rows) out[groupOf(e.tone)].push(e);
-  return out;
+
+/** The events a tab lists. Simulated events (from a series' "Simulate a move" or a test) stay out unless asked for. */
+export function tabRows(events: EventRow[], show: Show, withSimulated: boolean): EventRow[] {
+  return events.filter(e => (withSimulated || e.world === "live") && (show === "all" || e.status === show));
 }
 
-/** "news broke 17 Oct": what the date is, then the day (Colombo). */
+/** Events in pages: the first `n`, and how many are left. */
+export const PAGE_SIZE = 25;
+export const page = <T,>(rows: T[], n: number): { shown: T[]; left: number } => ({ shown: rows.slice(0, n), left: Math.max(0, rows.length - n) });
+
+/** "news broke 17 Oct": what the date is, then the day (Colombo). Used when the server sends no opening time. */
 export const whenText = (e: EventRow, dayOf: (iso: string) => string) => {
   const l = anchorLabel(e.anchor_basis);
   return `${l.charAt(0).toLowerCase()}${l.slice(1)} ${dayOf(e.anchor)}`;
 };
 
-// ---------------------------------------------------------------- what the checks say so far
-export interface CheckWords {
-  /** "2 of 6 checked": only when some have been checked */
-  progress?: string;
-  /** the most telling result so far, to show with its shape and word */
-  result?: { verdict: VerdictKey; adverse?: boolean | null; figure?: string | null };
-  /** plain text when there is no result yet: "first check 18 Nov", "Not checked" */
-  text?: string;
-}
-const WEIGHT: Record<VerdictKey, number> = { confirms: 6, contradicts: 5, error: 4, no_effect: 3, insufficient_data: 2, masked: 2, not_yet: 0 };
-
-/** An event's checks in words: the most telling result so far and how many are in, or when the first check is due. */
-export function checkWords(e: EventDetail | undefined): CheckWords | null {
+// ---------------------------------------------------------------- what each row says
+/** The products an event could move, once (from its effects), in the order the effects come. */
+export function productNames(e: EventDetail | undefined): string[] | null {
   if (!e) return null;
-  if (!e.run.validation) return { text: "Not checked" };
-  const total = e.tasks.length;
-  const done = e.tasks.filter(t => t.check && t.check.verdict !== "not_yet");
-  const next = earliest(e.tasks.filter(t => !t.check?.final).map(t => t.next_check_after ?? t.check?.next_check_after));
-  if (!done.length) return { text: next ? `first check ${onDay(next)}` : "Not checked yet" };
-  const top = [...done].sort((a, b) => WEIGHT[b.check!.verdict as VerdictKey] - WEIGHT[a.check!.verdict as VerdictKey])[0].check!;
-  const figure = done.length === 1 && top.change && top.change.length <= 12 ? top.change : null;
-  return {
-    progress: `${done.length} of ${total} checked`,
-    result: { verdict: top.verdict as VerdictKey, adverse: top.alert === "opportunity" ? false : top.alert === "adverse" ? true : undefined, figure },
-  };
+  const seen = new Map<string, string>();
+  for (const h of e.hypotheses) if (!seen.has(h.product_id)) seen.set(h.product_id, h.product_name || productTypeLabel(h.product_type));
+  return [...seen.values()];
 }
+/** "Chip-Supplier Credit Lines · Data-Center Contractor Credit Lines +3": the first two, then how many more. */
+export function productsText(names: string[], max = 2): string {
+  if (names.length <= max) return names.join(" · ");
+  return `${names.slice(0, max).join(" · ")} +${names.length - max}`;
+}
+/** When the latest news reached the event: its newest finding or a later finding that joined it. */
+export function lastNews(e: EventDetail | undefined): string | null {
+  if (!e) return null;
+  const t = [...e.findings.map(f => f.created_at), ...e.developments.map(d => d.joined_at)].filter(Boolean).sort();
+  return t.length ? t[t.length - 1] : null;
+}
+/** "5 effects" with the number apart, for the bold figure: [5, "effects"]; none yet: null. */
+export const effectsFigure = (n: number): [number, string] | null => (n > 0 ? [n, n === 1 ? "effect" : "effects"] : null);
+/** The alerts column: how many are waiting for a person, or nothing. */
+export const alertsText = (n: number): string | null => (n > 0 ? plural(n, "alert") : null);
+/** Alerts waiting for review, per event. */
+export function alertsByEvent(alerts: { event_id: string }[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const a of alerts) m.set(a.event_id, (m.get(a.event_id) ?? 0) + 1);
+  return m;
+}
+
+// ---------------------------------------------------------------- the line under the heading
+export interface LedeIn {
+  /** the live open events */
+  open: { tone: string; hypotheses: number }[];
+  /** how many different products those events could move; null until their details are in */
+  products: number | null;
+  /** how many checks against your data confirmed an effect; null until the details are in */
+  confirmed: number | null;
+  /** whether checks against your data are switched on (null: not known) */
+  validation: boolean | null;
+}
+/** "2 bad for you · 14 possible effects on 9 products · checks against your data on: 1 confirmed so far". `hot` is the red part. */
+export function ledeText(i: LedeIn): { hot: string | null; rest: string[] } {
+  if (!i.open.length) return { hot: null, rest: ["Watching for news and price moves that reach your products"] };
+  const bad = i.open.filter(e => e.tone === "bad").length;
+  const effects = i.open.reduce((n, e) => n + e.hypotheses, 0);
+  const rest: string[] = [];
+  if (!bad) rest.push("None bad for you");
+  rest.push(effects ? `${plural(effects, "possible effect")}${i.products != null && i.products > 0 ? ` on ${plural(i.products, "product")}` : ""}` : "No effects on your products traced yet");
+  if (i.validation === false) rest.push("checks against your data are off");
+  else if (i.validation && i.confirmed != null) rest.push(`checks against your data on: ${i.confirmed ? `${i.confirmed} confirmed so far` : "none confirmed yet"}`);
+  return { hot: bad ? `${bad} bad for you` : null, rest };
+}
+/** How many effects across these events your data has confirmed. */
+export const confirmedCount = (details: (EventDetail | undefined)[]): number =>
+  details.reduce((n, d) => n + (d ? d.tasks.filter(t => t.check?.verdict === "confirms").length : 0), 0);
 
 // ---------------------------------------------------------------- investigation runs
 /** The last 200 runs (the most the server returns). */
 export const RUNS_LIMIT = 200;
-export const fetchRuns = () => api<{ items: Run[] }>(`/api/v1/investigations?limit=${RUNS_LIMIT}`).then(r => r.items);
 
 export type RunKind = "failed" | "stopped" | "running" | "finished";
 export const runKind = (r: Run): RunKind => (r.status === "failed" ? "failed" : r.status === "stopped_early" ? "stopped" : r.status === "running" ? "running" : "finished");

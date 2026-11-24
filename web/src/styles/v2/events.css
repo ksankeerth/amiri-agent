@@ -1,0 +1,89 @@
+/* Events list (board 03; states: boards 15 and 16; phone: the board's 720 px rule, rows wrap and the products hide). Tokens only. */
+.v2-evs { display: flex; flex-direction: column; gap: var(--v2-sp-28); min-width: 0; }
+
+/* the old stylesheets underline links inside p and li (0,2,1): a link here underlines on hover only */
+.v2 .v2-evs a.v2-arrowlink { text-decoration: none; }
+.v2 .v2-evs a.v2-arrowlink:hover { text-decoration: underline; }
+
+/* ---------- heading */
+.v2-evs-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--v2-sp-12) var(--v2-sp-16); }
+.v2-evs-head__t { flex: 1 1 420px; min-width: 0; }
+.v2-evs-h1 { font-size: 36px; line-height: 1.15; letter-spacing: -0.03em; font-weight: var(--v2-fw-semibold); }
+.v2-evs-lede { margin-top: var(--v2-sp-6); font-size: var(--v2-fs-lead); color: var(--v2-text-2); }
+.v2-evs-lede__hot { color: var(--v2-bad); font-weight: var(--v2-fw-semibold); }
+.v2-evs-head__act { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-8) var(--v2-sp-12); }
+.v2-evs-ask { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-8); }
+
+/* ---------- notes above the list */
+.v2-evs-note { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-8) var(--v2-sp-12); padding: var(--v2-sp-12) var(--v2-sp-14); border: 1px solid var(--v2-line); border-radius: var(--v2-r-lg); background: var(--v2-surface); font-size: var(--v2-fs-body); }
+.v2-evs-note.is-warn { border-color: var(--v2-warn-line); background: var(--v2-warn-bg); color: var(--v2-warn-ink); }
+.v2-evs-note__t { flex: 1 1 260px; min-width: 0; }
+.v2-evs-dots { display: inline-flex; gap: 3px; vertical-align: 1px; }
+.v2-evs-dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--v2-text); animation: v2-pulse 1.2s ease-in-out infinite; }
+.v2-evs-dots i:nth-child(2) { background: var(--v2-dot-idle); animation-delay: .2s; }
+.v2-evs-dots i:nth-child(3) { background: var(--v2-dot-sep); animation-delay: .4s; }
+.v2-evs-warnword { color: var(--v2-unusual); }
+
+/* ---------- tabs, sort, the list */
+.v2-evs-tabs .v2-tabs__bar { margin-bottom: var(--v2-sp-20); }
+.v2-evs-sort { display: flex; align-items: center; gap: var(--v2-sp-8); padding-bottom: var(--v2-sp-8); font-size: var(--v2-fs-meta); color: var(--v2-muted); }
+.v2-evs-select {
+  min-height: 32px; padding: 0 var(--v2-sp-8); border: 1px solid var(--v2-line-input); border-radius: var(--v2-r-nav); background: var(--v2-surface);
+  color: var(--v2-text); font: var(--v2-fw-medium) var(--v2-fs-meta)/1.2 var(--v2-font);
+}
+.v2-evs-sim { display: flex; align-items: center; gap: var(--v2-sp-8); margin-bottom: var(--v2-sp-14); font-size: var(--v2-fs-meta); color: var(--v2-text-2); }
+.v2-evs-sim input { width: 16px; height: 16px; accent-color: var(--v2-brand); }
+
+.v2-evs-row { --v2-row-py: 16px; font-size: var(--v2-fs-meta); }
+.v2-evs-row > .v2-cell { min-width: 0; }
+.v2-evs-mark { display: flex; }
+.v2-evs-ev { display: flex; flex-direction: column; gap: var(--v2-sp-2); }
+.v2-evs-title { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-4) var(--v2-sp-8); }
+.v2-evs-title .v2-title { overflow-wrap: anywhere; }
+.v2-evs-meta { font-size: var(--v2-fs-cap); color: var(--v2-muted); overflow-wrap: anywhere; }
+.v2-evs-row.is-closed .v2-evs-title .v2-title { color: var(--v2-text-2); }
+.v2-evs-prods { color: var(--v2-text-2); overflow-wrap: anywhere; }
+.v2-evs-al__n { color: var(--v2-bad); font-weight: var(--v2-fw-semibold); }
+.v2 .v2-evs-row.is-action:hover .v2-evs-meta, .v2 .v2-evs-row.is-action:focus-within .v2-evs-meta { color: var(--v2-text-2); }  /* A1: no muted text on a hover fill */
+
+.v2-evs-more { display: flex; justify-content: center; padding-top: var(--v2-sp-16); }
+.v2-evs-cap { padding-top: var(--v2-sp-12); }
+.v2-evs-foot { max-width: 720px; padding-top: var(--v2-sp-16); }
+.v2-evs-findings { font-size: var(--v2-fs-body); color: var(--v2-text-2); }
+
+/* ---------- loading: the table's shape */
+.v2-evs-sk { display: block; border-radius: var(--v2-r-xs); background: var(--v2-count-bg); animation: v2-pulse 1.6s ease-in-out infinite; }
+.v2-evs-sk--dot { width: 13px; height: 13px; }
+.v2-evs-sk--pill { width: 84px; height: 22px; border-radius: var(--v2-r-pill); }
+.v2-evs-sk--n { width: 60px; height: 13px; }
+.v2-evs-skel__row { display: grid; grid-template-columns: 16px minmax(0, 1.4fr) 110px minmax(0, 1.6fr) 92px 90px; gap: var(--v2-sp-14); align-items: center; padding: var(--v2-sp-16) 0; border-top: 1px solid var(--v2-line); }
+.v2-evs-skel__ev { display: flex; flex-direction: column; gap: var(--v2-sp-6); }
+.v2-evs-skel { border-bottom: 1px solid var(--v2-line); }
+@media (prefers-reduced-motion: reduce) { .v2-evs-sk, .v2-evs-dots i { animation: none; } }
+
+/* ---------- investigation runs (Platform Admin) */
+.v2-evs-runs { padding-top: var(--v2-sp-20); border-top: 1px solid var(--v2-line); }
+.v2-evs-runs .v2-sechead { margin-bottom: var(--v2-sp-8); }
+.v2-evs-runs__table { margin-top: var(--v2-sp-8); }
+.v2-evs-run { --v2-row-py: 10px; font-size: var(--v2-fs-meta); }
+.v2-evs-run__when { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-6); color: var(--v2-text); }
+.v2-evs-run__ago { display: block; }
+.v2-evs-run__what { overflow-wrap: anywhere; }
+.v2-evs-runs__ok { padding: var(--v2-sp-8) 0; }
+.v2-evs-runs__more { padding-top: var(--v2-sp-8); }
+
+/* ---------- phone: rows wrap (mark, title and pill on the first line; effects and alerts under the title); products and the header hide */
+@media (max-width: 719.98px) {
+  .v2-evs { gap: var(--v2-sp-24); }
+  .v2-evs-h1 { font-size: 32px; }
+  .v2-evs-table .v2-row--head, .v2-evs-skel__row > .v2-hs, .v2-evs-sk--n, .v2-evs-sk--al { display: none; }
+  .v2-evs-row { align-items: start; row-gap: var(--v2-sp-4); }
+  .v2-evs-mark { padding-top: 5px; }
+  .v2-evs-pill { padding-top: 1px; }
+  .v2-evs-fx { grid-column: 2; }
+  .v2-evs-al { grid-column: 3; justify-self: end; }
+  .v2-evs-skel__row { grid-template-columns: 16px minmax(0, 1fr) auto; }
+  .v2-evs-sort { padding-bottom: var(--v2-sp-10); }
+  .v2-evs-select { min-height: var(--v2-hit-phone); }
+  .v2-evs-head__act { width: 100%; }
+}

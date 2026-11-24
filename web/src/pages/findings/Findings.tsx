@@ -11,7 +11,7 @@ import { errText, isDown, LoadError, ListSkeleton, useNow, useToast } from "../.
 import { ago, day, dayTime, plural, until, ZONE_LABEL } from "../../format";
 import { count, eventTitle, investigationFailed, longWhen, signalStrength, sourceInfo } from "../../plain";
 import "../../styles/rd-findings.css";
-import { useInvestigationStatus } from "../events/Events";
+import { useInvestigationStatus } from "../events/investigate";
 import { DAYS, reasonText, useRecentFindings } from "./recent";
 
 // the list carries each finding's evidence when the source kept it (the article's link)

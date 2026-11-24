@@ -8,7 +8,7 @@ import { Chain, ClampedText, TextButton, type Step } from "../../components/rd";
 import { useNow, useToast } from "../../components/ui";
 import { ago, day, dayTime, person, placeName, placeOrder } from "../../format";
 import { investigationFailed, setAsideReason } from "../../plain";
-import { themeText } from "../events/Events";
+import { themeText } from "../events/investigate";
 import { REL_WORD } from "./words";
 
 /** What Radar knows about where its stories went, beyond the story itself. */
