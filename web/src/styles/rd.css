@@ -186,3 +186,14 @@ a.rd-fig:hover .rd-fig-l { text-decoration:underline; text-underline-offset:3px;
 .side .nav .grp, .side .label { text-transform:none; letter-spacing:0; font-size:14px; font-weight:600; color:var(--ink-3); }
 .side { border-right-color:var(--hairline); }
 .appbar { border-bottom-color:var(--hairline); }
+
+/* ---------- links, once for every redesigned page: app.css underlines any link inside a paragraph, list item, hint or
+   banner, and each page used to undo that for itself. On an `.rd` page a link is ink and underlines on hover, so
+   rd-name and rd-go (both ink; rd-go for navigation, in bold) need no per-page override. Buttons, chips and the
+   strong links keep their own look. */
+.rd :where(p, li, .bd, .hint, .small, .sub, .meta, .banner, .rd-row-t, .rd-row-d, .rd-row-m, .rd-fine, .rd-lede, .rd-status, .rd-prose) a:not(.btn):not(.strong):not(.chip):not(.rd-tbtn),
+.rd a.rd-name:not(.btn):not(.strong):not(.chip), .rd a.rd-go:not(.btn):not(.strong):not(.chip) { color:var(--ink); text-decoration:none; }
+.rd :where(p, li, .bd, .hint, .small, .sub, .meta, .banner, .rd-row-t, .rd-row-d, .rd-row-m, .rd-fine, .rd-lede, .rd-status, .rd-prose) a:not(.btn):not(.strong):not(.chip):not(.rd-tbtn):hover,
+.rd a.rd-name:not(.btn):not(.strong):not(.chip):hover, .rd a.rd-go:not(.btn):not(.strong):not(.chip):hover { text-decoration:underline; text-underline-offset:3px; }
+.rd a.rd-go { font-weight:600; }
+.rd a:focus-visible { outline:2px solid var(--focus); outline-offset:3px; border-radius:4px; }
