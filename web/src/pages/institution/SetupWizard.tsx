@@ -6,6 +6,7 @@ import { ApiError } from "../../api/client";
 import { inst } from "../../api/institutions";
 import { Fold, PageTitle, Section, TextButton, TextTabs } from "../../components/rd";
 import { askSetupAgent, WithChat } from "../../components/SetupChat";
+import { LockBtn, LockFields, LockNote } from "../../components/lock";
 import { ChatToggleCtx, LoadError, useToast, PageSkeleton, type Status } from "../../components/ui";
 import "../../styles/setup.css";
 import "../../styles/rd-setup.css";
@@ -173,8 +174,9 @@ export function SetupWizard() {
         <Steps cur={cur[0]} idx={idx} states={states} done={done} />
 
         <div className="wz-body">
+          <LockNote />
           <TwoWays />
-          {step === "institution" && <Section title={i.name} action={<TextButton onClick={() => setEditing(true)}>Edit details</TextButton>}>
+          {step === "institution" && <Section title={i.name} action={<TextButton edits onClick={() => setEditing(true)}>Edit details</TextButton>}>
             <dl className="ins-kv wz-kv">
               <dt>Type</dt><dd>{kindText(i)}</dd>
               <dt>Home</dt><dd>{profile.place_names[i.home_country] ?? i.home_country} · {i.base_currency} · {i.time_zone}</dd>
@@ -185,11 +187,11 @@ export function SetupWizard() {
 
           {step === "where" && <>
             <Section title="Add where you operate">
-              <div className="wz-form grid2">
+              <LockFields><div className="wz-form grid2">
                 <Field label="Place" hint="Countries, states, provinces or districts."><PlacePicker scope="iso" onPick={p => addFootprint(p.code)} placeholder="e.g. a state, a province or a country" /></Field>
                 <Field label="As"><select className="input" value={role} onChange={e => setRole(e.target.value)}>
                   {["branches", "subsidiary", "representative_office", "agents", "digital_only", "home"].map(r => <option key={r} value={r}>{r === "home" ? "Home country" : cap(words(r))}</option>)}</select></Field>
-              </div>
+              </div></LockFields>
             </Section>
             <Section title="Your footprint on the map" className="ins-map-sec">
               <ProfileMap profile={profile} height={340} legend={false} />
@@ -225,7 +227,7 @@ export function SetupWizard() {
 
           {step === "rules" && <>
             <Section title="Currencies you settle in abroad">
-              <div className="wz-form"><CurrenciesField value={i.clearing_currencies ?? []} onChange={setClearing} /></div>
+              <LockFields><div className="wz-form"><CurrenciesField value={i.clearing_currencies ?? []} onChange={setClearing} /></div></LockFields>
               <p className="rd-fine wz-after">USD brings US sanctions (OFAC); EUR the EU's; GBP the UK's.</p>
             </Section>
             <Section title="From the rule table">
@@ -263,8 +265,8 @@ export function SetupWizard() {
               {prev && <button className="btn" type="button" onClick={() => goStep(prev)}>← Back</button>}
               <span className="wz-foot-s">Step {idx + 1} of {STEPS.length}</span>
               {next && <button className="btn btn--primary" type="button" onClick={() => goStep(next)}>Next: {STEPS[idx + 1][1]} →</button>}
-              {!next && i.status === "setup" && <button className="btn btn--primary" type="button" disabled={!readiness.ready}
-                title={readiness.ready ? "" : "Required parts are missing"} onClick={activate}>Activate</button>}
+              {!next && i.status === "setup" && <LockBtn className="btn btn--primary" disabled={!readiness.ready}
+                title={readiness.ready ? "" : "Required parts are missing"} onClick={activate}>Activate</LockBtn>}
             </div>
           </div>
         </div>

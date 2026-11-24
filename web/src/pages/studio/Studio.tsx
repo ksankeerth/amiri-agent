@@ -7,6 +7,8 @@ import { FillFromJson } from "../../components/FillFromJson";
 import { scenariosOf } from "../../components/fillJson";
 import { Icon } from "../../components/Icon";
 import { Fold, GoLink, PageTitle, Section, TextButton, ToneMark, TONE_WORD } from "../../components/rd";
+import { lockAttrs } from "../../components/demoLock";
+import { LockBtn, LockFields, LockNote, useDemoLock } from "../../components/lock";
 import { LoadError, MenuButton, Modal, PageSkeleton, useToast } from "../../components/ui";
 import { day, dayTime, plural } from "../../format";
 import "../../styles/rd-studio.css";
@@ -188,7 +190,7 @@ function HeadlineForm({ value, dayLabel, onSave, onCancel }: {
           <input className="input" type="time" value={h.time} onChange={e => setH({ ...h, time: e.target.value || "09:00" })} /></label>
         <span className="rds-grow" />
         <TextButton onClick={onCancel}>Cancel</TextButton>
-        <button className="btn" type="button" disabled={!ok} onClick={() => onSave({ ...h, title: h.title.trim() })}>Save headline</button>
+        <LockBtn className="btn" disabled={!ok} onClick={() => onSave({ ...h, title: h.title.trim() })}>Save headline</LockBtn>
       </div>
       {!ok && h.title.length > 0 && <p className="rd-fine" style={{ margin: "8px 0 0" }}>A headline needs at least 8 characters.</p>}
     </div>
@@ -208,27 +210,28 @@ function Headlines({ s, save, startOpen, own }: { s: Scenario; save: (body: { cu
   const remove = (id: string) => put(list().filter(x => x.id !== id));
   const toggle = (id: string) => save({ switched_off: off.has(id) ? s.switched_off.filter(x => x !== id) : [...s.switched_off, id] });
   const inRun = all.length - all.filter(h => off.has(h.id)).length;
+  const locked = useDemoLock();
   return (
     <Section title="Headlines" meta={plural(inRun, "headline") + " in the run"}
-      action={editing !== "new" && all.length < 30 ? <TextButton onClick={() => setEditing("new")}>+ Add</TextButton> : undefined}>
+      action={editing !== "new" && all.length < 30 ? <TextButton edits onClick={() => setEditing("new")}>+ Add</TextButton> : undefined}>
       <p className="rd-fine rds-fine" title={own ? "Amiri Agent's monitor reads each one on its day; the investigation traces what it finds to your products."
         : "Their figures come from the price path. Sizes are illustrative."}>{own ? "Marked simulated: they never reach the live pages." : "Marked simulated: edit, add or remove them."}</p>
       {!all.length && editing !== "new" && <p className="rd-row-d rd-prose" style={{ margin: "12px 0" }}>No headlines yet. Write what happens and on which day: Amiri Agent's monitor reads each headline the day it is published.{" "}
-        <TextButton onClick={() => setEditing("new")}>Write the first headline</TextButton></p>}
+        <TextButton edits onClick={() => setEditing("new")}>Write the first headline</TextButton></p>}
       {all.map(h => editing === h.id
         ? <HeadlineForm key={h.id} value={{ id: h.id, title: h.title, day: h.day, time: h.time }} dayLabel={dayLabel} onSave={upsert} onCancel={() => setEditing(null)} />
         : (
           <div key={h.id} className={`rds-head ${off.has(h.id) ? "rds-off" : ""}`}>
             <label className="rds-pick" title={`Day ${h.day} · ${dayLabel(h.day)} ${h.time}: ${h.title}`}>{/* the whole headline is the checkbox's target, not 22 px of it */}
-              <input type="checkbox" checked={!off.has(h.id)} onChange={() => toggle(h.id)} aria-label={`Include: ${h.title}`} />
+              <input type="checkbox" checked={!off.has(h.id)} {...lockAttrs(locked)} onChange={() => { if (!locked) toggle(h.id); }} aria-label={`Include: ${h.title}`} />
               <span className="rd-fine rds-dn">Day {h.day}</span>
               <span className="rds-ht rd-clamp1">{h.title}</span>
               {(off.has(h.id) || (h.story === "custom" && b.template_id !== "blank")) && <span className="rd-fine rds-tag">
                 {[off.has(h.id) ? "switched off" : "", h.story === "custom" && b.template_id !== "blank" ? "added by you" : ""].filter(Boolean).join(", ")}</span>}
             </label>
             <MenuButton label="More" compact={`More for: ${h.title}`}>
-              <button className="btn" type="button" onClick={() => setEditing(h.id)}>Edit</button>
-              <button className="btn" type="button" onClick={() => remove(h.id)}>Remove</button>
+              <LockBtn className="btn" onClick={() => setEditing(h.id)}>Edit</LockBtn>
+              <LockBtn className="btn" onClick={() => remove(h.id)}>Remove</LockBtn>
             </MenuButton>
           </div>))}
       {editing === "new" && <HeadlineForm value={{ id: newId(), title: "", day: Math.min(DAYS, (all[all.length - 1]?.day ?? 0) + 1), time: "09:00" }}
@@ -243,6 +246,7 @@ function PriceMoveForm({ s, save }: { s: Scenario; save: (body: { custom?: Custo
   const saved = JSON.stringify(s.built.prices.move ?? {}) === JSON.stringify(m);
   return (
     <div style={{ display: "grid", gap: 12 }}>
+      <LockFields style={{ display: "grid", gap: 12 }}>
       <label className="field"><span>Exchange rate</span>
         <select className="input" value={m.direction} onChange={e => setM({ ...m, direction: e.target.value as PriceMove["direction"], size_pct: m.size_pct || 5 })}>
           <option value="none">No price move</option>
@@ -254,9 +258,10 @@ function PriceMoveForm({ s, save }: { s: Scenario; save: (body: { custom?: Custo
         <label className="field" style={{ flex: 1 }}><span>Over (business days)</span>
           <input className="input" type="number" min={1} max={15} value={m.ramp_days} onChange={e => setM({ ...m, ramp_days: Number(e.target.value) })} /></label>
       </div>}
-      {!saved && <button className="btn" type="button" style={{ justifySelf: "start" }}
+      </LockFields>
+      {!saved && <LockBtn className="btn" style={{ justifySelf: "start" }}
         disabled={m.direction !== "none" && !(m.size_pct >= 0.5 && m.size_pct <= 30 && m.ramp_days >= 1 && m.ramp_days <= 15)}
-        onClick={() => save({ custom: { prices: m } })}>Save the price move</button>}
+        onClick={() => save({ custom: { prices: m } })}>Save the price move</LockBtn>}
     </div>
   );
 }
@@ -300,12 +305,13 @@ export function ScenarioPage() {
         crumbs={<><Link to="/studio">Scenario Studio</Link> / {s.title}</>}
         status={<>For {b.institution.name} · {b.prices.symbol} · starts {day(b.clock.start_at)} · {b.clock.steps} days, one a step{own ? " · your own scenario" : ""}</>}
         actions={<>
-          {naming !== null ? <><button className="btn" type="button" disabled={!naming.trim()} onClick={rename}>Save</button><TextButton onClick={() => setNaming(null)}>Cancel</TextButton></>
-            : <TextButton onClick={() => setNaming(s.title)}>Rename</TextButton>}
+          {naming !== null ? <><LockBtn className="btn" disabled={!naming.trim()} onClick={rename}>Save</LockBtn><TextButton onClick={() => setNaming(null)}>Cancel</TextButton></>
+            : <TextButton edits onClick={() => setNaming(s.title)}>Rename</TextButton>}
           {asking ? <span className="rds-quiet" style={{ margin: 0 }}><span>Delete this scenario and its runs?</span>
-            <TextButton onClick={async () => { try { await studioApi.remove(id); nav("/studio"); } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); } }}><span className="rds-danger">Delete</span></TextButton>
+            <TextButton edits onClick={async () => { try { await studioApi.remove(id); nav("/studio"); } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); } }}><span className="rds-danger">Delete</span></TextButton>
             <TextButton onClick={() => setAsking(false)}>Keep it</TextButton></span>
-            : <TextButton onClick={() => setAsking(true)}>Delete</TextButton>}</>} />
+            : <TextButton edits onClick={() => setAsking(true)}>Delete</TextButton>}</>} />
+      <LockNote />
       {err != null && <LoadError error={err} onRetry={load} what="this scenario" />}
       <CurrentLine sim={current} scenarioOnly={id} />
       {!current && s.simulations[0] && <LastRunLine m={s.simulations[0]} />}
@@ -313,14 +319,14 @@ export function ScenarioPage() {
         <div><Headlines s={s} save={save} startOpen={fresh} own={own} /></div>
         <div>
           <Section title="Run it">
-            <div className="rds-runit">
+            <LockFields className="rds-runit">
               {own ? <PriceMoveForm key={s.version} s={s} save={save} /> : <>
                 <label className="field"><span>How hard the shock hits</span>
                   <select className="input" value={s.intensity} onChange={e => save({ intensity: e.target.value })}>
                     <option value="low">Low (×0.5)</option><option value="medium">Medium</option><option value="high">High (×1.5)</option></select></label>
                 <label className="rds-check"><input type="checkbox" checked={!off.has("prices")} onChange={() => toggle("prices")} /><span>Move {b.prices.symbol} ({b.prices.shock.size_pct.toFixed(1)}% over {b.prices.shock.ramp_business_days} business days)</span></label>
               </>}
-            </div>
+            </LockFields>
             {empty && <p className="rd-warn" style={{ margin: "12px 0 0" }}><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> Add a headline or a price move to run it.</p>}
             <div className="rds-modes">
               {order.map(m => {

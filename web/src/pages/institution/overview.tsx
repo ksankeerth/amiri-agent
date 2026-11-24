@@ -58,7 +58,7 @@ function OpenRow({ w, onEdit }: { w: OpenCheck; onEdit?: () => void }) {
   return (
     <li className="rd-row ins-open-row">
       <div className="ins-main"><div className="rd-row-t ins-open-t">{w.title}</div>{w.sub && <p className="rd-row-m">{w.sub}</p>}</div>
-      <div className="ins-acts">{w.to ? <Link className="rd-go" to={w.to}>{w.action} →</Link> : onEdit && <TextButton onClick={onEdit}>{w.action}</TextButton>}</div>
+      <div className="ins-acts">{w.to ? <Link className="rd-go" to={w.to}>{w.action} →</Link> : onEdit && <TextButton edits onClick={onEdit}>{w.action}</TextButton>}</div>
     </li>
   );
 }
@@ -86,7 +86,7 @@ export function StillOpen({ readiness, setup, onEdit }: { readiness: Readiness; 
                 <div className="rd-row-t ins-open-t">{c.message}</div>
                 <p className="rd-row-m">{LEVEL_WORD[c.level]} · <b className="ins-k">{c.ok ? "Done" : "Still to do"}</b>{!c.ok && c.fix ? `: ${c.fix}` : ""}</p>
               </div>
-              {!c.ok && <div className="ins-acts">{c.section === "institution" ? <TextButton onClick={onEdit}>Edit details</TextButton>
+              {!c.ok && <div className="ins-acts">{c.section === "institution" ? <TextButton edits onClick={onEdit}>Edit details</TextButton>
                 : <Link className="rd-go" to={w.to ?? "/institution"}>{c.level === "info" ? w.action : "Fix"} →</Link>}</div>}
             </li>);
         })}</ul>

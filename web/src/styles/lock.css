@@ -1,0 +1,27 @@
+/* The demo lock: controls that would edit, delete or reset stay visible, muted and not-allowed, and say why (lock.tsx). */
+
+.is-locked, .is-locked:hover, .is-locked:active { cursor:not-allowed; }
+.is-locked { opacity:.5; }
+.btn.is-locked, .rd-tbtn.is-locked { opacity:.5; }
+.btn.is-locked:hover { background:var(--surface); border-color:var(--hairline-2); }
+.btn--primary.is-locked:hover { background:var(--accent-strong); border-color:var(--accent-strong); }
+.btn--ghost.is-locked:hover { background:transparent; border-color:transparent; }
+.btn.is-locked:active { transform:none; background-image:none; }
+.rd-tbtn.is-locked:hover, a.is-locked:hover { text-decoration:none; }
+.menu-pop .btn.is-locked:hover { background:transparent; }
+input[data-lock] { opacity:.5; cursor:not-allowed; }
+.is-locked:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+
+/* a form read-only while locked: the values stay readable, nothing can be changed */
+.lock-fields { border:0; padding:0; margin:0; min-width:0; }
+.lock-fields:disabled :is(input, select, textarea) { cursor:not-allowed; color:var(--ink-2); opacity:1; -webkit-text-fill-color:var(--ink-2); }
+.lock-fields:disabled :is(input[type="checkbox"], input[type="radio"], select) { opacity:.6; }
+
+/* one quiet line where a whole page is mostly locked */
+.rd-lock-note { margin:10px 0 10px; font-size:15px; line-height:1.4; color:var(--ink-3); }
+.rd-lock-note .rd-shape { color:var(--ink-3); }
+
+/* the tooltip: one for the whole app, under the control (above it when there is no room), never clipped by a menu */
+.lock-tip { position:fixed; z-index:200; transform:translate(-50%, -100%); max-width:300px; padding:10px 14px; border-radius:10px;
+  background:var(--ink); color:var(--paper); font-size:15px; line-height:1.4; font-weight:500; box-shadow:var(--e-lg); pointer-events:none; text-align:center; }
+.lock-tip.below { transform:translate(-50%, 0); }

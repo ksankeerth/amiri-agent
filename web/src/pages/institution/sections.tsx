@@ -6,6 +6,8 @@ import { inst, type Item, type Operation, type SectionName, type Suggestion } fr
 import { dayTime, person, plural } from "../../format";
 import { Icon } from "../../components/Icon";
 import { Modal, useToast } from "../../components/ui";
+import { LockBtn, LockFields, useDemoLock } from "../../components/lock";
+import { lockAttrs } from "../../components/demoLock";
 import { Fold, Section, TextButton } from "../../components/rd";
 import { dimWord, monthsText, PlaceName, usdText, useRoutes, valueWord } from "./fields";
 import { AREA_WORDS, ItemModal, LABELS, splitErrors, type Ctx } from "./forms";
@@ -89,6 +91,7 @@ function MetaLine({ meta }: { meta: Meta }) {
  * Checked by the server first (a dry run), shown, and added only when confirmed, all or nothing. */
 function ImportItems({ section, iid, onAdded, text }: { section: SectionName; iid: string; onAdded: () => void; text?: boolean }) {
   const toast = useToast();
+  const locked = useDemoLock();
   const [ops, setOps] = useState<Operation[] | null>(null);
   const [problems, setProblems] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -115,8 +118,9 @@ function ImportItems({ section, iid, onAdded, text }: { section: SectionName; ii
   };
   return (
     <>
-      <label className={text ? "rd-tbtn ins-import" : "btn btn--sm"} title={`Import ${LABELS[section].many.toLowerCase()} from a JSON file`}>{!text && <Icon name="plus" />}Import
-        <input type="file" accept="application/json" className="sr" onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) read(f); }} /></label>
+      {locked ? <LockBtn className={text ? "rd-tbtn ins-import" : "btn btn--sm"}>{!text && <Icon name="plus" />}Import</LockBtn>
+        : <label className={text ? "rd-tbtn ins-import" : "btn btn--sm"} title={`Import ${LABELS[section].many.toLowerCase()} from a JSON file`}>{!text && <Icon name="plus" />}Import
+          <input type="file" accept="application/json" className="sr" onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) read(f); }} /></label>}
       {ops !== null && <Modal title={`Import ${LABELS[section].many.toLowerCase()}`} onClose={() => setOps(null)} footer={<>
         <button className="btn" type="button" onClick={() => setOps(null)}>Cancel</button>
         <button className="btn btn--primary" type="button" disabled={busy || !ops.length || problems.length > 0} onClick={add}>Import {ops.length || ""}</button></>}>
@@ -181,9 +185,9 @@ export function SectionList({ section, ctx, reload, suggest, extra, compact, ite
       <div className="hd"><h2>{LABELS[section].many}</h2><span className="tabs" style={{ border: 0, margin: 0 }}><span className="count">{items.length}</span></span>
         <span className="spacer" />
         {extra}
-        {suggest && !archived && <button className="btn btn--sm" type="button" onClick={() => setSuggesting(true)}><Icon name="search" />Suggestions</button>}
+        {suggest && !archived && <LockBtn className="btn btn--sm" onClick={() => setSuggesting(true)}><Icon name="search" />Suggestions</LockBtn>}
         {!archived && <ImportItems section={section} iid={iid} onAdded={reload} />}
-        {!archived && <button className="btn btn--sm" type="button" onClick={() => setEditing("new")}><Icon name="plus" />Add</button>}
+        {!archived && <LockBtn className="btn btn--sm" onClick={() => setEditing("new")}><Icon name="plus" />Add</LockBtn>}
       </div>
       {!items.length ? <div className="bd pf-none">None yet.{suggest ? " Use Suggestions to start from the usual ones, or Add your own." : ""}</div> : (
         <div className="list">{items.map(it => {
@@ -198,8 +202,8 @@ export function SectionList({ section, ctx, reload, suggest, extra, compact, ite
               </div>
               {!archived && <div className="pf-acts">
                 {itemAction?.(it)}
-                <button className="btn btn--sm btn--ghost pf-ib" type="button" aria-label={`Edit ${what}`} title={`Edit ${what}`} onClick={() => setEditing(it)}><Icon name="edit" /></button>
-                <button className="btn btn--sm btn--ghost pf-ib pf-del" type="button" aria-label={`Delete ${what}`} title={`Delete ${what}`} onClick={() => setDeleting({ item: it })}><Icon name="trash" /></button>
+                <LockBtn className="btn btn--sm btn--ghost pf-ib" aria-label={`Edit ${what}`} title={`Edit ${what}`} onClick={() => setEditing(it)}><Icon name="edit" /></LockBtn>
+                <LockBtn className="btn btn--sm btn--ghost pf-ib pf-del" aria-label={`Delete ${what}`} title={`Delete ${what}`} onClick={() => setDeleting({ item: it })}><Icon name="trash" /></LockBtn>
               </div>}
             </div>
           );
@@ -250,9 +254,9 @@ function RdSection({ section, ctx, items, archived, suggest, note, itemAction, p
   reload: () => void; iid: string; modals: ReactNode;
 }) {
   const actions = archived ? undefined : <>
-    {suggest && <TextButton onClick={onSuggest}>Suggestions</TextButton>}
+    {suggest && <TextButton edits onClick={onSuggest}>Suggestions</TextButton>}
     <ImportItems section={section} iid={iid} onAdded={reload} text />
-    <TextButton onClick={onAdd}>+ Add</TextButton></>;
+    <TextButton edits onClick={onAdd}>+ Add</TextButton></>;
   const title = RD_TITLE[section] ?? LABELS[section].many;
   return (
     <Section title={title} count={items.length} action={actions} className={`ins-sec ins-${section}`}>
@@ -271,7 +275,7 @@ function RdSection({ section, ctx, items, archived, suggest, note, itemAction, p
               </div>
               {!archived && <div className="ins-acts">
                 {itemAction?.(it)}
-                <TextButton onClick={() => onEdit(it)} title={`Edit ${what}`} aria-label={`Edit ${what}`}>Edit</TextButton>
+                <TextButton edits onClick={() => onEdit(it)} title={`Edit ${what}`} aria-label={`Edit ${what}`}>Edit</TextButton>
               </div>}
             </li>);
         })}</ul>}
@@ -312,7 +316,7 @@ function ProductsTable({ ctx, items, archived, picked, setPicked, onEdit, itemAc
                 <div className="rd-open ins-open">
                   {f.length > 0 && <p className="rd-row-m ins-meta">{f.map((x, i) => <Fragment key={i}>{i > 0 && " · "}{x.warn ? <span className="rd-warn">◆ {x.text}</span> : x.text}</Fragment>)}</p>}
                   <div className="ins-acts ins-acts-open">
-                    {!archived && <TextButton onClick={() => onEdit(p)}>Edit {p.name}</TextButton>}
+                    {!archived && <TextButton edits onClick={() => onEdit(p)}>Edit {p.name}</TextButton>}
                     {!archived && itemAction?.(p)}
                     <Via rd o={ctx.profile?.origins?.products?.[p.id]} />
                   </div>
@@ -383,7 +387,7 @@ export function SuggestionPicker({ section, ctx, onAdded, inline }: { section: S
   if (inline) return (
     <div className="wz-pick">
       <p className="rd-fine rd-prose wz-pick-note">{data.note} {open ? `${open} not added yet.` : "Everything here is already in your profile."}</p>
-      <div className="wz-pick-list" role="group" aria-label="Suggestions">
+      <LockFields><div className="wz-pick-list" role="group" aria-label="Suggestions">
         {[...groups.entries()].map(([g, idx]) => (
           <div key={g} className="wz-pick-group">
             {g && <h3 className="wz-pick-h">{g.replace(/_/g, " ")}</h3>}
@@ -398,11 +402,11 @@ export function SuggestionPicker({ section, ctx, onAdded, inline }: { section: S
                 </label>);
             })}
           </div>))}
-      </div>
+      </div></LockFields>
       {err.length > 0 && <p className="rd-warn" role="alert"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> {err.join(" · ")}</p>}
       <div className="wz-pick-bar">
-        <button className="btn" type="button" disabled={busy || !picked.size} onClick={add}>{picked.size ? `Add the ${picked.size} ticked` : "Add the ticked"}</button>
-        {open > 0 && <TextButton onClick={tickAll}>Tick all</TextButton>}
+        <LockBtn className="btn" disabled={busy || !picked.size} onClick={add}>{picked.size ? `Add the ${picked.size} ticked` : "Add the ticked"}</LockBtn>
+        {open > 0 && <TextButton edits onClick={tickAll}>Tick all</TextButton>}
         <span className="rd-fine" aria-live="polite">{picked.size} ticked</span>
       </div>
     </div>
@@ -431,7 +435,7 @@ export function SuggestionPicker({ section, ctx, onAdded, inline }: { section: S
       {err.length > 0 && <div className="rawerr">{err.join(" · ")}</div>}
       <div className="row"><span className="small muted">{picked.size} ticked</span><span className="spacer" />
         {open > 0 && <button className="btn btn--sm" type="button" onClick={tickAll}>Tick all</button>}
-        <button className="btn btn--primary" type="button" disabled={busy || !picked.size} onClick={add}>Add {picked.size || ""}</button></div>
+        <LockBtn className="btn btn--primary" disabled={busy || !picked.size} onClick={add}>Add {picked.size || ""}</LockBtn></div>
     </div>
   );
 }
@@ -443,6 +447,7 @@ export function LinkGrid({ ctx, rows, cols, field, reload, title, rd, summary }:
   rd?: boolean; summary?: ReactNode;
 }) {
   const toast = useToast();
+  const locked = useDemoLock();
   const R = ctx.profile?.sections[rows] ?? [];
   const C = ctx.profile?.sections[cols] ?? [];
   const start = () => Object.fromEntries(R.map(r => [r.id, new Set<string>(r[field] ?? [])]));
@@ -469,7 +474,7 @@ export function LinkGrid({ ctx, rows, cols, field, reload, title, rd, summary }:
         <tr key={r.id}><td className={rd ? "rd-strong" : "strong"}>{rowLabel(r)}</td>
           {C.map(c => <td key={c.id} style={{ textAlign: "center" }}>
             <input type="checkbox" aria-label={`${rowLabel(r)}: ${c[LABELS[cols].nameKey]}`} style={{ accentColor: "var(--accent)" }} checked={m[r.id]?.has(c.id) ?? false}
-              onChange={e => setM(x => { const n = { ...x, [r.id]: new Set(x[r.id]) }; if (e.target.checked) n[r.id].add(c.id); else n[r.id].delete(c.id); return n; })} /></td>)}
+              {...lockAttrs(locked)} onChange={e => locked ? undefined : setM(x => { const n = { ...x, [r.id]: new Set(x[r.id]) }; if (e.target.checked) n[r.id].add(c.id); else n[r.id].delete(c.id); return n; })} /></td>)}
         </tr>))}</tbody>
     </table>);
   if (rd) return (
@@ -477,7 +482,7 @@ export function LinkGrid({ ctx, rows, cols, field, reload, title, rd, summary }:
       <div className="ins-grid">
         <div className="ins-grid-bar">{dirty.length > 0 ? <>
           <TextButton onClick={() => setM(start())}>Undo</TextButton>
-          <button className="btn btn--primary" type="button" disabled={busy} onClick={save}>Save {plural(dirty.length, "change")}</button></>
+          <LockBtn className="btn btn--primary" disabled={busy} onClick={save}>Save {plural(dirty.length, "change")}</LockBtn></>
           : <span className="rd-fine">Tick the customer groups each row is for. Nothing is saved until you press Save.</span>}</div>
         <div className="ins-grid-wrap">{grid}</div>
       </div>
@@ -487,7 +492,7 @@ export function LinkGrid({ ctx, rows, cols, field, reload, title, rd, summary }:
     <div className="card">
       <div className="hd"><h2>{title}</h2><span className="spacer" />
         {dirty.length > 0 && <><button className="btn btn--sm" type="button" onClick={() => setM(start())}>Undo</button>
-          <button className="btn btn--sm btn--primary" type="button" disabled={busy} onClick={save}>Save {plural(dirty.length, "change")}</button></>}</div>
+          <LockBtn className="btn btn--sm btn--primary" disabled={busy} onClick={save}>Save {plural(dirty.length, "change")}</LockBtn></>}</div>
       <div className="tblwrap">{grid}</div>
     </div>
   );

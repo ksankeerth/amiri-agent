@@ -11,6 +11,7 @@ import { PriceChart, type Mark } from "../components/charts";
 import { spikeIndex } from "../components/chartMath";
 import { Fold, GoLink, PageTitle, QuietWarn, Section, TextButton, TextTabs, ToneMark, TONE_WORD } from "../components/rd";
 import { EditSeriesModal, RefreshButton, themeMeaning } from "../components/series";
+import { LockNote } from "../components/lock";
 import { InlineSkeleton, LoadError, Modal, PageSkeleton, useNow, useRole, useToast } from "../components/ui";
 import { ago, day, dayTime, due, pct, price, ZONE_LABEL, zx } from "../format";
 import { eventTitle, FINDING_STATUS, ruleText, setAsideReason } from "../plain";
@@ -249,13 +250,14 @@ export function SeriesDetail() {
         actions={<span className="sr-act">
           <RefreshButton s={s} onDone={updated} small={false} />
           {isAdmin && <>
-            <TextButton onClick={() => setEditing(true)}>Edit</TextButton>
-            <TextButton onClick={pause}>{s.enabled ? "Pause" : "Resume"}</TextButton>
-            <TextButton onClick={() => setDeleting(true)}>Stop watching</TextButton>
+            <TextButton edits onClick={() => setEditing(true)}>Edit</TextButton>
+            <TextButton edits onClick={pause}>{s.enabled ? "Pause" : "Resume"}</TextButton>
+            <TextButton edits onClick={() => setDeleting(true)}>Stop watching</TextButton>
           </>}
         </span>}
         status={plain ? <span>{plain}</span> : undefined}
         help={<>
+          {isAdmin && <LockNote />}
           {notice && <QuietWarn>{notice}</QuietWarn>}
           <p className="rd-fine" style={{ margin: "8px 0 0" }}><TextButton aria-expanded={help} aria-controls={helpId} onClick={() => setHelp(h => !h)}>How this works</TextButton></p>
           <SeriesHelp status={status} id={helpId} open={help} />

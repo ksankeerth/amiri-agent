@@ -9,6 +9,7 @@ import { investigationApi, type EventDetail, type EventRow, type InvestigationSt
 import { Places } from "../../components/blocks";
 import { Fold, GoLink, PageTitle, QuietWarn, Result, Section, TextButton, TextTabs, ToneMark, ToneWord, TONE_WORD } from "../../components/rd";
 import { Icon } from "../../components/Icon";
+import { LockBtn } from "../../components/lock";
 import { errText, isDown, LoadError, ListSkeleton, useNow, useRole, useToast } from "../../components/ui";
 import { ago, day, dayTime, until, plural, ZONE_LABEL } from "../../format";
 import { count, eventTitle, investigationFailed, longWhen, themeLabel } from "../../plain";
@@ -125,9 +126,9 @@ function ClearSandbox({ onDone }: { onDone: () => void }) {
     finally { setAsking(false); }
   };
   return asking ? <span className="ev-ask"><span className="rd-fine">Remove every simulated finding, run and event?</span>
-    <button className="btn btn--danger" type="button" onClick={clear}>Clear</button>
+    <LockBtn className="btn btn--danger" onClick={clear}>Clear</LockBtn>
     <button className="btn" type="button" onClick={() => setAsking(false)}>Cancel</button></span>
-    : <button className="btn" type="button" onClick={() => setAsking(true)}><Icon name="trash" />Clear simulated</button>;
+    : <LockBtn className="btn" onClick={() => setAsking(true)}><Icon name="trash" />Clear simulated</LockBtn>;
 }
 
 // ---------------------------------------------------------------- the page

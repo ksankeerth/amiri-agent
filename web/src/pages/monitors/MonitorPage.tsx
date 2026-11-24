@@ -10,6 +10,7 @@ import { FillFromJson } from "../../components/FillFromJson";
 import { monitorsOf } from "../../components/fillJson";
 import { Places } from "../../components/blocks";
 import { Fold, GoLink, PageTitle, Section, TextButton } from "../../components/rd";
+import { LockBtn, LockFields, LockNote } from "../../components/lock";
 import { useNow, useToast, PageSkeleton, LoadError } from "../../components/ui";
 import { ago, day, dayTime, person, plainError, ZONE_LABEL } from "../../format";
 import { eventTitle, longWhen, MONITOR_STATUS, setAsideReason } from "../../plain";
@@ -205,6 +206,7 @@ function MonitorForm({ m, profile, status, onSaved, onCancel }: { m: Monitor | n
 
   return (
     <form className="mn-form" onSubmit={e => e.preventDefault()}>
+      <LockFields className="mn-fields">
       {err.general.length > 0 && warn(err.general.join(" "))}
       {Object.keys(E).length > 0 && warn("Some fields need attention: see below.")}
       <Field label="Name" error={E["about.name"]}>
@@ -275,10 +277,11 @@ function MonitorForm({ m, profile, status, onSaved, onCancel }: { m: Monitor | n
       {live && <p className="rd-fine mn-fineblock">Saving makes version {m.latest_version === m.live_version ? m.latest_version + 1 : m.latest_version} a draft; version {m.live_version} keeps running until a Risk Manager approves the new one.</p>}
       <div className="fill-end"><FillFromJson what="a monitor" read={monitorsOf} onFill={c => fillFrom(c.data)}
         example={'a monitor spec as JSON ({"about": {…}, "public": {…}, "private": {…}}), or {"spec": …}'} /></div>
+      </LockFields>
       <div className="mn-savebar">
         {onCancel && <TextButton onClick={onCancel}>Cancel</TextButton>}
-        <button className="btn" type="button" disabled={busy} onClick={() => save(false)}>{live ? "Save as the next version" : "Save draft"}</button>
-        <button className="btn btn--primary" type="button" disabled={busy} onClick={() => save(true)}>Save and submit for approval</button>
+        <LockBtn className="btn" disabled={busy} onClick={() => save(false)}>{live ? "Save as the next version" : "Save draft"}</LockBtn>
+        <LockBtn className="btn btn--primary" disabled={busy} onClick={() => save(true)}>Save and submit for approval</LockBtn>
       </div>
     </form>
   );
@@ -458,7 +461,7 @@ function Versions({ m, onChange }: { m: Monitor; onChange: () => void }) {
         <li key={v.version}><b>Version {v.version}</b>
           <span>{v.status}{v.version === m.live_version ? ", running" : ""} · by {person(v.created_by)} {dayTime(v.created_at)}{v.approved_by ? ` · approved by ${person(v.approved_by)}` : ""}{v.note ? ` · ${v.note}` : ""}</span></li>))}</ol>
       <p className="rd-fine">Monitor <span className="mono">{m.monitor_id}</span></p>
-      {m.status !== "retired" && <p><TextButton onClick={() => act("retire")}>Retire this monitor</TextButton> <span className="rd-fine">It stops being checked and moves to Retired on the list.</span></p>}
+      {m.status !== "retired" && <p><TextButton edits onClick={() => act("retire")}>Retire this monitor</TextButton> <span className="rd-fine">It stops being checked and moves to Retired on the list.</span></p>}
     </Fold>
   );
 }
@@ -527,8 +530,8 @@ export function MonitorPage() {
   const sp = m ? m.live_spec ?? m.spec : null;
   const running = !!checking;
   const approving = !!m && (!!m.pending || m.status === "draft" || m.status === "submitted");
-  const actions = isNew ? <>{help.toggle}<TextButton onClick={() => setDrafting(true)}>Draft from the profile</TextButton></> : m && <>
-    {m.status !== "retired" && !editMode && <TextButton onClick={() => setEditing(true)}>Edit</TextButton>}
+  const actions = isNew ? <>{help.toggle}<TextButton edits onClick={() => setDrafting(true)}>Draft from the profile</TextButton></> : m && <>
+    {m.status !== "retired" && !editMode && <TextButton edits onClick={() => setEditing(true)}>Edit</TextButton>}
     {!editMode && <PauseResume m={m} onChange={load} />}
     {m.status !== "retired" && <TextButton disabled={running} onClick={runNow}
       title={m.status === "live" ? "Check the news now" : "Test it now; what it finds is kept apart from your real findings"}>
@@ -543,6 +546,7 @@ export function MonitorPage() {
         lede={m ? undefined : "Say in plain words what to watch for. It runs once a Risk Manager approves it."}
         help={<MonitorHelp status={status} id={help.id} open={help.open} />} />
       {err != null && <LoadError error={err} onRetry={load} what="this monitor" />}
+      <LockNote />
       <MonitorBanners status={status} extra={m && isOverdue(m, now) && m.last_check ? <>This one is overdue: last checked {ago(m.last_check.at, now)}.</> : undefined} />
       {editMode && m && m.drafted_fields.length > 0 && <p className="rd-fine mn-fineblock">Filled in for you from your profile. Check the marked fields before you submit.</p>}
 

@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useId, useRef, useSt
 import { Icon } from "./Icon";
 import { PageHeader } from "./blocks";
 import { ApiError } from "../api/client";
+import { isDemoLocked, LOCK_TOAST } from "./demoLock";
 import "../styles/fixe.css";
 
 /** Set by a page that has the setup agent beside it: PageHead puts the show/hide button with the page's buttons. */
@@ -80,7 +81,11 @@ export function ResetModal({ onClose }: { onClose: () => void }) {
     setBusy(true); setErr(null);
     try {
       const r = await fetch("/api/v1/prototype:reset", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm: "RESET", then }) });
-      if (!r.ok) { const p = await r.json().catch(() => ({})); throw new Error(p.detail ?? `HTTP ${r.status}`); }
+      if (!r.ok) {
+        const p = await r.json().catch(() => ({}));
+        if (isDemoLocked(p)) window.dispatchEvent(new Event("amiri:demo-locked"));
+        throw new Error(isDemoLocked(p) ? LOCK_TOAST : p.detail ?? `HTTP ${r.status}`);
+      }
       try { localStorage.removeItem("amiri.institution"); } catch { /* private mode */ }
       window.location.assign("/home");  // a fresh start: every page loads again
     } catch (e) { setErr(String((e as Error).message ?? e)); setBusy(false); }
@@ -200,9 +205,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<{ id: number; msg: string }[]>([]);
   const push = useCallback((msg: string) => {
     const id = Date.now() + Math.random();
-    setItems(x => [...x, { id, msg }]);
+    setItems(x => (x.some(t => t.msg === msg) ? x : [...x, { id, msg }]));  // the same words twice at once: once
     setTimeout(() => setItems(x => x.filter(t => t.id !== id)), 4200);
   }, []);
+  useEffect(() => {  // a page that didn't know the demo is locked met the server's 403
+    const f = () => push(LOCK_TOAST);
+    window.addEventListener("amiri:demo-locked", f);
+    return () => window.removeEventListener("amiri:demo-locked", f);
+  }, [push]);
   return (
     <ToastCtx.Provider value={push}>
       {children}

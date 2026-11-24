@@ -10,6 +10,8 @@ import { scheduleText } from "../api/radar";
 import { HowItWorks } from "../components/blocks";
 import { Spark } from "../components/charts";
 import { Icon } from "../components/Icon";
+import { isDemoLocked, LOCK_TOAST } from "../components/demoLock";
+import { LockBtn } from "../components/lock";
 import { Fold, Figures, GoLink, QuietWarn, Section, TextButton, ToneMark, ToneWord, TONE_WORD, type ToneKey } from "../components/rd";
 import { Banner, CountUp, DEMOS, errText, isDown, LoadError, PageHead, PageSkeleton, useNow, useRole } from "../components/ui";
 import { ago, dayTime, pct, plural, price, TIME_ZONE, ZONE_LABEL } from "../format";
@@ -124,7 +126,7 @@ function DemoLoad() {
     setBusy(kind); setErr(null);
     try {
       const r = await fetch("/api/v1/prototype:demo", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind }) });
-      if (!r.ok) { const p = await r.json().catch(() => ({})); throw new Error(p.detail ?? `HTTP ${r.status}`); }
+      if (!r.ok) { const p = await r.json().catch(() => ({})); throw new Error(isDemoLocked(p) ? LOCK_TOAST : p.detail ?? `HTTP ${r.status}`); }
       window.location.assign("/home");  // every page loads again, with the demo
     } catch (e) { setErr(String((e as Error).message ?? e)); setBusy(null); }
   };
@@ -134,9 +136,9 @@ function DemoLoad() {
       <h2 id="demo-h">Start with a demo</h2>
       <p>An invented institution with its whole profile, ready to try everything on. No real customer data.</p>
       <div className="rd-fr-btns">{DEMOS.map((d, n) => (
-        <button key={d.kind} className={`btn${n === 0 ? " btn--primary" : ""}`} type="button" disabled={!!busy} onClick={() => load(d.kind)}>
+        <LockBtn key={d.kind} className={`btn${n === 0 ? " btn--primary" : ""}`} disabled={!!busy} onClick={() => load(d.kind)}>
           <b>{busy === d.kind ? "Loading…" : `Load the ${d.label.toLowerCase()}`}</b>
-          <span>{d.name}, {d.what.charAt(0).toLowerCase()}{d.what.slice(1)}</span></button>))}</div>
+          <span>{d.name}, {d.what.charAt(0).toLowerCase()}{d.what.slice(1)}</span></LockBtn>))}</div>
       {err && <p className="rd-warn" role="alert"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> Couldn't load the demo: {err}</p>}
     </section>
   );

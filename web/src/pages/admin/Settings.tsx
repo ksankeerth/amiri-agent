@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { Installation } from "../../App";
 import { api } from "../../api/client";
 import { PageTitle, QuietWarn, Section } from "../../components/rd";
+import { LockBtn, LockNote } from "../../components/lock";
 import { LoadError, ResetModal } from "../../components/ui";
 import "../../styles/rd-admin.css";
 
@@ -16,12 +17,13 @@ export function SettingsPage() {
   return (
     <div className="page rd rd-admin">
       <PageTitle title="Settings" lede="What a Platform Admin controls for this installation." />
+      <LockNote />
       {err != null && <LoadError error={err} onRetry={load} what="the settings" />}
       <Section title="Start again">
         <p className="rd-row-d rd-prose">Reset the prototype to try it as a new institution: everything Amiri Agent holds for the institution goes,
           including its data connection and validation settings. Market series, their prices and the reference data stay.</p>
         {allowed === null ? null : allowed
-          ? <div className="ad-act"><button className="btn btn--danger" type="button" onClick={() => setResetting(true)}>Reset the prototype…</button></div>
+          ? <div className="ad-act"><LockBtn className="btn btn--danger" onClick={() => setResetting(true)}>Reset the prototype…</LockBtn></div>
           : <QuietWarn>The reset is switched off on this server. To allow it, set <code>prototype_reset = true</code> in Terraform and deploy (locally: <code>PROTOTYPE_RESET=true</code>).</QuietWarn>}
       </Section>
       {resetting && <ResetModal onClose={() => setResetting(false)} />}

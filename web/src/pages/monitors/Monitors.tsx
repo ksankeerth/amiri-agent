@@ -7,6 +7,7 @@ import { ApiError } from "../../api/client";
 import { monitorsApi, type Draftable, type MonitorRow, type MonitorsStatus, type MonitorStatus } from "../../api/monitors";
 import { StatusPill } from "../../components/blocks";
 import { Fold, PageTitle, QuietWarn, Section, TextButton } from "../../components/rd";
+import { LockBtn, LockLink, LockNote } from "../../components/lock";
 import { Modal,useNow, useRole, useToast, ListSkeleton, LoadError } from "../../components/ui";
 import { ago, dayTime, person } from "../../format";
 import { MONITOR_CHECK, MONITOR_STATUS } from "../../plain";
@@ -92,8 +93,8 @@ export function useMonitorAct(m: { monitor_id: string }, onChange: () => void) {
 /** Pause or Resume, as a text action. */
 export function PauseResume({ m, onChange }: { m: MonitorRow; onChange: () => void }) {
   const { act } = useMonitorAct(m, onChange);
-  if (m.status === "live") return <TextButton onClick={() => act("pause")}>Pause</TextButton>;
-  if (m.status === "paused") return <TextButton onClick={() => act("resume")}>Resume</TextButton>;
+  if (m.status === "live") return <TextButton edits onClick={() => act("pause")}>Pause</TextButton>;
+  if (m.status === "paused") return <TextButton edits onClick={() => act("resume")}>Resume</TextButton>;
   return null;
 }
 
@@ -106,19 +107,19 @@ export function ApprovalActions({ m, onChange, primary }: { m: MonitorRow; onCha
   if (asking) return (
     <span className="mn-ask">
       <input className="input" aria-label="What should change?" placeholder="What should change?" value={note} onChange={e => setNote(e.target.value)} autoFocus />
-      <button className="btn" type="button" disabled={note.trim().length < 3} onClick={sendBack}>Send back</button>
+      <LockBtn className="btn" disabled={note.trim().length < 3} onClick={sendBack}>Send back</LockBtn>
       <TextButton onClick={() => setAsking(false)}>Cancel</TextButton>
     </span>
   );
   if (awaitingApproval(m)) return (
     <span className="mn-acts">
-      <button className={`btn${primary ? " btn--primary" : ""}`} type="button" onClick={() => act("approve")}>Approve{version}</button>
-      <TextButton onClick={() => setAsking(true)}>Request changes</TextButton>
+      <LockBtn className={`btn${primary ? " btn--primary" : ""}`} onClick={() => act("approve")}>Approve{version}</LockBtn>
+      <TextButton edits onClick={() => setAsking(true)}>Request changes</TextButton>
     </span>
   );
   if (m.pending?.status === "draft" || m.status === "draft") return (
-    <span className="mn-acts">{primary ? <button className="btn btn--primary" type="button" onClick={() => act("submit")}>Submit{version} for approval</button>
-      : <TextButton onClick={() => act("submit")}>Submit{version} for approval</TextButton>}</span>
+    <span className="mn-acts">{primary ? <LockBtn className="btn btn--primary" onClick={() => act("submit")}>Submit{version} for approval</LockBtn>
+      : <TextButton edits onClick={() => act("submit")}>Submit{version} for approval</TextButton>}</span>
   );
   return null;
 }
@@ -150,8 +151,8 @@ export function DraftFromProfile({ onClose, only }: { onClose: () => void; only?
         <div key={s} className="col" style={{ gap: 6 }}>
           <span className="label">{SECTION_WORDS[s]}</span>
           <div className="row wrap" style={{ gap: 6 }}>{xs.map(i => (
-            <button key={i.item_id} type="button" className="chip click" disabled={!!busy} onClick={() => draft(i)} title={i.kind}>
-              {busy === i.item_id ? "Drafting…" : i.label}</button>))}</div>
+            <LockBtn key={i.item_id} className="chip click" disabled={!!busy} onClick={() => draft(i)} title={i.kind}>
+              {busy === i.item_id ? "Drafting…" : i.label}</LockBtn>))}</div>
         </div>))}
     </Modal>
   );
@@ -241,8 +242,8 @@ export function MonitorsPage() {
   const empty = items !== null && !items.length;
   const nLive = (items ?? []).filter(m => m.status === "live").length;
   const nWaiting = groups.waiting.length;
-  const newBtn = <Link className="btn btn--primary" to="/monitors/new">+ New monitor</Link>;
-  const draftBtn = <TextButton onClick={() => setDrafting(true)}>Draft from the profile</TextButton>;
+  const newBtn = <LockLink className="btn btn--primary" to="/monitors/new">+ New monitor</LockLink>;
+  const draftBtn = <TextButton edits onClick={() => setDrafting(true)}>Draft from the profile</TextButton>;
   // every live monitor late for the same reason: said once, with the page's warning, not on each row
   const lateLive = groups.live.filter(m => isOverdue(m, now));
   const allLate = groups.live.length > 1 && lateLive.length === groups.live.length;
@@ -260,6 +261,7 @@ export function MonitorsPage() {
           <b>{nLive} live.</b> Each watches the news for one question a Risk Manager approved.
           {nWaiting > 0 && ` ${nWaiting} ${nWaiting === 1 ? "is" : "are"} waiting for your approval.`} {help.toggle}</>}
         help={!empty && <MonitorHelp status={status} id={help.id} open={help.open} />} />
+      <LockNote />
       {/* with no monitors yet, "can't check the news" changes nothing for a Risk Manager: the empty state says it calmly */}
       {err != null && (items === null ? <LoadError error={err} onRetry={load} what="the monitors" />
         : <QuietWarn>Couldn't refresh the monitors. Showing what was loaded.</QuietWarn>)}
@@ -313,7 +315,7 @@ export function MonitorsStep({ institutionId }: { institutionId: string }) {
           : Object.entries(SECTION_WORDS).map(([s, w]) => {
             const xs = open.filter(i => i.section === s);
             return xs.length ? <div key={s} className="wz-draft"><h3 className="wz-pick-h">{w}</h3>
-              <ul className="wz-draft-list">{xs.map(i => <li key={i.item_id}><TextButton disabled={!!busy} onClick={() => draft(i)}>{busy === i.item_id ? "Drafting…" : `+ ${i.label}`}</TextButton></li>)}</ul></div> : null;
+              <ul className="wz-draft-list">{xs.map(i => <li key={i.item_id}><TextButton edits disabled={!!busy} onClick={() => draft(i)}>{busy === i.item_id ? "Drafting…" : `+ ${i.label}`}</TextButton></li>)}</ul></div> : null;
           })}
       </Section>
       <Section title="Your monitors" count={mine.length} action={<Link className="rd-go" to="/monitors">Monitors page →</Link>}>

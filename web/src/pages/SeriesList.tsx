@@ -6,6 +6,7 @@ import { seriesApi, type Series } from "../api/series";
 import { Spark } from "../components/charts";
 import { PageTitle, QuietWarn, TextButton } from "../components/rd";
 import { AddSeriesModal, themeMeaning } from "../components/series";
+import { LockBtn, LockNote } from "../components/lock";
 import { ListSkeleton, LoadError, useRole } from "../components/ui";
 import { day, dayTime, pct, price } from "../format";
 import { count } from "../plain";
@@ -65,8 +66,8 @@ export function SeriesList() {
   const oldest = stale.map(s => s.latest!.bar_end).sort()[0];
   const notice = items && status ? listNotice({ total: items.length, stale: stale.length, oldestDay: oldest ? day(oldest) : null, configured: status.provider.configured, admin: isAdmin }) : null;
   const addButton = (primary: boolean) => primary
-    ? <button className="btn btn--primary" type="button" onClick={() => setAdding(true)} disabled={!status || left <= 0}>Add a series</button>
-    : <TextButton onClick={() => setAdding(true)} disabled={!status || left <= 0}
+    ? <LockBtn className="btn btn--primary" onClick={() => setAdding(true)} disabled={!status || left <= 0}>Add a series</LockBtn>
+    : <TextButton edits onClick={() => setAdding(true)} disabled={!status || left <= 0}
         title={left <= 0 ? "The prototype's series limit is reached; delete one first" : undefined}>+ Add a series</TextButton>;
 
   return (
@@ -76,6 +77,7 @@ export function SeriesList() {
         lede={items === null ? undefined : <><b>{count(items.length, "price")} watched.</b> A move {threshold}× bigger than a normal day is flagged.
           <TextButton aria-expanded={help} aria-controls={helpId} onClick={() => setHelp(h => !h)}>How this works</TextButton></>}
         help={<><SeriesHelp status={status} id={helpId} open={help} />{notice && <QuietWarn>{notice}</QuietWarn>}</>} />
+      {isAdmin && <LockNote />}
       {error != null && <LoadError error={error} onRetry={load} what="the market series" />}
       {items === null && error == null && <ListSkeleton rows={2} />}
       {items && items.length === 0 && (

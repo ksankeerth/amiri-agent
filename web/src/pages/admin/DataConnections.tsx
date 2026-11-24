@@ -7,6 +7,7 @@ import { connectApi, type CheckState, type CheckStatus, type Condition, type Con
 import { FillFromJson } from "../../components/FillFromJson";
 import type { Candidate } from "../../components/fillJson";
 import { Fold, PageTitle, QuietWarn, Section, TextButton, TextTabs, ToneWord, type ToneKey } from "../../components/rd";
+import { LockBtn, LockFields, LockNote, useDemoLock } from "../../components/lock";
 import { errText, ListSkeleton, LoadError, useToast } from "../../components/ui";
 import { ago, dayTime, person, plural } from "../../format";
 import "../../styles/rd-admin.css";
@@ -19,7 +20,7 @@ const SPEC = "1.0.0";
 
 /** A real switch with its state said in a word beside it. */
 function Switch({ on, label, disabled, onChange }: { on: boolean; label: string; disabled?: boolean; onChange: (v: boolean) => void }) {
-  return <button type="button" className="switch" role="switch" aria-checked={on} aria-label={label} disabled={disabled}
+  return <LockBtn className="switch" role="switch" aria-checked={on} aria-label={label} disabled={disabled}
     onClick={() => onChange(!on)} />;
 }
 
@@ -66,6 +67,7 @@ export function DataConnectionsPage() {
       <PageTitle title="Data connections"
         status={<><span>{state}</span><span>Metrics Spec {SPEC}</span></>}
         lede="Amiri Agent checks each possible impact against your institution's own figures, read from a Metrics Spec reference API. Only that API is accepted. Connect it, run the check, then approve it and switch checks on." />
+      <LockNote />
       <ConnectionSection conn={conn} samples={samples} checking={checking} onSaved={c => { setConn(c); setReport(null); load(); }}
         onCheck={run} onApprove={approve} onValidation={validation} />
       {report ? <ReportSection report={report} history={history} current={!!conn.latest_check?.current && conn.latest_check.check_id === report.check_id}
@@ -121,7 +123,7 @@ function ConnectionSection({ conn, samples, checking, onSaved, onCheck, onApprov
   const validationWhy = !conn.validation_allowed ? "Validation is switched off on this server (METRICS_VALIDATION)."
     : !conn.approved ? "Approve a checked connection first." : null;
   return (
-    <Section title="The connection" action={conn.configured && !editing ? <TextButton onClick={() => setEditing(true)}>Change</TextButton> : undefined}>
+    <Section title="The connection" action={conn.configured && !editing ? <TextButton edits onClick={() => setEditing(true)}>Change</TextButton> : undefined}>
       {conn.auth_allowed === false && <QuietWarn><b>Prototype: no authorization.</b> Use only the sample institutions or a test API with no real data.</QuietWarn>}
       {conn.configured && !editing && <>
         <dl className="ad-kv">
@@ -142,13 +144,14 @@ function ConnectionSection({ conn, samples, checking, onSaved, onCheck, onApprov
         </dl>
         <div className="ad-acts">
           <button className="btn btn--primary" type="button" onClick={onCheck} disabled={checking}>{checking ? "Checking…" : "Check"}</button>
-          <button className="btn" type="button" onClick={onApprove} disabled={!canApprove}
-            title={canApprove ? "Approve this connection for validation" : conn.approved ? "Already approved" : "Check it first; a connection that isn't ready can't be approved"}>Approve</button>
+          <LockBtn className="btn" onClick={onApprove} disabled={!canApprove}
+            title={canApprove ? "Approve this connection for validation" : conn.approved ? "Already approved" : "Check it first; a connection that isn't ready can't be approved"}>Approve</LockBtn>
         </div>
       </>}
       {editing && <div className="ad-form">
         <TextTabs label="Where the data comes from" value={source} onChange={setSource}
           items={[{ key: "sample", label: "A sample institution" }, { key: "url", label: "Your institution's API" }]} />
+        <LockFields>
         {source === "sample" ? <div className="field"><label htmlFor="dc-sample">Sample</label>
           <select id="dc-sample" className="input" style={{ maxWidth: 320 }} value={sample} onChange={e => setSample(e.target.value as "bank" | "insurer")}>
             <option value="bank">The sample bank</option><option value="insurer">The sample insurer</option></select>
@@ -168,8 +171,9 @@ function ConnectionSection({ conn, samples, checking, onSaved, onCheck, onApprov
               <span className="hint">Stored encrypted, never shown again.</span></div>
             </>}
           </div>}
+        </LockFields>
         <div className="ad-acts">
-          <button className="btn btn--primary" type="button" onClick={save} disabled={busy || (source === "url" && !base.trim())}>Save</button>
+          <LockBtn className="btn btn--primary" onClick={save} disabled={busy || (source === "url" && !base.trim())}>Save</LockBtn>
           {conn.configured && <TextButton onClick={() => setEditing(false)}>Cancel</TextButton>}
           <span className="rd-fine">Saving a change means checking and approving it again.</span>
         </div>
@@ -252,6 +256,7 @@ function ReportSection({ report, history, current, onPick }: { report: Report; h
 
 function SampleRow({ sample, onSaved, onUse }: { sample: Sample; onSaved: (s: Sample) => void; onUse: () => void }) {
   const toast = useToast();
+  const locked = useDemoLock();
   const [conds, setConds] = useState<Condition[]>(sample.conditions);
   const [busy, setBusy] = useState(false);
   useEffect(() => setConds(sample.conditions), [sample.conditions]);
@@ -294,12 +299,12 @@ function SampleRow({ sample, onSaved, onUse }: { sample: Sample; onSaved: (s: Sa
         </div>
         <span className="dc-sample-acts">
           {sample.enabled && <a className="rd-go" href={sample.openapi_path} target="_blank" rel="noreferrer">OpenAPI document</a>}
-          <button className="btn" type="button" onClick={onUse} disabled={!sample.enabled} title={sample.enabled ? undefined : "Switch it on first"}>Use it as the connection</button></span>
+          <LockBtn className="btn" onClick={onUse} disabled={!sample.enabled} title={sample.enabled ? undefined : "Switch it on first"}>Use it as the connection</LockBtn></span>
       </div>
       {!sample.allowed && <QuietWarn>Sample institutions are switched off on this server (MOCK_INSTITUTIONS).</QuietWarn>}
       <Fold title="Conditions" summary={nOn ? `${nOn} on` : "none on"} remember={`dc-conds-${sample.kind}`}>
         {groups.map(([title, note, group]) => (
-          <fieldset key={group} className="dc-conds">
+          <fieldset key={group} className="dc-conds" disabled={locked}>
             <legend><b>{title}</b><span className="rd-fine">{note}</span></legend>
             <ul>{sample.presets.filter(p => p.group === group).map(p => { const c = byId[p.id]; const on = !!c && c.on !== false; return (
               <li key={p.id}>
@@ -323,7 +328,7 @@ function SampleRow({ sample, onSaved, onUse }: { sample: Sample; onSaved: (s: Sa
             example={'{"conditions": [{"id": "floods", "start": "2026-10-01", "size": 600}]}'} />
           <span className="dc-spacer" />
           {dirty && <span className="rd-fine">Unsaved changes</span>}
-          <button className="btn" type="button" disabled={busy || !dirty} onClick={() => put(sample.enabled, conds)}>Save conditions</button>
+          <LockBtn className="btn" disabled={busy || !dirty} onClick={() => put(sample.enabled, conds)}>Save conditions</LockBtn>
         </div>
       </Fold>
     </article>

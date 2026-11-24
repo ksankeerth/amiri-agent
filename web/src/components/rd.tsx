@@ -4,6 +4,7 @@ import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import { Link } from "react-router-dom";
 import { VERDICT_LABEL, sourceInfo, type VerdictKey } from "../plain";
 import { Icon } from "./Icon";
+import { LockBtn } from "./lock";
 import { readFold, writeFold } from "./foldStore";
 import "../styles/rd.css";
 
@@ -170,11 +171,11 @@ export function Scale({ min, max, value, band, threshold, valueLabel, thresholdL
 export function QuietWarn({ children }: { children: ReactNode }) {
   return <p className="rd-warn" style={{ margin: "10px 0 0" }}><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> {children}</p>;
 }
-/** A text action (the third tier): underlined, never a box. */
-export function TextButton({ children, onClick, disabled, title, ...rest }: {
-  children: ReactNode; onClick?: () => void; disabled?: boolean; title?: string; "aria-expanded"?: boolean; "aria-controls"?: string;
+/** A text action (the third tier): underlined, never a box. `edits`: it changes or removes something, so the demo lock greys it out. */
+export function TextButton({ children, onClick, disabled, title, edits, ...rest }: {
+  children: ReactNode; onClick?: () => void; disabled?: boolean; title?: string; edits?: boolean; "aria-expanded"?: boolean; "aria-controls"?: string; "aria-label"?: string;
 }) {
-  return <button type="button" className="rd-tbtn" onClick={onClick} disabled={disabled} title={title} {...rest}>{children}</button>;
+  return <LockBtn className="rd-tbtn" locked={edits ? undefined : false} onClick={onClick} disabled={disabled} title={title} {...rest}>{children}</LockBtn>;
 }
 /** A navigation link in the action colour, with an arrow ("Open the event →"). For named things use `.rd-name`. */
 export function GoLink({ to, children }: { to: string; children: ReactNode }) {

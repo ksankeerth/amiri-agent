@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { Icon } from "./components/Icon";
+import { DemoLockCtx, LockTip } from "./components/lock";
 import { PageTitle } from "./components/rd";
 import { isDown, PageSkeleton, useNow, useRole, type Role } from "./components/ui";
 import { api, ME } from "./api/client";
@@ -57,6 +58,7 @@ export interface Installation {
   institution_id: string; profile: boolean; name: string | null; short_name?: string | null; home_country?: string;
   country_name?: string | null; base_currency?: string; time_zone: string; notes: string[];
   prototype_reset?: boolean;  // the server allows the prototype reset (PROTOTYPE_RESET)
+  demo_lock?: boolean;  // editing, deleting and the reset are switched off for a live demo (DEMO_LOCK)
   unreachable?: boolean;  // UI only: the server didn't answer, so whether a profile exists is unknown
 }
 
@@ -233,7 +235,9 @@ function Frame({ inst }: { inst: Installation }) {
     return () => { clearInterval(t); window.removeEventListener("amiri:alerts", load); };
   }, []);
   return (
+    <DemoLockCtx.Provider value={inst.demo_lock === true}>
     <div className="app">
+      <LockTip />
       <a className="skip" href="#main" onClick={e => { e.preventDefault(); document.querySelector<HTMLElement>("main")?.focus(); }}>Skip to the page</a>
       <div className="sr" role="status" aria-live="polite">{said}</div>
       <header className="appbar">
@@ -325,5 +329,6 @@ function Frame({ inst }: { inst: Installation }) {
         </main>
       </div>
     </div>
+    </DemoLockCtx.Provider>
   );
 }

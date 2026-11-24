@@ -1,5 +1,6 @@
 // Calls amiri-server. Errors come back as RFC 9457 problem details; every failure
 // becomes an ApiError carrying the problem's code, detail and Retry-After.
+import { LOCK_TOAST } from "../components/demoLock";
 
 export interface Problem {
   type?: string;
@@ -68,6 +69,8 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
     if (r.status === 401 && p.code === "signed_out" && !path.startsWith("/api/v1/auth/")) window.dispatchEvent(new Event("amiri:signed-out"));
     // the database is stopped to save costs (server: app/sleep.py): the app shows its paused page
     if (r.status === 503 && p.code === "asleep") window.dispatchEvent(new Event("amiri:asleep"));
+    // the demo is locked (server: app/demo_lock.py) and this page didn't know: say so, once, in the same words everywhere
+    if (r.status === 403 && p.code === "demo_locked") { p.detail = LOCK_TOAST; window.dispatchEvent(new Event("amiri:demo-locked")); }
     throw new ApiError(p);
   }
   return data as T;

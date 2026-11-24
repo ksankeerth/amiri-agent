@@ -9,6 +9,7 @@ import { WithChat } from "../../components/SetupChat";
 import { changeWords, countOf, fieldWord, SECTION_ONE, valueText } from "../../components/setupFlow";
 import { StatusPill } from "../../components/blocks";
 import { PageTitle, Section, TextButton, TextTabs } from "../../components/rd";
+import { LockBtn, LockFields, LockNote, useDemoLock } from "../../components/lock";
 import { ChatToggleCtx, DEMOS, InlineSkeleton, LoadError, Modal, ResetModal, useRole, useToast, PageSkeleton } from "../../components/ui";
 import { dayTime, person, plural, ZONE_LABEL } from "../../format";
 import { cap, words } from "../../plain";
@@ -68,6 +69,7 @@ export type InstitutionState = ReturnType<typeof useInstitution>;
 
 export function CreateInstitution({ onCreated }: { onCreated: (id: string) => void }) {
   const toast = useToast();
+  const locked = useDemoLock();
   const [d, setD] = useState<Record<string, any>>({ institution_type: "bank", clearing_currencies: [], islamic: false, fiscal_year_start_month: 1 });
   const [err, setErr] = useState<Record<string, string>>({});
   const [general, setGeneral] = useState<string[]>([]);
@@ -95,14 +97,16 @@ export function CreateInstitution({ onCreated }: { onCreated: (id: string) => vo
     <Section title="Tell Amiri Agent about your institution" className="rd-form">
       <p className="rd-row-d rd-prose rf-intro">Everything Amiri Agent watches and checks starts from this profile. Start with the basics; the next steps add where you operate, your customers, products, flows, rules, rivals and risks. Works with forms alone; the Setup agent is optional.</p>
       <p className="rd-fine rf-req"><span aria-hidden="true">*</span> means required; the rest is optional.</p>
-      <div ref={box} className="rf-fields"><InstitutionFields grouped d={d} set={(k, v) => setD(x => ({ ...x, [k]: v }))} err={err} creating
-        fill={data => { setErr({}); setGeneral([]); setD(x => ({ ...x, ...data })); }} /></div>
+      <LockNote />
+      <LockFields><div ref={box} className="rf-fields"><InstitutionFields grouped d={d} set={(k, v) => setD(x => ({ ...x, [k]: v }))} err={err} creating
+        fill={data => { setErr({}); setGeneral([]); setD(x => ({ ...x, ...data })); }} /></div></LockFields>
       {general.concat(hidden).length > 0 && <p className="rd-warn rf-err" role="alert"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> {general.concat(hidden).join(" · ")}</p>}
       <p className="rd-fine rf-demos">Already have a profile file? Import it to create everything at once. To try one, download a demo's profile: {DEMOS.map((d, n) => <Fragment key={d.kind}>{n ? ", " : ""}<a href={`/api/v1/reference/demo-profile?kind=${d.kind}`} download>{d.label.toLowerCase()}</a></Fragment>)}.</p>
       <div className="rf-foot"><div className="rf-foot-in">
-        <label className="btn">Import a whole profile
-          <input type="file" accept="application/json" className="sr" onChange={e => e.target.files?.[0] && importFile(e.target.files[0])} /></label>
-        <button className="btn btn--primary" type="button" disabled={busy} onClick={create}>Create and continue</button>
+        {locked ? <LockBtn className="btn">Import a whole profile</LockBtn>
+          : <label className="btn">Import a whole profile
+            <input type="file" accept="application/json" className="sr" onChange={e => e.target.files?.[0] && importFile(e.target.files[0])} /></label>}
+        <LockBtn className="btn btn--primary" disabled={busy} onClick={create}>Create and continue</LockBtn>
       </div></div>
     </Section>
   );
@@ -219,7 +223,7 @@ function History({ id, pv, onChanged, readOnly, names }: { id: string; pv: numbe
                 : <>{r.source === "import" ? "Imported" : "Saved"} <b>{plural(b.length, "change")}</b>: {summary(b)}</>}</td>
               <td>{who(r.actor, r.source)}</td>
               <td><div className="ins-acts"><TextButton aria-expanded={open === k} onClick={() => setOpen(open === k ? null : k)}>{open === k ? "Hide" : "Details"}</TextButton>
-                {!readOnly && r.op !== "status" && <TextButton title="Undo this whole save" onClick={() => askUndo(k)}>Undo</TextButton>}</div></td>
+                {!readOnly && r.op !== "status" && <TextButton edits title="Undo this whole save" onClick={() => askUndo(k)}>Undo</TextButton>}</div></td>
             </tr>
             {open === k && <tr className="ins-opened"><td colSpan={4}><div className="rd-open">{b.length === 1 ? <BeforeAfter r={r} />
               : <ul className="hist-items ins-items">{b.map(x => <li key={x.change_id}><ChangeSentence r={x} names={names} /></li>)}</ul>}</div></td></tr>}
@@ -363,7 +367,7 @@ export function InstitutionPage() {
   const archived = i.status === "archived";
   // Monitors belong to the institution this installation serves.
   const monitorButton = (section: string) => installation?.institution_id === i.institution_id && !archived
-    ? (it: Item) => <TextButton title="Draft a monitor from this item; you check it before it's submitted"
+    ? (it: Item) => <TextButton edits title="Draft a monitor from this item; you check it before it's submitted"
         onClick={() => setDrafting({ section, item_id: it.id })}>Draft a monitor</TextButton>
     : undefined;
   const act = async (a: "activate" | "archive" | "restore") => {
@@ -382,16 +386,16 @@ export function InstitutionPage() {
       <PageTitle
         title={i.name}
         actions={<>
-          {!archived && <TextButton onClick={() => setEditing(true)}>Edit details</TextButton>}
+          {!archived && <TextButton edits onClick={() => setEditing(true)}>Edit details</TextButton>}
           <Link className="rd-tbtn" to="/institution/setup">Guided setup</Link>
           <TextMenu label="More">
             <button className="rd-tbtn ins-mi" type="button" onClick={() => download(`${i.institution_id}-profile.json`, { institution: pickCreate(i as any), sections: profile.sections })}>Export the profile (JSON)</button>
-            {installation?.prototype_reset !== false && <button className="rd-tbtn ins-mi ins-danger" type="button" onClick={() => setResetting(true)}>Reset the prototype…</button>}
-            {setup && <button className="rd-tbtn ins-mi ins-danger" type="button" onClick={() => setConfirm("delete")}>Delete this institution…</button>}
+            {installation?.prototype_reset !== false && <LockBtn className="rd-tbtn ins-mi ins-danger" onClick={() => setResetting(true)}>Reset the prototype…</LockBtn>}
+            {setup && <LockBtn className="rd-tbtn ins-mi ins-danger" onClick={() => setConfirm("delete")}>Delete this institution…</LockBtn>}
           </TextMenu>
           <SetupAgentToggle />
-          {setup && <button className="btn btn--primary" type="button" disabled={!readiness.ready} title={readiness.ready ? "" : "Required parts are missing"} onClick={() => act("activate")}>Activate</button>}
-          {archived && <button className="btn btn--primary" type="button" onClick={() => act("restore")}>Restore</button>}
+          {setup && <LockBtn className="btn btn--primary" disabled={!readiness.ready} title={readiness.ready ? "" : "Required parts are missing"} onClick={() => act("activate")}>Activate</LockBtn>}
+          {archived && <LockBtn className="btn btn--primary" onClick={() => act("restore")}>Restore</LockBtn>}
         </>}
         status={<>
           <span><b className="ins-state">{stateWords[0]}</b> {stateWords[1]}</span>
@@ -402,6 +406,7 @@ export function InstitutionPage() {
       {archived && <p className="rd-warn ins-banner"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> Archived: Amiri Agent does not use this profile and it can't be changed. Restore it to edit.</p>}
       {!archived && !readiness.ready && <p className="rd-warn ins-banner"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> <b>{plural(readiness.missing_required, "required part")} missing</b> before it can go live. <Link className="rd-go" to="/institution/setup">Continue the guided setup →</Link></p>}
       {setup && readiness.ready && <p className="rd-fine ins-banner">Everything required is there. Activate to let Amiri Agent use this profile{readiness.open_recommendations ? `; ${plural(readiness.open_recommendations, "recommendation")} still open` : ""}.</p>}
+      <LockNote />
       <TextTabs label="Parts of the profile" value={tab} onChange={k => nav(`/institution/${k}`)} items={TABS.map(([key, label]) => ({ key, label }))} />
 
       {tab === "overview" && <Overview profile={profile} readiness={readiness} setup={setup} mapTitle={mapTitle(profile)} onEdit={() => setEditing(true)} />}

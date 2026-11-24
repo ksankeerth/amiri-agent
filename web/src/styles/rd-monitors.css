@@ -79,6 +79,7 @@
 /* ---------- the form: no card; labels above the fields at 16 px */
 .rd-monitors .mn-edit .rd-sec-h { margin-bottom:12px; }
 .rd-monitors .mn-form { display:flex; flex-direction:column; gap:22px; max-width:780px; }
+.rd-monitors .mn-form .mn-fields { display:flex; flex-direction:column; gap:22px; }
 .rd-monitors .mn-form .field { gap:6px; }
 .rd-monitors .mn-form .field > span, .rd-monitors .mn-form .field > label { font-size:16px; font-weight:600; color:var(--ink); }
 .rd-monitors .mn-form .field .hint { font-size:15px; font-weight:400; color:var(--ink-3); }

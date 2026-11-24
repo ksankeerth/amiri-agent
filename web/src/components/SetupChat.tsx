@@ -9,6 +9,7 @@ import { chat, type AssistantStatus, type Change, type ChatMessage, type Proposa
 import { dayTime, plural } from "../format";
 import { Icon } from "./Icon";
 import { useInstallation } from "../App";
+import { LockBtn, useDemoLock } from "./lock";
 import { changeWords, continuedTo, continueText, fieldWord, nextOpen, startersFor, trackFor, valueText, waitingForAnswer } from "./setupFlow";
 import { ChatToggleCtx, MenuButton, Modal, StatusIcon, useRole, useToast } from "./ui";
 import "../styles/setup.css";
@@ -43,6 +44,7 @@ function ChangeRow({ c }: { c: Change }) {
 
 function ProposalCard({ p, onDecided }: { p: Proposal; onDecided: (p: Proposal) => void }) {
   const toast = useToast();
+  const locked = useDemoLock();
   const [busy, setBusy] = useState(false);
   const [sure, setSure] = useState(false);
   const decide = async (a: "confirm" | "reject", confirmDeletes?: number) => {
@@ -74,12 +76,12 @@ function ProposalCard({ p, onDecided }: { p: Proposal; onDecided: (p: Proposal) 
         {p.status === "failed" && p.result && <div className="rawerr">{String(p.result.detail ?? "")}</div>}
         {p.status === "pending" && p.fits === false && <div className="rawerr">No longer fits: the profile changed since ({p.fit_errors.map(e => e.message).join("; ")}). Ask the agent to redo it.</div>}
       </div>
-      {p.status === "pending" && <div className="pf"><span className="small muted" style={{ flex: 1 }}>{p.deletes >= 3 ? `Removes ${p.deletes} items. ` : ""}Nothing changes until you apply.</span>
+      {p.status === "pending" && <div className="pf"><span className="small muted" style={{ flex: 1 }}>{p.deletes >= 3 ? `Removes ${p.deletes} items. ` : ""}{locked ? "Applying is switched off for this demo." : "Nothing changes until you apply."}</span>
         <button className="btn btn--sm" type="button" disabled={busy} onClick={() => decide("reject")}>Not now</button>
-        <button className="btn btn--sm btn--primary" type="button" disabled={busy || p.fits === false} onClick={() => decide("confirm")}>Apply</button></div>}
+        <LockBtn className="btn btn--sm btn--primary" disabled={busy || p.fits === false} onClick={() => decide("confirm")}>Apply</LockBtn></div>}
       {sure && <Modal title={`Remove ${p.deletes} items?`} onClose={() => setSure(false)} footer={<>
         <button className="btn" type="button" onClick={() => setSure(false)}>Cancel</button>
-        <button className="btn btn--danger" type="button" onClick={() => decide("confirm", p.deletes)}>Yes, remove {p.deletes}</button></>}>
+        <LockBtn className="btn btn--danger" onClick={() => decide("confirm", p.deletes)}>Yes, remove {p.deletes}</LockBtn></>}>
         <p>This proposal removes {p.deletes} items from your profile: {p.changes.filter(c => c.op === "delete").map(c => changeWords(c, "propose").name ?? c.id).join(", ")}. The history keeps them, and Undo can bring them back.</p>
       </Modal>}
     </div>
