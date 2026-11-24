@@ -5,7 +5,7 @@ import { PageHeader } from "./blocks";
 import { ApiError } from "../api/client";
 import { isDemoLocked, LOCK_TOAST } from "./demoLock";
 import { refusalOf } from "./v2/states";
-import { ToastHost, type ToastData } from "./v2/Toasts";
+import { ToastHost, type ToastAction, type ToastData } from "./v2/Toasts";
 import "../styles/fixe.css";
 
 /** Set by a page that has the setup agent beside it: PageHead puts the show/hide button with the page's buttons. */
@@ -203,7 +203,7 @@ export function Modal({ title, onClose, children, footer, wide }: { title: React
 // One list, drawn by v2/Toasts.tsx. `useToast()` is the short note every page already uses (a string: role=status).
 // `useRefusalToast()` is for when the server said no: it shows the problem's detail and, small, its code (role=alert).
 // Neither closes while hovered or focused, and each has a close button (A10).
-const ToastCtx = createContext<(msg: string) => void>(() => {});
+const ToastCtx = createContext<(msg: string, action?: ToastAction) => void>(() => {});
 export const useToast = () => useContext(ToastCtx);
 type RefusalPush = (error: unknown, title?: string) => void;
 const RefusalCtx = createContext<RefusalPush>(() => {});
@@ -216,7 +216,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     const id = Date.now() + Math.random();
     setItems(x => (x.some(o => o.message === t.message && o.code === t.code) ? x : [...x, { ...t, id }]));  // the same words twice at once: once
   }, []);
-  const push = useCallback((message: string) => add({ kind: "info", message }), [add]);
+  const push = useCallback((message: string, action?: ToastAction) => add({ kind: "info", message, action }), [add]);
   const refuse = useCallback<RefusalPush>((error, title) => {
     const r = refusalOf(error);
     add({ kind: "refusal", message: r?.message ?? "Something went wrong.", code: r?.code, title });

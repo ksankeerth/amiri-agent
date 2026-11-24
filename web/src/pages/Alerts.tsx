@@ -1,269 +1,253 @@
-// Alerts: what Amiri Agent found for each team's products, grouped by the event behind it, and who has taken it on.
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { ApiError } from "../api/client";
+// Alerts (board 01; states: board 16 section D): what Amiri Agent found for each team's products, as a list and a reading
+// pane. New / Acknowledged / Resolved tabs, a team and a level filter, one Acknowledge button for every alert to review.
+// The tab, filters and open alert live in the address (?tab=&team=&level=&alert=), so a link opens the right alert. On a
+// phone the list is the page and an alert opens as its own view with a back link. Reloads every minute.
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { alertsApi, type AlertItem, type AlertSummary } from "../api/alerts";
 import { investigationApi, type EventDetail } from "../api/investigation";
-import { PageTitle, Result, Section, TextButton, TextTabs, ToneMark, ToneWord } from "../components/rd";
-import { ListSkeleton, LoadError, useNow, useToast } from "../components/ui";
-import { ago, dayTime, ZONE_LABEL } from "../format";
+import { useNow, useRefusalToast, useToast } from "../components/ui";
+import { LoadError } from "../components/v2/LoadError";
+import { useCrumbs } from "../components/v2/Shell";
+import { StaleBanner } from "../components/v2/StaleBanner";
+import { TabPanel, Tabs } from "../components/v2/Tabs";
+import { alertOrder, eventTitle } from "../plain";
+import { AlertList, AlertsSkeleton, Article, changedAt, EmptyList, LevelsHelp, ManyStrip } from "./alerts/parts";
 import {
-  ACTION_MEANS, alertChangeText, alertOrder, checkMove, count, earliest, eventTitle, impactText, LEVEL_LABEL, listText, onDay,
-  relDay, sizeTiming, sourceInfo, type LevelKey, type VerdictKey,
-} from "../plain";
-import { useArticleUrl } from "./alerts/article";
-import { historySummary } from "./alerts/words";
-import "../styles/rd-alerts.css";
+  countAt, LEVELS, LIST_LIMIT, ledeText, limitNote, MANY, neighbour, parseLevel, parseTab, pickAlert, TABS, type LevelKey, type Tab,
+} from "./alerts/words";
+import "../styles/v2/alerts.css";
 
-type Show = "new" | "acknowledged" | "resolved" | "all";
+const REFRESH_MS = 60_000;
+const CRUMBS = [{ label: "Today" }, { label: "Alerts" }];
+const PHONE = "(max-width: 719.98px)";
 
-// when Amiri Agent last raised or escalated it: a person acknowledging it doesn't move it on the page
-const changed = (a: AlertItem) => [...a.history].reverse().find(h => h.by === "Amiri Agent" && h.change !== "resolved")?.at ?? a.created_at;
-// "Remittance inflow may fall" → "remittance inflow may fall" after the team's name; "FC deposit…" keeps its capitals
-const lower = (s: string) => (/^[A-Z][a-z]/.test(s) ? s[0].toLowerCase() + s.slice(1) : s);
-
-/** An alert's level in words, with its shape: amber ◆ for the two early levels, red ▲ once your data confirms it. */
-function LevelWord({ level }: { level: LevelKey }) {
-  return <ToneWord tone={level === "adverse" ? "bad" : "mixed"}>{LEVEL_LABEL[level]}</ToneWord>;
-}
-const Chevron = () => (
-  <svg className="rd-chev" viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
-    <path d="M7 4l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" /></svg>);
-
-/** What your data has said so far, in the app's result words: one result when every impact reads alike. The words
- *  "Your data" are said once, as the group's column heading (screen readers get them on each row). */
-function DataSoFar({ a }: { a: AlertItem }) {
-  const checked = a.effects.filter(e => e.check);
-  if (!checked.length) return <span><span className="sr">Your data: </span>Not checked yet</span>;
-  const lead = checked.find(e => e.check!.alert === a.level) ?? checked[0];
-  const kinds = [...new Set(checked.map(e => e.check!.verdict as VerdictKey))];
-  const move = a.effects.length === 1 ? checkMove(lead.check!.what)?.move : undefined;
-  return <span><span className="sr">Your data: </span>{kinds.map((v, i) => (
-    <span key={v}>{i > 0 && ", "}<Result verdict={v} adverse={checked.find(e => e.check!.verdict === v)!.adverse} figure={kinds.length === 1 ? move : undefined} strong={false} /></span>))}</span>;
+function usePhone(): boolean {
+  const [phone, setPhone] = useState(() => matchMedia(PHONE).matches);
+  useEffect(() => {
+    const m = matchMedia(PHONE), f = () => setPhone(m.matches);
+    m.addEventListener("change", f);
+    return () => m.removeEventListener("change", f);
+  }, []);
+  return phone;
 }
 
-function AlertRow({ a, next, ev, showLevel, now, onChange }: {
-  a: AlertItem; next: string | null; ev: EventDetail | undefined; showLevel: boolean; now: Date; onChange: (a: AlertItem) => void;
-}) {
-  const toast = useToast();
-  const [open, setOpen] = useState(false);
-  const [all, setAll] = useState(false);
-  const [asking, setAsking] = useState<"ack" | "resolve" | null>(null);
-  const [note, setNote] = useState("");
-  const [busy, setBusy] = useState(false);
-  const id = useId();
-  const act = async (action: "ack" | "resolve" | "reopen") => {
-    setBusy(true);
-    try { onChange(await alertsApi.act(a.alert_id, action, note)); setAsking(null); setNote("");
-      toast({ ack: "Acknowledged: your team can see you're on it", resolve: "Resolved", reopen: "Back on the review list" }[action]); }
-    catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
-    finally { setBusy(false); }
-  };
-  // the impact the alert's level rests on leads; the rest wait in Details
-  const lead = a.effects.find(e => e.check?.alert === a.level) ?? a.effects[0];
-  const products = [...new Set(a.effects.map(e => e.product))];
-  const strongest = a.top_finding;
-  const inEvent = ev && strongest
-    ? ev.findings.filter(f => f.title === strongest).flatMap(f => f.evidence?.headlines ?? []).find(h => h.url)?.url ?? null : null;
-  const articleUrl = useArticleUrl(strongest, a.sources, open, inEvent);
-  const labels = (a.sources ?? []).map(s => sourceInfo(s).label);
-  const lastChecked = a.effects.map(e => e.check?.as_of).filter((x): x is string => !!x).sort().pop()
-    ?? [...a.history].reverse().find(h => h.change === "checked")?.at ?? null;
-  const dueIn = next ? relDay(next, now) : "";
-  const anyChecked = a.effects.some(e => e.check && e.check.verdict !== "not_yet");
+/** The event behind the open alert: its tasks know the next check and the figure, and its findings have the article links. */
+function useEvent(eventId: string | undefined, stamp: string | undefined): EventDetail | null {
+  const [ev, setEv] = useState<EventDetail | null>(null);
+  useEffect(() => {
+    if (!eventId) { setEv(null); return; }
+    let live = true;
+    investigationApi.event(eventId).then(e => { if (live) setEv(e); }).catch(() => { if (live) setEv(null); });  // the pane reads without it
+    return () => { live = false; };
+  }, [eventId, stamp]);
+  return ev && ev.event_id === eventId ? ev : null;
+}
 
-  return (
-    <article className="rd-al" aria-labelledby={`t-${a.alert_id}`}>
-      <div className="rd-row rd-alrow">
-        <div className="rd-alrow-main">
-          <h3 className="rd-row-t" id={`t-${a.alert_id}`}>
-            <button type="button" className="rd-tgl" title={`${a.owner}, ${lead ? lower(impactText(lead.metric_name, lead.direction)) : a.title}`}
-              aria-expanded={open} aria-controls={`d-${id}`} onClick={() => setOpen(o => !o)}>
-              <span className="rd-clamp1 rd-tgl-t">{a.owner}<span aria-hidden="true"> · </span><span className="sr">, </span>
-                <span className="rd-what">{lead ? lower(impactText(lead.metric_name, lead.direction)) : a.title}</span></span><Chevron /></button></h3>
-          <div className="rd-row-d rd-dots rd-clamp1" title={listText(products, 6)}>
-            <span>{listText(products, 2)}</span>
-            {showLevel && <span className="rd-lv"><LevelWord level={a.level} /></span>}
-          </div>
-          {a.status === "acknowledged" && <div className="rd-row-d rd-who rd-clamp1"><b>{a.acknowledged_by}</b> is on it{a.acknowledged_at ? `, ${ago(a.acknowledged_at, now)}` : ""}{a.ack_note ? `: “${a.ack_note}”` : ""}</div>}
-          {a.status === "resolved" && <div className="rd-row-d rd-who">Resolved by <b>{a.resolved_by}</b>{a.resolved_at ? `, ${ago(a.resolved_at, now)}` : ""}{a.resolved_note ? `: “${a.resolved_note}”` : ""}</div>}
-        </div>
-        <div className="rd-alrow-data rd-row-d"><DataSoFar a={a} /></div>
-        {!asking ? <div className="rd-alrow-act">
-          {/* every alert waiting for review gets the same button: they're peers, and the list's order already says which
-              is most serious. The filled button is kept for the confirmation, the one action at that moment. */}
-          {a.status === "new" && <button className="btn" type="button" title={ACTION_MEANS.ack} onClick={() => setAsking("ack")}>Acknowledge</button>}
-          {a.status === "acknowledged" && <TextButton title={ACTION_MEANS.resolve} onClick={() => setAsking("resolve")}>Resolve</TextButton>}
-          {a.status !== "new" && <TextButton title={ACTION_MEANS.reopen} disabled={busy} onClick={() => act("reopen")}>Reopen</TextButton>}
-        </div> : <div className="rd-alrow-act" />}
-      </div>
-
-      {(open || asking) && <div className="rd-open rd-det" id={`d-${id}`}>
-        {open && <>
-          <h4>Why Amiri Agent expects this</h4>
-          <p className="rd-fine rd-prose">Amiri Agent's assessment (AI). Sizes and timing are estimates, checked against your
-            own figures as they're published.</p>
-          <div className="rd-scroll"><table className="rd-table">
-            <thead><tr><th scope="col">Product</th><th scope="col">Expected</th><th scope="col">Size and timing</th><th scope="col">Your data so far</th></tr></thead>
-            <tbody>{a.effects.map(e => { const m = e.check ? checkMove(e.check.what) : null; return (
-              <tr key={e.hypothesis_id}>
-                <td className="rd-strong">{e.product}</td>
-                <td>{impactText(e.metric_name, e.direction)}<div className="rd-fine">How: {e.chain_label}</div></td>
-                <td>{sizeTiming(e.size, e.timing)}</td>
-                <td>{e.check ? <><Result verdict={e.check.verdict as VerdictKey} adverse={e.adverse} figure={m?.move} strong={false} />
-                  {m && <div className="rd-fine">{m.against}</div>}</> : <span className="rd-fine">Not checked yet</span>}</td>
-              </tr>); })}</tbody></table></div>
-
-          {(strongest || a.finding_ids.length > 0) && <p className="rd-det-line"><b>Evidence:</b>{" "}
-            {a.finding_ids.length > 0 && <>{count(a.finding_ids.length, "finding")}{labels.length ? ` from ${listText(labels)}` : ""}. </>}
-            {strongest && <>Strongest:{" "}{articleUrl
-              ? <a className="rd-link" href={articleUrl} target="_blank" rel="noreferrer">{strongest}<span aria-hidden="true"> ↗</span><span className="sr"> (opens the article)</span></a>
-              : strongest}</>}</p>}
-
-          <p className="rd-det-line"><b>History:</b> {historySummary(a.history, a.created_at, lastChecked)}.{" "}
-            <TextButton aria-expanded={all} aria-controls={`h-${id}`} onClick={() => setAll(x => !x)}>{all ? "Hide the list" : `Show all ${a.history.length}`}</TextButton></p>
-          {all && <ol className="rd-hist" id={`h-${id}`} tabIndex={0} aria-label={`All ${a.history.length} history entries, newest first`}>
-            {[...a.history].reverse().map((h, i) => (
-              <li key={i}><b>{alertChangeText(h)}</b><span className="rd-fine">{dayTime(h.at)}{h.by && h.by !== "Amiri Agent" ? ` · ${h.by}` : ""}</span></li>))}</ol>}
-
-          {next && <p className="rd-det-line"><b>{dueIn.includes("ago") ? "Check due:" : anyChecked ? "Next check:" : "First check:"}</b> {onDay(next)}{" "}
-            <span className="rd-fine">({dueIn})</span></p>}
-          {a.via_monitor && <p className="rd-det-line">Sent to you because your team owns <Link className="rd-link" to={`/monitors/${a.via_monitor}`}>the monitor</Link> that found it.</p>}
-          {a.status === "new" && !asking && <p className="rd-det-line"><TextButton title={ACTION_MEANS.resolve} onClick={() => setAsking("resolve")}>Resolve</TextButton>{" "}
-            <span className="rd-fine">You've dealt with it; it leaves the review list.</span></p>}
-        </>}
-
-        {asking && <div className="rd-ask">
-          <input className="input" autoFocus aria-label={asking === "ack" ? "A note for your team (optional)" : "Why it's resolved (optional)"}
-            placeholder={asking === "ack" ? "A note for your team (optional): who is looking, what next" : "Why it's resolved (optional)"}
-            value={note} onChange={e => setNote(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") act(asking); else if (e.key === "Escape") { setAsking(null); setNote(""); } }} />
-          <button className="btn btn--primary" type="button" disabled={busy} onClick={() => act(asking)}>{asking === "ack" ? "Acknowledge" : "Resolve"}</button>
-          <TextButton onClick={() => { setAsking(null); setNote(""); }}>Cancel</TextButton>
-        </div>}
-      </div>}
-    </article>
-  );
+/** Event names as the Events pages show them: the alert carries only the stored title, the list has the themes. */
+function useEventTitles(): (a: AlertItem) => string {
+  const [names, setNames] = useState<Map<string, string>>(new Map());
+  useEffect(() => {
+    let live = true;
+    investigationApi.events(200).then(rows => { if (live) setNames(new Map(rows.map(r => [r.event_id, eventTitle(r)]))); })
+      .catch(() => {});  // the stored title is the fallback
+    return () => { live = false; };
+  }, []);
+  return useCallback((a: AlertItem) => names.get(a.event_id) ?? a.event_title, [names]);
 }
 
 export function AlertsPage() {
-  const [show, setShow] = useState<Show>("new");
-  const [team, setTeam] = useState("");
+  useCrumbs(CRUMBS);
+  const [sp, setSp] = useSearchParams();
+  const nav = useNavigate();
+  const loc = useLocation();
+  const phone = usePhone();
+  const now = useNow(60_000);
+  const toast = useToast(), refuse = useRefusalToast();
+  const teamId = useId(), levelId = useId();
+
+  const tab = parseTab(sp.get("tab")), team = sp.get("team") ?? "", level = parseLevel(sp.get("level")), alertId = sp.get("alert");
   const [items, setItems] = useState<AlertItem[] | null>(null);
   const [sum, setSum] = useState<AlertSummary | null>(null);
-  const [events, setEvents] = useState<Record<string, EventDetail>>({});
-  const [byEvent, setByEvent] = useState<Record<string, AlertItem[]>>({});  // every team's alerts on an event, whatever the filter
   const [err, setErr] = useState<unknown>(null);
-  const [help, setHelp] = useState(false);
-  const helpId = useId();
-  const now = useNow(60_000);
+  const [loadedAt, setLoadedAt] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+  const seq = useRef(0);
+  const pushed = useRef(0);                               // alerts opened with a new history entry (phone), so Back can undo them
+  const focusNext = useRef<"article" | "list" | null>(null);
+  const lastOpened = useRef<string | null>(null);
+
+  /** Change the address. Filters and selections replace the entry; opening an alert on a phone adds one (the phone's Back). */
+  const setParams = useCallback((patch: Record<string, string | null>, push = false) => {
+    setSp(prev => {
+      const n = new URLSearchParams(prev);
+      for (const [k, v] of Object.entries(patch)) { if (v) n.set(k, v); else n.delete(k); }
+      return n;
+    }, { replace: !push });
+  }, [setSp]);
+
   const load = useCallback(async () => {
+    const mine = ++seq.current;
     try {
-      // the list is the newest 100, so it's asked for one status at a time (older alerts to review still show);
-      // the filter's counts come from the summary, which counts them all
-      const [s, xs] = await Promise.all([alertsApi.summary(), alertsApi.list({ status: show === "all" ? undefined : show, owner: team || undefined })]);
-      setSum(s); setItems(xs); setErr(null);
-    } catch (e) { setErr(e); }
-  }, [show, team]);
-  useEffect(() => setItems(null), [show, team]);  // another filter: wait for its list rather than filter the old one
-  useEffect(() => { load(); const t = setInterval(load, 60_000); return () => clearInterval(t); }, [load]);
-  // an alert acted on here leaves a filter it no longer matches at once, before the next load
-  const shown = useMemo(() => items && items.filter(a => show === "all" || a.status === show), [items, show]);
-  const nAt = (k: Show) => sum?.by_team_status?.filter(r => (!team || r.owner === team) && (k === "all" || r.status === k))
-    .reduce((n, r) => n + r.n, 0);
-  // each alert's next check is on its event, and "reached N teams" counts every team's alert on the event, even with
-  // a team filter on: two requests per event on the page
-  const eventIds = useMemo(() => [...new Set((shown ?? []).map(a => a.event_id))].sort().join(","), [shown]);
+      // one status at a time (the newest 200); the tab counts come from the summary, which counts them all
+      const [s, xs] = await Promise.all([alertsApi.summary(), alertsApi.list({ status: tab, owner: team || undefined, level: level || undefined, limit: LIST_LIMIT })]);
+      if (mine !== seq.current) return;
+      setSum(s); setItems(xs); setErr(null); setLoadedAt(Date.now());
+    } catch (e) { if (mine === seq.current) setErr(e); }
+  }, [tab, team, level]);
+  useEffect(() => { setItems(null); }, [tab, team, level]);  // another filter: wait for its list rather than show the old one
+  useEffect(() => { load(); const t = setInterval(load, REFRESH_MS); return () => clearInterval(t); }, [load]);
+
+  // the list as shown: an alert acted on leaves a tab it no longer belongs to at once, before the next load; most serious first
+  const queue = useMemo(() => (items ?? []).filter(a => a.status === tab).sort((x, y) => alertOrder({ ...x, at: changedAt(x) }, { ...y, at: changedAt(y) })), [items, tab]);
+  const selected = pickAlert(queue, alertId, phone);
+  const ev = useEvent(selected?.event_id, selected?.updated_at);
+  const titleOf = useEventTitles();
+  useEffect(() => { setNote(""); }, [selected?.alert_id]);
+
+  // a link to an alert (?alert=) with no tab: open the tab it is in. An old #event-<id> link opens that event's first alert.
   useEffect(() => {
-    if (!eventIds) return;
-    let live = true;
-    const ids = eventIds.split(",");
-    Promise.all(ids.map(id => investigationApi.event(id).then(e => [id, e] as const).catch(() => null)))
-      .then(xs => { if (live) setEvents(Object.fromEntries(xs.filter(x => x !== null))); });
-    Promise.all(ids.map(id => alertsApi.list({ event_id: id }).then(l => [id, l] as const).catch(() => null)))
-      .then(xs => { if (live) setByEvent(Object.fromEntries(xs.filter(x => x !== null))); });
-    return () => { live = false; };
-  }, [eventIds]);
-  const nextCheck = (a: AlertItem) => {
-    const ev = events[a.event_id];
-    if (!ev) return null;
-    const hs = new Set(a.effects.map(e => e.hypothesis_id));
-    return earliest(ev.tasks.filter(t => hs.has(t.hypothesis_id) && !t.check?.final).map(t => t.next_check_after ?? t.check?.next_check_after));
+    if (!items || !alertId || sp.has("tab") || items.some(a => a.alert_id === alertId)) return;
+    alertsApi.one(alertId).then(a => setParams({ tab: a.status === "new" ? null : a.status })).catch(() => {});
+  }, [items, alertId, sp, setParams]);
+  useEffect(() => {
+    const m = loc.hash.match(/^#event-(.+)$/);
+    const hit = m && !alertId && queue.find(a => a.event_id === m[1]);
+    if (hit) setParams({ alert: hit.alert_id });
+  }, [loc.hash, queue, alertId, setParams]);
+
+  // focus follows a choice: to the alert's heading when one opens, to the list (or the row left) when one closes
+  useEffect(() => {
+    if (focusNext.current === "article") document.getElementById("alert-title")?.focus({ preventScroll: false });
+    else if (focusNext.current === "list") (document.getElementById(lastOpened.current ? `al-row-${lastOpened.current}` : "al-list-h") ?? document.getElementById("al-list-h"))?.focus();
+    else return;
+    focusNext.current = null;
+  });
+  useEffect(() => {  // the phone's own Back button closed the alert
+    if (phone && !alertId && lastOpened.current && pushed.current > 0) { focusNext.current = "list"; pushed.current -= 1; }
+  }, [phone, alertId]);
+
+  const hrefFor = (id: string) => { const n = new URLSearchParams(sp); n.set("alert", id); return `?${n}`; };
+  const open = (id: string) => { focusNext.current = "article"; lastOpened.current = id; if (phone) pushed.current += 1; setParams({ alert: id }, phone); };
+  const back = () => {
+    focusNext.current = "list";
+    if (pushed.current > 0) { pushed.current -= 1; nav(-1); } else setParams({ alert: null });
   };
-  const update = (a: AlertItem) => { setItems(xs => (xs ?? []).map(x => (x.alert_id === a.alert_id ? a : x))); alertsApi.summary().then(setSum).catch(() => {});
-    window.dispatchEvent(new Event("amiri:alerts")); };
+  const setFilter = (patch: Record<string, string | null>) => setParams({ ...patch, alert: null });
 
-  // one queue, the most serious first (the alert your own data confirms leads), then the latest; an event's alerts
-  // sit together where its most serious one is
-  const queue = useMemo(() => [...(shown ?? [])].sort((x, y) => alertOrder({ ...x, at: changed(x) }, { ...y, at: changed(y) })), [shown]);
-  const groups = useMemo(() => {
-    const m = new Map<string, AlertItem[]>();
-    for (const a of queue) m.set(a.event_id, [...(m.get(a.event_id) ?? []), a]);
-    return [...m.entries()];
-  }, [queue]);
+  const refreshSummary = () => { alertsApi.summary().then(setSum).catch(() => {}); window.dispatchEvent(new Event("amiri:alerts")); };
+  const act = async (a: AlertItem, action: "ack" | "resolve" | "reopen") => {
+    setBusy(true);
+    try {
+      const done = await alertsApi.act(a.alert_id, action, action === "reopen" ? undefined : note);
+      const after = neighbour(queue, a.alert_id);
+      setItems(xs => (xs ?? []).map(x => (x.alert_id === done.alert_id ? done : x)));
+      setNote("");
+      refreshSummary();
+      if (done.status !== tab) {  // it left this tab: the next one down opens (on a phone, back to the list)
+        lastOpened.current = null;
+        if (phone) { focusNext.current = "list"; pushed.current = 0; setParams({ alert: null }); }
+        else { focusNext.current = after ? "article" : "list"; setParams({ alert: after?.alert_id ?? null }); }
+      }
+      const n = (countAt(sum?.by_team_status, done.status as Tab, team) ?? 0) + 1;
+      if (action === "ack") toast(`Acknowledged · moved to Acknowledged (${n})`, { label: "Undo", title: "Moves it back to New", onClick: () => undo(done) });
+      else if (action === "resolve") toast(`Resolved · moved to Resolved (${n})`);
+      else toast("Back in New");
+    } catch (e) { refuse(e); }
+    finally { setBusy(false); }
+  };
+  const undo = async (a: AlertItem) => {
+    try {
+      await alertsApi.act(a.alert_id, "reopen");
+      toast("Back in New");
+      focusNext.current = "article"; lastOpened.current = a.alert_id;
+      setParams({ tab: null, alert: a.alert_id });
+      load(); refreshSummary();
+    } catch (e) { refuse(e); }
+  };
 
-  const s = sum;
-  const waiting = !s ? null : team ? s.teams.find(t => t.owner === team)?.to_review ?? 0 : s.to_review;
-  const title = waiting === null ? "Alerts" : waiting ? `${count(waiting, "alert")} waiting for ${team || "review"}` : team ? `All caught up for ${team}` : "All caught up";
-  const nTeams = new Set(queue.map(a => a.owner)).size;
-  const nConfirmed = queue.filter(a => a.status === "new" && a.level === "adverse").length;
-  const lede = shown && shown.length ? <>From {count(groups.length, "event")}{team ? "" : `, for ${count(nTeams, "team")}`}.{" "}
-    {nConfirmed > 0 && <><ToneWord tone="bad">{nConfirmed} confirmed by your data</ToneWord>. </>}Most serious first.{" "}</> : null;
-  const tabs = ([["new", "To review"], ["acknowledged", "Acknowledged"], ["resolved", "Resolved"], ["all", "All"]] as const)
-    .map(([key, label]) => ({ key, label, count: nAt(key) }));
+  // ---------------------------------------------------------------- what the page says
+  const toReview = !sum ? null : team ? sum.teams.find(t => t.owner === team)?.to_review ?? 0 : sum.to_review;
+  const lede = ledeText({ toReview, acknowledgedWeek: sum ? sum.acknowledged_week : null, team });
+  const byTeamStatus = sum?.by_team_status;
+  const levelOn = !!level;  // the summary doesn't count by level, so a level filter leaves the other tabs' numbers out
+  const tabs = TABS.map(t => ({
+    id: t.id, label: t.label, countLabel: t.countLabel,
+    count: levelOn ? (t.id === tab && items ? queue.length : undefined) : countAt(byTeamStatus, t.id, team),
+    countTone: t.id === "new" ? ("hot" as const) : undefined,
+  })).map(t => ({ ...t, countTone: t.countTone && t.count ? t.countTone : undefined }));
+  const tabTotal = levelOn ? undefined : countAt(byTeamStatus, tab, team);
+  const teamRows = (sum?.all_teams ?? []).map(t => ({ owner: t, n: countAt(byTeamStatus, tab, t) ?? 0 }));
+  const many = !team && !levelOn && (tabTotal ?? 0) > MANY && teamRows.filter(t => t.n > 0).length > 1;
+  const reading = phone && !!selected;
+  const stale = err != null && items !== null && loadedAt != null;
+
+  const filters = (
+    <>
+      {sum && sum.all_teams.length > 1 && (
+        <span className="v2-al-sel">
+          <label htmlFor={teamId}>Team</label>
+          <select id={teamId} className="v2-al-select" value={team} onChange={e => setFilter({ team: e.target.value || null })}>
+            <option value="">All teams ({countAt(byTeamStatus, tab) ?? 0})</option>
+            {teamRows.map(t => <option key={t.owner} value={t.owner}>{t.owner} ({t.n})</option>)}
+          </select>
+        </span>
+      )}
+      <span className="v2-al-sel">
+        <label htmlFor={levelId}>Level</label>
+        <select id={levelId} className="v2-al-select" value={level} onChange={e => setFilter({ level: e.target.value || null })}>
+          {LEVELS.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
+        </select>
+      </span>
+    </>
+  );
+
+  const list = (
+    <div className="v2-al-col">
+      <h2 id="al-list-h" tabIndex={-1} className="v2-sr">{TABS.find(t => t.id === tab)!.label} alerts, most serious first</h2>
+      <AlertList titleOf={titleOf} rows={queue} selectedId={selected?.alert_id ?? null} now={now} hrefFor={hrefFor} onOpen={open} />
+      {limitNote(tabTotal, queue.length) && <p className="v2-meta v2-al-limit">{limitNote(tabTotal, queue.length)}</p>}
+      <LevelsHelp />
+    </div>
+  );
 
   return (
-    <div className="page rd rd-alerts">
-      <PageTitle title={title}
-        lede={<>{lede}<TextButton aria-expanded={help} aria-controls={helpId} onClick={() => setHelp(h => !h)}>How this works</TextButton></>}
-        help={<div id={helpId} className="rd-open rd-prose rd-help" hidden={!help}>
-          <p>Amiri Agent watches the news and the markets, links what it finds to an event, and works out which of your
-            products the event could hit. The team that owns each product gets an alert. Amiri Agent then tests each
-            possible impact against your own figures as they're published.</p>
-          <p>Someone on that team acknowledges it, so everyone knows it's taken on. The most serious alert is at the top;
-            work down the list.</p>
-          <ul className="rd-levels">
-            <li><LevelWord level="warning" /> <span>Amiri Agent expects an impact; your data can't tell yet.</span></li>
-            <li><LevelWord level="developing" /> <span>Your figures are starting to move the bad way.</span></li>
-            <li><LevelWord level="adverse" /> <span>Your own figures show the impact.</span></li>
-          </ul>
-        </div>} />
-      {err != null && <LoadError error={err} onRetry={load} what="the alerts" />}
+    <div className="v2-al">
+      {stale && <StaleBanner loadedAt={loadedAt!} now={now.getTime()} onRetry={load} />}
 
-      {(items !== null || err == null) && <TextTabs label="Which alerts" items={tabs} value={show} onChange={setShow}
-        end={<>
-          {s && <span className="rd-fine">{s.acknowledged_week} acknowledged this week</span>}
-          {s && s.all_teams.length > 1 && <select className="input rd-select" aria-label="Team" value={team} onChange={e => setTeam(e.target.value)}>
-            <option value="">Team: All teams</option>
-            {s.all_teams.map(t => { const n = s.teams.find(x => x.owner === t)?.to_review; return <option key={t} value={t}>{t}{n ? ` (${n} to review)` : ""}</option>; })}
-          </select>}
-        </>} />}
+      <header className={`v2-al-head${reading ? " v2-sr" : ""}`}>
+        <h1 className="v2-al-h1">Alerts</h1>
+        {lede && <p className="v2-al-lede">{lede.hot && <><b className="v2-al-lede__hot v2-num">{lede.hot}</b>{lede.rest.length > 0 && " · "}</>}{lede.rest.join(" · ")}</p>}
+      </header>
 
-      {shown === null ? (err == null && <div className="mt12"><ListSkeleton rows={3} /></div>)
-        : !shown.length ? <div className="rd-empty">
-          <p className="rd-lede">{show === "new" ? "When an event could hit your products, the owning team's alert appears here." : "No alerts in this group."}</p>
-          {show === "new" && <Link className="btn btn--primary" to="/events">See events</Link>}</div>
-        : <div className="rd-groups">{groups.map(([eid, as], gi) => {
-          const ev = events[eid];
-          const all = byEvent[eid];
-          const reached = all ? new Set(all.map(x => x.owner)).size : team ? null : new Set(as.map(x => x.owner)).size;
-          const raised = earliest([...(all ?? as).map(x => x.created_at)]) ?? as[0].created_at;
-          const sameLevel = as.every(x => x.level === as[0].level);
-          const name = ev ? eventTitle(ev) : as[0].event_title;
-          const tone = as.some(x => x.effects.some(e => e.adverse)) ? "bad" : "mixed";
-          return (
-            <Section key={eid} className="rd-grp" id={`event-${eid}`}
-              title={<><ToneMark tone={tone} label={tone === "bad" ? "Bad for you: " : "Mixed for you: "} /><Link className="rd-name" to={`/events/${eid}`}>{name}</Link></>}
-              meta={<span className="rd-dots">
-                {sameLevel && <span className="rd-lv"><LevelWord level={as[0].level} /></span>}
-                <span>raised {dayTime(raised)}{gi === 0 ? ` ${ZONE_LABEL} time` : ""}</span>
-                {reached !== null && <span>reached {count(reached, "team")}</span>}
-              </span>}
-              >
-              <div className="rd-alhead rd-colh" aria-hidden="true"><span /><span>Your data</span><span /></div>
-              {as.map(a => <AlertRow key={a.alert_id} a={a} next={nextCheck(a)} ev={ev} now={now} showLevel={!sameLevel} onChange={update} />)}
-            </Section>);
-        })}</div>}
+      {items === null && err != null && <LoadError error={err} onRetry={load} what="the alerts" safe="Your alerts are safe; this page just couldn't reach them." />}
+
+      {reading && selected ? (
+        <div className="v2-al-read">
+          <Link to="?" className="v2-al-back" onClick={e => { e.preventDefault(); back(); }}><span aria-hidden="true">←</span>All alerts</Link>
+          <Article titleOf={titleOf} a={selected} ev={ev} now={now} busy={busy} note={note} onNote={setNote} onAct={action => act(selected, action)} />
+        </div>
+      ) : (items !== null || err == null) && (
+        <Tabs label="Which alerts" tabs={tabs} value={tab} onChange={id => setFilter({ tab: id === "new" ? null : id })} className="v2-al-tabs" trailing={<div className="v2-al-filters">{filters}</div>}>
+          <TabPanel id={tab}>
+            {items === null ? <AlertsSkeleton phone={phone} /> : <>
+              {many && <ManyStrip total={tabTotal!} tab={tab} teams={teamRows.filter(t => t.n > 0).sort((a, b) => b.n - a.n).slice(0, 4)} onTeam={t => setFilter({ team: t })} />}
+              {!queue.length
+                ? <EmptyList tab={tab} team={team} level={level as "" | LevelKey}
+                    onClear={what => setFilter({ ...(what !== "level" ? { team: null } : {}), ...(what !== "team" ? { level: null } : {}) })} />
+                : <div className="v2-al-body">
+                  {list}
+                  {!phone && selected && (
+                    <div className="v2-al-pane">
+                      <Article titleOf={titleOf} a={selected} ev={ev} now={now} busy={busy} note={note} onNote={setNote} onAct={action => act(selected, action)} />
+                    </div>
+                  )}
+                </div>}
+            </>}
+          </TabPanel>
+        </Tabs>
+      )}
     </div>
   );
 }

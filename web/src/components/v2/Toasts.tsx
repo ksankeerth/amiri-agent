@@ -14,7 +14,10 @@ export interface ToastData {
   code?: string;
   /** Refusals: a bold line above the message, when the page has one. */
   title?: string;
+  /** Info toasts: one button after the message ("Undo"). It closes the toast and runs `onClick`. */
+  action?: ToastAction;
 }
+export interface ToastAction { label: string; /** what it does, as a tooltip ("Moves it back to New") */ title?: string; onClick: () => void }
 
 /** Counts down `ms`, but stands still while paused; calls `done` once. ms <= 0: never. */
 function useCloseTimer(ms: number, paused: boolean, done: () => void) {
@@ -37,9 +40,9 @@ export interface ToastProps extends Omit<ToastData, "id" | "kind"> {
 }
 
 /** One toast. A refusal is announced at once (role=alert); an info toast waits in the polite region of its host. */
-export function Toast({ kind = "info", message, code, title, onClose, ms }: ToastProps) {
+export function Toast({ kind = "info", message, code, title, action, onClose, ms }: ToastProps) {
   const [hover, setHover] = useState(false), [focus, setFocus] = useState(false);
-  useCloseTimer(ms ?? (kind === "refusal" ? 9000 : 4200), hover || focus, onClose);
+  useCloseTimer(ms ?? (kind === "refusal" ? 9000 : action ? 8000 : 4200), hover || focus, onClose);
   const esc = (e: KeyboardEvent) => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } };
   return (
     <div className={`v2-toast v2-toast--${kind}`} {...(kind === "refusal" ? { role: "alert" } : {})}
@@ -51,6 +54,7 @@ export function Toast({ kind = "info", message, code, title, onClose, ms }: Toas
         <div className={title ? "v2-toast__msg" : "v2-toast__msg is-lead"}>{message}</div>
         {code && <div className="v2-mono v2-toast__code">{code}</div>}
       </div>
+      {action && <button type="button" className="v2-toast__act" title={action.title} onClick={() => { onClose(); action.onClick(); }}>{action.label}</button>}
       <button type="button" className="v2-toast__x" aria-label="Close" onClick={onClose}><Icon name="x" /></button>
     </div>
   );
@@ -67,7 +71,7 @@ export function ToastHost({ items, onClose }: { items: ToastData[]; onClose: (id
   return (
     <div className="v2 v2-toasts">
       <div role="status" aria-live="polite" className="v2-toasts__list">
-        {info.map(t => <Toast key={t.id} message={t.message} onClose={() => onClose(t.id)} />)}
+        {info.map(t => <Toast key={t.id} message={t.message} action={t.action} onClose={() => onClose(t.id)} />)}
       </div>
       <div className="v2-toasts__list">
         {refusals.map(t => <Toast key={t.id} kind="refusal" message={t.message} code={t.code} title={t.title} onClose={() => onClose(t.id)} />)}

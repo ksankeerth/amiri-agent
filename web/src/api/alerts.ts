@@ -23,10 +23,11 @@ const B = "/api/v1/alerts";
 const enc = encodeURIComponent;
 export const alertsApi = {
   summary: () => api<AlertSummary>(`${B}:summary`),
-  list: (q: { status?: string; owner?: string; level?: string; event_id?: string } = {}) => {
-    const p = new URLSearchParams(Object.entries(q).filter(([, v]) => v) as [string, string][]).toString();
+  list: (q: { status?: string; owner?: string; level?: string; event_id?: string; limit?: number } = {}) => {
+    const p = new URLSearchParams(Object.entries(q).filter(([, v]) => v).map(([k, v]) => [k, String(v)])).toString();
     return api<{ items: AlertItem[] }>(`${B}${p ? `?${p}` : ""}`).then(r => r.items);
   },
+  one: (id: string) => api<AlertItem>(`${B}/${enc(id)}`),
   act: (id: string, action: "ack" | "resolve" | "reopen", note?: string) =>
     api<AlertItem>(`${B}/${enc(id)}:${action}`, { method: "POST", json: action === "reopen" ? {} : { note: note || null } }),
 };
