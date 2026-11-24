@@ -149,7 +149,7 @@ export function OverviewPage() {
 
   // The headline answers "does anything need my teams?" and the one button under it is the next step.
   const head = alerts
-    ? { title: <><span className="ovx-n">{alerts}</span> alert{alerts === 1 ? "" : "s"} need{alerts === 1 ? "s" : ""} your attention</>,
+    ? { title: <><span className="ovx-n">{alerts} alert{alerts === 1 ? "" : "s"}</span> need{alerts === 1 ? "s" : ""} your attention</>,
         line: bad.length ? <>Most serious: <Link to={`/events/${bad[0].event_id}`}><b>{eventTitle(bad[0])}</b></Link>, bad for you</> : <>Early warnings for products your teams own</>,
         cta: <Link className="btn btn--primary btn--lg" to="/alerts">Review the alerts<Icon name="arrow" /></Link> }
     : o.events.length

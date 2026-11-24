@@ -122,7 +122,7 @@ p { margin:0; }
 .side { background:var(--surface); border-right:1px solid var(--hairline); display:flex; flex-direction:column; min-height:0; }
 .nav { padding:12px 8px; display:flex; flex-direction:column; gap:2px; overflow:auto; flex:1; }
 .nav .grp { margin:16px 12px 8px; }
-.nav a { display:flex; align-items:center; gap:12px; height:34px; padding:0 12px; border-radius:var(--r-nav); color:var(--ink-2); font-weight:500; text-decoration:none; }
+.nav a { display:flex; align-items:center; gap:12px; height:36px; padding:0 12px; border-radius:var(--r-nav); color:var(--ink-2); font-size:var(--fs-lg); font-weight:500; text-decoration:none; }
 /* hover: a green tint with a green label and icon (both themes); the current page keeps its own highlight */
 .nav a:not([aria-current="page"]):hover { background:color-mix(in srgb, var(--accent) 22%, transparent); color:var(--accent-ink); }
 .nav a:not([aria-current="page"]):hover svg { color:var(--accent); }
@@ -429,6 +429,6 @@ svg.chart .ax line { stroke:var(--hairline); }
 /* every disclosure row is at least a 24 px target */
 details > summary { min-height:24px; }
 .side-foot .seg { width:100%; }
-.side-foot .seg button { flex:1; padding:0 8px; }
+.side-foot .seg button { flex:1; padding:0 4px; font-size:var(--fs-sm); }
 .crumbs a, .sp-toc-list a { display:inline-block; padding:4px 0; } /* 24 px tall targets */
 .sp-toc-list { gap:0; }
