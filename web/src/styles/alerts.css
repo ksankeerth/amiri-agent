@@ -1,0 +1,61 @@
+/* Alerts, by event: the Findings language (an answering headline, hairlines, no boxes). One section per event, one line per team:
+   team | impact and products | actions; the opened part spans under the impact. */
+.ap { max-width:1180px; }
+.ap .ph-title h1 { font-size:44px; line-height:1.08; letter-spacing:-.03em; }
+.ap .ph-status { font-size:var(--fs-lg); color:var(--ink-2); max-width:80ch; }
+.ap .ph-status b { color:var(--ink); }
+/* the count's underline draws in, then the event glows, on the Overview's 5 s beat (keyframes in shell.css) */
+.ap-n { font-variant-numeric:tabular-nums; background:linear-gradient(var(--medium), var(--medium)) no-repeat 0 100% / 100% 3px; padding-bottom:2px;
+  animation:ovline 5s .6s ease-in-out infinite; }
+.ap .ph-status a.ap-ev { font-weight:700; color:var(--accent-ink); text-decoration:underline; text-underline-offset:3px; --c:var(--accent); animation:ovwake 5s 1.4s ease-out infinite; }
+.ap .muted { color:var(--ink-3); }
+.ap .ico16.rot { transform:rotate(90deg); }
+.ap-filters { margin:28px 0 0; }
+
+.ap-groups { margin-top:32px; display:flex; flex-direction:column; gap:40px; }
+.ap-groups section { border-top:2px solid var(--line); padding-top:14px; }
+.ap-groups h2 { margin:0 0 4px; font-size:24px; letter-spacing:-.01em; color:var(--ink); display:flex; align-items:baseline; gap:12px; }
+.ap-groups h2 a { color:var(--ink); text-decoration:underline; text-underline-offset:4px; text-decoration-color:var(--line-strong); }
+.ap-groups h2 span { font-size:16px; font-weight:600; color:var(--ink-3); }
+.ap-groups section.quiet h2 { font-size:20px; color:var(--ink-2); }
+.ap-sub2 { margin:0; font-size:15px; color:var(--ink-3); }
+
+.ap-lines { list-style:none; margin:14px 0 0; padding:0; }
+.ap-line { display:grid; grid-template-columns:160px minmax(0,1fr) auto; column-gap:20px; align-items:center; padding:12px 0; border-top:1px solid var(--hairline); }
+.ap-team { font-weight:700; font-size:17px; color:var(--ink); }
+.ap-t { padding:0; border:0; background:none; text-align:left; cursor:pointer; font:500 17px/1.4 var(--font-ui); color:var(--ink); min-width:0; }
+.ap-t:hover .ap-w, .ap-t[aria-expanded="true"] .ap-w { text-decoration:underline; text-underline-offset:3px; }
+.ap-t[aria-expanded="true"] .ap-w { color:var(--accent-ink); }
+.ap-sub { display:block; font-size:15px; font-weight:400; color:var(--ink-3); margin-top:2px; }
+.ap-end { display:inline-flex; align-items:center; gap:12px; justify-self:end; }
+.ap-act { display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.ap-act .input { width:280px; max-width:100%; }
+.ap-done, .ap-x { grid-column:2 / -1; }
+.ap-done { display:flex; gap:6px; align-items:baseline; margin:6px 0 0; font-size:15px; color:var(--info-ink); }
+.ap-done.ok { color:var(--accent-ink); }
+.ap-done svg { width:15px; height:15px; flex:none; align-self:center; }
+.ap-line.resolved .ap-t, .ap-line.resolved .ap-team { color:var(--ink-2); }
+
+.ap-x { padding:10px 0 4px; font-size:16px; line-height:1.55; color:var(--ink-2); max-width:80ch; display:flex; flex-direction:column; gap:8px; }
+.ap-x p { margin:0; }
+.ap-x h3 { margin:6px 0 0; font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
+.ap-x a { color:var(--accent-ink); }
+.ap-why { margin:0; padding-left:18px; display:flex; flex-direction:column; gap:6px; }
+.ap-why b { color:var(--ink); }
+.ap-move b { color:var(--critical-ink); }
+.ap-src { display:flex; gap:8px; align-items:baseline; }
+.ap-src > svg { width:16px; height:16px; flex:none; align-self:center; color:var(--ink-3); }
+.ap-x .src-ext { width:13px; height:13px; margin-left:4px; vertical-align:-1px; color:var(--ink-3); }
+.ap-hist { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; font-size:15px; }
+.ap-hist li { display:flex; flex-wrap:wrap; gap:4px 12px; }
+.ap-hist b { color:var(--ink); font-weight:600; min-width:190px; }
+.ap-hist span { color:var(--ink-3); font-variant-numeric:tabular-nums; }
+.ap-more { display:inline-flex; align-items:center; gap:6px; margin-top:6px; padding:10px 0; border:0; background:none; cursor:pointer; font:600 16px/1.4 var(--font-ui); color:var(--accent-ink); }
+
+@media (max-width:900px) {
+  .ap .ph-title h1 { font-size:34px; }
+  .ap-line { grid-template-columns:minmax(0,1fr); row-gap:8px; }
+  .ap-end { justify-self:start; flex-wrap:wrap; }
+  .ap-done, .ap-x { grid-column:1; }
+  .ap-hist b { min-width:0; }
+}
