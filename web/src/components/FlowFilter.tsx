@@ -1,6 +1,6 @@
 // Status filters. FlowFilter: statuses that follow one another (Waiting → Being investigated → In an event), drawn as
 // steps on a line, each with its count, plus a quiet "All". ChipFilter: options that don't follow one another (teams).
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 import { Icon } from "./Icon";
 import "../styles/polish-daily.css";
 
@@ -12,8 +12,9 @@ import "../styles/polish-daily.css";
 export interface FlowStep<K extends string> { key: K; label: string; count?: number; state?: "queued" | "busy" | "held" | "done" }
 
 /** `steps` in order; an inner array is one stage with alternative outcomes ("In an event" or "No impact found"). */
-export function FlowFilter<K extends string>({ steps, value, onChange, all, label, toned }: {
-  toned?: boolean; steps: (FlowStep<K> | FlowStep<K>[])[]; value: K; onChange: (k: K) => void; all: FlowStep<K>; label: string;
+/** `after`: a second, smaller filter that belongs to the same bar (Alerts' team), drawn inside it after a divider. */
+export function FlowFilter<K extends string>({ steps, value, onChange, all, label, toned, after }: {
+  toned?: boolean; after?: ReactNode; steps: (FlowStep<K> | FlowStep<K>[])[]; value: K; onChange: (k: K) => void; all: FlowStep<K>; label: string;
 }) {
   const btn = (s: FlowStep<K>) => (
     <button key={s.key} type="button" className="ff-step" data-state={s.count ? s.state : undefined} aria-pressed={value === s.key} onClick={() => onChange(s.key)}>
@@ -34,6 +35,7 @@ export function FlowFilter<K extends string>({ steps, value, onChange, all, labe
             ? <span className="ff-alt">{s.map((x, j) => <Fragment key={x.key}>{j > 0 && <span className="ff-or">or</span>}{btn(x)}</Fragment>)}</span>
             : btn(s)}
         </Fragment>))}</span>
+      {after && <><span className="ff-sep" aria-hidden="true" />{after}</>}
     </div>
   );
 }

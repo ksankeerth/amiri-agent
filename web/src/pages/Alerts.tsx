@@ -197,10 +197,10 @@ export function AlertsPage() {
       {(items !== null || err == null) && <div className="filters ap-filters">
         <FlowFilter toned label="Which alerts" value={show} onChange={setShow} all={{ key: "all", label: "All", count: nAt("all") }}
           steps={([["new", "To review", "queued"], ["acknowledged", "Acknowledged", "held"], ["resolved", "Resolved", "done"]] as const)
-            .map(([key, label, state]) => ({ key, label, count: nAt(key), state }))} />
-        {s && s.all_teams.length > 1 && <select className="input ap-team-sel" aria-label="Filter by team" value={team} onChange={e => setTeam(e.target.value)}>
-          <option value="">All teams ({nAt(show, "")})</option>
-          {s.all_teams.map(t => <option key={t} value={t}>{t} ({nAt(show, t)})</option>)}</select>}
+            .map(([key, label, state]) => ({ key, label, count: nAt(key), state }))}
+          after={s && s.all_teams.length > 1 && <select className="ff-sel" aria-label="Filter by team" data-on={team ? "" : undefined} value={team} onChange={e => setTeam(e.target.value)}>
+            <option value="">All teams</option>
+            {s.all_teams.map(t => <option key={t} value={t}>{t} ({nAt(show, t)})</option>)}</select>} />
       </div>}
 
       {shown === null ? (err == null && <div className="mt12"><ListSkeleton rows={3} /></div>)

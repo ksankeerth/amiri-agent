@@ -9,10 +9,7 @@
 .ap .ph-status a.ap-ev { font-weight:700; color:var(--accent-ink); text-decoration:none; background:linear-gradient(var(--critical), var(--critical)) no-repeat 0 100% / 100% 2px; padding-bottom:2px; animation:ovline 5s .6s ease-in-out infinite; }
 .ap .muted { color:var(--ink-3); }
 .ap .ico16.rot { transform:rotate(90deg); }
-/* one bar: the status flow, and the team as a select right beside it, a pill like the bar it belongs to */
-.ap-filters { margin:28px 0 0; display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
-.ap-filters .ap-team-sel { width:auto; min-width:200px; flex:none; height:48px; padding:0 40px 0 18px; border-radius:var(--r-pill); font-size:15px; }
-@media (max-width:760px) { .ap-filters .ap-team-sel { width:100%; } }
+.ap-filters { margin:28px 0 0; }
 
 .ap-groups { margin-top:32px; display:flex; flex-direction:column; gap:40px; }
 .ap-groups section { border-top:2px solid var(--line); padding-top:14px; }
