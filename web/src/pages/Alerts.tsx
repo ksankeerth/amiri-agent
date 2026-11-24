@@ -10,7 +10,7 @@ import { HowItWorks, PageHeader, StatusPill } from "../components/blocks";
 import "../styles/daily.css";
 import "../styles/polish-daily.css";
 import "../styles/alerts.css";
-import { ChipFilter, FlowFilter } from "../components/FlowFilter";
+import { FlowFilter } from "../components/FlowFilter";
 import { Icon } from "../components/Icon";
 import { Empty, ListSkeleton, LoadError, useNow, useToast } from "../components/ui";
 import { ago, dayTime } from "../format";
@@ -165,6 +165,7 @@ export function AlertsPage() {
   const adverse = waiting.filter(a => a.level === "adverse").length;
   const g0 = waiting[0];
   const headline = !s ? "Alerts" : !s.to_review ? "All caught up"
+    : team && (show === "new" || show === "all") ? <><span className="ap-n">{count(waiting.length, "alert")}</span> waiting for {team}</>
     : show === "new" || show === "all" ? <><span className="ap-n">{count(teams || s.teams.length, "team")}</span> {(teams || s.teams.length) === 1 ? "has" : "have"} an alert waiting</>
     : <>{count(s.to_review, "alert")} waiting for review</>;
   const status = !s ? "" : !s.to_review ? "Nothing is waiting for review." : !waiting.length ? "Choose To review to see them." : <>
@@ -197,8 +198,9 @@ export function AlertsPage() {
         <FlowFilter toned label="Which alerts" value={show} onChange={setShow} all={{ key: "all", label: "All", count: nAt("all") }}
           steps={([["new", "To review", "queued"], ["acknowledged", "Acknowledged", "held"], ["resolved", "Resolved", "done"]] as const)
             .map(([key, label, state]) => ({ key, label, count: nAt(key), state }))} />
-        {s && s.all_teams.length > 1 && <ChipFilter label="Team" value={team} onChange={t => setTeam(t)}
-          options={[{ key: "", label: "All teams", count: nAt(show, "") }, ...s.all_teams.map(t => ({ key: t, label: t, count: nAt(show, t) }))]} />}
+        {s && s.all_teams.length > 1 && <select className="input ap-team-sel" aria-label="Filter by team" value={team} onChange={e => setTeam(e.target.value)}>
+          <option value="">All teams ({nAt(show, "")})</option>
+          {s.all_teams.map(t => <option key={t} value={t}>{t} ({nAt(show, t)})</option>)}</select>}
       </div>}
 
       {shown === null ? (err == null && <div className="mt12"><ListSkeleton rows={3} /></div>)
