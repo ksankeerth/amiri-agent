@@ -121,3 +121,5 @@
 }
 /* an event whose detail could not load: said in the reader, with a retry (Refresh retries too) */
 .ev-fail { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:0; color:var(--ink-2); }
+/* how far an event could reach (possible impacts, products) reads in amber: expected, not yet seen */
+.ev b.amb { color:var(--medium-ink); }
