@@ -2,13 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { seriesApi, type Bar, type Finding, type ProviderCall, type Series, type SimulateResult } from "../api/series";
-import { FactList, PageHeader, Places, Section, StatTiles, StatusPill, TechnicalDetails } from "../components/blocks";
+import { FactList, PageHeader, Places, Section, StatusPill, TechnicalDetails } from "../components/blocks";
 import { PriceChart, type Mark } from "../components/charts";
 import { spikeIndex } from "../components/chartMath";
 import { Icon } from "../components/Icon";
 import { EditSeriesModal, FetchBadge, RefreshButton, seriesSentence, StateBadge, themeMeaning } from "../components/series";
 import { Banner, Empty, Modal, useNow, useRole, useToast, PageSkeleton, InlineSkeleton, LoadError } from "../components/ui";
-import { ago, day, dayTime, due, pct, price, when, zx, ZONE_LABEL } from "../format";
+import { ago, day, dayTime, due, pctFine, price, when, zx, ZONE_LABEL } from "../format";
+import "../styles/series.css";
 import { FINDING_STATUS, ruleText, setAsideReason, themeLabel } from "../plain";
 import { InvestigateNowButton } from "./events/Events";
 import { PricesHelp, PrototypeBanner, useSeriesStatus } from "./SeriesList";
@@ -24,7 +25,7 @@ function takeaway(name: string, vs: number[], range: string, typical: number | n
   if (vs.length < 2) return name;
   const chg = (vs[vs.length - 1] / vs[0] - 1) * 100;
   const flat = Math.abs(chg) < Math.max(0.1, (typical ?? 0) / 2);
-  return `${name} ${flat ? "flat" : chg > 0 ? "up" : "down"} over ${range} (${pct(chg)})`;
+  return `${name} ${flat ? "flat" : chg > 0 ? "up" : "down"} over ${range} (${pctFine(chg)})`;
 }
 
 function Chart({ s, findings }: { s: Series; findings: Finding[] }) {
@@ -68,11 +69,14 @@ function Chart({ s, findings }: { s: Series; findings: Finding[] }) {
   );
 }
 
+/** The window breakdown, folded: the headline numbers already sit at the top of the page. */
 function Windows({ s }: { s: Series }) {
   const l = s.latest;
+  const ds = (l?.windows ?? []).map(w => w.days);
   return (
-    <Section title="How unusual is the latest price?" flush>
-      <p className="sec-line">{l?.typical_daily_move_pct ? <>A normal day moves <b>±{l.typical_daily_move_pct.toFixed(2)}%</b>. </> : null}AMIRI Agent {ruleText(s.detector.z_threshold)}.</p>
+    <details className="card sd-fold">
+      <summary><h2>Compare windows{ds.length ? `: ${ds.join(", ").replace(/, (\d+)$/, " and $1")} days` : ""}</h2><span className="small muted">how unusual the latest price is over each</span></summary>
+      <p className="sec-line">{l?.typical_daily_move_pct ? <>A normal day moves <b>±{pctFine(l.typical_daily_move_pct).replace(/^\+/, "")}</b>. </> : null}AMIRI Agent {ruleText(s.detector.z_threshold)}.</p>
       {!l || !l.windows.length ? <p className="sec-line">No prices yet.</p> : (
         <div className="tblwrap"><table className="tbl">
           <thead><tr><th>Over</th><th>Change</th><th>Compared with usual</th></tr></thead>
@@ -81,20 +85,20 @@ function Windows({ s }: { s: Series }) {
             return (
               <tr key={w.days}>
                 <td className="strong">{w.days} trading day{w.days === 1 ? "" : "s"}<div className="sub">from {price(w.ref_close)}</div></td>
-                <td className="num">{pct(w.change_pct)}</td>
+                <td className="num">{pctFine(w.change_pct)}</td>
                 <td>{w.z === null ? <span className="muted">not known yet</span> : fires ? <StatusPill tone="red">{zx(w.z)} usual: flagged</StatusPill> : <span className="num">{zx(w.z)} usual</span>}</td>
               </tr>);
           })}</tbody>
         </table></div>
       )}
-    </Section>
+    </details>
   );
 }
 
 function FetchLog({ calls }: { calls: ProviderCall[] | null }) {
   return (
-    <div className="card">
-      <div className="hd"><h2>Fetch log</h2><span className="small muted">for the Platform Admin: every call to Twelve Data, errors exactly as returned</span></div>
+    <details className="card sd-fold">
+      <summary><h2>Fetch log{calls ? ` (${calls.length})` : ""}</h2><span className="small muted">for the Platform Admin: every call to Twelve Data, errors exactly as returned</span></summary>
       {!calls ? <InlineSkeleton /> : !calls.length ? <div className="bd muted small">No calls yet.</div> : (
         <div className="tblwrap"><table className="tbl">
           <thead><tr><th>When</th><th>Why</th><th>Result</th><th>New hours</th><th>Credits</th><th>Took</th><th>Error</th></tr></thead>
@@ -111,16 +115,17 @@ function FetchLog({ calls }: { calls: ProviderCall[] | null }) {
             </tr>))}</tbody>
         </table></div>
       )}
-    </div>
+    </details>
   );
 }
 
-function Findings({ findings, onChange }: { findings: Finding[] | null; onChange: () => void }) {
+function Findings({ findings, onChange, trying, onTry }: { findings: Finding[] | null; onChange: () => void; trying: boolean; onTry: () => void }) {
   const waiting = (findings ?? []).filter(f => f.status === "new").map(f => f.finding_id);
   return (
     <section className="card sec" id="findings" aria-labelledby="moves-h">
       <div className="sec-hd"><h2 id="moves-h">Moves flagged</h2>{findings && <span className="sec-n">{findings.length}</span>}
-        <span className="spacer" />{waiting.length > 0 && <InvestigateNowButton ids={waiting} onDone={onChange} small />}</div>
+        <span className="spacer" />{waiting.length > 0 && <InvestigateNowButton ids={waiting} onDone={onChange} small />}
+        <button className="btn btn--sm btn--ghost" type="button" aria-expanded={trying} onClick={onTry}><Icon name="play" />{trying ? "Close the test" : "Try a move"}</button></div>
       <div className="sec-bd flush">
       {!findings ? <InlineSkeleton /> : !findings.length ? <p className="sec-line">None yet. A move shows here when it's far bigger than usual.</p>
         : findings.map(f => {
@@ -156,7 +161,7 @@ function SimulateMove({ s, onDone }: { s: Series; onDone: () => void }) {
     finally { setBusy(false); }
   };
   return (
-    <div className="card">
+    <div className="card mt16" id="try">
       <div className="hd"><h2>Try a move</h2><StatusPill tone="blue">Test</StatusPill></div>
       <div className="bd col" style={{ gap: 10 }}>
         <p className="small muted">See whether a made-up move would be flagged. Your real prices don't change.</p>
@@ -187,6 +192,7 @@ export function SeriesDetail() {
   const [calls, setCalls] = useState<ProviderCall[] | null>(null);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [trying, setTrying] = useState(false);  // "Try a move" is a sandbox: opened on demand, never beside the real moves by default
   const { status, reload: reloadStatus } = useSeriesStatus();
   const isAdmin = role === "platform_admin";
 
@@ -248,13 +254,14 @@ export function SeriesDetail() {
           ? <Banner kind="crit" icon="warn"><b>The last fetch failed</b> ({when(s.fetch.last_error.at, now)}). Twelve Data returned: <span className="mono">{s.fetch.last_error.code}{s.fetch.last_error.http_status ? ` ${s.fetch.last_error.http_status}` : ""}: {s.fetch.last_error.message}</span>.</Banner>
           : <Banner kind="warn" icon="warn">The last price update failed. The prices below are the last ones received; your Platform Admin has been told.</Banner>)}
       </div>
-      <StatTiles label="The latest price in short" items={[
-        { value: price(l?.close), label: "Latest price", sub: l ? `hour ending ${when(l.bar_end, now)}` : "no prices yet", tone: s.state === "stale" ? "amber" : "grey", icon: "series" },
-        { value: pct(l?.change_1d_pct), label: "Over one trading day", sub: l?.typical_daily_move_pct ? `a normal day is ±${l.typical_daily_move_pct.toFixed(2)}%` : undefined, tone: "grey" },
-        { value: l?.max_z !== null && l?.max_z !== undefined ? zx(l.max_z) : "—", label: "How unusual", sub: `of a normal move; flagged at ${s.detector.z_threshold}×`, tone: moved ? "red" : "green" },
-      ]} />
+      <p className="sd-now"><span className="sc-price">{price(l?.close)}</span>
+        <span className={`sc-chg${moved ? " hot" : ""}`}>{pctFine(l?.change_1d_pct)} <span className="muted">over one trading day</span></span>
+        <span className="muted">{l ? `hour ending ${when(l.bar_end, now)}` : "no prices yet"}{l?.typical_daily_move_pct ? ` · a normal day is ±${pctFine(l.typical_daily_move_pct).replace(/^\+/, "")}` : ""}</span></p>
       <Chart s={s} findings={findings ?? []} />
-      <div className="grid2 mt16">
+      <div className="mt16"><Findings findings={findings} trying={trying} onTry={() => setTrying(!trying)}
+        onChange={() => seriesApi.findings(id).then(setFindings).catch(() => {})} /></div>
+      {trying && <SimulateMove s={s} onDone={() => seriesApi.findings(id).then(setFindings).catch(() => {})} />}
+      <div className="grid2 mt16" style={{ alignItems: "start" }}>
         <Windows s={s} />
         <Section title="What a move means" action={isAdmin ? <button className="btn btn--sm" type="button" onClick={() => setEditing(true)}><Icon name="edit" />Edit</button> : undefined}>
           <FactList items={[
@@ -271,10 +278,6 @@ export function SeriesDetail() {
               ["Version", `${s.version}, changed ${dayTime(s.updated_at)}`], ["Added", day(s.created_at)]]} />
           </TechnicalDetails></div>
         </Section>
-      </div>
-      <div className="grid2 mt16" style={{ gridTemplateColumns: "2fr 1fr", alignItems: "start" }}>
-        <Findings findings={findings} onChange={() => seriesApi.findings(id).then(setFindings).catch(() => {})} />
-        <SimulateMove s={s} onDone={() => seriesApi.findings(id).then(setFindings).catch(() => {})} />
       </div>
       {isAdmin && <div className="mt16"><FetchLog calls={calls} /></div>}
       {editing && <EditSeriesModal s={s} onClose={() => setEditing(false)} onSaved={x => { setEditing(false); updated(x); }} />}
