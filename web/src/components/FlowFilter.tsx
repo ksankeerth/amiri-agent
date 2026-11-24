@@ -5,23 +5,24 @@ import { Icon } from "./Icon";
 import "../styles/polish-daily.css";
 
 // state, when a page gives one and the count isn't 0: queued (amber, pulsing), busy (blue, a turning arc, dots running down the
-// line to the next step), held (blue and still: a person has it), done (green, with a tick). Selected, a step keeps its colour.
+// line to the next step), held (blue and still: a person has it), done (green). `toned` (Alerts): a finished step's count gets a tick, and a
+// selected step keeps its colour.
 // Reduced motion keeps the colours and stops the movement.
 export interface FlowStep<K extends string> { key: K; label: string; count?: number; state?: "queued" | "busy" | "held" | "done" }
 
 /** `steps` in order; an inner array is one stage with alternative outcomes ("In an event" or "No impact found"). */
-export function FlowFilter<K extends string>({ steps, value, onChange, all, label }: {
-  steps: (FlowStep<K> | FlowStep<K>[])[]; value: K; onChange: (k: K) => void; all: FlowStep<K>; label: string;
+export function FlowFilter<K extends string>({ steps, value, onChange, all, label, toned }: {
+  toned?: boolean; steps: (FlowStep<K> | FlowStep<K>[])[]; value: K; onChange: (k: K) => void; all: FlowStep<K>; label: string;
 }) {
   const btn = (s: FlowStep<K>) => (
     <button key={s.key} type="button" className="ff-step" data-state={s.count ? s.state : undefined} aria-pressed={value === s.key} onClick={() => onChange(s.key)}>
       {s.count !== undefined && <span className={`ff-n${s.count ? "" : " zero"}`}>{s.count}
-        {s.state === "done" && !!s.count && <Icon name="check" className="ff-tick" />}</span>}
+        {toned && s.state === "done" && !!s.count && <Icon name="check" className="ff-tick" />}</span>}
       <span className="ff-l">{s.label}</span>
     </button>);
   const busy = (s: FlowStep<K> | FlowStep<K>[]) => !Array.isArray(s) && s.state === "busy" && !!s.count;
   return (
-    <div className="ff" role="group" aria-label={label}>
+    <div className={`ff${toned ? " toned" : ""}`} role="group" aria-label={label}>
       <button type="button" className="ff-all" aria-pressed={value === all.key} onClick={() => onChange(all.key)}>
         {all.label}{all.count !== undefined && <span className="ff-c">{all.count}</span>}</button>
       <span className="ff-sep" aria-hidden="true" />

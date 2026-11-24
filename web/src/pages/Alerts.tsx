@@ -191,7 +191,7 @@ export function AlertsPage() {
       {err != null && <LoadError error={err} onRetry={load} what="the alerts" />}
 
       {(items !== null || err == null) && <div className="filters ap-filters">
-        <FlowFilter label="Which alerts" value={show} onChange={setShow} all={{ key: "all", label: "All", count: nAt("all") }}
+        <FlowFilter toned label="Which alerts" value={show} onChange={setShow} all={{ key: "all", label: "All", count: nAt("all") }}
           steps={([["new", "To review", "queued"], ["acknowledged", "Acknowledged", "held"], ["resolved", "Resolved", "done"]] as const)
             .map(([key, label, state]) => ({ key, label, count: nAt(key), state }))} />
         {s && s.all_teams.length > 1 && <ChipFilter label="Team" value={team} onChange={t => setTeam(t)}
