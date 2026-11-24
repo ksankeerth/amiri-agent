@@ -36,8 +36,8 @@ a.card:hover { border-color:var(--line-strong); }
 button.worldpill { font:inherit; font-size:var(--fs-xs); cursor:pointer; }
 button.worldpill:hover { background-image:linear-gradient(var(--hover-bg), var(--hover-bg)); }
 .world-why { display:none; position:absolute; top:calc(100% + 8px); left:0; z-index:60; width:max-content; max-width:360px;
-  padding:10px 12px; border-radius:var(--r-control); background:var(--surface); border:1px solid var(--hairline-2); box-shadow:var(--e-pop);
-  color:var(--ink); font-size:var(--fs-sm); line-height:1.45; white-space:normal; }
+  padding:12px 16px; border-radius:12px; background:var(--surface); border:1px solid var(--hairline); box-shadow:var(--e-lg);
+  color:var(--ink); font-size:15px; line-height:1.45; white-space:normal; }
 .world-why.open, .worldwrap:has(.worldpill:focus-visible) .world-why { display:block; }
 
 /* ---------- PE12: empty-state prose at a readable measure */

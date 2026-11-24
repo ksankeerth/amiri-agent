@@ -750,3 +750,20 @@ a.evrow:hover .row-l, a.lrow:hover .row-l { text-decoration:underline !important
 .mapripple { opacity:.45; }
 .mapripple:not(:first-child) { display:none; }
 .homeglow { display:none; }
+
+/* ---------- Floating layers (dialogs, menus, toasts, tooltips): warm, one soft shadow, 16 px corners, generous padding.
+   Nothing else in the app has a shadow. */
+.modalback { backdrop-filter:none; -webkit-backdrop-filter:none; }
+.modal { border:0; border-radius:16px; box-shadow:var(--e-lg); }
+.modal .mh { padding:24px 24px 4px; border-bottom:0; align-items:flex-start; }
+.modal .mh h2 { font-size:22px; line-height:1.3; font-weight:650; letter-spacing:-.01em; padding-top:2px; }
+.modal .mb { padding:12px 24px 24px; gap:20px; font-size:var(--fs-lg); line-height:1.5; color:var(--ink-2); }
+.modal .mf { padding:16px 24px 24px; gap:12px; border-top:1px solid var(--hairline); border-radius:0 0 16px 16px; align-items:center; }
+.modal .mf .small { font-size:15px; }
+.menu-pop { padding:8px; gap:2px; border:1px solid var(--hairline); border-radius:16px; box-shadow:var(--e-lg); min-width:240px; }
+.menu-pop .btn { height:44px; padding:0 12px; border:0; border-radius:10px; background:transparent; font-weight:500; }
+.menu-pop .btn:hover { background:var(--surface-2); }
+.pop { border-radius:16px; box-shadow:var(--e-lg); }
+.toasts { bottom:24px; }
+.toast { max-width:min(520px, calc(100vw - 32px)); padding:14px 20px; border:0; border-radius:12px; font-size:var(--fs-lg); font-weight:500; line-height:1.4; box-shadow:var(--e-lg); }
+.maptip { padding:10px 14px; border-radius:12px; font-size:15px; line-height:1.4; box-shadow:var(--e-pop); }
