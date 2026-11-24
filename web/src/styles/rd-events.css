@@ -15,34 +15,34 @@
 .rd-events .ev-sort .input { font-size:16px; min-height:40px; color:var(--ink); }
 
 /* a group: the shared Section, with a hairline under its heading */
-.rd-events .ev-groups > .rd-sec:first-child { margin-top:24px; }
+.rd-events .ev-groups > .rd-sec:first-child { margin-top:12px; border-top:0; padding-top:12px; }
 .rd-events .ev-none { margin:24px 0 0; }
-.rd-events .ev-grp .rd-sec-h { margin-bottom:0; padding-bottom:12px; border-bottom:1px solid var(--rd-hair); column-gap:16px; row-gap:2px; }
+.rd-events .ev-grp .rd-sec-h { margin-bottom:12px; column-gap:16px; row-gap:2px; }
 .rd-events .ev-grp .rd-sec-m { font-size:16px; }
 .rd-events .ev-list { list-style:none; margin:0; padding:0; }
 
 /* an event that could hurt or help: shape, title and small print, the possible impacts as a figure, what the checks say */
 .rd-events .ev-row { display:grid; grid-template-columns:28px minmax(0, 1fr) 190px 250px; column-gap:20px; align-items:center;
-  padding:16px 0; border-bottom:1px solid var(--rd-hair); }
+  padding:14px 0; }
 .rd-events .ev-shape { font-size:20px; line-height:1; text-align:center; align-self:start; padding-top:4px; }
-.rd-events .ev-row .rd-row-t { font-size:19px; }
+.rd-events .ev-row .rd-row-t { font-size:17px; }
 .rd-events .ev-n { display:flex; align-items:baseline; gap:8px; white-space:nowrap; }
-.rd-events .ev-n b { font-size:30px; line-height:1; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
+.rd-events .ev-n b { font-size:28px; line-height:1; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
 .rd-events .ev-n span { font-size:15px; color:var(--ink-3); }
 .rd-events .ev-ck { font-size:15px; color:var(--ink-2); line-height:1.4; }
 .rd-events .ev-ck .rd-toneword { white-space:normal; font-size:15px; }
 
 /* an event that touches none of your products: one quiet line */
-.rd-events .ev-quiet { display:grid; grid-template-columns:28px minmax(0, 1fr) auto; column-gap:20px; align-items:baseline; padding:12px 0;
-  border-bottom:1px solid var(--rd-hair); font-size:17px; color:var(--ink-2); }
+.rd-events .ev-quiet { display:grid; grid-template-columns:28px minmax(0, 1fr) auto; column-gap:20px; align-items:baseline; padding:8px 0;
+  font-size:16px; color:var(--ink-2); }
 .rd-events .ev-quiet { align-items:center; }
 .rd-events .ev-quiet .ev-shape { padding-top:0; font-size:17px; align-self:center; }
 .rd-events .ev-quiet .rd-fine { text-align:right; white-space:nowrap; }
 
 .rd-events .ev-findings { margin:32px 0 0; font-size:17px; color:var(--ink); }
 .rd-events .ev-findings .rd-toneword { white-space:normal; }
-.rd-events .ev-folds { margin-top:32px; border-top:2px solid var(--ink); }
-.rd-events .ev-folds .rd-fold:first-child > button { padding-top:16px; }
+.rd-events .ev-folds { margin-top:32px; border-top:1px solid var(--hairline); padding-top:16px; }
+.rd-events .ev-folds .rd-fold:first-child > button { padding-top:14px; }
 .rd-events .ev-folds .rd-fold-b { padding-left:30px; }
 .rd-events .ev-folds .rd-fold-s b { color:var(--high-ink); }
 .rd-events .ev-runs { margin-bottom:12px; }
@@ -58,3 +58,10 @@
   .rd-events .ev-quiet { grid-template-columns:28px minmax(0, 1fr); }
   .rd-events .ev-quiet .rd-fine { grid-column:2; text-align:left; white-space:normal; }
 }
+
+/* warm look: named things and "go" links sit in ink and are underlined only on hover (app.css underlines every link in a paragraph at rest) */
+.rd-events a.rd-name:not(.btn):not(.strong):not(.chip), .rd-events a.rd-go:not(.btn):not(.strong):not(.chip) { text-decoration:none; }
+.rd-events a.rd-name:not(.btn):not(.strong):not(.chip):hover, .rd-events a.rd-go:not(.btn):not(.strong):not(.chip):hover { text-decoration:underline; text-underline-offset:3px; }
+
+/* an opened item (help, details, verification) is a very light soft surface, not a rule on the left */
+.rd-events .rd-open { border-left:0; background:var(--surface-2); border-radius:12px; padding:16px 20px 18px; margin:8px 0 12px; }

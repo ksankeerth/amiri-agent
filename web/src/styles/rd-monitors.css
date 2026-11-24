@@ -13,30 +13,30 @@
 .rd-monitors .mn-empty { margin:12px 0; color:var(--ink-2); }
 .rd-monitors .mn-fineblock { margin:12px 0 0; max-width:680px; }
 
-/* ---------- the list: one ruled row per monitor */
+/* ---------- the list: one row per monitor, held by space */
 .rd-monitors .mn-list { list-style:none; margin:0; padding:0; }
-.rd-monitors .mn-row { display:grid; grid-template-columns:minmax(0, 1fr) 150px 270px; column-gap:28px; align-items:start; padding:16px 0; border-bottom:1px solid var(--rd-hair); }
-.rd-monitors .mn-name { font-size:19px; line-height:1.3; font-weight:700; }
+.rd-monitors .mn-row { display:grid; grid-template-columns:minmax(0, 1fr) 150px 270px; column-gap:28px; align-items:start; padding:16px 0; }
+.rd-monitors .mn-name { font-size:17px; line-height:1.3; font-weight:600; }
 .rd-monitors .mn-q { margin:4px 0 0; font-size:16px; color:var(--ink-2); max-width:62ch; }
 .rd-monitors .mn-fine { margin:6px 0 0; }
-.rd-monitors .mn-fig-v { font-size:30px; line-height:1.1; font-weight:700; color:var(--ink); letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+.rd-monitors .mn-fig-v { font-size:28px; line-height:1.1; font-weight:700; color:var(--ink); letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
 .rd-monitors .mn-fig-l { font-size:15px; color:var(--ink-3); margin-top:2px; }
 .rd-monitors .mn-side { grid-column:3; display:flex; flex-direction:column; align-items:flex-start; gap:8px; font-size:16px; color:var(--ink-2); }
 .rd-monitors .mn-last { display:block; }
 .rd-monitors .mn-acts { display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
 .rd-monitors .mn-ask { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
 .rd-monitors .mn-ask .input { width:260px; max-width:100%; }
-.rd-monitors .mn-retired { margin-top:36px; border-top:2px solid var(--ink); }
+.rd-monitors .mn-retired { margin-top:32px; border-top:1px solid var(--hairline); padding-top:16px; }
 
 /* ---------- one monitor */
 .rd-monitors .mn-state { color:var(--ink); font-weight:700; }
 .rd-monitors .mn-hero { margin-top:32px; }
 .rd-monitors .mn-about { margin:0; font-size:16px; color:var(--ink-3); }
-.rd-monitors .mn-hq { margin:4px 0 0; font-size:26px; line-height:1.3; font-weight:700; color:var(--ink); letter-spacing:-.01em; max-width:900px; }
+.rd-monitors .mn-hq { margin:4px 0 0; font-size:28px; line-height:1.25; font-weight:650; color:var(--ink); letter-spacing:-.01em; max-width:900px; }
 
 .rd-monitors .mn-tellsec .rd-sec-m { margin-left:auto; }
 .rd-monitors .mn-tell { list-style:none; margin:0; padding:0; }
-.rd-monitors .mn-tl { display:grid; grid-template-columns:32px minmax(0, 1fr); column-gap:12px; align-items:baseline; padding:13px 0; border-bottom:1px solid var(--rd-hair); }
+.rd-monitors .mn-tl { display:grid; grid-template-columns:32px minmax(0, 1fr); column-gap:12px; align-items:baseline; padding:9px 0; }
 .rd-monitors .mn-tl.mn-has { grid-template-columns:32px minmax(0, 1fr) 64px; }
 .rd-monitors .mn-n { font-size:17px; font-weight:600; color:var(--ink-3); }
 .rd-monitors .mn-tt { font-size:17px; color:var(--ink); }
@@ -44,8 +44,8 @@
 .rd-monitors .mn-c.mn-hit { color:var(--ink); font-size:24px; }
 
 .rd-monitors .mn-found { list-style:none; margin:0; padding:0; }
-.rd-monitors .mn-found li { display:grid; grid-template-columns:minmax(0, 1fr) auto minmax(0, 250px); column-gap:24px; align-items:baseline; padding:13px 0; border-bottom:1px solid var(--rd-hair); }
-.rd-monitors .mn-ft { font-size:17px; line-height:1.4; color:var(--ink); overflow-wrap:anywhere; }
+.rd-monitors .mn-found li { display:grid; grid-template-columns:minmax(0, 1fr) auto minmax(0, 250px); column-gap:24px; align-items:baseline; padding:10px 0; }
+.rd-monitors .mn-ft { font-size:17px; font-weight:600; line-height:1.4; color:var(--ink); overflow-wrap:anywhere; }
 .rd-monitors .mn-fm { font-size:15px; color:var(--ink-3); white-space:nowrap; }
 .rd-monitors .mn-fe { font-size:15px; color:var(--ink-2); }
 
@@ -53,7 +53,7 @@
 .rd-monitors .mn-appr .mn-acts, .rd-monitors .mn-appr .mn-ask { margin:4px 0 12px; }
 .rd-monitors .mn-appr .rd-fine { margin-bottom:0; }
 
-.rd-monitors .mn-folds { margin-top:36px; border-top:2px solid var(--ink); }
+.rd-monitors .mn-folds { margin-top:32px; border-top:1px solid var(--hairline); padding-top:16px; }
 .rd-monitors .mn-dl > div { display:grid; grid-template-columns:190px minmax(0, 1fr); column-gap:16px; padding:8px 0; }
 .rd-monitors .mn-dl dt { font-size:15px; font-weight:600; color:var(--ink-3); }
 .rd-monitors .mn-dl dd { margin:0; font-size:16px; color:var(--ink); overflow-wrap:anywhere; }
@@ -61,7 +61,7 @@
 .rd-monitors .mn-ex { list-style:none; margin:0; padding:0; }
 .rd-monitors .mn-ex li { padding:2px 0; }
 .rd-monitors .mn-ck-list, .rd-monitors .mn-vers { list-style:none; margin:0; padding:0; }
-.rd-monitors .mn-ck-list li { padding:12px 0; border-bottom:1px solid var(--rd-hair); }
+.rd-monitors .mn-ck-list li { padding:10px 0; }
 .rd-monitors .mn-ck-list li:first-child { padding-top:0; }
 .rd-monitors .mn-ck-l { display:flex; gap:16px; align-items:baseline; flex-wrap:wrap; }
 .rd-monitors .mn-ck-l b { color:var(--ink); font-size:16px; }
@@ -85,7 +85,7 @@
 .rd-monitors .mn-filled { font-weight:400; font-size:15px; color:var(--ink-3); }
 .rd-monitors .mn-err { margin:0; color:var(--critical-ink); font-weight:600; }
 .rd-monitors .mn-watch { list-style:none; margin:0; padding:0; }
-.rd-monitors .mn-watch li { display:flex; justify-content:space-between; gap:16px; align-items:baseline; padding:8px 0; border-bottom:1px solid var(--rd-hair); }
+.rd-monitors .mn-watch li { display:flex; justify-content:space-between; gap:16px; align-items:baseline; padding:6px 0; }
 .rd-monitors .mn-watch b { color:var(--ink); }
 .rd-monitors .mn-expo { display:flex; gap:8px 16px; align-items:baseline; flex-wrap:wrap; margin-top:4px; }
 .rd-monitors .mn-expo-l { width:150px; flex:none; }
@@ -97,7 +97,7 @@
 .rd-monitors .mn-savebar { display:flex; gap:20px; align-items:center; flex-wrap:wrap; margin-top:4px; }
 
 /* names, places and outlets picked in a form read as underlined text with a remove mark, not as chips */
-.rd-monitors .mn-form .chip { display:inline-flex; align-items:baseline; gap:4px; height:auto; min-height:0; padding:2px 2px; margin:0 14px 4px 0; background:none; border:0; border-bottom:1px solid var(--rd-mark);
+.rd-monitors .mn-form .chip { display:inline-flex; align-items:baseline; gap:4px; height:auto; min-height:0; padding:2px 2px; margin:0 14px 4px 0; background:none; border:0; border-bottom:1px solid var(--hairline-2);
   border-radius:0; box-shadow:none; font-size:16px; color:var(--ink); }
 .rd-monitors .mn-form .chip button { font-size:18px; color:var(--ink); }
 .rd-monitors .mn-form .chip .muted, .rd-monitors .mn-form .chip .mono { font-size:14px; }
@@ -109,3 +109,13 @@
   .rd-monitors .mn-hq { font-size:22px; }
   .rd-monitors .mn-dl > div { grid-template-columns:minmax(0, 1fr); }
 }
+
+/* warm look: named things and "go" links sit in ink and are underlined only on hover (app.css underlines every link in a paragraph at rest) */
+.rd-monitors a.rd-name:not(.btn):not(.strong):not(.chip), .rd-monitors a.rd-go:not(.btn):not(.strong):not(.chip) { text-decoration:none; }
+.rd-monitors a.rd-name:not(.btn):not(.strong):not(.chip):hover, .rd-monitors a.rd-go:not(.btn):not(.strong):not(.chip):hover { text-decoration:underline; text-underline-offset:3px; }
+
+/* an opened item (help, details, verification) is a very light soft surface, not a rule on the left */
+.rd-monitors .rd-open { border-left:0; background:var(--surface-2); border-radius:12px; padding:16px 20px 18px; margin:8px 0 12px; }
+.rd-monitors dl.mn-dl.rd-open { margin:8px 0 12px; }
+.rd-monitors .mn-form .input, .rd-monitors .mn-form select.input { border-radius:10px; }
+.rd-monitors .rd-sec:first-of-type { border-top: 0; margin-top: 16px; padding-top: 12px; }
