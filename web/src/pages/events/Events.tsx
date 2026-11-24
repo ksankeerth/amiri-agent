@@ -196,7 +196,8 @@ export function EventsPage() {
 
   // the investigation's queue in one line under the headline: only when something waits, runs, or the agent is down
   const waiting = status?.findings_waiting ?? 0;
-  const pipeline = !!status && (waiting > 0 || inProgress.length > 0 || !status.connected || (admin && status.notes.length > 0));
+  // whether the agent is connected is the side bar's system status: not said again here
+  const pipeline = !!status && (waiting > 0 || inProgress.length > 0 || (admin && status.notes.length > 0));
   const next = status?.next_batch_at && status.connected ? (new Date(status.next_batch_at) <= now ? "very soon" : `in ${until(status.next_batch_at, now)}`) : null;
 
   const reach = rows.filter(e => e.hypotheses > 0), none = rows.filter(e => e.hypotheses === 0);
@@ -223,11 +224,11 @@ export function EventsPage() {
         help={<HowItWorks><p>An event is something that happened in the world, traced to the products it could hit. It stays open while news about it keeps coming, then closes.</p></HowItWorks>} />
       {err != null && <LoadError error={err} onRetry={refresh} what="the events" />}
       {pipeline && status && <div className="ev-note" role="status">
-        <Icon name={status.connected ? "hourglass" : "warn"} className={status.connected ? undefined : "warn"} />
+        <Icon name="hourglass" />
         <div>
           <p>{waiting > 0 && <><b>{count(waiting, "finding")}</b> {waiting === 1 ? "is" : "are"} waiting to be investigated{next ? `: the next batch goes ${next}` : ""}. </>}
             {inProgress.length > 0 && <><b>{inProgress.length}</b> {inProgress.length === 1 ? "is" : "are"} being investigated now. </>}
-            {admin ? status.notes.join(" ") : !status.connected && "The investigation agent isn't connected; your Platform Admin has been told."}
+            {admin && status.notes.join(" ")}
             {noEvent.length > 0 && <> {noEvent.length} more this week had no impact.</>}</p>
           <Link to="/findings">See the findings</Link>
         </div>
