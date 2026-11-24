@@ -252,9 +252,9 @@ export function RadarPage() {
 
       <div className="rd-filters">
         <ChipFilter label="Which stories" value={show} onChange={k => { refilter(); setShow(k); }}
-          options={SHOW.map(([key, label]) => ({ key, label, count: count(key) }))} />
-        {placesSeen.length > 1 && <select className="input rd-where" aria-label="Filter by place" value={where} onChange={e => { refilter(); setWhere(e.target.value); }}>
-          <option value="">All places</option>{placesSeen.map(p => <option key={p} value={p}>{place(p)}</option>)}</select>}
+          options={SHOW.map(([key, label]) => ({ key, label, count: count(key) }))}
+          after={placesSeen.length > 1 && <select className="ff-sel" aria-label="Filter by place" data-on={where ? "" : undefined} value={where} onChange={e => { refilter(); setWhere(e.target.value); }}>
+            <option value="">All places</option>{placesSeen.map(p => <option key={p} value={p}>{place(p)}</option>)}</select>} />
       </div>
 
       {items === null ? (err == null && <ListSkeleton rows={4} />)

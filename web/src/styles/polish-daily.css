@@ -128,4 +128,4 @@
 .ff-sel:hover { background-color:var(--hover-bg); }
 .ff-sel[data-on] { background-color:var(--active-bg); color:var(--ink); font-weight:600; }
 /* narrow screens: a wrapped pill becomes an oval; the bar turns into a rounded panel, the dividers go, the extra filter takes its own line */
-@media (max-width:640px) { .ff { border-radius:18px; } .ff-sep, .ff-line { display:none; } .ff-sel { flex-basis:100%; text-align:left; } }
+@media (max-width:640px) { .ff, .ffc { border-radius:18px; } .ff-sep, .ff-line { display:none; } .ff-sel { flex-basis:100%; text-align:left; } }

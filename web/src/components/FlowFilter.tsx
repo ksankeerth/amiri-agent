@@ -41,13 +41,14 @@ export function FlowFilter<K extends string>({ steps, value, onChange, all, labe
 }
 
 /** Options that are not a sequence, styled to match FlowFilter. The selected one shows a tick, not only a colour. */
-export function ChipFilter<K extends string>({ options, value, onChange, label }: {
-  options: FlowStep<K>[]; value: K; onChange: (k: K) => void; label: string;
+export function ChipFilter<K extends string>({ options, value, onChange, label, after }: {
+  options: FlowStep<K>[]; value: K; onChange: (k: K) => void; label: string; after?: ReactNode;
 }) {
   return (
     <div className="ffc" role="group" aria-label={label}>{options.map(o => (
       <button key={o.key} type="button" className="ffc-o" aria-pressed={value === o.key} onClick={() => onChange(o.key)}>
         {value === o.key && <Icon name="check" />}{o.label}{o.count ? <span className="ff-c">{o.count}</span> : null}</button>))}
+      {after && <><span className="ff-sep" aria-hidden="true" />{after}</>}
     </div>
   );
 }

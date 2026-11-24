@@ -24,7 +24,6 @@
 .rd-pwhy { padding-left:14px; border-left:3px solid var(--accent); color:var(--ink); }
 
 .rd-filters { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin:32px 0 0; }
-.rd-filters .rd-where { width:220px; flex:none; margin-left:auto; }
 
 /* the two panes */
 /* the two panes fill the rest of the screen and scroll inside themselves; the page doesn't move */
@@ -83,7 +82,6 @@
   .rd-split { flex:none; grid-template-columns:1fr; gap:32px; }
   .rd-index > ol { height:70vh; }
   .rd-read { overflow:visible; }
-  .rd-filters .rd-where { margin-left:0; }
 }
 @media (max-width:600px) { .rd .ph-title h1 { font-size:34px; } }
 /* second layer of the chosen story: what happened, places, sources; the headlines sit one layer deeper */
