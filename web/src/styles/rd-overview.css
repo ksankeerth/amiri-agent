@@ -20,7 +20,8 @@
 .rd-overview .rd-lede .rd-name { font-weight:600; }
 .rd-overview .rd-lede .rd-shape { margin-right:4px; }
 .rd-overview .rd-ov-cta { margin-top:20px; }
-.rd-overview .rd-ov-words .rd-figs { --rd-fig:40px; margin-top:28px; grid-template-columns:minmax(0, 1fr) minmax(0, .92fr) minmax(0, 1.08fr); }
+/* the figures sit midway between the button and the sources line: the free space splits evenly above and below them */
+.rd-overview .rd-ov-words .rd-figs { --rd-fig:40px; margin-top:auto; padding-top:28px; grid-template-columns:minmax(0, 1fr) minmax(0, .92fr) minmax(0, 1.08fr); }
 .rd-overview .rd-ov-words .rd-fig { padding-right:10px; }
 .rd-overview .rd-ov-words .rd-fig + .rd-fig { padding-left:14px; border-left:0; }
 .rd-overview .rd-ov-words .rd-fig-l { font-size:16px; white-space:nowrap; }
