@@ -22,11 +22,11 @@
 .rd-series .sr-lg text { font-size:15px; }
 
 /* ---------- the list: one table */
-.rd-series .sr-table { margin-top:20px; border-top:2px solid var(--ink); }
+.rd-series .sr-table { margin-top:20px; }
 .rd-series .sr-table th { padding-top:12px; }
 .rd-series .sr-table td { padding:18px 20px 18px 0; vertical-align:top; }
 .rd-series .sr-table th:last-child, .rd-series .sr-table td:last-child { padding-right:0; }
-.rd-series .sr-name { font-size:19px; line-height:1.3; font-weight:700; }
+.rd-series .sr-name { font-size:17px; line-height:1.3; font-weight:600; }
 .rd-series .sr-mean { margin:4px 0 0; font-size:16px; color:var(--ink-2); max-width:36ch; }
 .rd-series .sr-fine { margin:4px 0 0; font-size:15px; color:var(--ink-3); }
 .rd-series .sr-stale { margin:4px 0 0; font-size:15px; color:var(--high-ink); }
@@ -36,25 +36,25 @@
 
 /* ---------- one series */
 .rd-series .sr-hero { display:grid; grid-template-columns:minmax(0, 1fr) auto; column-gap:48px; align-items:end; margin-top:24px; }
-.rd-series .sr-hp { font-size:52px; line-height:1.05; font-weight:700; color:var(--ink); letter-spacing:-.025em; font-variant-numeric:tabular-nums; }
-.rd-series .sr-hd { margin:8px 0 0; font-size:18px; color:var(--ink-2); }
+.rd-series .sr-hp { font-size:36px; line-height:1.1; font-weight:650; color:var(--ink); letter-spacing:-.025em; font-variant-numeric:tabular-nums; }
+.rd-series .sr-hd { margin:8px 0 0; font-size:17px; color:var(--ink-2); }
 .rd-series .sr-act { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
 .rd-series .sr-act .btn { background:none; border:0; box-shadow:none; min-height:0; padding:6px 2px; margin:-6px -2px; font-weight:600; color:var(--ink);
-  text-decoration:underline; text-decoration-color:var(--rd-mark); text-underline-offset:4px; }
-.rd-series .sr-act .btn:hover { background:none; text-decoration-color:var(--ink); }
+  text-decoration:none; }
+.rd-series .sr-act .btn:hover { background:none; text-decoration:underline; text-underline-offset:4px; }
 .rd-series .sr-act .btn:disabled { color:var(--ink-3); text-decoration:none; opacity:1; }
 
 .rd-series .sr-take { margin:14px 0 8px; font-size:16px; color:var(--ink-2); }
 .rd-series .sr-note { margin:10px 0 0; }
-.rd-series .sr-chart { margin-top:10px; }
+.rd-series .sr-chart { margin-top:10px; border-radius:16px; overflow:hidden; }
 .rd-series .sr-chart .empty { padding:48px 0; font-size:16px; color:var(--ink-2); }
 .rd-series .sr-mt .rd-shape { margin-right:8px; }
 .rd-series .sr-mm .rd-shape { margin:0 6px 0 2px; }
 
 .rd-series .sr-lede { margin:4px 0 8px; max-width:680px; color:var(--ink-2); }
 .rd-series .sr-moves { list-style:none; margin:0; padding:0; }
-.rd-series .sr-moves li { display:grid; grid-template-columns:minmax(0, 1fr) auto; column-gap:24px; align-items:baseline; padding:14px 0; border-bottom:1px solid var(--rd-hair); }
-.rd-series .sr-mt { font-size:18px; font-weight:600; color:var(--ink); }
+.rd-series .sr-moves li { display:grid; grid-template-columns:minmax(0, 1fr) auto; column-gap:24px; align-items:baseline; padding:10px 0; }
+.rd-series .sr-mt { font-size:17px; font-weight:600; color:var(--ink); }
 .rd-series .sr-mm { font-size:15px; color:var(--ink-3); text-align:right; }
 .rd-series .sr-mm .rd-name { color:var(--ink); }
 .rd-series .sr-wait { display:flex; justify-content:flex-end; margin:4px 0 0; }
@@ -73,6 +73,12 @@
 
 @media (max-width: 900px) {
   .rd-series .sr-hero { grid-template-columns:minmax(0, 1fr); row-gap:20px; }
-  .rd-series .sr-hp { font-size:40px; }
   .rd-series .sr-table { display:block; overflow-x:auto; }
 }
+
+/* warm look: named things and "go" links sit in ink and are underlined only on hover (app.css underlines every link in a paragraph at rest) */
+.rd-series a.rd-name:not(.btn):not(.strong):not(.chip), .rd-series a.rd-go:not(.btn):not(.strong):not(.chip) { text-decoration:none; }
+.rd-series a.rd-name:not(.btn):not(.strong):not(.chip):hover, .rd-series a.rd-go:not(.btn):not(.strong):not(.chip):hover { text-decoration:underline; text-underline-offset:3px; }
+
+/* an opened item (help, details, verification) is a very light soft surface, not a rule on the left */
+.rd-series .rd-open { border-left:0; background:var(--surface-2); border-radius:12px; padding:16px 20px 18px; margin:8px 0 12px; }

@@ -21,7 +21,7 @@
 
 /* overview: map and what's still open */
 .rd-inst .ins-cols { display:grid; grid-template-columns:minmax(0, 1.45fr) minmax(0, 1fr); gap:0 44px; align-items:start; }
-.rd-inst .ins-cols > .rd-sec { margin-top:28px; }
+.rd-inst .ins-cols > .rd-sec { margin-top:32px; }
 .rd-inst .ins-key { margin:10px 0 0; max-width:760px; }
 .rd-inst .ins-map-sec .pmap-title { display:none; }
 .rd-inst .ins-open-row { display:flex; gap:20px; align-items:baseline; justify-content:space-between; }
@@ -49,8 +49,8 @@
 .rd-inst .ins-products th:nth-child(3), .rd-inst .ins-products td:nth-child(3) { min-width:130px; }
 .rd-inst .ins-products th.rd-num, .rd-inst .ins-products td.rd-num { padding-right:0; }
 .rd-inst .ins-pick { background:none; border:0; padding:0; font:inherit; font-weight:600; color:var(--ink); text-align:left; cursor:pointer;
-  text-decoration:underline; text-decoration-color:var(--rd-mark); text-underline-offset:3px; }
-.rd-inst .ins-pick:hover { text-decoration-color:var(--ink); }
+  text-decoration:none; }
+.rd-inst .ins-pick:hover { text-decoration:underline; text-underline-offset:3px; }
 .rd-inst .ins-opened td { padding:4px 0 14px; }
 .rd-inst .ins-open { margin:0; padding-top:2px; padding-bottom:6px; }
 .rd-inst .ins-acts-open { justify-content:flex-start; margin-top:6px; }
@@ -82,7 +82,7 @@
 .rd-inst .ins-whyl li + li { margin-top:4px; }
 .rd-inst .ins-two { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:0 44px; }
 .rd-inst .ins-words { list-style:none; margin:0; padding:0; }
-.rd-inst .ins-words li { padding:8px 0; border-bottom:1px solid var(--rd-hair); }
+.rd-inst .ins-words li { padding:7px 0; }
 .rd-inst .ins-json { font-family:var(--font-mono, ui-monospace, monospace); font-size:14px; white-space:pre-wrap; margin:10px 0 0; max-height:520px; overflow:auto; color:var(--ink-2); }
 
 @media (max-width: 1100px) {
@@ -96,3 +96,18 @@
 .rd-inst.ins-narrow .rd-fig:nth-child(3n+1) { border-left:0; padding-left:0; }
 .rd-inst.ins-narrow .rd-head { gap:8px 20px; }
 .rd-inst.ins-narrow .rd-pagehead .rd-actions { margin-left:0; gap:10px 20px; }
+
+/* warm look: named things and "go" links sit in ink and are underlined only on hover (app.css underlines every link in a paragraph at rest) */
+.rd-inst a.rd-name:not(.btn):not(.strong):not(.chip), .rd-inst a.rd-go:not(.btn):not(.strong):not(.chip) { text-decoration:none; }
+.rd-inst a.rd-name:not(.btn):not(.strong):not(.chip):hover, .rd-inst a.rd-go:not(.btn):not(.strong):not(.chip):hover { text-decoration:underline; text-underline-offset:3px; }
+
+/* an opened item (help, details, verification) is a very light soft surface, not a rule on the left */
+.rd-inst .rd-open { border-left:0; background:var(--surface-2); border-radius:12px; padding:16px 20px 18px; margin:8px 0 12px; }
+.rd-inst .mapbox { border:0; border-radius:16px; box-shadow:none; }
+.rd-inst .ins-menu-pop { border-radius:12px; }
+.rd-inst .rd-figs { --rd-fig:36px; }
+.rd-inst .ins-opened td { padding:4px 0 14px; }
+.rd-inst .rd-fig + .rd-fig { border-left: 0; }
+.rd-inst .pmap-bar .seg button, .rd-inst .pmap-bar .btn--sm, .rd-inst .pmap-bar summary, .rd-inst .pmap-layers .check, .rd-inst .pmap-layers .caret { font-size: 14px; }
+.rd-inst .pmap-bar .btn--sm { border-radius: 10px; }
+.rd-inst .mapzoom button { font-size: 14px; }
