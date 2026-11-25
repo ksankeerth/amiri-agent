@@ -189,6 +189,7 @@ class FakeInvestigationAgent:
         self.forget: set[str] = set()  # run_ids GET answers 404 for, once (another instance, a restart)
         self.themes: list[dict] | None = None  # how it classifies a finding that came without themes
         self.classify = None  # (finding) -> (themes, expected direction "rise"/"fall"): one event per theme, like the agent
+        self.refuse: set[str] = set()  # finding ids a POST is refused for (422, as FastAPI names body.findings[i])
 
     def result(self, req: dict) -> dict:
         if self.classify and not req.get("extend"):
@@ -243,6 +244,10 @@ class FakeInvestigationAgent:
             if self.fail_next:
                 return httpx.Response(self.fail_next.pop(0), json={"error": "scripted failure"})
             body = _json.loads(request.content)
+            bad = [i for i, f in enumerate(body["findings"]) if f["finding_id"] in self.refuse]
+            if bad:
+                return httpx.Response(422, json={"detail": [{"type": "literal_error", "msg": "Input should be ...", "input": "x",
+                                                             "loc": ["body", "findings", i, "themes", 0, "item"]} for i in bad]})
             self.requests.append(body)
             self.runs[body["run_id"]] = body
             return httpx.Response(202, json={"run_id": body["run_id"], "status": "queued", "created_at": "2026-10-07T00:00:00Z"})

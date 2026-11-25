@@ -1,0 +1,80 @@
+{
+ "name": "gkg-recall",
+ "purpose": "English articles about the home country, the footprint (with a insurer's themes), named places and actors",
+ "sql": "\nWITH a AS (\n  SELECT DATE, SourceCommonName AS outlet, DocumentIdentifier AS url,\n         REGEXP_EXTRACT(Extras, r'<PAGE_TITLE>(.*?)</PAGE_TITLE>') AS title,\n         IFNULL(V2Locations, '') AS locations, IFNULL(V2Themes, '') AS themes, IFNULL(V2Organizations, '') AS orgs\n  FROM `gdelt-bq.gdeltv2.gkg_partitioned`\n  WHERE _PARTITIONTIME BETWEEN TIMESTAMP(@day_from) AND TIMESTAMP(@day_to)\n    AND DATE >= @since AND DATE < @until\n    AND IFNULL(TranslationInfo, '') = ''),\nb AS (\n  SELECT *, LOWER(IFNULL(title, '')) AS t,\n    (SELECT COUNTIF(SPLIT(x, '#')[SAFE_OFFSET(2)] IN UNNEST(@home_fips)) FROM UNNEST(SPLIT(locations, ';')) AS x) AS home_n,\n    (SELECT COUNTIF(SPLIT(x, '#')[SAFE_OFFSET(2)] IN UNNEST(@foot_fips)) FROM UNNEST(SPLIT(locations, ';')) AS x) AS foot_n,\n    (SELECT COUNTIF(SPLIT(x, '#')[SAFE_OFFSET(2)] IN UNNEST(@share_fips)) FROM UNNEST(SPLIT(locations, ';')) AS x) AS share_n,\n    (SELECT COUNTIF(x != '') FROM UNNEST(SPLIT(locations, ';')) AS x) AS all_n\n  FROM a),\nc AS (\n  SELECT *,\n    (@home_names != '' AND REGEXP_CONTAINS(t, @home_names)) OR home_n >= @home_mentions\n      OR ENDS_WITH(LOWER(IFNULL(outlet, '')), @home_domain) AS r_home,\n    ((@foot_names != '' AND REGEXP_CONTAINS(t, @foot_names)) OR (share_n >= 2 AND share_n >= @share * all_n))\n      AND REGEXP_CONTAINS(themes, @themes) AS r_footprint,\n    @place_names != '' AND REGEXP_CONTAINS(t, @place_names) AS r_place,\n    @actor_names != '' AND (home_n > 0 OR foot_n > 0) AND REGEXP_CONTAINS(CONCAT(LOWER(orgs), ' ', t), @actor_names) AS r_actor\n  FROM b)\nSELECT DATE, outlet, url, title, locations, themes, orgs, home_n, foot_n, all_n, r_home, r_footprint, r_place, r_actor\nFROM c WHERE r_home OR r_footprint OR r_place OR r_actor\nORDER BY DATE DESC\nLIMIT @row_limit\n",
+ "days": [
+  "2026-10-16",
+  "2026-10-17"
+ ],
+ "clamped": false,
+ "params": {
+  "day_from": [
+   "STRING",
+   "2026-10-16"
+  ],
+  "day_to": [
+   "STRING",
+   "2026-10-17"
+  ],
+  "since": [
+   "INT64",
+   20261016060000
+  ],
+  "until": [
+   "INT64",
+   20261017060000
+  ],
+  "home_fips": [
+   "ARRAY<STRING>",
+   [
+    "ID"
+   ]
+  ],
+  "foot_fips": [
+   "ARRAY<STRING>",
+   [
+    "SN"
+   ]
+  ],
+  "share_fips": [
+   "ARRAY<STRING>",
+   []
+  ],
+  "home_names": [
+   "STRING",
+   "(^|[^a-z0-9])(jakarta raya|indonesian|jawa barat|indonesia|jakarta|sumatra|bali|java)([^a-z0-9]|$)"
+  ],
+  "home_domain": [
+   "STRING",
+   ".id"
+  ],
+  "foot_names": [
+   "STRING",
+   "(^|[^a-z0-9])(singaporean|singapore)([^a-z0-9]|$)"
+  ],
+  "place_names": [
+   "STRING",
+   "(^|[^a-z0-9])(strait of malacca|malacca strait)([^a-z0-9]|$)"
+  ],
+  "actor_names": [
+   "STRING",
+   "(^|[^a-z0-9])(otoritas jasa keuangan|nusantara insurance|ojk)([^a-z0-9]|$)"
+  ],
+  "themes": [
+   "STRING",
+   "(^|;)(WB_337_INSURANCE|MARITIME_INCIDENT|MARITIME_PIRACY|SANCTIONS|ECON_CURRENCY_EXCHANGE_RATE|WB_1287_HEALTH_INSURANCE|ECON_STOCKMARKET|NATURAL_DISASTER_EARTHQUAKE|NATURAL_DISASTER_FLOOD|NATURAL_DISASTER_FLOODS|NATURAL_DISASTER_HURRICANE|NATURAL_DISASTER_TSUNAMI|NATURAL_DISASTER_DROUGHT),"
+  ],
+  "home_mentions": [
+   "INT64",
+   3
+  ],
+  "share": [
+   "FLOAT64",
+   0.4
+  ],
+  "row_limit": [
+   "INT64",
+   10000
+  ]
+ }
+}

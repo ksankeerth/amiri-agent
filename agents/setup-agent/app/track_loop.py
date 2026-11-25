@@ -26,7 +26,7 @@ from pydantic import BaseModel
 from app import settings
 from app.contract import ErrorEv, MessageEv, TurnIn
 from app.engine import Usage
-from app.guides import GUIDES
+from app.guides import GUIDES, REGION_SAID, region_guide
 from app.models import fallback_gemini
 from app.router import Route
 from app.server_api import seg
@@ -82,7 +82,9 @@ def _who(ctx: dict | None) -> str:
 
 
 def instruction(b: TurnBox, ctx: dict | None, readiness: dict | None, earlier: list[dict] | None,
-                region: str | None = None, decided: list[str] | None = None, noted: list[dict] | None = None) -> str:
+                region: str | None = None, decided: list[str] | None = None, noted: list[dict] | None = None,
+                guide: tuple[str, str] | None = None) -> str:
+    """guide: the home country's region guide (app/guides.region_guide), as respond found it."""
     t, g = TRACKS[b.track], GUIDES[b.track]
     nxt = next_in_setup(b.track)
     after = ("After a proposal, say what it does and that nothing changes until they apply it; then, if something "
@@ -98,6 +100,8 @@ def instruction(b: TurnBox, ctx: dict | None, readiness: dict | None, earlier: l
     ]
     if region:
         parts.append(region)
+    if guide:  # the home country's region pack (US): its guide for every track
+        parts.append(guide[1])
     if noted:  # seen: "motor cover in Seoul and Gyeonggi" went to customers; the footprint was never proposed (T02)
         parts.append("This message also had facts for other tracks, noted for later and NOT saved: " +
                      "; ".join(f"“{n['text']}” → {TRACKS[n['track']].label}" for n in noted if n["track"] in TRACKS) +
@@ -216,6 +220,10 @@ async def respond(s: Session, turn: TurnIn, route: Route, usage: Usage) -> Async
     track = route.track
     ctx, readiness = await _fresh(s, turn.institution_id)
     s.state["institution"] = ctx
+    guide = region_guide(ctx, s.context)
+    # the region the session began in: an institution already based in the US is told nothing; one whose home
+    # country becomes the US during the session (created, or changed) is told once
+    began_in = s.state.setdefault("region_at_start", guide[0] if guide else None)
     region = await _region_line(s) if track == "institution" or not ctx else None
     decided = await _decided(s, turn.thread_id)
     b = TurnBox(s, turn, track)
@@ -226,7 +234,7 @@ async def respond(s: Session, turn: TurnIn, route: Route, usage: Usage) -> Async
     agent = Agent(
         name=f"{track}_track", model=_model(),
         instruction=instruction(b, ctx, readiness, s.context.get("recent_messages") if first else None, region, decided,
-                                route.notes),
+                                route.notes, guide),
         tools=GUIDES[track].tools,
         generate_content_config=types.GenerateContentConfig(temperature=settings.number("AGENT_TEMPERATURE")))
     runner = Runner(app=App(name=APP_NAME, root_agent=agent), session_service=SESSIONS)
@@ -286,6 +294,10 @@ async def respond(s: Session, turn: TurnIn, route: Route, usage: Usage) -> Async
         reminded.update(p["id"] for p in waiting)
         text += ("\n\n" if text else "") + "Still waiting for your Apply, so nothing of it is saved yet: " + \
             "; ".join(f"“{p['summary']}”" for p in waiting) + "."
+    if guide and guide[0] != began_in and guide[0] not in s.state.setdefault("region_said", set()):  # once
+        s.state["region_said"].add(guide[0])
+        said = REGION_SAID[guide[0]].format(kind="bank" if ctx.get("institution_type") == "bank" else "insurer")
+        text = said + ("\n\n" + text if text else "")
     s.state["asked"] = bool(b.asked or text.rstrip().endswith("?"))
     if text:
         yield MessageEv(text=text[:8000])

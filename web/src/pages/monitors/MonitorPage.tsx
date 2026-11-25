@@ -11,7 +11,7 @@ import type { Installation } from "../../App";
 import { FactList, PageHeader, TechnicalDetails } from "../../components/blocks";
 import { Icon } from "../../components/Icon";
 import { LoadError, PageSkeleton, useNow, useRole, useToast } from "../../components/ui";
-import { ago, dayTime, due } from "../../format";
+import { ago, dayTime, due, person } from "../../format";
 import { count, eventTitle, everyText, listText } from "../../plain";
 import { changed, draftedLine, MonitorForm } from "./monitorForm";
 import { CheckLine, FindingLine, headOf, lower, Progress, Versions, Watches, wentTo, who } from "./monitorParts";
@@ -158,7 +158,7 @@ export function MonitorPage() {
               <button type="button" onClick={() => act("retire")}>Retire it</button><span className="muted">A retired monitor stops checking; what it found stays in Findings.</span></p>}
             {role === "platform_admin" && <TechnicalDetails><FactList items={[["Monitor", <span className="mono">{m.monitor_id}</span>], ["Institution", m.institution_id],
               ["Versions", `live ${m.live_version ?? "none"}, latest ${m.latest_version}`], ["Drafted fields", m.drafted_fields.join(", ") || null],
-              ["Created", `${m.created_by} ${dayTime(m.created_at)}`], ["Next check", m.next_check_at ? dayTime(m.next_check_at) : null]]} /></TechnicalDetails>}
+              ["Created", `${person(m.created_by)} ${dayTime(m.created_at)}`], ["Next check", m.next_check_at ? dayTime(m.next_check_at) : null]]} /></TechnicalDetails>}
           </div>
         </>}
       {drafting && <DraftFromProfile onClose={() => setDrafting(false)} />}

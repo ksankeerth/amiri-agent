@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { ApiError } from "../../api/client";
 import { showProposal } from "../../api/assistant";
 import { inst, type Item, type Operation, type SectionName, type Suggestion } from "../../api/institutions";
-import { dayTime, plural } from "../../format";
+import { dayTime, person, plural } from "../../format";
 import { Icon } from "../../components/Icon";
 import { Modal, useToast } from "../../components/ui";
 import { dimWord, monthsText, PlaceName, usdText, useRoutes, valueWord } from "./fields";
@@ -50,7 +50,7 @@ function describe(section: SectionName, it: Item, ctx: Ctx): { title: ReactNode;
       return { title: <>{cap(FLOW_WORDS[it.kind] ?? "")} {it.goods ? `(${it.goods}) ` : ""}· {pn(ctx, it.local)} ↔ {pn(ctx, it.counterpart)}</>,
         meta: keep([["Value", it.value ? `${usdText(it.value.amount)} a year (${it.value.year})` : "no figure"],
           ["Source", it.source.kind === "dataset" ? `${it.source.dataset}${it.source.sample ? " (sample figure)" : ""}`
-            : it.source.original_amount != null ? `your figure (dataset said ${usdText(it.source.original_amount)}; changed by ${it.source.edited_by})` : "your figure"],
+            : it.source.original_amount != null ? `your figure (dataset said ${usdText(it.source.original_amount)}; changed by ${person(it.source.edited_by)})` : "your figure"],
           it.segments.length && ["Groups", it.segments.map((s: string) => byId(ctx, "segments", s, "label")).join(", ")]]),
         badges: <>{it.status === "suggested" && <span className="badge b-sub">TO CHECK</span>}{it.source.sample && <span className="badge b-warn">SAMPLE</span>}</> };
     case "regulators":
@@ -324,7 +324,7 @@ function Via({ o }: { o?: { source: string; by: string; at: string; proposal_id:
   if (!o) return null;
   const pid = o.last_source === "assistant" ? o.last_proposal_id : o.source === "assistant" ? o.proposal_id : null;
   if (!pid) return null;
-  const what = o.source === "assistant" ? `Added by the setup agent (${o.by}) on ${dayTime(o.at)}` : `Last changed by the setup agent on ${dayTime(o.last_at)}`;
+  const what = o.source === "assistant" ? `Added by the setup agent (${person(o.by)}) on ${dayTime(o.at)}` : `Last changed by the setup agent on ${dayTime(o.last_at)}`;
   return <button type="button" className="badge b-info" style={{ cursor: "pointer" }} title={`${what}. Click to see it in the chat.`} onClick={() => showProposal(pid)}>
     VIA SETUP AGENT</button>;
 }

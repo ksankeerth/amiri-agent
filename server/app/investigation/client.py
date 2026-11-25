@@ -8,13 +8,24 @@ import httpx
 from app import settings
 
 
+def _refused_findings(r: httpx.Response) -> set[int]:
+    """The findings a validation error names: FastAPI's detail[].loc is ["body", "findings", i, ...]."""
+    try:
+        detail = r.json().get("detail") or []
+    except ValueError:
+        return set()
+    return {d["loc"][2] for d in detail if isinstance(d, dict) and isinstance(d.get("loc"), list) and len(d["loc"]) > 2
+            and d["loc"][:2] == ["body", "findings"] and isinstance(d["loc"][2], int)}
+
+
 class AgentError(Exception):
     """The agent couldn't be reached or refused the request."""
 
-    def __init__(self, message: str, *, retry: bool = True, cold: bool = False):
+    def __init__(self, message: str, *, retry: bool = True, cold: bool = False, refused: set[int] | None = None):
         super().__init__(message)
         self.retry = retry  # False: the request itself was refused (4xx); sending it again won't help
         self.cold = cold  # no answer in time, or not up yet: an agent starting from zero (Cloud Run) looks like this
+        self.refused = refused or set()  # a 422: the positions of the findings the agent named (body.findings[i])
 
 
 class AgentClient:
@@ -49,7 +60,9 @@ class AgentClient:
         if r.status_code in (200, 202):
             return r.json()
         raise AgentError(f"HTTP {r.status_code}: {r.text[:500]}", retry=r.status_code >= 500 or r.status_code == 404,
-                         cold=r.status_code in (429, 502, 503, 504))
+                         cold=r.status_code in (429, 502, 503, 504),
+                         refused=_refused_findings(r) if r.status_code == 422 else None)
+
 
     async def start(self, request: dict) -> dict:
         try:

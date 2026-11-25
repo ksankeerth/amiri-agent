@@ -24,6 +24,7 @@ from pydantic import ValidationError
 from app import reference, settings
 from app.assistant import monitor_ops, numbers
 from app.assistant.agent import Assistant, AssistantEvent, TurnInput
+from app.assistant.region import region_guide
 from app.assistant.tracks import RULES_INSTITUTION_FIELDS, TRACKS
 from app.assistant.tracks import view as tracks_view
 from app.clock import Clock
@@ -202,6 +203,9 @@ class AssistantService:
                                 "filled_by": None, "profile_version": None, "changes_since_last_session": []}
         if iid:
             pack["institution"] = await self.institutions.context(iid)
+            guide = region_guide(pack["institution"].get("country"))
+            if guide:  # a region pack's setup guide (US institutions only; ContextPack is open to additions)
+                pack["region_guide"] = guide
             rd = await self.institutions.readiness_for(iid)
             pack["readiness"] = {"ready": rd["ready"], "open": [c for c in rd["checks"] if not c["ok"]],
                                  "warnings": rd["warnings"]}

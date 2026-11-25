@@ -451,7 +451,7 @@ async def test_rows_land_in_their_tables_and_the_database_enforces_links(client,
                 pass
 
 
-async def test_gazetteer_places_and_iso_only_footprint(client):
+async def test_gazetteer_places_and_iso_only_footprint(client, env):
     iid = (await new(client))["institution_id"]
     r = await client.post(f"{B}/{iid}/footprint", json={"code": "city:colombo"})
     assert r.status_code == 422
@@ -463,6 +463,19 @@ async def test_gazetteer_places_and_iso_only_footprint(client):
     assert r.status_code == 422
     prof = (await client.get(f"{B}/{iid}/profile")).json()
     assert prof["places"]["city:jaffna"]["lat"] == 9.66 and prof["places"]["chk:hormuz"]["kind"] == "chokepoint"
+
+    # a US bank (the US region): Texas as its footprint, Dallas and Houston as places
+    env.setenv("SUPPORTED_REGION", "us")
+    us = (await new(client, {**BANK, "name": "Austin Tech Bank", "home_country": "US", "base_currency": "USD",
+                             "time_zone": "America/Chicago"}))["institution_id"]
+    await add(client, us, "footprint", {"code": "US-TX"})
+    seg = await add(client, us, "segments", {"label": "Dallas contractors", "kind": "business",
+                                             "places": ["city:dallas", "US-TX", "city:houston"]})
+    assert seg["item"]["places"] == ["city:dallas", "US-TX", "city:houston"]
+    assert (await client.post(f"{B}/{us}/footprint", json={"code": "city:dallas"})).status_code == 422  # ISO only
+    prof = (await client.get(f"{B}/{us}/profile")).json()
+    assert prof["places"]["city:dallas"]["lat"] == 32.78 and prof["places"]["city:dallas"]["parent"] == "US-TX"
+    assert prof["places"]["US-TX"]["lat"] == 31.0 and prof["place_names"]["US-TX"] == "Texas"
 
 
 async def test_reference_places_routes_hazards(client):

@@ -297,7 +297,7 @@ export function MonitorsStep({ institutionId }: { institutionId: string }) {
   const open = (items ?? []).filter(i => !i.monitor_id);
   return (
     <div className="col gap16">
-      <Banner kind="info">Monitors watch the news for what your profile says matters. Draft them here, or ask the setup agent ("watch Gulf jobs for our migrant families"). Each one runs after a Risk Manager approves it on the Monitors page. Optional: you can go live without any.</Banner>
+      <Banner kind="info">Monitors watch the news for what your profile says matters. Draft them here, or ask the setup agent ("watch our main rival's deposit rates"). Each one runs after a Risk Manager approves it on the Monitors page. Optional: you can go live without any.</Banner>
       <div className="card"><div className="hd"><h2>Draft from your profile</h2></div><div className="bd col" style={{ gap: 10 }}>
         {items === null ? <span className="muted small">Loading…</span> : !open.length ? <span className="small muted">Everything the profile offers is watched, or there is nothing to draft from yet.</span>
           : Object.entries(SECTION_WORDS).map(([s, w]) => {

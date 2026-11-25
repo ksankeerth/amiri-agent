@@ -19,6 +19,7 @@ from pydantic import ValidationError
 
 from app import reference, settings, spec
 from app.clock import Clock
+from app.harness import region_for
 from app.institutions import privacy, rivals, rules, store
 from app.institutions.rules import Item, State
 from app.institutions.schemas import (
@@ -79,7 +80,8 @@ def create_errors(fields: dict) -> list[dict]:
 
 
 def region_errors(fields: dict) -> list[dict]:
-    """The prototype is tested in one region (SUPPORTED_REGION): the home country and base currency must be in it."""
+    """The prototype is tested in some regions (SUPPORTED_REGION): the home country and base currency must be in
+    one of them."""
     r = reference.region()
     if not r:
         return []
@@ -695,8 +697,12 @@ class Institutions:
                     why[code].append(reason)
 
         S = state.section
+        # a region pack (US) is told which footprint places are only partly covered: Radar's US pack doesn't count a
+        # part-covered state by its mentions, only by the pack's names for the part (Silicon Valley for California)
+        pack = region_for(state.inst["fields"].get("home_country"))
         for it in S("footprint").values():
-            add(it.data["code"], f"footprint ({it.data['role'].replace('_', ' ')})")
+            part = ", part" if pack and it.data.get("scope") == "part" else ""
+            add(it.data["code"], f"footprint ({it.data['role'].replace('_', ' ')}{part})")
         for it in S("watch-places").values():
             add(it.data.get("code"), f"place to watch: {it.data.get('reason') or it.data['name']}")
         for d in flows:
@@ -840,8 +846,10 @@ class Institutions:
 
         rows = reference.regulator_rows()
         home = f["home_country"]
+        fp_codes = set(state.footprint_codes())
         for r in rows:
-            if r.get("country") == home:
+            # a state regulator (its subdivision) only for a footprint in that state: Texas DOB for a bank in Texas
+            if r.get("country") == home and (not r.get("subdivision") or r["subdivision"] in fp_codes):
                 add(r, "home", f"home country {reference.place_name(home)}")
         for c in sorted(state.footprint_countries() - {home}):
             for r in rows:

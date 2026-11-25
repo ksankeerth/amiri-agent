@@ -7,12 +7,12 @@ import type { CheckRow, Monitor, MonitorFinding, MonitorSpec, MonitorsStatus } f
 import { FactList, Places, TechnicalDetails, usePlaceNames } from "../../components/blocks";
 import { Icon } from "../../components/Icon";
 import { useRole } from "../../components/ui";
-import { dayTime, due, plainError } from "../../format";
+import { dayTime, due, person, plainError } from "../../format";
 import { cap, count, undated, everyText, listText, longWhen, MONITOR_CHECK, setAsideReason } from "../../plain";
 import { FLOW_WORDS } from "../../components/setupFlow";
 
 /** "dilan@serendib.lk" → "Dilan". */
-export const who = (email?: string | null) => (email ? cap(email.split("@")[0]) : "someone");
+export const who = (email?: string | null) => (email ? person(email) : "someone");
 export const lower = (s: string) => (/^(?:[A-Z][a-z]|A )/.test(s) ? s[0].toLowerCase() + s.slice(1) : s);
 /** A drafted sentence starts with the monitor's name ("Gulf tension meets remittances: events in…"): the title says it. */
 export const unnamed = (s: string, name: string) => (s.startsWith(`${name}: `) ? cap(s.slice(name.length + 2)) : s);

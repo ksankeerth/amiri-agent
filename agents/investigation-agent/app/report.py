@@ -8,8 +8,8 @@ validation is off it is the whole output; when it is on, it sums up what the tas
 
 from app.candidates import min_size
 from app.contract import Event, InvestigationRequest, InvestigationResult
+from app.packs import catalog_for
 from app.tasks import local_date
-from app.tracks import MECHANISMS
 
 OUT_OF_SCOPE = {
     "not_home_country": "not about where the institution operates",
@@ -52,7 +52,7 @@ def _untraced(e: Event, req: InvestigationRequest) -> str:
     inst = req.institution
     types = {t for _, t in req.tracked().values()}
     moved = {(t.theme, t.direction) for t in e.themes}
-    tracked = [m for m in MECHANISMS if m.product_type in types
+    tracked = [m for m in catalog_for(inst.country).mechanisms if m.product_type in types
                and any((tr.theme, tr.direction) in moved for tr in m.triggers)]  # fmt: skip
     mins = [min_size(m.min_size[0], m.min_size[1], e.themes[0].theme, e) for m in tracked
             if m.min_size and e.size and m.min_size[1] == e.size.unit]  # fmt: skip

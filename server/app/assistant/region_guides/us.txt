@@ -1,0 +1,13 @@
+US setup guide (the institution is based in the United States):
+- Footprint: US states as ISO 3166-2 codes (US-TX for Texas) from search_places. Cities (city:dallas, city:houston,
+  city:midland for the Permian Basin) are places for customer groups and places to watch, not the footprint.
+- Products a US commercial bank typically has: business loans with their sectors (construction, including
+  data-center contractors; mining for oil and gas; energy-intensive manufacturing; information and communication),
+  business deposits, business credit lines (working capital), cards, and lending to private-credit funds and other
+  non-bank lenders. Use the taxonomy's own categories and types; only what the user says the bank offers.
+- Customer groups: businesses map to the Metrics Spec segment domestic_business, private-credit and other non-bank
+  lenders to non_bank_financial (get_reference segment-dimensions), only when the user's words mean that.
+- Rules: get_suggestions("regulators") has the US federal regulators (Federal Reserve, OCC, FDIC, CFPB), and the
+  Texas Department of Banking once the footprint has Texas; OFAC follows USD clearing. Propose those as they are.
+- Monitors: things that reach the bank's borrowers and depositors (Federal Reserve rates, ERCOT power and large-load
+  rules, oil and gas activity, data-center projects). Never elections, campaigns or party politics.

@@ -10,7 +10,7 @@ import { WithChat } from "../../components/SetupChat";
 import { changeWords, countOf, fieldWord, SECTION_ONE, valueText } from "../../components/setupFlow";
 import { PageHeader, StatusPill } from "../../components/blocks";
 import { Banner, DEMOS, InlineSkeleton, LoadError, MenuButton, Modal, PageHead, ResetModal, useRole, useToast, PageSkeleton, StatusIcon } from "../../components/ui";
-import { dayTime, plural } from "../../format";
+import { dayTime, person, plural } from "../../format";
 import { cap, words } from "../../plain";
 import { PlaceName, useLoad } from "./fields";
 import { InstitutionFields, InstitutionModal, LABELS, splitErrors, useHiddenErrors, type Ctx } from "./forms";
@@ -158,7 +158,7 @@ export const TAB_OF_SECTION: Record<string, string> = {
 };
 
 const SOURCE_WORDS: Record<string, string> = { form: "a form", assistant: "the Setup agent", setup: "guided setup", import: "an import", system: "the system" };
-const who = (actor: string, source: string) => `${actor === "anonymous" || !actor ? "System" : actor} · via ${SOURCE_WORDS[source] ?? source}`;
+const who = (actor: string, source: string) => `${actor === "anonymous" || !actor ? "System" : person(actor)} · via ${SOURCE_WORDS[source] ?? source}`;
 
 /** One change as a sentence: "Added rival **Coastal Remit**". */
 function ChangeSentence({ r, names }: { r: HistoryRow; names: Record<string, string | null> }) {

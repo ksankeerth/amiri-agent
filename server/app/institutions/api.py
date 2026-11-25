@@ -393,7 +393,7 @@ for _section, _model in SECTIONS.items():
 # ---------------------------------------------------------------- reference data
 
 
-@ref_router.get("/countries", summary="ISO 3166-1 countries (scope=home: those a home country may be, SUPPORTED_REGION)")
+@ref_router.get("/countries", summary="ISO 3166-1 countries (scope=home: those a home country may be, in the SUPPORTED_REGION regions)")
 async def countries(q: str | None = None, scope: Literal["all", "home"] = "all"):
     items = reference.countries()
     region = reference.region() if scope == "home" else None
@@ -457,7 +457,7 @@ async def demo_profile(kind: Literal["bank", "insurer"] = "bank"):
     return JSONResponse(demo.profile(kind), headers={"Content-Disposition": f'attachment; filename="{name}.json"'})
 
 
-@ref_router.get("/currencies", summary="ISO 4217 currencies (scope=home: those a base currency may be, SUPPORTED_REGION)")
+@ref_router.get("/currencies", summary="ISO 4217 currencies (scope=home: those a base currency may be, in the SUPPORTED_REGION regions)")
 async def currencies(scope: Literal["all", "home"] = "all"):
     items = reference.currencies()
     region = reference.region() if scope == "home" else None

@@ -83,11 +83,13 @@ def list_candidates(
     limits: Limits,
     sides: frozenset[str] = frozenset({"home"}),
     previous: Event | None = None,
+    mechanisms: list[Mechanism] | None = None,
 ) -> Listing:
     """products: product_id -> (the tracks' product type, book size, Metrics Spec type).
     sides: where the event is for trade (home; abroad, a market that buys from us or sells to us);
     a mechanism tied to one side is listed only for an event on it.
-    previous: the same event at its earlier size (a resize): only what qualifies now and didn't then."""
+    previous: the same event at its earlier size (a resize): only what qualifies now and didn't then.
+    mechanisms: the run's catalog (app/packs.catalog_for); by default the built-in tracks."""
     by_type: dict[str, list[str]] = {}
     book: dict[str, float] = {}
     spec_type: dict[str, str | None] = {}
@@ -97,7 +99,7 @@ def list_candidates(
         spec_type[pid] = stype
 
     grouped: dict[tuple[str, str], Candidate] = {}
-    for m in MECHANISMS:
+    for m in MECHANISMS if mechanisms is None else mechanisms:
         if m.product_type not in by_type or not triggered(m, event):
             continue
         if m.side and m.side not in sides:

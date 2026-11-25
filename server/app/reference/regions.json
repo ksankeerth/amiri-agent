@@ -6,6 +6,10 @@
       "countries": ["AU", "BD", "BN", "BT", "CN", "FJ", "FM", "HK", "ID", "IN", "JP", "KH", "KI", "KR", "LA", "LK", "MH", "MM",
                     "MN", "MO", "MV", "MY", "NP", "NR", "NZ", "PG", "PH", "PK", "PW", "SB", "SG", "TH", "TL", "TO", "TV", "TW", "VN",
                     "VU", "WS"]
+    },
+    "us": {
+      "label": "United States",
+      "countries": ["US"]
     }
   }
 }

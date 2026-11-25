@@ -69,6 +69,7 @@ def schedule(now: datetime, tz: ZoneInfo, last_tick: datetime | None) -> tuple[b
 class Radar:
     def __init__(self, pool: AsyncConnectionPool, institutions: Institutions, client: RadarClient, clock: Clock):
         self.pool, self.institutions, self.client, self.clock = pool, institutions, client, clock
+        self.investigations = None  # set by the app: what a person asked for is investigated at once
 
     def _iid(self) -> str:
         return settings.raw("INSTITUTION_ID")
@@ -318,7 +319,7 @@ class Radar:
                                        f"{'.'.join(str(x) for x in e.errors()[0]['loc'])}", step)
             return
         now = self.clock.now()
-        sent = 0
+        sent, sent_ids = 0, []
         async with self.pool.connection() as conn, conn.transaction():
             cur = await conn.execute("SELECT * FROM signals.radar_runs WHERE run_id = %s FOR UPDATE", (run_id,))
             run = await cur.fetchone()
@@ -327,7 +328,7 @@ class Radar:
             for s in result["stories"]:
                 story = await self._upsert(conn, run, s, now)
                 if s["send"] and story["status"] == "below":
-                    await self._send(conn, story, run_id, "agent", now)
+                    sent_ids.append(await self._send(conn, story, run_id, "agent", now))
                     sent += 1
             await conn.execute(
                 """UPDATE signals.radar_runs SET status = %s, result = %s, stories = %s, sent = %s, bytes_processed = %s,
@@ -336,6 +337,8 @@ class Radar:
         step["done"] = step.get("done", 0) + 1
         step["stories"] = step.get("stories", 0) + len(result["stories"])
         step["sent"] = step.get("sent", 0) + sent
+        if run["trigger"] == "now" and sent_ids and self.investigations is not None:
+            await self.investigations.investigate_now(sent_ids)
 
     async def _upsert(self, conn, run: dict, s: dict, now: datetime) -> dict:
         cur = await conn.execute("SELECT * FROM signals.radar_stories WHERE institution_id = %s AND fingerprint = %s FOR UPDATE",
@@ -434,7 +437,9 @@ class Radar:
                 raise Problem(404, "not_found", f"No story {story_id}.")
             if s["status"] == "sent":
                 raise Problem(409, "already_sent", "This story was sent for investigation already.")
-            await self._send(conn, s, s["run_id"], actor, now)
+            fid = await self._send(conn, s, s["run_id"], actor, now)
+        if self.investigations is not None:
+            await self.investigations.investigate_now([fid])
         return await self.story(story_id)
 
     async def dismiss(self, story_id: str, actor: str, restore: bool = False) -> dict:

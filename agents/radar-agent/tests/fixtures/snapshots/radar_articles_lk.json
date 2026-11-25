@@ -1,0 +1,4785 @@
+[
+ {
+  "url": "https://www.funkytaurusmedia.com/shop_content.php?coID=3&XTCsid=2bqriadnrnopb5i8oom6g791i5",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.samaa.tv/2087358610-iran-says-oil-supertanker-caught-fire-after-hitting-mine",
+  "article": {
+   "about": [
+    "IR",
+    "chk:hormuz"
+   ],
+   "places": [
+    "IR",
+    "SA",
+    "US",
+    "chk:hormuz"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint",
+    "place"
+   ]
+  }
+ },
+ {
+  "url": "https://www.vanguardngr.com/2026/10/oil-tanker-on-fire-after-hitting-mine-in-hormuz-irans-guards/",
+  "article": {
+   "about": [
+    "IR",
+    "chk:hormuz"
+   ],
+   "places": [
+    "IR",
+    "OM",
+    "US",
+    "chk:hormuz"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint",
+    "place"
+   ]
+  }
+ },
+ {
+  "url": "http://www.sierraleonetimes.com/news/279380774/iran-says-supertanker-hit-mine-in-strait-of-hormuz",
+  "article": {
+   "about": [
+    "IR",
+    "chk:hormuz"
+   ],
+   "places": [
+    "AE",
+    "BH",
+    "IR",
+    "KW",
+    "OM",
+    "QA",
+    "SA",
+    "US",
+    "YE",
+    "chk:hormuz"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint",
+    "place"
+   ]
+  }
+ },
+ {
+  "url": "https://www.kvpr.org/npr-news/2026-10-17/no-kings-turns-its-focus-to-voting-this-weekend-heres-what-we-know",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.aljazeera.com/news/liveblog/2026/10/17/draft-2?update=5055003",
+  "article": {
+   "about": [
+    "IR",
+    "chk:hormuz"
+   ],
+   "places": [
+    "IR",
+    "chk:hormuz"
+   ],
+   "in_title": true,
+   "rules": [
+    "place"
+   ]
+  }
+ },
+ {
+  "url": "https://www.journal-advocate.com/2026/10/17/bob-chew-colorado-senate-candidate/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.apr.org/politics-government/2026-10-17/trump-promised-a-swing-district-blitz-hes-going-to-a-lot-of-very-red-states",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.times-series.co.uk/news/national/26645737.lawyers-us-politician-omar-demand-return-property-home-searched/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.khabaragency.net/news254447.html",
+  "article": {
+   "about": [
+    "YE"
+   ],
+   "places": [
+    "IR",
+    "YE"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.news4jax.com/news/politics/2026/10/17/retail-price-impacts-from-the-iran-war-are-uneven-but-add-up-for-us-households-before-midterms/",
+  "article": {
+   "about": [
+    "IR",
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.haitisun.com/news/279380774/iran-says-supertanker-hit-mine-in-strait-of-hormuz",
+  "article": {
+   "about": [
+    "IR",
+    "chk:hormuz"
+   ],
+   "places": [
+    "AE",
+    "BH",
+    "IR",
+    "KW",
+    "OM",
+    "QA",
+    "SA",
+    "US",
+    "YE",
+    "chk:hormuz"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint",
+    "place"
+   ]
+  }
+ },
+ {
+  "url": "https://www.azernews.az/region/265727.html",
+  "article": {
+   "about": [
+    "SA"
+   ],
+   "places": [
+    "SA"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.publicradiotulsa.org/npr-national-news/2026-10-17/weddings-are-expensive-how-about-a-grocery-store-cake",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.indiagazette.com/news/279380774/iran-says-supertanker-hit-mine-in-strait-of-hormuz",
+  "article": {
+   "about": [
+    "IR",
+    "chk:hormuz"
+   ],
+   "places": [
+    "AE",
+    "BH",
+    "IR",
+    "KW",
+    "OM",
+    "QA",
+    "SA",
+    "US",
+    "YE",
+    "chk:hormuz"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint",
+    "place"
+   ]
+  }
+ },
+ {
+  "url": "https://www.northwalespioneer.co.uk/news/national/26645737.lawyers-us-politician-omar-demand-return-property-home-searched/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.greekherald.com/news/279380774/iran-says-supertanker-hit-mine-in-strait-of-hormuz",
+  "article": {
+   "about": [
+    "IR",
+    "chk:hormuz"
+   ],
+   "places": [
+    "AE",
+    "BH",
+    "IR",
+    "KW",
+    "OM",
+    "QA",
+    "SA",
+    "US",
+    "YE",
+    "chk:hormuz"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint",
+    "place"
+   ]
+  }
+ },
+ {
+  "url": "https://247wallst.com/personal-finance/2026/10/17/you-dont-co-parent-with-a-gorilla-dave-ramsey-to-mom-who-financed-103000-for-her-boyfriends-construction-company/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.dailyadvance.com/news/local/us-coast-guard-rescues-16-people-and-searches-for-more-after-mayday-call-off-mexicos/article_607d12cf-09a8-5ae4-9077-7bd53fd91c9c.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.arabnews.com/business/saudi-cybersecurity-market-grows-107-to-435bn-as-digital-economy-expands-3006506",
+  "article": {
+   "about": [
+    "SA"
+   ],
+   "places": [
+    "BH",
+    "SA"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://pajhwok.com/2026/10/17/11-missing-16-rescued-after-boat-sinks-off-mexicos-coast/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.thehindu.com/news/international/sri-lankas-human-rights-commission-flags-enduring-militarisation-in-tamil-majority-areas/article71595758.ece",
+  "article": {
+   "about": [
+    "LK"
+   ],
+   "places": [
+    "LK"
+   ],
+   "in_title": true,
+   "rules": [
+    "home"
+   ]
+  }
+ },
+ {
+  "url": "https://www.mountaineagle.com/news/goetz-recalls-effort-to-finish-i-22-after-10-years-of-motoring/article_bb24f7e0-7d3a-5bb3-842d-02776649aa6f.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.middleeasteye.net/live-blog/live-blog-update/ukmto-says-unknown-projectile-hit-tanker-saudi-arabias-coast",
+  "article": {
+   "about": [
+    "SA"
+   ],
+   "places": [
+    "SA"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.kenyastar.com/news/279380743/tanker-struck-by-unknown-projectile-near-al-jubail-in-saudi-arabia-ukmto",
+  "article": {
+   "about": [
+    "SA"
+   ],
+   "places": [
+    "IR",
+    "SA",
+    "US",
+    "YE"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.salemnews.net/news/local-news/2026/10/u-s-route-30-reopened-after-semi-accident/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wdbo.com/news/politics/iran-war-votes/O2QMLOFSXQYJVH5LMODDIYSOUM/",
+  "article": {
+   "about": [
+    "IR",
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.lancashiretelegraph.co.uk/news/national/26645737.lawyers-us-politician-omar-demand-return-property-home-searched/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wsbradio.com/news/business/retail-price-impacts/E5QUSQCQBY2MJMUCBWFPK3XJVM/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://lancasteronline.com/news/national/us-coast-guard-rescues-16-people-and-searches-for-more-after-mayday-call-off-mexicos/article_f2fb8a04-c8e7-5db7-bb28-0670bb326692.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://slguardian.org/un-security-council-fails-to-back-any-candidate-for-guterress-successor/",
+  "article": {
+   "about": [],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "home"
+   ]
+  }
+ },
+ {
+  "url": "https://www.progressive-charlestown.com/search?updated-max=2026-10-14T20:04:00-04:00&max-results=15",
+  "article": {
+   "about": [],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.northkoreatimes.com/news/279380386/relief-for-india-as-trump-waives-sanctions-related-to-russian-fuel-purchase-under-lindsey-graham-act",
+  "article": {
+   "about": [],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://internationaltimes.it/beam-me-up-scotty/",
+  "article": {
+   "about": [],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://srilankamirror.com/news/no-presidential-pardon-for-gnanasara-thera-lalkantha/",
+  "article": {
+   "about": [
+    "LK"
+   ],
+   "places": [
+    "LK"
+   ],
+   "in_title": false,
+   "rules": [
+    "home"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wral.com/news/ap/9bc35-us-coast-guard-rescues-at-least-16-and-is-searching-for-more-in-the-water-off-mexicos-baja-coast/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://timesofindia.indiatimes.com/city/amritsar/punjab-origin-man-held-for-murder-after-missing-wifes-burned-remains-found-in-california/articleshow/135008313.cms",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.altoonamirror.com/news/local-news/2026/10/running-on-empty-farmers-eye-high-diesel-fuel-costs-as-fall-harvest-underway/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://townhall.com/columnists/jay-rogers/2026/10/17/when-the-rap-sheet-doesnt-even-matter-n2684762",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.santafenewmexican.com/ap/washington/california-officials-who-process-ballots-from-suspected-noncitizens-risk-prosecution-u-s-warns/article_7c12415b-05cd-544f-a734-b3f2bd992bb3.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wxii12.com/article/ilhan-omar-attorneys-return-property-seized/74165254",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.933thedrive.com/2026/10/16/trump-threatens-california-officials-with-imprisonment-over-stance-on-mail-ballots/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.afghanistannews.net/news/279380386/relief-for-india-as-trump-waives-sanctions-related-to-russian-fuel-purchase-under-lindsey-graham-act",
+  "article": {
+   "about": [],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://bdnews24.com/world/m2gkbsynel",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.winnipegfreepress.com/world/2026/10/16/ap-news-in-brief-at-1204-a-m-edt-1014",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.bryantimes.com/news/interest-rates-still-good-for-county-revenue/article_3198c30e-243c-452a-8ff2-fe02bab4f1cc.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://newsroomamerica.com/?before=115616",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.gazettextra.com/news/nation_world/ap-news-in-brief-at-12-04-a-m-edt/article_be39b930-9a42-52cd-a2e0-6dd757b45988.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://flaglerlive.com/heckle-desantis/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://wgme.com/news/local/maine-representatives-call-on-congress-for-more-liheap-money",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://aninews.in/news/world/us/relief-for-india-as-trump-waives-sanctions-related-to-russian-fuel-purchase-under-lindsey-graham-act16020261017082702/",
+  "article": {
+   "about": [],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://independentaustralia.net/politics/politics-display/trumps-weapons-in-space-violate-international-law,21684",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.jpost.com/american-politics/article-911949",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.tickerreport.com/banking-finance/13623207/ally-financial-nyseally-lendingclub-nasdaqhapn-head-to-head-review.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.aol.com/articles/trump-threatens-california-officials-imprisonment-021513000.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.dw.com/en/trump-puts-new-russia-sanctions-on-hold/a-79685002",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.greeleytribune.com/2026/10/16/election-2026-california-noncitizen-voting/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://timesofindia.indiatimes.com/world/us/when-in-doubt-say-mohammad-trump-jokes-about-common-middle-east-name-while-taking-aim-at-iran/articleshow/135006022.cms",
+  "article": {
+   "about": [
+    "IR",
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.businesstoday.in/markets/story/brent-hits-110-as-hormuz-ship-attacks-houthi-strikes-on-saudi-trigger-oil-rally-562207-2026-10-17",
+  "article": {
+   "about": [
+    "SA",
+    "chk:hormuz"
+   ],
+   "places": [
+    "IR",
+    "SA",
+    "chk:hormuz"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint",
+    "place"
+   ]
+  }
+ },
+ {
+  "url": "https://theworldlink.com/news/state-extends-condolences-offers-supply-following-bend-school-shooting/article_4808475d-ca4c-50e7-9cd1-c31973988f95.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.hawaiipublicradio.org/local-news/2026-10-16/honolulu-ballot-question-weighs-hpds-role-in-immigration-enforcement",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wbaltv.com/article/family-expenses-are-up-hundreds-of-dollars-a-month-since-2025-see-how-inflation-is-affecting-your-budget/74164097",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.santafenewmexican.com/news/business/coming-sunday-and-monday/article_84bd5396-11c6-441d-818f-2cd94e7cbb3d.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.inforum.com/opinion/columns/plain-talk-north-dakota-agriculture-commissioner-debate-doug-goehring-vs-vern-thompson",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wlrn.org/immigration/2026-10-16/a-traffic-stop-a-family-torn-apart-and-a-flight-to-guatemala",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.presstelegram.com/2026/10/16/coalition-moves-to-intervene-in-doj-lawsuit-against-california-and-la-county/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wfsb.com/2026/10/17/technical-discussion-freeze-likely-early-sunday-morning/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wxii12.com/article/family-expenses-are-up-hundreds-of-dollars-a-month-since-2025-see-how-inflation-is-affecting-your-budget/74164097",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.grandrapidsmn.com/u-s-population-reaches-milestone-with-local-birth/article_01286a17-ec5a-4bff-982c-83e22f17a70a.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.gdnonline.com:443/Details/1409967",
+  "article": {
+   "about": [
+    "BH",
+    "SA"
+   ],
+   "places": [
+    "BH",
+    "SA",
+    "YE"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wcax.com/2026/10/16/commuters-tourists-face-daily-closures-iconic-covered-bridge/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.lankanewspapers.com/2026/10/16/police-block-tamil-council-members-from-entering-thaiyiddy-buddhist-temple-in-northern-sri-lanka",
+  "article": {
+   "about": [
+    "LK"
+   ],
+   "places": [
+    "LK"
+   ],
+   "in_title": true,
+   "rules": [
+    "home"
+   ]
+  }
+ },
+ {
+  "url": "https://www.amren.com/news/2026/10/bill-allowing-victims-to-sue-judges-others-who-let-illegals-run-wild-is-quietly-advancing-in-congress/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.spokesman.com/stories/2026/oct/16/seize-crew-then-blow-up-boat-us-shifts-tactics-in-/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.pasadenastarnews.com/2026/10/16/election-2026-pasadenas-fire-department-turns-to-voters-for-major-funding-but-critics-balk-at-one-more-tax/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.pymnts.com/cryptocurrency/2026/stablecoins-take-aim-cash-locked-prefunding/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.newscenter1.tv/news/south-dakota/local-and-legislative-elections-to-watch-this-november",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://wcyb.com/news/nation-world/byron-donalds-pitches-common-sense-to-voters-touts-agenda-in-florida-governor-bid-conservative-david-jolly",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.13abc.com/2026/10/16/findlay-breaks-ground-major-flood-project-after-2007-disaster/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://gazette.com/2026/10/16/no-kings-4-focusing-on-ballot-questions-data-center-moratorium/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.breitbart.com/politics/2026/10/15/ca-ag-bonta-ice-enforcement-at-courthouses-violates-the-law/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://mymotherlode.com/news/national/11227915/ice-pursuit-in-houston-that-broke-a-mans-leg-targeted-a-suspect-who-died-years-ago-family-says.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://newschannel9.com/news/nation-world/inflations-next-wave-could-be-building-as-energy-costs-spread-through-economy",
+  "article": {
+   "about": [],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.sdjewishworld.com/2026/10/16/noah-the-film-is-a-dark-midrash-on-the-early-biblical-book/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.theepochtimes.com/world/iran-backed-groups-sending-money-to-irgc-amid-economic-pressure-us-says-6105103",
+  "article": {
+   "about": [
+    "IR"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.humaneworld.org/en/all-animals/farm-animals-and-climate-change",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.winnipegfreepress.com/world/2026/10/16/california-officials-who-process-ballots-from-suspected-noncitizens-risk-prosecution-us-warns",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://kcby.com/news/nation-world/byron-donalds-pitches-common-sense-to-voters-touts-agenda-in-florida-governor-bid-conservative-david-jolly",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.clickondetroit.com/news/politics/2026/10/16/california-officials-who-process-ballots-from-suspected-noncitizens-risk-prosecution-us-warns/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.breitbart.com/clips/2026/10/16/cnns-stelter-trump-is-trying-to-push-the-press-out/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.mississauga.com/news/ontario-gas-price-prediction-for-oct-17-18/article_21d3dd36-2e21-5676-9209-f368dd77c1e1.html",
+  "article": {
+   "about": [
+    "IR"
+   ],
+   "places": [
+    "IR"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://abc7ny.com/post/ny-governors-race-hochul-blakeman-clash-trump/19944934/",
+  "article": {
+   "about": [
+    "IR",
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.kenyastar.com/news/279379868/microsoft-president-warns-trump-h-1b-green-card-crackdown-could-drive-tech-talent-out-of-us",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.stripes.com/branches/air_force/2026-10-16/reentry-vehicle-sentinel-icbm-test-23175743.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.mainlinemedianews.com/2026/10/16/ice-pursuit-houston-broken-leg/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://newsroomamerica.com/?before=115608",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.orlandosentinel.com/2026/10/16/could-what-happened-to-christa-pike-happen-in-florida/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.fingerlakes1.com/2026/10/16/riley-presses-hhs-to-release-heating-aid-by-nov-1/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.orlandosentinel.com/2026/10/16/coast-guard-rescues-15-people-from-sea-off-ensenada-with-more-victims-reportedly-still-in-water/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.trinidadtimes.com/news/279379868/microsoft-president-warns-trump-h-1b-green-card-crackdown-could-drive-tech-talent-out-of-us",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.k991fm.com/entertainment/sean-diddy-combs-transferred-new-prison-pennsylvania-sources/YBYJ7R544M6NJCF5RFJTERN6DU/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.sbs.com.au/news/article/donald-trumps-new-press-secretary-katie-zacharia-out-after-less-than-week/qpe0t1e18",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://wgxa.tv/news/nation-world/marjorie-taylor-greene-says-trump-admin-pretending-to-prepare-to-deport-rep-ilhan-omar-inflation-iran-epstein-files-doj-us-citizenship",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.ft.lk/business/Chrysalis-marks-decade-of-catalysing-inclusive-change-across-Sri-Lanka/34-798766",
+  "article": {
+   "about": [
+    "LK"
+   ],
+   "places": [
+    "LK"
+   ],
+   "in_title": true,
+   "rules": [
+    "home"
+   ]
+  }
+ },
+ {
+  "url": "https://www.twincities.com/2026/10/16/ice-pursuit-houston-broken-leg/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.ft.lk/business/BRISL-to-host-undergraduate-seminar-on-Belt-and-Road-Initiative-in-Colombo/34-798780",
+  "article": {
+   "about": [
+    "LK"
+   ],
+   "places": [
+    "LK"
+   ],
+   "in_title": true,
+   "rules": [
+    "home"
+   ]
+  }
+ },
+ {
+  "url": "https://www.bostonglobe.com/2026/10/15/business/homeownership-drifts-further-out-reach-rates-rise/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://carbuzz.com/phev-phase-out-as-erev-tech-grows-in-popularity/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.iraqsun.com/news/279379819/saudi-led-coalition-claims-to-intercept-ballistic-missile-targeting-yanbu-two-cruise-missiles-over-red-sea",
+  "article": {
+   "about": [
+    "SA",
+    "sea:red-sea"
+   ],
+   "places": [
+    "SA",
+    "YE",
+    "sea:red-sea"
+   ],
+   "in_title": true,
+   "rules": [
+    "place"
+   ]
+  }
+ },
+ {
+  "url": "https://okcfox.com/news/nation-world/byron-donalds-pitches-common-sense-to-voters-touts-agenda-in-florida-governor-bid-conservative-david-jolly",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.themarketsdaily.com/2026/10/16/geopark-ltd-nysegprk-stock-short-interest-report-for-september.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://radio.foxnews.com/2026/10/16/are-they-going-to-harm-us-or-help-us-jonathan-fahey-on-immigration/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://lasvegassun.com/news/2026/oct/16/ice-pursuit-in-houston-that-broke-a-mans-leg-targe/",
+  "article": null
+ },
+ {
+  "url": "https://www.wboc.com/news/national/ice-pursuit-in-houston-that-broke-a-mans-leg-targeted-a-suspect-who-died-years/article_6853eac9-b366-5135-abd3-bd4cb8d0743e.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.presstelegram.com/2026/10/16/los-angeles-countys-sales-tax-addiction-is-getting-out-of-control/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://riverheadlocal.com/2026/10/16/at-civic-forum-halpin-and-rothwell-lay-out-competing-visions-for-riverhead/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wmal.com/2026/10/16/arthur-purves-and-his-run-for-congress-in-va-11/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.rttnews.com/story.aspx?Id=3699865",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://bakersfieldnow.com/news/nation-world/why-home-prices-arent-falling-despite-a-growing-surplus-of-sellers",
+  "article": {
+   "about": [
+    "IR",
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://kvpiradio.com/entertainment-news/168d29a6ab2fef517effbcb7af5f43e8",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.sitkasentinel.com/stories/ice-pursuit-in-houston-that-broke-a-mans-leg-targeted-a-suspect-who-died-years-ago-family-says,179230",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://newsroomamerica.com/?before=115551",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.clevelandjewishnews.com/jns/iran-using-asymmetric-warfare-to-spread-jew-hatred-in-us-to-sow-division-report-says/article_47a48710-15c5-5409-b261-5c1b2868eb3b.html",
+  "article": {
+   "about": [
+    "IR"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.outerbanksvoice.com/2026/10/16/first-sergeant-alvis-clyde-joyner-jr/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.dglobe.com/news/local/minnesota-house-district-21a-candidates-discuss-agriculture-child-care-and-rural-services",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://investinglive.com/commodities/oil-prices-surge-higher-into-the-weekend/",
+  "article": {
+   "about": [
+    "IR"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.aol.com/articles/government-killed-unlimited-grad-school-185633000.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.prnewswire.com/news-releases/property-management-expert-amy-reynolds-explains-rental-income-strategies-in-hellonation-302908517.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://english.pravda.ru/news/world/170160-us-employee-financial-security-drop-skipping-care/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.npr.org/transcripts/nx-s1-5974213",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://newsroomamerica.com/a/4Ir3IBJ8DyQzwBPfxxLbGdVmW4r/governor_spanberger_says_september_revenues_rose_11_5_percent_and_first_quarter_collections_grew_8_0_percent_running_3_2_percent_ahead_of_forecast_despite_national_economic_uncertainty.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://abc7ny.com/post/us-coast-guard-rescues-least-16-is-searching-more-water-off-mexicos-baja/19944715/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.ksmu.org/show/informed-voter-coalition/2026-10-16/missouri-house-district-132",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://pjmedia.com/tim-o-brien/2026/10/16/the-lefts-choreographed-lifelong-republican-demoralization-campaign-is-underway-n4958372",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.kten.com/ice-pursuit-in-houston-that-broke-a-mans-leg-targeted-a-suspect-who-died-years/article_27474e63-59a5-58b2-a251-c763942249f1.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.advocateanddemocrat.com/news/national/article_61bd4431-54b8-5c60-8d69-f786fd595f78.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.tribune242.com/news/2026/oct/16/mitchell-calls-for-less-ceremony-more-dialogue-in-us-caribbean-relations/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://townhall.com/news/dmitri-bolt/2026/10/16/the-federal-minimum-wage-has-been-repealed-well-kind-of-n2684809",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wtae.com/article/press-secretary-katie-zacharia-defends-legal-background/74149357",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.tickerreport.com/banking-finance/13622674/united-states-brent-oil-fund-nysearcabno-reaches-new-52-week-high-heres-why.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.clickondetroit.com/news/national/2026/10/16/us-coast-guard-rescues-at-least-16-and-is-searching-for-more-in-the-water-off-mexicos-baja-coast/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.theboneonline.com/news/survey-finds-77-us/4FFXKMAD4Q3HJJMR7IE6YKIS2U/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://nj1015.com/police-lieutenant-guilty-misconduct-charges/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.hot105fm.com/news/survey-finds-77-us/4FFXKMAD4Q3HJJMR7IE6YKIS2U/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.rawstory.com/donald-trump-corruption-2678096700/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://freebeacon.com/democrats/troy-jackson-discloses-campaign-donations-from-billionaires-two-days-after-saying-theres-no-billionaires-funding-me/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://gizmodo.com/stanford-just-figured-out-how-to-lead-dying-coral-reefs-to-a-fast-and-full-recovery-2000827001",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.newscentralasia.net/2026/10/16/uzbekistan-and-the-united-states-the-economics-of-mutual-interest/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://wondradio.com/abc-entertainment/21294b8f171f1b3f1780d1bf893d8479",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.aol.com/articles/truist-tfc-q3-2026-earnings-172946000.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://wkjc.com/entertainment/2bbf7c2164277744151b19ab29d04c3b",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://107jamz.com/ixp/149/p/cheapest-gas-prices-lake-charles-swla/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://urbanmilwaukee.com/2026/10/16/elections-commission-says-federal-agents-should-not-be-at-polling-places/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wdbo.com/news/national/us-coast-guard-says/DMM3VJYDUA3GRMF5CL3I6VMSOM/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://790waeb.iheart.com/content/2026-10-16-super-el-nio-set-to-reshape-2026-2027-us-winter-patterns/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://reason.com/2026/10/16/musks-meddling/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wbkb11.com/news/money/millennials-in-this-state-are-increasingly-becoming-homeowners-here-s-how-some-of-them-achieved/article_a89fbddd-0798-5662-893e-828771edd9b3.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://politicalwire.com/2026/10/16/trump-has-failed-to-listen-to-voters-on-inflation/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.ocregister.com/2026/10/16/in-californias-49th-congressional-district-its-a-contest-between-armen-kurdian-and-rep-mike-levin/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://whoradio.iheart.com/content/2026-10-16-super-el-nio-set-to-reshape-2026-2027-us-winter-patterns/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.middleeaststar.com/news/279378534/explainer-will-washington-pull-the-trigger-on-houthis",
+  "article": {
+   "about": [
+    "SA"
+   ],
+   "places": [
+    "IR",
+    "KW",
+    "SA",
+    "US",
+    "YE"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.latimes.com/delos/story/2026-10-16/aida-rodriguez-new-indie-movie-hurricane-seasons-puerto-rico-newport-beach-film-festival",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.justsecurity.org/161058/early-edition-october-16-2026/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "SA",
+    "US",
+    "YE"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.aol.com/articles/democrats-made-corruption-key-midterm-145959000.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://thefrontierpost.com/qatar-announces-massive-solar-plant-project-in-lebanon/",
+  "article": {
+   "about": [
+    "QA"
+   ],
+   "places": [
+    "QA",
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://wtkg.iheart.com/content/2026-10-16-super-el-nio-set-to-reshape-2026-2027-us-winter-patterns/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.powerorlando.com/news/survey-finds-77-us/4FFXKMAD4Q3HJJMR7IE6YKIS2U/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.themarketsdaily.com/2026/10/16/royal-bank-of-canada-issues-pessimistic-forecast-for-the-pnc-financial-services-group-nysepnc-stock-price.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.kcrg.com/2026/10/16/31-years-after-homicide-black-hawk-county-authorities-make-arrest/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wral.com/news/ap/da8c3-qatar-pledges-a-lifeline-for-lebanon-s-economy-power-grid-and-reconstruction-in-the-south/",
+  "article": {
+   "about": [
+    "QA"
+   ],
+   "places": [
+    "IR",
+    "QA",
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://wham1180.iheart.com/content/2026-10-16-super-el-nio-set-to-reshape-2026-2027-us-winter-patterns/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.stcatharinesstandard.ca/business/qatar-pledges-a-lifeline-for-lebanon-s-economy-power-grid-and-reconstruction-in-the-south/article_abede043-52a1-56c0-9113-368f5248b68d.html",
+  "article": {
+   "about": [
+    "QA"
+   ],
+   "places": [
+    "IR",
+    "QA",
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wxii12.com/article/press-secretary-katie-zacharia-defends-legal-background/74149357",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://newsroomamerica.com/tag/gemini",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.thegazette.com/news/elections/candidates/president-trump-to-rally-in-sioux-city-thursday/article_498aa17f-4a56-482b-86e2-c4ff73f5bc44.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.dallasobserver.com/news/educator-misconduct-reports-triple-since-new-texas-reporting-requirements-took-effect-40723794/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wlwt.com/article/press-secretary-katie-zacharia-defends-legal-background/74149357",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.mtairynews.com/ap/washington/new-medicare-season-begins-shifts-to-arrive-in-2027/article_25f17c37-ac74-566b-aadd-6ada341d753e.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://1430kasi.iheart.com/content/2026-10-16-super-el-nio-set-to-reshape-2026-2027-us-winter-patterns/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://aa.com.tr/en/us-israel-iran-war/irans-navy-reports-oil-tanker-fire-in-gulf-of-oman/4091077",
+  "article": {
+   "about": [
+    "IR",
+    "OM"
+   ],
+   "places": [
+    "IR",
+    "OM"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.ky3.com/2026/10/16/las-vegas-officials-identify-homicide-victim-whose-body-was-found-barrel-lake-mead-arkansas-man/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.fool.com/earnings/call-transcripts/2026/10/16/equity-bancshares-eqbk-q3-2026-earnings-call-transcript/?source=iedfolrf0000001",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.sanantoniopost.com/news/279378534/explainer-will-washington-pull-the-trigger-on-houthis",
+  "article": {
+   "about": [
+    "SA"
+   ],
+   "places": [
+    "IR",
+    "KW",
+    "SA",
+    "US",
+    "YE"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.mymagic949.com/news/survey-finds-77-us/4FFXKMAD4Q3HJJMR7IE6YKIS2U/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.fortmorgantimes.com/2026/10/16/new-england-fall-foliage/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.haitisun.com/news/279374411/us-inflation-heats-up-as-gasoline-prices-surge-in-september",
+  "article": {
+   "about": [],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.gpb.org/news/2026/10/15/changes-preservation-act-could-threaten-georgias-historic-sites",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wvgazettemail.com/opinion/columnists/joseph-wyatt-the-desperation-express-departs-the-station-opinion/article_8884ac67-b5c4-4112-8d2b-7aca98f8aeba.html",
+  "article": {
+   "about": [],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.dailymail.com/sciencetech/article-16214593/mount-st-helens-ash-warnings-washington.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.ketv.com/article/press-secretary-katie-zacharia-defends-legal-background/74149357",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://arynews.tv/tri-series-offers-chance-to-build-pakistans-world-cup-combinations-says-fakhar",
+  "article": {
+   "about": [
+    "LK"
+   ],
+   "places": [
+    "LK"
+   ],
+   "in_title": false,
+   "rules": [
+    "home"
+   ]
+  }
+ },
+ {
+  "url": "https://globalnews.ca/news/12105128/iea-diesel-barrels/",
+  "article": {
+   "about": [],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.latimes.com/world-nation/story/2026-10-16/qatar-pledges-lifeline-for-lebanons-economy-power-grid-reconstruction-in-south",
+  "article": {
+   "about": [
+    "QA"
+   ],
+   "places": [
+    "IR",
+    "QA",
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.newhavenindependent.org/2026/10/16/aclu-plan-your-vote/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.mcall.com/2026/10/16/stock-market/",
+  "article": {
+   "about": [
+    "IR"
+   ],
+   "places": [
+    "IR"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://nebraskapublicmedia.org/en/news/news-articles/nebraska-kids-whose-parents-are-deported-could-face-decades-of-trauma-experts-say/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.timescall.com/2026/10/16/joe-neguse-kelley-dennison-colorado-2nd-district-election/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.actionnewsjax.com/weather/talking-tropics-wmike-strong-low-pressure-form-western-atlantic/EKNMDXPTFBEXLAVQTQ7RWTLXXA/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.channelnewsasia.com/visual-stories/containers-float-sea-after-strikes-sink-singapore-flagged-vessel-near-strait-hormuz-6466366?ref=cna-homepage-singapore_91902672-2309-4431-8604-3f7b0f585505&cid=91902672-2309-4431-8604-3f7b0f585505&pos=0",
+  "article": {
+   "about": [
+    "chk:hormuz"
+   ],
+   "places": [
+    "chk:hormuz"
+   ],
+   "in_title": true,
+   "rules": [
+    "place"
+   ]
+  }
+ },
+ {
+  "url": "https://coastaldigest.com/iran-captures-cutting-edge-us-militarys-most-modern-submersible-in-hormuz/",
+  "article": {
+   "about": [
+    "IR",
+    "chk:hormuz"
+   ],
+   "places": [
+    "IR",
+    "US",
+    "chk:hormuz"
+   ],
+   "in_title": true,
+   "rules": [
+    "place"
+   ]
+  }
+ },
+ {
+  "url": "https://www.juniorminingnetwork.com/junior-miner-news/press-releases/1271-tsx-venture/bva/213025-bravada-gold-files-pea-for-wind-mountain-gold-silver-project.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.hometownregister.com/news/national/belonging-and-belief-why-evangelical-churches-draw-many-migrants-in-the-us/article_6ee824d4-b270-55ac-940f-edb19c7237ea.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.averyjournal.com/news/national/belonging-and-belief-why-evangelical-churches-draw-many-migrants-in-the-us/article_0f656e50-c857-5f6c-9a6e-d90ffa375a95.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.orlandosentinel.com/2026/10/16/guest-commentary-floridas-insurance-market-is-recovering-a-state-takeover-could-undo-it/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.nbcdfw.com/entertainment/entertainment-news/love-is-blind-boston-recap-who-gets-engaged-season-11/4091827/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://peakoil.com/publicpolicy/iea-agrees-to-release-of-outstanding-100mm-oil-barrels",
+  "article": null
+ },
+ {
+  "url": "https://beach951.com/abc-national-news/35d1795a741ca45267d5e796803e4494",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "place"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wgauradio.com/news/politics/latest-trump-will/YXR7EAXMEY5A7DVUTFGUNF2AVE/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.singaporestar.com/news/279374411/us-inflation-heats-up-as-gasoline-prices-surge-in-september",
+  "article": {
+   "about": [],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://beach951.com/abc-national-news/89499f9991aa1815282c08eed737f1a7",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "place"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wmur.com/article/president-trump-campaign-18-days-until-midterms/74154366",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://icsf.net/newss/escalating-conflict-in-yemen-drives-mass-coastal-displacement-and-threatens-survival-of-fishing-communities/",
+  "article": {
+   "about": [
+    "YE"
+   ],
+   "places": [
+    "YE"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://krcrtv.com/news/nation-world/kristi-noem-no-longer-serving-as-special-envoy-trump-shield-of-the-americas-former-homeland-security-secretary-critical-minerals-politics-crime-narcotics-western-hemisphere-tommy-piggott",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.fox26houston.com/weather/houston-weather-friday-october-16-2026",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://colombogazette.com/2026/10/16/sri-lanka-wins-visitors-choice-award-for-leading-wellness-destination-at-sata-2026",
+  "article": {
+   "about": [
+    "LK"
+   ],
+   "places": [
+    "LK"
+   ],
+   "in_title": true,
+   "rules": [
+    "home"
+   ]
+  }
+ },
+ {
+  "url": "https://theconversation.com/americans-want-electric-cars-they-just-cant-find-them-293901",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.sandiegouniontribune.com/2026/10/16/shadow-surge-ice-arrests/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://lancasteronline.com/business/restaurant_inspections/pinkish-orange-slime-in-ice-machine-lancaster-county-restaurant-inspections-oct-16-2026/article_544e2980-6fbb-44e8-a377-18fb9eac02cf.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.japanherald.com/news/279374411/us-inflation-heats-up-as-gasoline-prices-surge-in-september",
+  "article": {
+   "about": [],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wxpr.org/energy-environment/2026-10-16/this-years-winter-outlook-is-looking-similar-to-the-lost-winter-of-23-24",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.vietnamtribune.com/news/279374411/us-inflation-heats-up-as-gasoline-prices-surge-in-september",
+  "article": {
+   "about": [],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://news.wfsu.org/wfsu-local-news/2026-10-16/florida-backs-post-isaias-tourism-marketing-for-the-panhandle",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.businessinsider.com/microsoft-president-pushes-back-trump-immigration-crackdown-ai-talent-visas-2026-10",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://turnto10.com/news/nation-world/kristi-noem-no-longer-serving-as-special-envoy-trump-shield-of-the-americas-former-homeland-security-secretary-critical-minerals-politics-crime-narcotics-western-hemisphere-tommy-piggott",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wxii12.com/article/president-trump-campaign-18-days-until-midterms/74154366",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.neworleanssun.com/news/279378736/uae-strengthens-global-financial-partnerships-wins-praise-for-financial-resilience-at-imf-world-bank-meetings",
+  "article": {
+   "about": [
+    "AE"
+   ],
+   "places": [
+    "AE"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://ktxs.com/news/nation-world/kristi-noem-no-longer-serving-as-special-envoy-trump-shield-of-the-americas-former-homeland-security-secretary-critical-minerals-politics-crime-narcotics-western-hemisphere-tommy-piggott",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://visionmp.com/politics/bcci-tightens-team-india/",
+  "article": {
+   "about": [
+    "LK"
+   ],
+   "places": [
+    "LK"
+   ],
+   "in_title": false,
+   "rules": [
+    "home"
+   ]
+  }
+ },
+ {
+  "url": "https://www.dailymirror.lk/business/Zydus-and-Sunshine-plan-US-20mn-pharmaceutical-plant-in-Horana/215-352663",
+  "article": {
+   "about": [
+    "LK"
+   ],
+   "places": [
+    "LK",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "home"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wesh.com/article/president-trump-campaign-18-days-until-midterms/74154366",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.thenationalnews.com/news/uae/2026/10/16/robert-pether-detained-in-iraq-former-dubai-resident/",
+  "article": {
+   "about": [
+    "AE"
+   ],
+   "places": [
+    "AE"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.cruiselawnews.com/2018/10/articles/pollution-environmental-damage/norway-uses-drones-hunt-sulphur-sinners/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wkar.org/election-2026/2026-10-16/republican-john-james-and-democrat-jocelyn-benson-running-for-governor-debate-for-second-time",
+  "article": {
+   "about": [],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.kwit.org/harvest-public-media/2026-10-16/hay-drought-pests-fuel-livestock",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://abc11.com/story/thanksgiving-food-forecast-prices-going-are-bright-spots/19943254/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.cbsnews.com/news/body-barrel-lake-mead-identified-homicide-victim-edward-jackson/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://wkml.com/2026/10/16/this-day-in-country-history-october-16-2/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://247wallst.com/companies/mtb/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.resilience.org/stories/2026-10-16/trumps-pronatalist-policy-puts-gdp-growth-before-reproductive-freedom/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.finanznachrichten.de/nachrichten-2026-10/69856728-datameds-ai-inc-datameds-applauds-fda-s-proposed-interim-access-policy-for-compounding-using-certain-peptides-and-provides-corexa-health-s-peptides-200.htm",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.dailypolitical.com/2026/10/16/bank-of-america-corporation-bac-stock-weaver-capital-management-llc-boosts-position.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.businessinsider.com/middle-income-americans-are-feeling-the-squeeze-2026-10",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://fortune.com/2026/10/16/china-chip-export-controls-failed-rakesh-kumar/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://chattooga1180.com/major-i-285-closure-begins-tonight-in-metro-atlanta/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://crisismagazine.com/opinion/catholics-should-condemn-death-on-display",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://economictimes.indiatimes.com/nri/latest-updates/microsoft-president-warns-us-green-card-crackdown-could-break-the-tech-sector/articleshow/134987776.cms",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.ironmountaindailynews.com/news/local-news/2026/10/dnr-to-track-fish-stocking-using-23andme-style-gene-testing/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.dailypolitical.com/2026/10/16/varma-mutual-pension-insurance-co-acquires-new-shares-in-microsoft-corporation-msft.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.presstv.co.uk/Detail/2026/10/16/778417/Army-chief--Strait-of-Hormuz-stays-closed-until-enemy-respects-Iranian-nation%E2%80%99s-rights%20class=column-beyond-headlines-h-p",
+  "article": {
+   "about": [
+    "IR",
+    "chk:hormuz"
+   ],
+   "places": [
+    "IR",
+    "OM",
+    "US",
+    "chk:hormuz"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint",
+    "place"
+   ]
+  }
+ },
+ {
+  "url": "https://www.yumasun.com/opinion/guest-column-medicare-s-bad-incentives-are-costing-taxpayers-billions/article_60ee6da3-96e9-4a74-8abe-2e4480047c6a.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.marshallindependent.com/news/local-news/2026/10/brad-hennen/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.livelaw.in/top-stories/is-valorem-court-fee-without-cap-valid-supreme-court-to-examine-kerala-court-fee-hike-on-khcaa-plea-554985",
+  "article": {
+   "about": [
+    "IN-KL"
+   ],
+   "places": [
+    "IN-KL"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.dailymirror.lk/business-news/Zydus-and-Sunshine-plan-US-20mn-pharmaceutical-plant-in-Horana/273-352663",
+  "article": {
+   "about": [
+    "LK"
+   ],
+   "places": [
+    "LK",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "home"
+   ]
+  }
+ },
+ {
+  "url": "https://www.fox9.com/news/ilhan-omars-home-raided-feds-reportedly-seek-strip-citizenship-deport",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.investegate.co.uk/announcement/rns/brave-bison-group--bbsn/acceptance-level-update/9825945",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://ianslive.in/microsofts-brad-smith-hits-back-at-vance-over-h-1b-green-card-curbs--20261016072403",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://chicagomaroon.com/54069/news/graduate-student-union-calls-for-university-to-protect-international-students/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.dailyfreeman.com/2026/10/16/cal-thomas-what-happened-to-initiative/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.kelownadailycourier.ca/entertainment/national_entertainment/article_3faef940-06eb-58b2-a09d-e272c2aae3e1.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.sitkasentinel.com/stories/new-white-house-press-secretary-katie-zacharia-defends-her-legal-background-and-short-first,179042",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.tradersmagazine.com/xtra/nasdaq-completes-acquisition-of-level-markets/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://timesofindia.indiatimes.com/business/india-business/rupee-gains-20-paise-against-us-dollar-as-rbi-support-kicks-in-greenback-weakens/articleshow/134983035.cms",
+  "article": {
+   "about": [],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "actor"
+   ]
+  }
+ },
+ {
+  "url": "https://santamariatimes.com/ap/national/las-vegas-officials-identify-a-homicide-victim-whose-body-was-found-in-a-barrel-in/article_54bec60b-b6b8-5a61-804c-780858141255.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://wowo.com/public-defender-shortage-leaves-indigent-defendants-waiting-months-for-lawyers/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://kezj.com/ixp/96/p/interstate-84-flyover-ramp-construction/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://arizonadailyindependent.com/2026/10/15/arizona-supreme-court-grants-historic-approval-for-grand-canyon-universitys-new-college-of-law/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://english.news.cn/20261016/d29fc2ae2d904ca29fc703bc715c1fbe/c.html",
+  "article": {
+   "about": [
+    "IR",
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.theguardian.com/world/2026/oct/16/future-western-security-at-stake-yemen-civil-war-former-pm",
+  "article": {
+   "about": [
+    "YE"
+   ],
+   "places": [
+    "IR",
+    "SA",
+    "US",
+    "YE"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://nebraska.tv/news/nation-world/federal-probe-targets-rep-ilhan-omars-immigration-history-agents-raid-dc-home-citizenship-minnesota",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://kansascityhomes.com/listing/KS/Leawood/2305-120th-Terrace-66209/234782134",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.news9.com/national-politics-oklahoma/white-house-prepares-plans-to-use-weapon-dubbed-mother-of-all-bombs-on-iran-sources-say",
+  "article": {
+   "about": [
+    "IR"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://abc11.com/post/more-200-complaints-filed-north-carolina-gas-tax-holiday/19941927/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://fox11online.com/news/nation-world/federal-probe-targets-rep-ilhan-omars-immigration-history-agents-raid-dc-home-citizenship-minnesota",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.asiaone.com:443/world/new-white-house-press-secretary-katie-zacharia-defends-her-legal-background-and-short-first",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.catholicworldreport.com/2026/10/15/u-s-midterm-elections-spark-multiple-catholic-voting-exhortations-2/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wsbtv.com/news/local/early-voting-ramps-up-senate-candidates-make-pitch/3DRSDF57MVFXFBVDLUQSR5PMQU/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.hotelnewsresource.com/article143361.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.tsln.com/news/outside-circle-by-jan-swan-wood-for-the-oct-17-2026-edition-pigeon-fever-sdhsra-memberships-breakaway-bull-riding-practice-nfsr/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wflx.com/2026/10/15/policyholder-advocates-warn-florida-homeowners-insurance-challenges-after-hurricane-isaias/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wokv.com/news/politics/new-white-house/RMC3MMJQ24Y5HKWCETDXTYEQ5E/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wisbusiness.com/2026/nfib-wisconsin-new-nfib-survey-uncertainty-grows-and-optimism-fades-slightly-on-main-street-in-september/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.paloaltoonline.com/calmatters/2026/10/15/california-files-its-100th-lawsuit-against-trump-this-time-over-ice-at-courthouses/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.breitbart.com/clips/2026/10/15/ca-ag-bonta-ice-enforcement-at-courthouses-violates-the-law/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://nbcmontana.com/news/nation-world/federal-probe-targets-rep-ilhan-omars-immigration-history-agents-raid-dc-home-citizenship-minnesota",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://okcfox.com/news/nation-world/americans-see-too-much-economic-inequality-but-split-on-how-to-address-it",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.dailyliberal.com.au/story/9369667/two-ships-sink-near-hormuz-amid-surge-in-attacks/",
+  "article": {
+   "about": [
+    "IR",
+    "chk:hormuz"
+   ],
+   "places": [
+    "IR",
+    "US",
+    "chk:hormuz"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint",
+    "place"
+   ]
+  }
+ },
+ {
+  "url": "https://www.fox10phoenix.com/news/grand-canyon-flash-flood-relief-sba-opens-disaster-loans-small-businesses",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://ohsonline.com/articles/2026/10/15/cal-osha-proposes-212-thousand-and-500-dollars-in-penalties-following-fatal-tunnel-collapse.aspx",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.centralmaine.com/2026/10/15/heres-whats-on-the-ballot-in-waterville/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.presstelegram.com/2026/10/15/a-few-quick-tips-to-prepare-for-an-earthquake/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://editorials.voa.gov/a/no-safe-haven-for-cartel-del-noreste/8211722.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.eurasiareview.com/16102026-imf-us-cant-grow-its-way-out-of-1t-interest-bill/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.hellenicshippingnews.com/imf-warns-attacks-on-saudi-arabia-could-hurt-global-economy-after-strike-on-aramco-headquarters/",
+  "article": {
+   "about": [
+    "SA"
+   ],
+   "places": [
+    "IR",
+    "SA"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://ktul.com/news/nation-world/americans-see-too-much-economic-inequality-but-split-on-how-to-address-it",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "IR",
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://ktul.com/news/nation-world/federal-probe-targets-rep-ilhan-omars-immigration-history-agents-raid-dc-home-citizenship-minnesota",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://vtdigger.org/2026/10/15/expenses-for-eb-5-mop-up-total-14-million-as-judge-oks-1-million-more-in-fees/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.fox7austin.com/news/gov-abbott-requests-federal-disaster-tax-relief-texas-flood-victims",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.foxbusiness.com/politics/larry-kudlow-dont-count-gop-out-yet",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://highlandcountypress.com/headlines/report-accuses-ohio-based-grocery-giant-kroger-frequent-overpricing",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.npr.org/transcripts/nx-s1-6002922",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.kten.com/news/politics/trump-admin-files-long-shot-lawsuit-after-california-wouldn-t-open-a-thumb-drive-of/article_5381a8ae-7d19-51ca-b4a0-9c90c4bca665.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.amren.com/news/2026/10/two-men-in-ice-custody-were-riding-in-the-vehicle-that-struck-miguel-parra-hernandez-attorneys-say/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.hometownstation.com/santa-clarita-news/politics/santa-clarita-seniors-can-expect-a-3-7-increase-in-their-social-security-payments-in-january-614463",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.afghanistansun.com/news/279372387/us-european-watchdogs-intensify-scrutiny-of-ai-risks-at-banks",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.cbc.ca/music/joni-mitchell-news-painting-book-auction-9.7381677",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.miragenews.com/unsc-condemns-escalating-houthi-attacks-on-1761495/",
+  "article": {
+   "about": [
+    "SA"
+   ],
+   "places": [
+    "SA",
+    "YE"
+   ],
+   "in_title": true,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.wsoctv.com/news/millennials-this/A6K3AZD3KA6DRGM2BVVZV77ICA/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "http://www.hngnews.com/nation_world/ap-news-summary-at-7-44-p-m-edt/article_45699d0d-2ccd-5317-a00c-9dc65d330265.html",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://whyy.org/articles/brian-fitzpatrick-dave-sommers-turtle-trafficker-campaign-ads/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.nbcmiami.com/news/local/florida-amendment-3-what-a-yes-or-no-vote-would-mean/3873576/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.outdoorlife.com/survival/hunters-flipped-overboard-hurricane/",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ },
+ {
+  "url": "https://www.latimes.com/world-nation/story/2026-10-15/new-white-house-press-secretary-katie-zacharia-defends-her-legal-background-short-first-briefing",
+  "article": {
+   "about": [
+    "US"
+   ],
+   "places": [
+    "US"
+   ],
+   "in_title": false,
+   "rules": [
+    "footprint"
+   ]
+  }
+ }
+]

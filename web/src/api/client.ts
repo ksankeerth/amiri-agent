@@ -28,8 +28,9 @@ export class ApiError extends Error {
   }
 }
 
-// The signed-in person. IAP provides it in production; until then, one demo user.
-export const ME = "dilan@serendib.lk";
+// The signed-in person. IAP provides it in production; until then, one demo user, by name only (the server
+// stores the X-Amiri-Actor header as free text). Pages show actors through format.person, never an email.
+export const ME = "John";
 
 export async function api<T>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
   const headers = new Headers(init.headers);

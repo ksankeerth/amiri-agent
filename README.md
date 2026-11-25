@@ -35,11 +35,12 @@
 10. [APIs, contracts and the Metrics Spec](#apis-contracts-and-the-metrics-spec)
 11. [Google Cloud, end to end](#google-cloud-end-to-end)
 12. [Technical solutions](#technical-solutions)
-13. [Measured, not estimated](#measured-not-estimated)
-14. [What it costs to run](#what-it-costs-to-run)
-15. [Run it yourself](#run-it-yourself)
-16. [What comes next](#what-comes-next)
-17. [References](#references)
+13. [Region harnesses](#region-harnesses)
+14. [Measured, not estimated](#measured-not-estimated)
+15. [What it costs to run](#what-it-costs-to-run)
+16. [Run it yourself](#run-it-yourself)
+17. [What comes next](#what-comes-next)
+18. [References](#references)
 
 ---
 
@@ -225,6 +226,73 @@ The problems we hit running agents on serverless infrastructure, and how we solv
 | **Runaway cost** | One capped BigQuery query a run (`maximum_bytes_billed`), daily and monthly byte caps, *Check now* 5 a day, monitors at most hourly with 3 searches each, up to 10 live. |
 | **Trust** | People approve monitors and apply profile changes. Every step keeps its evidence and history. Alerts are acknowledged by name. |
 | **Repeatable demos without AI cost** | **Scenario Studio** records every agent answer from a live run and replays it in seconds, with no model calls. |
+
+## Region harnesses
+
+One codebase serves institutions in different regions. Every service runs a shared **base** (everything
+above), and an institution's home country can add a **region pack** on top of it. There is one pack so far:
+the **US** pack, version `us-1`.
+
+**How the region is chosen:** from the institution's home country, which every agent request already carries
+(`institution.country`). Each service has the same small resolver in `app/harness.py` (the server and the four
+agents each keep a copy). `region_for("US")` returns `"us"`; any other country returns `None`, meaning the base
+alone. Nothing new is stored, and no request or response changes. Investigation records the harness in its
+existing `tracks_version` (`builtin-v2.4+us-1`); Radar and the event monitor note it in their logs.
+
+**What the US pack holds:**
+
+| Service | Files | What it adds |
+|---|---|---|
+| Radar | [`agents/radar-agent/app/packs/us.json`](agents/radar-agent/app/packs/us.json) | Home news means the footprint's states and cities, not the whole country: their names in the title, a footprint state (GDELT `USTX`) three times in the locations, or a listed US outlet. Also a judging rule: skip elections and party politics. The rules are below. |
+| Investigation | [`agents/investigation-agent/app/packs/us_tracks.py`](agents/investigation-agent/app/packs/us_tracks.py) | Three impact rules: deposits drawn down in a hit sector, contractors' credit lines, private-credit lenders' lines |
+| Event monitor | [`agents/event-monitor-agent/app/packs/us.json`](agents/event-monitor-agent/app/packs/us.json) | Prefer US sources and regulators (Fed, FDIC, OCC, ERCOT); skip politics |
+| Setup | [`server/app/assistant/region_guides/us.txt`](server/app/assistant/region_guides/us.txt), sent in the context pack as `region_guide`, and the agent's copy | A US setup guide for every track, once the home country is the US. The agent says once that it is using it. |
+| Reference data | [`server/app/reference/`](server/app/reference) | Texas, California, Arizona, Utah and Nevada, six Texas cities and San Jose, the US regulators, and a `us` entry in `regions.json` |
+| Web | [`web/src/components/setupFlow.ts`](web/src/components/setupFlow.ts) | The setup chat's US starters |
+
+**Radar's US rules,** the same in the BigQuery query and in Python (a test replays both on real rows):
+- **Relevance.** A footprint name in the title, or a footprint state in the locations, counts as home news only
+  when the article is relevant: one of the pack's GKG themes (`relevance_themes`; a code ending in `_` is a
+  prefix) or one of its words in the cleaned title (`relevance_words`). An article tagged with an election or
+  party theme (`politics_themes`) needs a word: its themes alone don't make it relevant. A place named in the
+  title follows the same rule, so an actor's "Texas Senate race" gets no Texas.
+- **Cleaned titles.** Titles are matched after cleaning: HTML entities decoded (separators, apostrophes and
+  quotes, also in the query), spaces folded, and an outlet's name cut off either end ("… | FOX 4
+  Dallas-Fort Worth").
+- **Part states through aliases only.** A state the footprint covers only in part (the server marks it
+  "footprint (…, part)") counts only through the pack's aliases for it (Silicon Valley, San Jose, Bay Area…),
+  never by its own name or its mentions. Its papers and stations don't count either: outlets are listed by state,
+  and only a state covered in full brings its own. The national wires count for any US footprint.
+- **Whole-name actors.** An actor's short form that is also a common word is dropped (`actor_stoplist`: "Fed"
+  would match "Fed up"); the pack adds whole names instead ("Federal Reserve", "Fed's", "Dallas Fed", …).
+- **Outlets.** A listed paper counts on its own; a TV or radio station (`outlets_with_relevance`) only for a
+  relevant article, since stations also run national wire stories.
+
+**Known limits:** the US pack is tuned for Texas and Silicon Valley. A nationwide US bank, or a bank in a state
+with short names or names with a compass word (Ohio, Iowa, North Carolina), gets little home news by name.
+Recorded, not fixed.
+
+**Supported regions:** `SUPPORTED_REGION` is a comma list of `server/app/reference/regions.json` ids. The
+default is `japac`; `japac,us` lets one deployment take a Sri Lankan or a US bank. An empty value is the
+default, and an unknown id is ignored with a warning.
+
+**Countries without a pack** (Sri Lanka, Indonesia and everywhere else) get the base alone, exactly as before.
+Snapshot tests in every service (`test_snapshot_non_us.py`) pin their queries, impact rules, prompts and setup
+context. Another test fails if any migration or API contract changes.
+
+**Adding a pack:**
+1. Add the country to `PACKS` and the pack's version to `PACK_VERSIONS` in every `app/harness.py`.
+2. Add the pack's files beside the US ones. A pack only adds: it never edits or replaces the base's rules or
+   data.
+3. Where a service loads a pack by region (for example Investigation's `app/packs/__init__.py`), add the new one.
+4. Add its places to `server/app/reference/gazetteer.json` and copy the file to Radar exactly (a test checks
+   the copies match). Add its regulators, and a `regions.json` entry if its deployment sets `SUPPORTED_REGION`
+   to it.
+5. Write tests for the pack, and leave the snapshot tests as they are.
+
+**A US bank:** Austin Tech Bank, [`demo/austin-tech-bank/`](demo/austin-tech-bank/), on a deployment with `SUPPORTED_REGION=japac,us`,
+loaded with `python3 demo/load_bundle.py --file demo/austin-tech-bank/bundle.json`. A
+deployment holds one sample bank at a time.
 
 ## Measured, not estimated
 

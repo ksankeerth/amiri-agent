@@ -1,0 +1,1024 @@
+{
+  "bundle_version": "1.0",
+  "about": "Austin Tech Bank: a synthetic mid-size Austin bank, built from the public product mix of US technology lenders and Texas commercial banks. Book sizes are illustrative. Load once, on an empty platform.",
+  "institution": {
+    "institution_id": "austin-tech-bank",
+    "name": "Austin Tech Bank",
+    "short_name": "Austin Tech",
+    "institution_type": "bank",
+    "subtype": "commercial",
+    "home_country": "US",
+    "base_currency": "USD",
+    "time_zone": "America/Chicago",
+    "clearing_currencies": [
+      "USD"
+    ],
+    "governance_body": "Board Risk Committee",
+    "size_band": "mid",
+    "summary": "Synthetic mid-size bank in Austin, Texas, built from the public product mix of US technology lenders and Texas commercial banks: deposits from startups and venture funds, venture debt and capital-call lines, loans to data-center contractors, chip-industry suppliers and energy firms, and mortgages for tech employees, many written near Austin's 2022 price peak."
+  },
+  "sections": {
+    "footprint": [
+      {
+        "code": "US",
+        "role": "home",
+        "scope": "part",
+        "note": "Texas home market, plus a startup office in California."
+      },
+      {
+        "code": "US-TX",
+        "role": "branches",
+        "scope": "all",
+        "branch_count": 22,
+        "note": "Austin, Dallas-Fort Worth, Houston, San Antonio"
+      },
+      {
+        "code": "US-CA",
+        "role": "branches",
+        "scope": "part",
+        "branch_count": 2,
+        "note": "Startup and venture-fund office in San Jose"
+      }
+    ],
+    "watch-places": [
+      {
+        "name": "Silicon Valley",
+        "code": "city:san-jose",
+        "kind": "city",
+        "reason": "Where many startup clients' investors and peers are; funding news starts here"
+      },
+      {
+        "name": "Austin",
+        "code": "city:austin",
+        "kind": "city",
+        "reason": "Home market: startups, chip plants and data centers"
+      },
+      {
+        "name": "Dallas-Fort Worth",
+        "code": "city:dallas",
+        "kind": "city",
+        "reason": "Data-center construction clients"
+      },
+      {
+        "name": "Permian Basin",
+        "code": "city:midland",
+        "kind": "city",
+        "reason": "Energy-lending clients; power for Texas data centers"
+      }
+    ],
+    "segments": [
+      {
+        "id": "startups",
+        "label": "Venture-backed startups",
+        "kind": "business",
+        "note": "AI, software and hardware startups; deposits are mostly cash raised from investors.",
+        "places": [
+          "US-TX",
+          "US-CA",
+          "city:austin",
+          "city:san-jose"
+        ],
+        "income_sources": [
+          "business_income"
+        ],
+        "spec_mapping": [
+          {
+            "dimension": "size_band",
+            "value": "startup"
+          },
+          {
+            "dimension": "sector",
+            "value": "J"
+          }
+        ],
+        "share_of_customers_pct": 18
+      },
+      {
+        "id": "venture-funds",
+        "label": "Venture and private-credit funds",
+        "kind": "financial",
+        "note": "Funds that bank with us and draw capital-call lines.",
+        "places": [
+          "US-TX",
+          "US-CA",
+          "city:austin",
+          "city:san-jose"
+        ],
+        "spec_mapping": [
+          {
+            "dimension": "segment",
+            "value": "non_bank_financial"
+          },
+          {
+            "dimension": "sector",
+            "value": "K"
+          }
+        ],
+        "share_of_customers_pct": 2
+      },
+      {
+        "id": "dc-contractors",
+        "label": "Data-center contractors",
+        "kind": "business",
+        "note": "Electrical, mechanical and site contractors building data centers in Austin and Dallas-Fort Worth.",
+        "places": [
+          "US-TX",
+          "city:austin",
+          "city:dallas"
+        ],
+        "income_sources": [
+          "business_income"
+        ],
+        "spec_mapping": [
+          {
+            "dimension": "sector",
+            "value": "F"
+          },
+          {
+            "dimension": "sector_l2",
+            "value": "43"
+          }
+        ],
+        "share_of_customers_pct": 4
+      },
+      {
+        "id": "chip-suppliers",
+        "label": "Chip-industry suppliers",
+        "kind": "business",
+        "note": "Manufacturers and service firms supplying the Austin-area chip plants; heavy power users.",
+        "places": [
+          "US-TX",
+          "city:austin"
+        ],
+        "income_sources": [
+          "business_income"
+        ],
+        "spec_mapping": [
+          {
+            "dimension": "sector",
+            "value": "C"
+          },
+          {
+            "dimension": "sector_l2",
+            "value": "26"
+          }
+        ],
+        "share_of_customers_pct": 3
+      },
+      {
+        "id": "energy-firms",
+        "label": "Oil and gas firms",
+        "kind": "business",
+        "note": "Permian producers and oilfield-service companies.",
+        "places": [
+          "US-TX",
+          "city:midland",
+          "city:houston"
+        ],
+        "income_sources": [
+          "business_income"
+        ],
+        "spec_mapping": [
+          {
+            "dimension": "sector",
+            "value": "B"
+          },
+          {
+            "dimension": "sector_l2",
+            "value": "06"
+          }
+        ],
+        "share_of_customers_pct": 3
+      },
+      {
+        "id": "tech-employees",
+        "label": "Tech employees",
+        "kind": "individual",
+        "note": "Salaried staff of technology companies, many paid partly in shares.",
+        "places": [
+          "US-TX",
+          "US-CA",
+          "city:austin",
+          "city:san-jose"
+        ],
+        "income_sources": [
+          "salary"
+        ],
+        "spec_mapping": [
+          {
+            "dimension": "segment",
+            "value": "salaried"
+          },
+          {
+            "dimension": "employer_sector",
+            "value": "J"
+          }
+        ],
+        "share_of_customers_pct": 40
+      }
+    ],
+    "products": [
+      {
+        "id": "startup-deposits",
+        "name": "Startup Operating Accounts",
+        "category": "savings",
+        "product_type": "current_account",
+        "segments": [
+          "startups"
+        ],
+        "owner": "Technology banking",
+        "currencies": [
+          "USD"
+        ],
+        "book_size": {
+          "amount": 9200000000,
+          "currency": "USD"
+        },
+        "note": "The largest deposit book; balances fall when startups burn cash faster than they raise it."
+      },
+      {
+        "id": "fund-deposits",
+        "name": "Venture Fund Deposits",
+        "category": "savings",
+        "product_type": "current_account",
+        "segments": [
+          "venture-funds"
+        ],
+        "owner": "Fund banking",
+        "currencies": [
+          "USD"
+        ],
+        "book_size": {
+          "amount": 3800000000,
+          "currency": "USD"
+        }
+      },
+      {
+        "id": "employee-savings",
+        "name": "Tech Employee Savings",
+        "category": "savings",
+        "product_type": "savings_account",
+        "segments": [
+          "tech-employees"
+        ],
+        "owner": "Retail banking",
+        "currencies": [
+          "USD"
+        ],
+        "book_size": {
+          "amount": 2100000000,
+          "currency": "USD"
+        }
+      },
+      {
+        "id": "venture-debt",
+        "name": "Venture Debt and Startup Credit Lines",
+        "category": "business_loan",
+        "product_type": "working_capital",
+        "segments": [
+          "startups"
+        ],
+        "owner": "Technology banking",
+        "currencies": [
+          "USD"
+        ],
+        "book_size": {
+          "amount": 3400000000,
+          "currency": "USD"
+        }
+      },
+      {
+        "id": "capital-call-lines",
+        "name": "Capital-Call Lines",
+        "category": "business_loan",
+        "product_type": "working_capital",
+        "segments": [
+          "venture-funds"
+        ],
+        "owner": "Fund banking",
+        "currencies": [
+          "USD"
+        ],
+        "book_size": {
+          "amount": 4900000000,
+          "currency": "USD"
+        },
+        "note": "Short lines funds draw before their investors pay in."
+      },
+      {
+        "id": "dc-contractor-loans",
+        "name": "Data-Center Contractor Loans",
+        "category": "business_loan",
+        "product_type": "term_loan",
+        "segments": [
+          "dc-contractors"
+        ],
+        "owner": "Commercial banking",
+        "currencies": [
+          "USD"
+        ],
+        "book_size": {
+          "amount": 2200000000,
+          "currency": "USD"
+        }
+      },
+      {
+        "id": "dc-contractor-lines",
+        "name": "Data-Center Contractor Credit Lines",
+        "category": "business_loan",
+        "product_type": "working_capital",
+        "segments": [
+          "dc-contractors"
+        ],
+        "owner": "Commercial banking",
+        "currencies": [
+          "USD"
+        ],
+        "book_size": {
+          "amount": 900000000,
+          "currency": "USD"
+        },
+        "note": "Revolving lines contractors draw on while they wait to be paid; they draw harder when projects stall."
+      },
+      {
+        "id": "chip-supplier-lines",
+        "name": "Chip-Supplier Credit Lines",
+        "category": "business_loan",
+        "product_type": "working_capital",
+        "segments": [
+          "chip-suppliers"
+        ],
+        "owner": "Commercial banking",
+        "currencies": [
+          "USD"
+        ],
+        "book_size": {
+          "amount": 1500000000,
+          "currency": "USD"
+        }
+      },
+      {
+        "id": "energy-loans",
+        "name": "Energy Loans",
+        "category": "business_loan",
+        "product_type": "term_loan",
+        "segments": [
+          "energy-firms"
+        ],
+        "owner": "Energy lending",
+        "currencies": [
+          "USD"
+        ],
+        "book_size": {
+          "amount": 1800000000,
+          "currency": "USD"
+        }
+      },
+      {
+        "id": "employee-mortgages",
+        "name": "Founder and Employee Mortgages",
+        "category": "retail_loan",
+        "product_type": "housing_loan",
+        "segments": [
+          "tech-employees"
+        ],
+        "owner": "Retail banking",
+        "currencies": [
+          "USD"
+        ],
+        "book_size": {
+          "amount": 3000000000,
+          "currency": "USD"
+        },
+        "note": "Many written in 2021-22, near Austin's price peak; Austin home prices have since fallen, so a laid-off borrower often can't sell to clear the loan."
+      },
+      {
+        "id": "corporate-cards",
+        "name": "Startup Corporate Cards",
+        "category": "cards",
+        "product_type": "credit_card",
+        "segments": [
+          "startups"
+        ],
+        "owner": "Technology banking",
+        "currencies": [
+          "USD"
+        ],
+        "book_size": {
+          "amount": 400000000,
+          "currency": "USD"
+        }
+      },
+      {
+        "id": "founder-wealth",
+        "name": "Founder and Employee Investment Accounts",
+        "category": "wealth",
+        "product_type": "investment_funds",
+        "segments": [
+          "tech-employees"
+        ],
+        "owner": "Private banking",
+        "currencies": [
+          "USD"
+        ],
+        "book_size": {
+          "amount": 1600000000,
+          "currency": "USD"
+        },
+        "note": "Much of it is tech shares; when tech shares fall, clients redeem or move cash."
+      }
+    ],
+    "flows": [],
+    "regulators": [
+      {
+        "regulator_id": "us-fed",
+        "relation": "home",
+        "basis": "rule"
+      },
+      {
+        "regulator_id": "us-fdic",
+        "relation": "home",
+        "basis": "rule"
+      },
+      {
+        "regulator_id": "us-texas-dob",
+        "relation": "home",
+        "basis": "rule"
+      },
+      {
+        "regulator_id": "us-cfpb",
+        "relation": "home",
+        "basis": "rule"
+      },
+      {
+        "name": "Financial Crimes Enforcement Network",
+        "short": "FinCEN",
+        "country": "US",
+        "area": "aml",
+        "relation": "home"
+      },
+      {
+        "regulator_id": "sanctions-ofac",
+        "relation": "home",
+        "basis": "rule"
+      }
+    ],
+    "rivals": [],
+    "counterparties": [
+      {
+        "name": "Fedwire Funds Service",
+        "kind": "payment_scheme",
+        "places": [
+          "US"
+        ],
+        "importance": "critical"
+      },
+      {
+        "name": "ERCOT",
+        "kind": "other",
+        "places": [
+          "US-TX"
+        ],
+        "importance": "important",
+        "aliases": [
+          "Electric Reliability Council of Texas"
+        ],
+        "note": "Texas grid operator; listed so Radar listens for it."
+      }
+    ],
+    "risk-exposures": []
+  },
+  "series": [
+    {
+      "symbol": "QQQ",
+      "name": "Nasdaq-100 fund (startup funding mood)",
+      "places": [
+        "US",
+        "US-CA",
+        "US-TX"
+      ],
+      "theme": {
+        "theme": "markets",
+        "direction_up": "equity_up",
+        "direction_down": "equity_down"
+      }
+    },
+    {
+      "symbol": "UNG",
+      "name": "Natural gas fund (drives Texas power prices)",
+      "places": [
+        "US-TX"
+      ],
+      "theme": {
+        "theme": "prices",
+        "direction_up": "up",
+        "direction_down": "down",
+        "item": "electricity"
+      }
+    },
+    {
+      "symbol": "USO",
+      "name": "US oil fund (energy clients)",
+      "places": [
+        "US-TX"
+      ],
+      "theme": {
+        "theme": "commodities",
+        "direction_up": "up",
+        "direction_down": "down",
+        "item": "oil"
+      }
+    },
+    {
+      "symbol": "IEF",
+      "name": "7-10 year Treasury fund (rates: mortgages, deposit costs)",
+      "places": [
+        "US"
+      ],
+      "theme": {
+        "theme": "rates",
+        "direction_up": "down",
+        "direction_down": "up"
+      }
+    }
+  ],
+  "monitors": [
+    {
+      "status": "live",
+      "spec": {
+        "about": {
+          "name": "Tech layoffs at our customers' employers",
+          "owner": "Retail banking",
+          "check_frequency": 360,
+          "kind": "events",
+          "review_by": "2027-03-31"
+        },
+        "public": {
+          "watch": [
+            {
+              "name": "Tech layoffs",
+              "type": "topic"
+            },
+            {
+              "name": "Austin",
+              "type": "place"
+            },
+            {
+              "name": "Silicon Valley",
+              "type": "region"
+            },
+            {
+              "name": "AI spending",
+              "type": "topic"
+            }
+          ],
+          "in_one_sentence": "Technology employers with staff in Austin or California announcing job cuts, and how many jobs.",
+          "tell_me_if": [
+            "A tech company with Austin or California staff announces layoffs",
+            "A company says it is cutting jobs to fund AI spending",
+            "A Texas WARN notice lists tech job cuts in the Austin area"
+          ],
+          "ignore": [
+            "Layoffs outside the US with no Texas or California staff",
+            "Opinion pieces about AI and jobs with no new cuts",
+            "Election, campaign or party-politics stories"
+          ],
+          "places": [
+            "US",
+            "US-TX",
+            "US-CA"
+          ],
+          "sources": {
+            "mode": "any_reputable",
+            "check_first": [
+              "Texas Workforce Commission"
+            ]
+          }
+        },
+        "private": {
+          "exposure": [
+            {
+              "id": "product:employee-mortgages",
+              "how_it_reaches_us": "laid-off borrowers struggle with mortgage payments"
+            },
+            {
+              "id": "product:employee-savings",
+              "how_it_reaches_us": "laid-off staff draw down savings"
+            },
+            {
+              "id": "segment:tech-employees",
+              "how_it_reaches_us": "our largest retail customer group"
+            }
+          ],
+          "serious": [
+            "More than 1,000 jobs cut by one employer in the Austin area"
+          ]
+        },
+        "alert_level": 7
+      }
+    },
+    {
+      "status": "live",
+      "spec": {
+        "about": {
+          "name": "Austin housing and mortgage stress",
+          "owner": "Retail banking",
+          "check_frequency": 1440,
+          "kind": "events",
+          "review_by": "2027-03-31"
+        },
+        "public": {
+          "watch": [
+            {
+              "name": "Austin home prices",
+              "type": "topic"
+            },
+            {
+              "name": "Mortgage delinquencies",
+              "type": "topic"
+            },
+            {
+              "name": "Austin",
+              "type": "place"
+            }
+          ],
+          "in_one_sentence": "Moves in Austin home prices, home sales or mortgage delinquencies that change what our mortgage borrowers owe against what they own.",
+          "tell_me_if": [
+            "Austin or Texas home prices fall further, or sales drop sharply",
+            "Mortgage delinquencies or foreclosures rise in Texas or nationally",
+            "Mortgage rates move by more than a quarter point in a week"
+          ],
+          "ignore": [
+            "Home-improvement and design stories",
+            "Single-house listings",
+            "Election, campaign or party-politics stories"
+          ],
+          "places": [
+            "US",
+            "US-TX"
+          ],
+          "sources": {
+            "mode": "any_reputable",
+            "check_first": [
+              "Redfin",
+              "Mortgage Bankers Association"
+            ]
+          }
+        },
+        "private": {
+          "exposure": [
+            {
+              "id": "product:employee-mortgages",
+              "how_it_reaches_us": "falling prices leave borrowers owing more than the home is worth"
+            }
+          ],
+          "serious": [
+            "Austin prices fall more than 10% on a year earlier"
+          ]
+        },
+        "alert_level": 6
+      }
+    },
+    {
+      "status": "live",
+      "spec": {
+        "about": {
+          "name": "Bank-level evidence",
+          "owner": "Risk management",
+          "check_frequency": 1440,
+          "kind": "events",
+          "review_by": "2027-03-31"
+        },
+        "public": {
+          "watch": [
+            {
+              "name": "Mortgage delinquencies",
+              "type": "topic"
+            },
+            {
+              "name": "Bank lending standards",
+              "type": "topic"
+            },
+            {
+              "name": "FDIC Quarterly Banking Profile",
+              "type": "regulation"
+            },
+            {
+              "name": "Dallas Fed Banking Conditions Survey",
+              "type": "regulation"
+            }
+          ],
+          "in_one_sentence": "Published figures showing US or Texas banks' loans going bad, lending getting tighter or deposits moving.",
+          "tell_me_if": [
+            "The MBA, NY Fed or FDIC reports higher delinquencies or noncurrent loans",
+            "The Fed or Dallas Fed reports tighter lending or weaker loan performance",
+            "Small banks' deposits or loans move sharply in the Fed's weekly figures"
+          ],
+          "ignore": [
+            "Bank share-price commentary with no new figures",
+            "Election, campaign or party-politics stories"
+          ],
+          "places": [
+            "US",
+            "US-TX"
+          ],
+          "sources": {
+            "mode": "any_reputable",
+            "check_first": [
+              "Federal Reserve Bank of New York",
+              "Mortgage Bankers Association",
+              "FDIC",
+              "Federal Reserve Bank of Dallas"
+            ]
+          }
+        },
+        "private": {
+          "exposure": [
+            {
+              "id": "product:employee-mortgages"
+            },
+            {
+              "id": "product:venture-debt"
+            },
+            {
+              "id": "product:dc-contractor-loans"
+            },
+            {
+              "id": "product:startup-deposits"
+            }
+          ],
+          "serious": [
+            "A national or Texas delinquency rate reaches its highest since 2010"
+          ]
+        },
+        "alert_level": 6
+      }
+    },
+    {
+      "status": "live",
+      "spec": {
+        "about": {
+          "name": "Data-center build-out in Austin and Dallas",
+          "owner": "Commercial banking",
+          "check_frequency": 360,
+          "kind": "events",
+          "review_by": "2027-03-31"
+        },
+        "public": {
+          "watch": [
+            {
+              "name": "Data centers",
+              "type": "topic"
+            },
+            {
+              "name": "ERCOT",
+              "type": "organisation"
+            },
+            {
+              "name": "Dallas-Fort Worth",
+              "type": "region"
+            },
+            {
+              "name": "Austin",
+              "type": "place"
+            }
+          ],
+          "in_one_sentence": "Data-center projects in Austin or Dallas-Fort Worth being delayed, cancelled, refinanced or cut off the grid.",
+          "tell_me_if": [
+            "A data-center project in Texas is delayed, cancelled or loses financing",
+            "ERCOT curtails or limits large power users",
+            "Banks sell or offload data-center construction loans"
+          ],
+          "ignore": [
+            "Openings of finished data centers with no new risk",
+            "Election, campaign or party-politics stories"
+          ],
+          "places": [
+            "US",
+            "US-TX"
+          ],
+          "sources": {
+            "mode": "any_reputable",
+            "check_first": []
+          }
+        },
+        "private": {
+          "exposure": [
+            {
+              "id": "product:dc-contractor-loans",
+              "how_it_reaches_us": "contractors wait longer to be paid and draw harder on credit"
+            },
+            {
+              "id": "product:dc-contractor-lines",
+              "how_it_reaches_us": "contractors draw harder on their credit lines as projects stall"
+            },
+            {
+              "id": "segment:dc-contractors"
+            }
+          ],
+          "serious": [
+            "A Texas project over $1 billion is cancelled or paused"
+          ]
+        },
+        "alert_level": 6
+      }
+    },
+    {
+      "status": "live",
+      "spec": {
+        "about": {
+          "name": "Texas power prices",
+          "owner": "Commercial banking",
+          "check_frequency": 1440,
+          "kind": "events",
+          "review_by": "2027-03-31"
+        },
+        "public": {
+          "watch": [
+            {
+              "name": "ERCOT",
+              "type": "organisation"
+            },
+            {
+              "name": "Texas electricity prices",
+              "type": "topic"
+            },
+            {
+              "name": "Natural gas prices",
+              "type": "topic"
+            }
+          ],
+          "in_one_sentence": "Texas power prices and grid alerts that raise costs for our chip suppliers and contractors.",
+          "tell_me_if": [
+            "ERCOT issues a grid alert or conservation appeal",
+            "Texas wholesale power or natural gas prices jump",
+            "A winter storm threatens the Texas grid"
+          ],
+          "ignore": [
+            "Rooftop-solar product promotions",
+            "Election, campaign or party-politics stories"
+          ],
+          "places": [
+            "US",
+            "US-TX"
+          ],
+          "sources": {
+            "mode": "any_reputable",
+            "check_first": []
+          }
+        },
+        "private": {
+          "exposure": [
+            {
+              "id": "product:chip-supplier-lines",
+              "how_it_reaches_us": "higher power bills squeeze margins and lift credit-line use"
+            },
+            {
+              "id": "product:dc-contractor-loans"
+            }
+          ],
+          "serious": [
+            "ERCOT declares an energy emergency"
+          ]
+        },
+        "alert_level": 6
+      }
+    },
+    {
+      "status": "live",
+      "spec": {
+        "about": {
+          "name": "Venture and private-credit fund stress",
+          "owner": "Fund banking",
+          "check_frequency": 1440,
+          "kind": "events",
+          "review_by": "2027-03-31"
+        },
+        "public": {
+          "watch": [
+            {
+              "name": "Venture capital",
+              "type": "topic"
+            },
+            {
+              "name": "Private credit",
+              "type": "topic"
+            },
+            {
+              "name": "Capital calls",
+              "type": "topic"
+            }
+          ],
+          "in_one_sentence": "Venture or private-credit funds delaying capital calls, marking down portfolios or facing investor withdrawals.",
+          "tell_me_if": [
+            "A venture or private-credit fund delays capital calls or limits withdrawals",
+            "Funds mark down startup valuations sharply",
+            "Regulators flag bank lending to private-credit funds"
+          ],
+          "ignore": [
+            "Fundraising announcements by individual funds",
+            "Election, campaign or party-politics stories"
+          ],
+          "places": [
+            "US",
+            "US-TX",
+            "US-CA"
+          ],
+          "sources": {
+            "mode": "any_reputable",
+            "check_first": []
+          }
+        },
+        "private": {
+          "exposure": [
+            {
+              "id": "product:capital-call-lines",
+              "how_it_reaches_us": "funds draw their lines when their own investors pay in late"
+            },
+            {
+              "id": "product:fund-deposits"
+            }
+          ],
+          "serious": [
+            "A large fund suspends withdrawals"
+          ]
+        },
+        "alert_level": 6
+      }
+    },
+    {
+      "status": "live",
+      "spec": {
+        "about": {
+          "name": "AI and startup funding",
+          "owner": "Technology banking",
+          "check_frequency": 1440,
+          "kind": "events",
+          "review_by": "2027-03-31"
+        },
+        "public": {
+          "watch": [
+            {
+              "name": "AI startups",
+              "type": "sector"
+            },
+            {
+              "name": "Venture funding",
+              "type": "topic"
+            },
+            {
+              "name": "Down rounds",
+              "type": "topic"
+            }
+          ],
+          "in_one_sentence": "Startup funding slowing outside the few biggest AI companies: smaller rounds, down-rounds or startups running short of cash.",
+          "tell_me_if": [
+            "Quarterly venture funding falls, or is concentrated in a few AI firms",
+            "A well-known startup raises at a lower valuation or shuts down",
+            "Startups cut staff because funding is harder to get"
+          ],
+          "ignore": [
+            "Single funding announcements by large AI labs",
+            "Election, campaign or party-politics stories"
+          ],
+          "places": [
+            "US",
+            "US-TX",
+            "US-CA"
+          ],
+          "sources": {
+            "mode": "any_reputable",
+            "check_first": []
+          }
+        },
+        "private": {
+          "exposure": [
+            {
+              "id": "product:startup-deposits",
+              "how_it_reaches_us": "startups burn cash faster than they raise it"
+            },
+            {
+              "id": "product:venture-debt"
+            },
+            {
+              "id": "product:corporate-cards"
+            }
+          ],
+          "serious": [
+            "North American venture funding falls more than 30% in a quarter"
+          ]
+        },
+        "alert_level": 6
+      }
+    }
+  ],
+  "sample_data": {
+    "enabled": true,
+    "conditions": []
+  },
+  "after_load": {
+    "activate": true,
+    "run_radar": true,
+    "check_monitors": true
+  }
+}

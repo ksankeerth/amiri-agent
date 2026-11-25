@@ -59,7 +59,10 @@ class Studio:
 
     async def templates(self, institution_id: str) -> list[dict]:
         ctx = await self.institutions.context(institution_id)
-        return [{"template_id": k, **v, "unavailable": template.available(k, ctx)} for k, v in template.TEMPLATES.items()]
+        listed = [k for k in template.TEMPLATES if template.offered(k, ctx)]
+        listed.sort(key=lambda k: template.TEMPLATES[k].get("region") is None)  # a region's own templates first
+        return [{"template_id": k, **{f: v for f, v in template.TEMPLATES[k].items() if f in ("title", "summary", "tags")},
+                 "unavailable": template.available(k, ctx)} for k in listed]
 
     async def create_scenario(self, institution_id: str, template_id: str, intensity: str, title: str | None,
                               actor: str, custom: dict | None = None) -> dict:
@@ -479,7 +482,7 @@ class Studio:
         title, explanation, w = detect.finding_text(p["name"], d, z, tz)
         t = p["theme"]
         themes = [{"theme": t["theme"], "direction": t["direction_up"] if w["change_pct"] > 0 else t["direction_down"],
-                   "currency": t["currency"]}]
+                   **{f: t[f] for f in ("currency", "item") if t.get(f)}}]
         ref_end = datetime.fromisoformat(w["ref_ts"]) + detect.BAR
         fid = f"f-st-{token(sim['sim_id'])}-{sim['step']}-ts-1"
         evidence = {"signals": [{

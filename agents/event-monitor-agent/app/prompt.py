@@ -2,6 +2,7 @@
 
 import json
 
+from app.packs import pack_for
 from app.tools import STATE_CHECK, STATE_INSTITUTION, STATE_MONITOR
 
 _PRIVATE_INSTITUTION_FIELDS = ("notes",)
@@ -76,6 +77,19 @@ def _numbered(lines: list[str]) -> list[dict]:
     return [{"line": i, "text": t} for i, t in enumerate(lines, start=1)]
 
 
+# A region pack's hints (app/packs/us.json) go just before "What a finding is".
+_FINDING = "\nWhat a finding is:\n"
+
+
+def _template(country: str | None) -> str:
+    pack = pack_for(country)
+    if not pack or not pack.get("prompt_hints"):
+        return _TEMPLATE
+    assert _TEMPLATE.count(_FINDING) == 1
+    hints = "\n".join(f"- {h}" for h in pack["prompt_hints"]).replace("{", "{{").replace("}", "}}")
+    return _TEMPLATE.replace(_FINDING, f"\nFor this institution ({pack['region'].upper()}):\n{hints}\n{_FINDING}")
+
+
 def build_instruction(state: dict) -> str:
     monitor = state.get(STATE_MONITOR) or {}
     spec = monitor.get("spec") or {}
@@ -87,7 +101,7 @@ def build_instruction(state: dict) -> str:
     def dump(value) -> str:
         return json.dumps(value, indent=1, ensure_ascii=False)
 
-    return _TEMPLATE.format(
+    return _template(institution.get("country")).format(
         monitor=dump(
             {
                 "name": spec.get("about", {}).get("name"),

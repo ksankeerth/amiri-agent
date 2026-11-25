@@ -74,6 +74,33 @@ export const STARTERS: Record<string, string[]> = {
   history: ["What changed this week?"],
   agent_view: ["Which places does Radar watch, and why?"],
 };
+/** The same for a US institution (the US region pack). */
+export const US_STARTERS: Record<string, string[]> = {
+  institution: ["We're a commercial bank in Dallas, Texas", "Our Board Risk Committee owns risk decisions"],
+  footprint_flows: ["We have branches across Texas", "Most of our business is in Dallas-Fort Worth and Houston"],
+  customers_products: ["We lend to data-center contractors and energy firms", "We hold deposits and credit lines for Texas businesses"],
+  rules: ["Which regulators reach a Texas state bank?", "We also settle in euros"],
+  rivals_partners: ["Our rivals are other Texas commercial banks", "Some of our borrowers are private-credit funds"],
+  risks: ["What risks meet our Texas footprint?", "Hurricanes hit our Houston branches"],
+  monitors: ["Watch ERCOT power curtailments", "Watch data-center projects in Dallas-Fort Worth"],
+  verification: STARTERS.verification, history: STARTERS.history, agent_view: STARTERS.agent_view,
+};
+/** For any other country, or before the home country is known: no place in particular. */
+export const NEUTRAL_STARTERS: Record<string, string[]> = {
+  institution: ["We're a commercial bank", "Our Board Risk Committee owns risk decisions"],
+  footprint_flows: ["We have branches in two regions", "Many customers get money from family abroad"],
+  customers_products: ["Most of our customers are small businesses", "We sell personal loans and cards"],
+  rules: STARTERS.rules,
+  rivals_partners: ["Who are our main rivals?", "We clear dollars through a US correspondent bank"],
+  risks: ["What risks meet our footprint?", "Floods hit some of our branches"],
+  monitors: ["Watch our main rival's deposit rates", "Watch our central bank's rate decisions"],
+  verification: STARTERS.verification, history: STARTERS.history, agent_view: STARTERS.agent_view,
+};
+/** The starters for an institution's home country: Sri Lanka's as they were, the US pack's, or neutral ones. */
+export function startersFor(country: string | null | undefined): Record<string, string[]> {
+  const c = (country ?? "").toUpperCase();
+  return c === "LK" ? STARTERS : c === "US" ? US_STARTERS : NEUTRAL_STARTERS;
+}
 
 // ---------------------------------------------------------------- plain words for a profile change
 // Proposal cards and the History tab say what changes in words: names, not ids; field names, not keys.

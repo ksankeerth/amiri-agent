@@ -14,7 +14,8 @@ import { ChipsInput, Field, PlacesField } from "../institution/fields";
 import { CheckLine, exposureOptions, ReadsAs, unnamed } from "./monitorParts";
 
 const CHIP_TYPES: ChipType[] = ["organisation", "place", "region", "person", "sector", "regulation", "topic"];
-const OWNERS = ["Risk management", "Treasury", "Retail banking", "Retail credit", "Business credit", "Pawning", "Cards", "Underwriting", "Claims"];
+const OWNERS = ["Risk management", "Treasury", "Retail banking", "Retail credit", "Business credit", "Pawning", "Cards", "Underwriting", "Claims",
+  "Commercial banking", "Energy lending"];
 
 function blank(): MonitorSpec {
   return {
@@ -82,10 +83,10 @@ function WatchField({ value, onChange }: { value: MonitorSpec["public"]["watch"]
         {w.name}{w.other_forms?.length ? <span className="muted"> +{w.other_forms.length}</span> : null}
         <button type="button" aria-label={`Remove ${w.name}`} onClick={() => onChange(value.filter((_, j) => j !== i))}>×</button></span>))}</div>}
     {value.length < 12 && <div className="mp-addrow">
-      <input className="input" aria-label="A name to watch" placeholder="A name: Saudi Arabia, Coastal Remit, migrant workers…" value={name} onChange={e => setName(e.target.value)} onKeyDown={enter} />
+      <input className="input" aria-label="A name to watch" placeholder="A name: a country, a rival, a group of customers…" value={name} onChange={e => setName(e.target.value)} onKeyDown={enter} />
       <select className="input" aria-label="What kind of name" value={type} onChange={e => setType(e.target.value as ChipType)}>
         {CHIP_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select>
-      <input className="input" aria-label="Other forms of the name, separated by commas" placeholder="Also: KSA, UAE" value={forms} onChange={e => setForms(e.target.value)} onKeyDown={enter} />
+      <input className="input" aria-label="Other forms of the name, separated by commas" placeholder="Also: short forms, other spellings" value={forms} onChange={e => setForms(e.target.value)} onKeyDown={enter} />
       <button className="btn btn--sm" type="button" onClick={add} disabled={!name.trim()}><Icon name="plus" />Add</button>
     </div>}
   </div>;
@@ -171,16 +172,16 @@ export function MonitorForm(p: FormProps) {
   // the parts, each answering one question; the new form shows them open, a draft or an edit as rows
   const what = <>
     <input className={`input mp-name ${E["about.name"] ? "err" : ""}`} aria-label="Name" aria-invalid={!!E["about.name"] || undefined} value={s.about.name}
-      placeholder="Name it: Gulf jobs and security" onChange={e => up(x => { x.about.name = e.target.value; })} /><Err k="about.name" />
+      placeholder="Name it: jobs at our borrowers' main employers" onChange={e => up(x => { x.about.name = e.target.value; })} /><Err k="about.name" />
     <textarea className={`input ${E["public.in_one_sentence"] ? "err" : ""}`} aria-label="In one sentence, what it watches for" aria-invalid={!!E["public.in_one_sentence"] || undefined} rows={2}
-      value={s.public.in_one_sentence} placeholder="In a sentence: events in the Gulf that could cut jobs or pay for our migrant-worker customers."
+      value={s.public.in_one_sentence} placeholder="In a sentence: events that could cut jobs or pay for the customers of one of our products."
       onChange={e => up(x => { x.public.in_one_sentence = e.target.value; })} />
     {E["public.in_one_sentence"] ? <Err k="public.in_one_sentence" /> : <span className="mp-hint">Specific beats broad: name the places, people or markets.</span>}
   </>;
   const when = <>
     <textarea className={`input ${E["public.tell_me_if"] ? "err" : ""}`} aria-label="Tell me if, one line each" aria-invalid={!!E["public.tell_me_if"] || undefined}
       rows={Math.max(3, tellLines.length * 2 + 1)} value={tell} onChange={e => setTell(e.target.value)}
-      placeholder="A Gulf state announces job cuts, visa limits or wage controls for foreign workers" /><Err k="public.tell_me_if" />
+      placeholder="A large employer where we lend announces job cuts or a plant closure" /><Err k="public.tell_me_if" />
     {ign || E["public.ignore"] ? <Field label="Leave out (one per line)" error={pe("public.ignore")}><textarea className="input" value={ignore} onChange={e => setIgnore(e.target.value)} placeholder="Routine labour statistics with no change" /></Field>
       : <button type="button" className="mp-add" onClick={() => setIgn(true)}><Icon name="plus" />Something it should leave out</button>}
   </>;
@@ -241,7 +242,7 @@ export function MonitorForm(p: FormProps) {
       </> : <>
         <Q n={1} title="What should it watch for?">{what}</Q>
         <Q n={2} title="When should it tell you?" hint="One line each. A finding names the lines it meets.">{when}</Q>
-        <Q n={3} title="Which names and places?" hint="The names the news would use; other forms catch KSA, UAE and local spellings.">{names}</Q>
+        <Q n={3} title="Which names and places?" hint="The names the news would use; other forms catch abbreviations and local spellings.">{names}</Q>
         <Q n={4} title="Who at the bank could it reach?">{reach}</Q>
         <div className="mp-q">{often}</div>
         <details className="mp-fold" open={moreErr || undefined}><summary><Icon name="settings" />More <span className="muted">outlets to read first, key dates, how serious, review date</span><Icon name="chevron" className="mp-chev" /></summary>{more}</details>
