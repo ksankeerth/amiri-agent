@@ -1,81 +1,105 @@
-// First run, as the Overview shows it until the first-run page is redone (P14): the one-click demo first, your own
-// setup second. Still on the old look (rd-overview.css), so it stays here, apart from the new Overview.
+// First run (board 14): what a visitor sees on the Overview until the institution is set up. With no institution: the one-click
+// demo first, then setting up your own. With one that isn't live yet: the same three steps, in order, then the Scenario Studio.
+// Loading a demo is the one write here (POST /prototype:demo); the demo lock greys it, and the server refuses once an institution exists.
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useInstallation } from "../../App";
+import { api } from "../../api/client";
 import { type Overview } from "../../api/overview";
-import { isDemoLocked, LOCK_TOAST } from "../../components/demoLock";
-import { LockBtn } from "../../components/lock";
-import { GoLink } from "../../components/rd";
-import { DEMOS } from "../../components/ui";
-import { plural } from "../../format";
-import "../../styles/rd-overview.css";
+import { useDemoLock } from "../../components/lock";
+import { DEMOS, useRefusalToast } from "../../components/ui";
+import { Button } from "../../components/v2/Button";
+import { Icon } from "../../components/Icon";
+import { useCrumbs } from "../../components/v2/Shell";
+import { demoLine, firstSteps, resetNote, stepNote, type FirstStep } from "./firstRunWords";
+import "../../styles/v2/first-run.css";
 
-// ================================================================ first run
-export function FirstRun({ o }: { o: Overview }) {
-  const i = o.institution;
-  const steps: { done: boolean; title: string; body: string; to: string; label: string }[] = [
-    { done: !!i, title: "Tell Amiri Agent about your institution", body: "Where you operate, your customers, products, flows, regulators, rivals and risks.",
-      to: i ? "/institution/setup" : "/institution/new", label: i ? "Continue setup" : "Start setup" },
-    { done: !!i && i.readiness.ready && i.status === "active", title: "Check it and go live",
-      body: i ? (i.readiness.ready ? "Everything required is there. Activate the profile so Amiri Agent starts using it." : `${plural(i.readiness.missing_required, "required item")} still missing.`) : "Once the profile has what's required, activate it.",
-      to: "/institution/setup/review", label: "Review" },
-    { done: o.counts.monitors_live > 0, title: "Choose what to watch", body: "Draft monitors from your profile. A Risk Manager approves each one.",
-      to: "/monitors", label: "Monitors" },
-  ];
-  const next = steps.findIndex(s => !s.done);
+const CRUMBS = [{ label: "Overview" }];
+const ICON: Record<string, string> = { bank: "bank", insurer: "audit" };
+
+/** Load one of the two invented demos on an empty platform, then start again at the Overview with it. */
+function DemoLoad() {
+  const refuse = useRefusalToast();
+  const locked = useDemoLock();
+  const installation = useInstallation();
+  const [busy, setBusy] = useState<string | null>(null);
+  const load = async (kind: string) => {
+    setBusy(kind);
+    try {
+      await api("/api/v1/prototype:demo", { method: "POST", json: { kind } });
+      window.location.assign("/home");  // every page loads again, with the demo
+    } catch (e) { refuse(e, "Couldn't load the demo"); setBusy(null); }
+  };
+  const note = resetNote(installation?.prototype_reset !== false);
+  const loading = DEMOS.find(d => d.kind === busy);
   return (
-    <div className="page rd rd-overview">
-      <h1 className="rd-ov-h1">Welcome to Amiri Agent</h1>
-      <p className="rd-lede rd-prose">{i ? <>Three steps, and Amiri Agent starts watching the world for <b>{i.name}</b>.</>
-        : <>See it work on a demo institution in one click, or set up your own.</>}</p>
-      {!i && <DemoLoad />}
-      <section className={i ? "rd-fr-demo" : "rd-fr-steps-sec"} aria-labelledby="fr-steps-h">
-        <h2 id="fr-steps-h">{i ? "Three steps to go live" : "Or set up your own institution"}</h2>
-        <ol className="rd-fr-steps">{steps.map((st, n) => {
-          const locked = n > 0 && !steps[n - 1].done && !st.done;  // a step opens once the one before it is done
-          return (
-            <li key={st.title} data-s={st.done ? "done" : locked ? "locked" : "open"}>
-              <span className="rd-fr-n" aria-hidden="true">{n + 1}</span>
-              <h3><span className="sr">Step {n + 1}: </span>{st.title}</h3>
-              <p>{st.body}</p>
-              <div>{st.done ? <span className="rd-fr-done">Done</span>
-                : locked ? <span className="rd-fr-state">After step {n}</span>
-                  : i && n === next ? <Link className="btn btn--primary btn--lg" to={st.to}>{st.label} →</Link>
-                    : <GoLink to={st.to}>{st.label}</GoLink>}</div>
-            </li>);
-        })}</ol>
+    <>
+      <section className="v2-fr-demo" aria-labelledby="fr-demo">
+        <h2 id="fr-demo" className="v2-sr">Start with a demo</h2>
+        <div className="v2-fr-demo__btns">
+          {DEMOS.map((d, n) => (
+            <Button key={d.kind} variant={n === 0 ? "primary" : "secondary"} className="v2-fr-demo__btn" locked={locked}
+              disabled={!!busy} aria-busy={busy === d.kind} onClick={() => load(d.kind)}>
+              <Icon name={ICON[d.kind] ?? "bank"} />
+              <span className="v2-fr-demo__txt">
+                <b>{busy === d.kind ? "Loading…" : `Load the ${d.label.toLowerCase()}`}</b>
+                <span>{demoLine(d)}</span>
+              </span>
+            </Button>))}
+        </div>
+        <p className="v2-fr-fine" role="status">{loading
+          ? `Setting up ${loading.name}: its whole profile, monitors and prices. This takes a few seconds.`
+          : <>{note.before}{note.link && <Link to="/admin/settings">{note.link}</Link>}{note.after}</>}</p>
       </section>
-      {i && <section className="rd-fr-studio" aria-labelledby="fr-studio-h">
-        <div><h2 id="fr-studio-h">See it work first</h2>
-          <p className="rd-prose" style={{ margin: "4px 0 0" }}>Run a sharp currency fall on your institution in the Scenario Studio: headlines arrive, prices move, and Amiri Agent's monitors and investigation respond. Nothing touches live data.</p></div>
-        <Link className="btn btn--lg" to="/studio">Open the Scenario Studio</Link></section>}
+    </>
+  );
+}
+
+function Step({ s }: { s: FirstStep }) {
+  const note = stepNote(s);
+  return (
+    <li className={`v2-fr-step is-${s.state === "locked" ? "wait" : s.state}`}>
+      <span className="v2-fr-step__n v2-num" aria-hidden="true">{s.state === "done" ? <Icon name="check" /> : s.n}</span>
+      <div className="v2-fr-step__txt">
+        <h3 className="v2-fr-step__t"><span className="v2-sr">Step {s.n}: </span>{s.title}</h3>
+        <p>{s.body}</p>
+      </div>
+      <div className="v2-fr-step__act">
+        {note ? <span className="v2-fr-step__note">{note}</span>
+          : s.next ? <Button as="link" to={s.to} variant="primary">{s.label} <span aria-hidden="true">→</span></Button>
+            : <Button as="link" to={s.to} variant="secondary">{s.label}</Button>}
+      </div>
+    </li>
+  );
+}
+
+export function FirstRun({ o }: { o: Overview }) {
+  useCrumbs(CRUMBS);
+  const i = o.institution;
+  const steps = firstSteps(i, o.counts.monitors_live);
+  return (
+    <div className="v2-fr">
+      <header className="v2-fr-head">
+        <p className="v2-cap">Welcome</p>
+        {i ? <h1 className="v2-hero v2-fr-h1">Welcome to Amiri Agent</h1>
+          : <h1 className="v2-hero v2-fr-h1">See Amiri Agent work<br />in one click</h1>}
+        <p className="v2-fr-lede">{i ? <>Three steps, and Amiri Agent starts watching the world for <b>{i.name}</b>.</>
+          : "Load an invented institution with its whole profile, monitors and prices. No real customer data."}</p>
+      </header>
+      {!i && <DemoLoad />}
+      <section className="v2-fr-own" aria-labelledby="fr-own">
+        <h2 id="fr-own" className="v2-fr-h2">{i ? "Three steps to go live" : "Or set up your own institution"}</h2>
+        <ol className="v2-fr-steps">{steps.map(s => <Step key={s.n} s={s} />)}</ol>
+      </section>
+      {i && (
+        <section className="v2-fr-studio" aria-labelledby="fr-studio">
+          <div>
+            <h2 id="fr-studio" className="v2-fr-h2">See it work first</h2>
+            <p>Run a sharp currency fall on your institution in the Scenario Studio: headlines arrive, prices move, and Amiri Agent's monitors and investigation respond. Nothing touches live data.</p>
+          </div>
+          <Button as="link" to="/studio" variant="secondary">Open the Scenario Studio</Button>
+        </section>
+      )}
     </div>
   );
 }
-
-/** No institution yet: load one of the two invented demos in one click (the server refuses once an institution exists). */
-function DemoLoad() {
-  const [busy, setBusy] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const load = async (kind: string) => {
-    setBusy(kind); setErr(null);
-    try {
-      const r = await fetch("/api/v1/prototype:demo", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind }) });
-      if (!r.ok) { const p = await r.json().catch(() => ({})); throw new Error(isDemoLocked(p) ? LOCK_TOAST : p.detail ?? `HTTP ${r.status}`); }
-      window.location.assign("/home");  // every page loads again, with the demo
-    } catch (e) { setErr(String((e as Error).message ?? e)); setBusy(null); }
-  };
-  return (
-    <section className="rd-fr-demo" aria-labelledby="demo-h">
-      <div className="rd-fine">Fastest way in</div>
-      <h2 id="demo-h">Start with a demo</h2>
-      <p>An invented institution with its whole profile, ready to try everything on. No real customer data.</p>
-      <div className="rd-fr-btns">{DEMOS.map((d, n) => (
-        <LockBtn key={d.kind} className={`btn${n === 0 ? " btn--primary" : ""}`} disabled={!!busy} onClick={() => load(d.kind)}>
-          <b>{busy === d.kind ? "Loading…" : `Load the ${d.label.toLowerCase()}`}</b>
-          <span>{d.name}, {d.what.charAt(0).toLowerCase()}{d.what.slice(1)}</span></LockBtn>))}</div>
-      {err && <p className="rd-warn" role="alert"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> Couldn't load the demo: {err}</p>}
-    </section>
-  );
-}
-

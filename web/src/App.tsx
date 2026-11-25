@@ -18,6 +18,7 @@ import { StudioPage } from "./pages/studio/Studio";
 import { StudioRunPage } from "./pages/studio/StudioRun";
 import { SeriesPage } from "./pages/series/Series";
 import { OverviewPage } from "./pages/Overview";
+import { NeedsInstitutionPage } from "./pages/overview/NeedsInstitution";
 import { RadarPage } from "./pages/radar/Radar";
 import { BotCheckPage, PausedPage } from "./pages/Login";
 import { authApi, type AuthConfig } from "./api/auth";
@@ -48,17 +49,7 @@ export const useInstallation = () => useContext(InstallationCtx);
 function NeedsInstitution({ title, what, children }: { title: string; what: string; children: ReactNode }) {
   const inst = useInstallation();
   if (!inst || inst.profile || inst.unreachable) return <>{children}</>;  // unreachable: the page shows the load error
-  return (
-    <div className="page rd">
-      <PageTitle title={title} />
-      <section className="rd-sec" aria-labelledby="needs-inst">
-        <div className="rd-sec-h"><h2 id="needs-inst">Set up your institution first</h2></div>
-        <p className="rd-row-d rd-prose">{what} come from your institution's profile: who you are, where you operate, your customers, products and
-          risks. Set it up first; it takes a few minutes with the forms or the Setup agent.</p>
-        <p style={{ margin: "20px 0 0" }}><Link className="btn btn--primary" to="/institution/setup">Set up the institution</Link></p>
-      </section>
-    </div>
-  );
+  return <NeedsInstitutionPage title={title} what={what} />;
 }
 
 

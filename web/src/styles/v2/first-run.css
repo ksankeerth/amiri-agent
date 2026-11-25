@@ -1,0 +1,74 @@
+/* First run (board 14) and the "set up your institution first" page that stands in for the pages that need one. Tokens only.
+   Prefix v2-fr-. Phone (under 720 px): one column; the demo buttons and each step's action stack. */
+.v2-fr { display: flex; flex-direction: column; gap: var(--v2-sp-28); min-width: 0; max-width: 820px; }
+.v2-fr :where(p, ul, ol, h1, h2, h3) { margin: 0; }
+.v2-fr ol { padding: 0; list-style: none; }
+/* the old stylesheets underline links in p and li: a link here underlines on hover only */
+.v2 .v2-fr a:not(.v2-btn) { text-decoration: none; }
+.v2 .v2-fr a:not(.v2-btn):hover { text-decoration: underline; }
+.v2 .v2-fr a.v2-btn, .v2 .v2-fr a.v2-btn:hover { text-decoration: none; }
+
+/* ---------- the hero */
+.v2-fr-head { display: flex; flex-direction: column; gap: var(--v2-sp-12); padding-top: var(--v2-sp-24); }
+.v2-fr--need .v2-fr-head { padding-top: 0; }
+.v2-fr-h1 { overflow-wrap: anywhere; text-wrap: balance; }
+.v2-fr-h1--page { font-size: 36px; line-height: 1.15; letter-spacing: -0.03em; font-weight: var(--v2-fw-semibold); }
+.v2-fr-lede { max-width: 56ch; font-size: var(--v2-fs-title-lg); line-height: 1.5; color: var(--v2-text-2); }
+.v2-fr-lede b { color: var(--v2-text); }
+.v2-fr-h2 { font-size: var(--v2-fs-h3); line-height: 1.3; letter-spacing: var(--v2-ls-h3); font-weight: var(--v2-fw-semibold); }
+.v2-fr-fine { font-size: var(--v2-fs-cap); color: var(--v2-muted); }
+
+/* ---------- the demo: two big buttons */
+.v2-fr-demo { display: flex; flex-direction: column; gap: var(--v2-sp-12); }
+.v2-fr-demo__btns { display: flex; flex-wrap: wrap; gap: var(--v2-sp-12); }
+.v2 .v2-fr-demo__btn {
+  flex: 1 1 260px; min-height: 76px; justify-content: flex-start; gap: var(--v2-sp-14); padding: 0 var(--v2-sp-20); text-align: left; white-space: normal;
+}
+.v2-fr-demo__btn svg { width: 22px; height: 22px; }
+.v2-fr-demo__txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.v2-fr-demo__txt b { font-size: var(--v2-fs-lead); font-weight: var(--v2-fw-semibold); }
+.v2-fr-demo__txt span { font-size: var(--v2-fs-cap); font-weight: var(--v2-fw-medium); line-height: 1.4; }
+.v2 .v2-fr-demo__btn:disabled { opacity: .7; }
+.v2-fr-fine a { font-weight: var(--v2-fw-semibold); }
+
+/* ---------- your own: the steps */
+.v2-fr-own { margin-top: var(--v2-sp-12); }
+.v2-fr-own > .v2-fr-h2 { font-size: var(--v2-fs-h3); margin-bottom: var(--v2-sp-4); }
+.v2-fr-step { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: var(--v2-sp-16); align-items: center; padding: var(--v2-sp-20) 0; border-top: 1px solid var(--v2-line); }
+.v2-fr-step__n {
+  display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--v2-text);
+  font-weight: var(--v2-fw-semibold);
+}
+.v2-fr-step__n svg { width: 18px; height: 18px; }
+.v2-fr-step.is-wait .v2-fr-step__n { border: 1.5px dashed var(--v2-line-input); color: var(--v2-text-2); }
+.v2-fr-step.is-done .v2-fr-step__n { background: var(--v2-ink-btn); border-color: var(--v2-ink-btn); color: var(--v2-ink-btn-text); }
+.v2-fr-step__txt { min-width: 0; display: flex; flex-direction: column; gap: var(--v2-sp-2); }
+.v2-fr-step__t { font-size: var(--v2-fs-title-lg); font-weight: var(--v2-fw-semibold); }
+.v2-fr-step.is-wait .v2-fr-step__t { color: var(--v2-muted); }
+.v2-fr-step__txt p { font-size: var(--v2-fs-body); color: var(--v2-text-2); }
+.v2-fr-step__act { display: flex; justify-content: flex-end; }
+.v2-fr-step__note { font-size: var(--v2-fs-meta); color: var(--v2-muted); white-space: nowrap; }
+.v2-fr-step.is-done .v2-fr-step__note { color: var(--v2-text); font-weight: var(--v2-fw-semibold); }
+
+/* ---------- the Scenario Studio, once an institution exists */
+.v2-fr-studio { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-16) var(--v2-sp-24); padding-top: var(--v2-sp-24); border-top: 1px solid var(--v2-line); }
+.v2-fr-studio > div { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: var(--v2-sp-4); }
+.v2-fr-studio p { font-size: var(--v2-fs-body); color: var(--v2-text-2); max-width: 62ch; }
+
+/* ---------- a page that needs the institution */
+.v2-fr-need { display: flex; flex-direction: column; align-items: flex-start; gap: var(--v2-sp-10); padding: var(--v2-sp-24); background: var(--v2-surface); border: 1px solid var(--v2-line); border-radius: var(--v2-r-panel); }
+.v2-fr-need p { max-width: 60ch; font-size: var(--v2-fs-body); line-height: 1.55; color: var(--v2-text-2); }
+.v2-fr-need__act { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-10) var(--v2-sp-20); margin-top: var(--v2-sp-8); }
+
+@media (max-width: 719.98px) {
+  .v2-fr-head { padding-top: 0; }
+  .v2-fr .v2-hero { font-size: 38px; }
+  .v2-fr-h1--page { font-size: 30px; }
+  .v2-fr-lede { font-size: var(--v2-fs-lead); }
+  .v2-fr-demo__btn { flex-basis: 100%; }
+  .v2-fr-step { grid-template-columns: 36px minmax(0, 1fr); gap: var(--v2-sp-8) var(--v2-sp-14); align-items: start; }
+  .v2-fr-step__act { grid-column: 2; justify-content: flex-start; }
+  .v2-fr-step .v2-btn { width: 100%; }
+  .v2-fr-need { padding: var(--v2-sp-18); }
+  .v2-fr-need__act .v2-btn { width: 100%; }
+}
