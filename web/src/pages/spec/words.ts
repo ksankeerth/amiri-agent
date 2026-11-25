@@ -1,5 +1,5 @@
 // The Metrics Spec's plain words: what a metric's fields say, in a sentence. Page-only helpers, pure so they can be tested.
-import type { SpecCategory, SpecMetric } from "../../api/spec";
+import type { Spec, SpecCategory, SpecMetric } from "../../api/spec";
 
 export const words = (s: string) => s.replace(/_/g, " ");
 
@@ -141,4 +141,86 @@ export function proseRuns(md: string): string[] {
   for (const line of md.split("\n")) { if (line.trim().startsWith("|")) flush(); else cur.push(line); }
   flush();
   return runs;
+}
+
+// ---- the page's rail and the category's list
+export interface Chapter { id: string; n: string; title: string }
+/** The guide's chapters in the spec's own numbering: the introduction, 1 to 13 (5 is the categories, which the rail shows), the change log. */
+export function chaptersOf(s: Pick<Spec, "guide" | "drawn">): Chapter[] {
+  const title = (n: string) => s.guide[n]?.title ?? s.drawn[n]?.title ?? `Chapter ${n}`;
+  const out: Chapter[] = [{ id: "intro", n: "", title: "Introduction" }];
+  for (let i = 1; i <= 13; i++) if (i !== 5) out.push({ id: `s${i}`, n: String(i), title: title(String(i)) });
+  out.push({ id: "changes", n: "", title: "Change log" });
+  return out;
+}
+/** The chapters the rail shows at first (board 12: four); the others sit under "All N chapters". */
+export const FEATURED = ["intro", "s3", "s9", "changes"];
+export function splitChapters(chs: Chapter[], current?: string): { shown: Chapter[]; rest: Chapter[]; openRest: boolean } {
+  const shown = chs.filter(c => FEATURED.includes(c.id)), rest = chs.filter(c => !FEATURED.includes(c.id));
+  return { shown, rest, openRest: !!current && rest.some(c => c.id === current) };
+}
+export const chapterHead = (c: Chapter) => (c.n ? `${c.n}. ${c.title}` : c.title);
+
+/** How many of the institution's products sit in each category (profile products carry their category's id). */
+export function productCounts(products: { category: string }[]): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const p of products) out.set(p.category, (out.get(p.category) ?? 0) + 1);
+  return out;
+}
+export const productsWord = (n: number) => `${n} product${n === 1 ? "" : "s"}`;
+/** The categories that hold one of the institution's products, in the spec's order. */
+export const yourCategories = (cats: SpecCategory[], counts: Map<string, number>) => cats.filter(c => (counts.get(c.id) ?? 0) > 0);
+
+/** The category the page opens on when the URL names none: the first of the institution's own, else the first of its kind, else the first. */
+export function defaultCategory(cats: SpecCategory[], counts: Map<string, number>, kind?: "bank" | "insurer" | null): SpecCategory | undefined {
+  return yourCategories(cats, counts)[0] ?? cats.find(c => c.institution === kind) ?? cats[0];
+}
+
+export type Tab = "all" | "starter" | "required";
+export function tabCounts(ms: SpecMetric[]): Record<Tab, number> {
+  return { all: ms.length, starter: ms.filter(m => m.starter).length, required: ms.filter(m => m.tier === "required").length };
+}
+export function inTab(ms: SpecMetric[], tab: Tab): SpecMetric[] {
+  return tab === "starter" ? ms.filter(m => m.starter) : tab === "required" ? ms.filter(m => m.tier === "required") : ms;
+}
+export const SHOWN_AT_FIRST = 6;
+/** How many rows show: the first six, until "N more" is opened or a linked metric sits further down. */
+export function shownRows(total: number, expanded: boolean, linkedIndex = -1): number {
+  return expanded || linkedIndex >= SHOWN_AT_FIRST || total <= SHOWN_AT_FIRST + 1 ? total : SHOWN_AT_FIRST;
+}
+export const tierWord = (t: SpecMetric["tier"]) => ucFirst(t);
+
+/** What the Tier column says of a metric that was replaced: "Replaced by Claims notified · 1.1". Null for a live metric. */
+export function deprecationWord(m: Pick<SpecMetric, "deprecated_in" | "replaced_by">, nameOf: (key: string) => string): string | null {
+  if (!m.deprecated_in) return null;
+  return m.replaced_by ? `Replaced by ${nameOf(m.replaced_by)} · ${m.deprecated_in}` : `Deprecated · ${m.deprecated_in}`;
+}
+/** A metric's name from its key, across every category (the replaced metric may sit in another). */
+export function nameLookup(cats: SpecCategory[]): (key: string) => string {
+  const names = new Map(cats.flatMap(c => c.metrics ?? []).map(m => [m.key, m.name] as const));
+  return key => names.get(key) ?? ucFirst(words(key));
+}
+
+/** Search: metrics whose key, name, question or category contains every word's text (one phrase, lower case). */
+export function searchMetrics(cats: SpecCategory[], q: string): { c: SpecCategory; m: SpecMetric }[] {
+  const needle = q.trim().toLowerCase();
+  if (!needle) return [];
+  return cats.flatMap(c => (c.metrics ?? []).filter(m => [m.key, m.name, m.question, c.name].some(x => x.toLowerCase().includes(needle))).map(m => ({ c, m })));
+}
+
+// ---- the banner: does the institution serve these figures, and are the checks on?
+export interface ConnectionFacts {
+  configured: boolean; validationOn: boolean; approved: boolean; name: string | null;
+  source: "bank" | "insurer" | "file" | null; coverage: { some: number; total: number } | null;
+}
+export interface ConnectionLine { tone: "good" | "neutral"; pill: string; text: string }
+export function connectionLine(f: ConnectionFacts): ConnectionLine {
+  const who = f.name ?? "The institution";
+  if (!f.configured) return { tone: "neutral", pill: "Not connected", text: `${who} hasn't shared its own figures yet, so Amiri Agent has nothing of its own to check its expectations against.` };
+  const from = f.source === "bank" ? "sample bank" : f.source === "insurer" ? "sample insurer" : f.source === "file" ? "a file" : null;
+  const cover = f.coverage ? `${f.coverage.some} of ${f.coverage.total} product${f.coverage.total === 1 ? "" : "s"}` : null;
+  const bits = [from, cover].filter(Boolean).join(", ");
+  const serves = `${who} serves these figures${bits ? ` (${bits})` : ""}`;
+  if (f.validationOn) return { tone: "good", pill: "Connected · checks on", text: `${serves}, so Amiri Agent checks its expectations against them.` };
+  return { tone: "neutral", pill: "Connected · checks off", text: `${serves}, but checks against them are off${f.approved ? "" : ": approve a ready connection first"}.` };
 }

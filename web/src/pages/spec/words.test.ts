@@ -1,7 +1,10 @@
 // Run with `node --test src/pages/spec/words.test.ts` (Node runs the TypeScript directly).
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { adverseLine, barLines, countLine, methodLine, metricAnchors, proseRuns, specDate, unitAndGrain, viewOf } from "./words.ts";
+import {
+  adverseLine, barLines, chaptersOf, connectionLine, countLine, defaultCategory, deprecationWord, inTab, methodLine, metricAnchors, nameLookup,
+  productCounts, proseRuns, searchMetrics, shownRows, specDate, splitChapters, tabCounts, unitAndGrain, viewOf, yourCategories,
+} from "./words.ts";
 
 const metric = (key: string, tier = "required") => ({ key, tier }) as never;
 const cats = [
@@ -51,4 +54,77 @@ test("what an effect needs is one sentence when every size agrees", () => {
 
 test("a drawn chapter's text is cut around its tables", () => {
   assert.deepEqual(proseRuns("Intro\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n**After.** text\n"), ["Intro", "**After.** text"]);
+});
+
+const full = (key: string, over: Record<string, unknown> = {}) => ({ key, name: key.toUpperCase(), question: `Q ${key}`, tier: "optional", starter: false, ...over }) as never;
+const spread = [
+  { id: "bank1", institution: "bank", name: "Deposits", metrics: [full("a", { tier: "required", starter: true }), full("b", { starter: true }), full("c", { tier: "required" }), full("d")] },
+  { id: "bank2", institution: "bank", name: "Lending", metrics: [full("e")] },
+  { id: "ins1", institution: "insurer", name: "Motor", metrics: [full("f")] },
+] as never as import("../../api/spec").SpecCategory[];
+
+test("the page opens on the institution's own category, else its kind, else the first", () => {
+  const mine = productCounts([{ category: "bank2" }, { category: "bank2" }, { category: "bank1" }]);
+  assert.equal(mine.get("bank2"), 2);
+  assert.deepEqual(yourCategories(spread, mine).map(c => c.id), ["bank1", "bank2"]);  // the spec's order, not the count's
+  assert.equal(defaultCategory(spread, mine, "bank")?.id, "bank1");
+  assert.equal(defaultCategory(spread, new Map(), "insurer")?.id, "ins1");
+  assert.equal(defaultCategory(spread, new Map(), null)?.id, "bank1");
+  assert.equal(defaultCategory([], new Map(), null), undefined);
+});
+
+test("the tabs count and filter a category's metrics", () => {
+  const ms = spread[0].metrics!;
+  assert.deepEqual(tabCounts(ms), { all: 4, starter: 2, required: 2 });
+  assert.deepEqual(inTab(ms, "starter").map(m => m.key), ["a", "b"]);
+  assert.deepEqual(inTab(ms, "required").map(m => m.key), ["a", "c"]);
+  assert.equal(inTab(ms, "all").length, 4);
+});
+
+test("six rows show at first; a linked metric further down, or 'more', shows all (a single extra row is never hidden)", () => {
+  assert.equal(shownRows(12, false), 6);
+  assert.equal(shownRows(12, true), 12);
+  assert.equal(shownRows(12, false, 9), 12);
+  assert.equal(shownRows(12, false, 2), 6);
+  assert.equal(shownRows(7, false), 7);
+  assert.equal(shownRows(3, false), 3);
+});
+
+test("a replaced metric says what replaced it", () => {
+  const nameOf = nameLookup([{ metrics: [full("claims_notified", { name: "Claims notified" })] }] as never);
+  assert.equal(deprecationWord({ deprecated_in: "1.1", replaced_by: "claims_notified" }, nameOf), "Replaced by Claims notified · 1.1");
+  assert.equal(deprecationWord({ deprecated_in: "1.1", replaced_by: null }, nameOf), "Deprecated · 1.1");
+  assert.equal(deprecationWord({ deprecated_in: null, replaced_by: null }, nameOf), null);
+  assert.equal(nameOf("claims_count"), "Claims count");
+});
+
+test("search finds a metric by key, name, question or category", () => {
+  assert.deepEqual(searchMetrics(spread, "  LEND ").map(r => r.m.key), ["e"]);
+  assert.deepEqual(searchMetrics(spread, "q f").map(r => r.m.key), ["f"]);
+  assert.deepEqual(searchMetrics(spread, "").map(r => r.m.key), []);
+});
+
+test("the guide's rail shows four chapters and keeps the rest under 'all'", () => {
+  const chs = chaptersOf({ guide: { "1": { title: "One", md: "" }, "3": { title: "Levels", md: "" } }, drawn: { "9": { title: "Checks", md: "" } } });
+  assert.deepEqual(chs.map(c => c.id).slice(0, 3), ["intro", "s1", "s2"]);
+  assert.ok(!chs.some(c => c.id === "s5"));
+  assert.equal(chs.find(c => c.id === "s2")?.title, "Chapter 2");
+  const { shown, rest, openRest } = splitChapters(chs, "s7");
+  assert.deepEqual(shown.map(c => c.id), ["intro", "s3", "s9", "changes"]);
+  assert.equal(rest.length, chs.length - 4);
+  assert.equal(openRest, true);
+  assert.equal(splitChapters(chs, "s3").openRest, false);
+});
+
+test("the banner says whether the institution serves the figures and whether checks are on", () => {
+  const base = { configured: true, validationOn: true, approved: true, name: "Austin Tech Bank", source: "bank" as const, coverage: { some: 11, total: 12 } };
+  const on = connectionLine(base);
+  assert.equal(on.tone, "good");
+  assert.equal(on.pill, "Connected · checks on");
+  assert.equal(on.text, "Austin Tech Bank serves these figures (sample bank, 11 of 12 products), so Amiri Agent checks its expectations against them.");
+  const off = connectionLine({ ...base, validationOn: false, approved: false });
+  assert.equal(off.pill, "Connected · checks off");
+  assert.match(off.text, /approve a ready connection first/);
+  assert.equal(connectionLine({ ...base, configured: false }).pill, "Not connected");
+  assert.match(connectionLine({ ...base, name: null, source: null, coverage: null }).text, /^The institution serves these figures, so/);
 });

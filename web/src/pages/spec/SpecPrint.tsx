@@ -6,7 +6,7 @@
 import { Fragment, useEffect, type ReactNode } from "react";
 import type { Spec, SpecCategory, SpecMetric } from "../../api/spec";
 import { Markdown } from "../../components/markdown";
-import { useSpec } from "./Spec";
+import { useSpec } from "./useSpec";
 import { errText } from "../../components/ui";
 
 const PUBLISHER = "Amiri Agent";
