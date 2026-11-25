@@ -1,11 +1,9 @@
 import { createContext, lazy, Suspense, useContext, useEffect, useState, type ReactNode } from "react";
-import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Icon } from "./components/Icon";
-import { PageTitle } from "./components/rd";
 import { PageSkeleton } from "./components/ui";
 import { api } from "./api/client";
 import { setZone } from "./format";
-import "./styles/shell.css";  // only .btn--lg is still used (Login); the shell itself is styles/v2/shell.css
 import { Shell } from "./components/v2/Shell";
 import { BUILT, NAV } from "./components/v2/nav";
 import { InstitutionPage } from "./pages/institution/Institution";
@@ -28,6 +26,7 @@ import { SettingsPage } from "./pages/admin/Settings";
 import { FindingsPage } from "./pages/findings/Findings";
 import { SpecPage } from "./pages/spec/Spec";
 import { SpecPrintPage } from "./pages/spec/SpecPrint";
+import { NotFoundPage } from "./pages/NotFound";
 
 // The v2 component gallery: dev server only. `import.meta.env.DEV` is a constant false in the production build, so the
 // import below is dropped there and /dev/v2 doesn't exist (checked by grepping dist/ for the gallery's words).
@@ -52,15 +51,6 @@ function NeedsInstitution({ title, what, children }: { title: string; what: stri
   return <NeedsInstitutionPage title={title} what={what} />;
 }
 
-
-function NotBuilt({ title }: { title: string }) {
-  return (
-    <div className="page rd">
-      <PageTitle title={title} lede="This page isn't available. It may have moved, or it isn't part of this version." />
-      <p style={{ margin: "24px 0 0" }}><Link className="btn" to="/home">Go to the Overview</Link></p>
-    </div>
-  );
-}
 
 export function App() {
   // first: has this browser passed the bot check? (no login; AUTH_MODE=off: no check at all)
@@ -127,9 +117,9 @@ function Frame({ inst }: { inst: Installation }) {
         <Route path="/spec" element={<SpecPage />} />
         {DevGallery && <Route path="/dev/v2" element={<Suspense fallback={<PageSkeleton bare />}><DevGallery /></Suspense>} />}
         {[...NAV.risk_manager, ...NAV.platform_admin].filter(([, , to]) => !BUILT.has(to)).map(([, label, to]) => (
-          <Route key={to} path={to} element={<NotBuilt title={label} />} />
+          <Route key={to} path={to} element={<NotFoundPage title={label} />} />
         ))}
-        <Route path="*" element={<NotBuilt title="Page not found" />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Shell>
   );

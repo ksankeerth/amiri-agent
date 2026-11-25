@@ -1,0 +1,66 @@
+/* The screens the boards don't draw (decision D5): the entry screens (Judge login, the reCAPTCHA box, Paused) and Not found.
+   Tokens only. Prefixes v2-lg- (entry, outside the shell, on its own .v2 root) and v2-nf- (inside the shell).
+   Under 720 px: smaller type, the button runs the full width. */
+
+/* ---------- entry: one calm centred column on the plain page */
+.v2-lg { min-height: 100vh; min-height: 100dvh; display: flex; }
+.v2-lg__main { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; padding: var(--v2-sp-48) var(--v2-sp-24); }
+.v2-lg__main:focus { outline: none; }
+.v2-lg__col { width: min(520px, 100%); display: flex; flex-direction: column; align-items: center; text-align: center; }
+.v2-lg__brand { display: flex; flex-direction: column; align-items: center; gap: var(--v2-sp-8); margin-bottom: var(--v2-sp-48); }
+.v2-lg__logo { width: 44px; height: 44px; border-radius: var(--v2-r-lg); font-size: 22px; }
+.v2-lg__brand b { font-size: 22px; font-weight: var(--v2-fw-semibold); letter-spacing: var(--v2-ls-tight); }
+.v2-lg__tag { font-size: var(--v2-fs-body); color: var(--v2-muted); }
+.v2-lg__h1 { font-size: 36px; line-height: 1.15; letter-spacing: -0.03em; font-weight: var(--v2-fw-semibold); text-wrap: balance; overflow-wrap: anywhere; }
+.v2-lg__lede { margin-top: var(--v2-sp-12) !important; max-width: 46ch; font-size: var(--v2-fs-title-lg); line-height: 1.5; color: var(--v2-text-2); text-wrap: pretty; }
+.v2-lg__act { margin-top: var(--v2-sp-28); }
+.v2-lg__act .v2-btn { min-width: 200px; }
+.v2-lg__status { margin-top: var(--v2-sp-16) !important; min-height: 1.4em; font-size: var(--v2-fs-body); line-height: 1.4; color: var(--v2-text-2); }
+.v2-lg__status:empty { display: none; }
+.v2-lg__status[role="alert"] { max-width: 46ch; padding: var(--v2-sp-10) var(--v2-sp-14); border-radius: var(--v2-r-ctl); background: var(--v2-bad-tint); text-align: left; }
+.v2-lg__status[role="alert"] > span { color: var(--v2-bad); }
+.v2-lg__agent { margin-top: var(--v2-sp-20); width: 100%; text-align: left; }
+.v2-lg__fine { margin-top: var(--v2-sp-20) !important; max-width: 46ch; font-size: var(--v2-fs-meta); line-height: 1.5; color: var(--v2-muted); text-wrap: pretty; }
+.v2-lg__fine b { color: var(--v2-text-2); }
+.v2-lg__fine + .v2-lg__fine { margin-top: var(--v2-sp-10) !important; }
+.v2 .v2-lg a { text-decoration: underline; text-underline-offset: 3px; }
+.v2-lg__foot { margin-top: var(--v2-sp-48) !important; font-size: var(--v2-fs-meta); color: var(--v2-muted); }
+
+/* the box: Google draws the widget (304 x 78); a missing box says why, and what to do */
+.v2-lg__check { margin-top: var(--v2-sp-28); min-height: 78px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--v2-sp-12); }
+.v2-lg__captcha { min-height: 78px; display: flex; justify-content: center; max-width: 100%; }
+.v2-lg__problem {
+  width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--v2-sp-6); padding: var(--v2-sp-16) var(--v2-sp-18);
+  border-radius: var(--v2-r-panel); background: var(--v2-warn-bg); border: 1px solid var(--v2-warn-line); color: var(--v2-warn-ink); font-size: var(--v2-fs-body); line-height: 1.5;
+}
+.v2-lg__problem b { color: var(--v2-warn-ink); font-size: var(--v2-fs-title); }
+.v2-lg__problem .v2-btn { margin-top: var(--v2-sp-8); }
+
+/* ---------- not found, inside the shell (the look of an empty page: board 15's title, one line, the way on) */
+.v2-nf { display: flex; flex-direction: column; gap: var(--v2-sp-16); max-width: 640px; min-width: 0; padding-top: var(--v2-sp-16); }
+.v2-nf :where(p, h1, h2, ul) { margin: 0; }
+.v2-nf__h1 { font-size: 36px; line-height: 1.15; letter-spacing: -0.03em; font-weight: var(--v2-fw-semibold); overflow-wrap: anywhere; text-wrap: balance; }
+.v2-nf__lede { max-width: 56ch; font-size: var(--v2-fs-title-lg); line-height: 1.5; color: var(--v2-text-2); }
+.v2-nf__path { align-self: flex-start; max-width: 100%; padding: var(--v2-sp-4) var(--v2-sp-10); border-radius: var(--v2-r-xs); background: var(--v2-count-bg); color: var(--v2-text-2); overflow-wrap: anywhere; }
+.v2-nf__act { margin-top: var(--v2-sp-4); }
+.v2-nf__more { margin-top: var(--v2-sp-16); padding-top: var(--v2-sp-20); border-top: 1px solid var(--v2-line); display: flex; flex-direction: column; gap: var(--v2-sp-10); }
+.v2-nf__more h2 { font-size: var(--v2-fs-title); font-weight: var(--v2-fw-semibold); }
+.v2-nf__links { display: flex; flex-wrap: wrap; gap: 0 var(--v2-sp-20); padding: 0; list-style: none; }
+.v2 .v2-nf .v2-nf__links a:not(.btn) { display: inline-flex; align-items: center; min-height: var(--v2-hit); font-size: var(--v2-fs-body); text-decoration: none; }  /* beats app.css's underline on li links */
+.v2 .v2-nf .v2-nf__links a:not(.btn):hover { text-decoration: underline; }
+.v2 .v2-nf a.v2-btn, .v2 .v2-nf a.v2-btn:hover { text-decoration: none; }
+
+@media (max-width: 719.98px) {
+  .v2-lg__main { align-items: flex-start; padding: var(--v2-sp-40) var(--v2-sp-16) var(--v2-sp-32); }
+  .v2-lg__brand { margin-bottom: var(--v2-sp-32); }
+  .v2-lg__h1, .v2-nf__h1 { font-size: 30px; }
+  .v2-lg__lede, .v2-nf__lede { font-size: var(--v2-fs-lead); }
+  .v2-lg__act { width: 100%; }
+  .v2-lg__act .v2-btn { width: 100%; min-height: var(--v2-hit-phone); }
+  .v2-lg__foot { margin-top: var(--v2-sp-36) !important; }
+  .v2-nf { padding-top: 0; }
+  .v2-nf__act .v2-btn { width: 100%; }
+}
+
+/* a button that is looking or opening keeps focus (aria-disabled, not disabled), so it says so by looking quiet */
+.v2-lg .v2-btn[aria-busy="true"] { opacity: .7; cursor: progress; }
