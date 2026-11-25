@@ -55,3 +55,103 @@ export function uploadWords(p: { code?: string; detail?: string; errors?: { fiel
     : p?.detail && headline !== p.detail ? [p.detail] : [];
   return { headline, items, more: p?.code === "invalid_import" ? Math.max(0, errs.length - shown) + extra : 0 };
 }
+
+// ---------------------------------------------------------------- looking at a file before it is sent
+export interface Peek {
+  products: number; metrics: number; series: number; rows: number; from: string | null; until: string | null;
+  as_of: string; about: string | null; institution: string | null;
+}
+export type PeekResult = { ok: true; peek: Peek } | { ok: false; problem: UploadProblem };
+
+const FORMAT = "amiri-institution-data/1";
+
+/** The offset of the first syntax error in `t` (null: it is valid JSON). Engines word their errors differently and
+ *  some give no position, so this reads the text itself. Only used once JSON.parse has already failed. */
+export function jsonErrorAt(t: string): number | null {
+  let i = 0;
+  const fail = (): never => { throw i; };
+  const ws = () => { while (i < t.length && " \t\n\r".includes(t[i])) i++; };
+  const str = () => {
+    i++;
+    for (;;) {
+      const c = t[i];
+      if (c === undefined || c < " ") fail();
+      if (c === '"') { i++; return; }
+      if (c === "\\") {
+        const e = t[i + 1];
+        if (e !== undefined && '"\\/bfnrt'.includes(e)) i += 2;
+        else if (e === "u" && /^[0-9a-fA-F]{4}$/.test(t.slice(i + 2, i + 6))) i += 6;
+        else { i++; fail(); }
+      } else i++;
+    }
+  };
+  const num = () => { const m = /^-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/.exec(t.slice(i, i + 64)); if (!m) fail(); i += m![0].length; };
+  const val = (): void => {
+    ws();
+    const c = t[i];
+    if (c === "{") {
+      i++; ws();
+      if (t[i] === "}") { i++; return; }
+      for (;;) {
+        ws(); if (t[i] !== '"') fail();
+        str(); ws(); if (t[i] !== ":") fail();
+        i++; val(); ws();
+        if (t[i] === ",") { i++; continue; }
+        if (t[i] === "}") { i++; return; }
+        fail();
+      }
+    } else if (c === "[") {
+      i++; ws();
+      if (t[i] === "]") { i++; return; }
+      for (;;) {
+        val(); ws();
+        if (t[i] === ",") { i++; continue; }
+        if (t[i] === "]") { i++; return; }
+        fail();
+      }
+    } else if (c === '"') str();
+    else if (t.startsWith("true", i)) i += 4;
+    else if (t.startsWith("false", i)) i += 5;
+    else if (t.startsWith("null", i)) i += 4;
+    else num();
+  };
+  try { val(); ws(); if (i < t.length) fail(); return null; } catch (e) { return typeof e === "number" ? e : null; }
+}
+
+/** Where a JSON syntax error is: "line 4, column 12". */
+export function jsonWhere(text: string): string | null {
+  const at = jsonErrorAt(text);
+  if (at === null) return null;
+  const before = text.slice(0, at);
+  return `line ${before.split("\n").length}, column ${before.length - before.lastIndexOf("\n")}`;
+}
+
+/** A first look at the file's text: is it JSON, is it in the import format, and what will it bring in. The server
+ *  checks every row when it is sent; this only keeps an obvious mistake from costing a 15 MB upload. */
+export function peekImport(text: string): PeekResult {
+  let doc: any;
+  try { doc = JSON.parse(text); }
+  catch {
+    const where = jsonWhere(text);
+    return { ok: false, problem: { headline: "The file isn't valid JSON, so nothing was imported.", items: where ? [`${where}: this isn't valid JSON here`] : [], more: 0 } };
+  }
+  const bad = (field: string, message: string): PeekResult => ({ ok: false, problem: { headline: "The file isn't in the import format, so nothing was imported.", items: [`${field}: ${message}`], more: 0 } });
+  if (doc === null || typeof doc !== "object" || Array.isArray(doc)) return bad("(the file)", "must be one JSON object");
+  if (doc.format !== FORMAT) return bad("format", `must be "${FORMAT}"`);
+  if (typeof doc.as_of !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(doc.as_of)) return bad("as_of", "must be a date, like 2026-11-23");
+  if (!doc.catalog || !Array.isArray(doc.catalog.products)) return bad("catalog.products", "is missing");
+  if (!Array.isArray(doc.series)) return bad("series", "is missing");
+  let rows = 0, from: string | null = null, until: string | null = null;
+  for (const s of doc.series) for (const r of Array.isArray(s?.rows) ? s.rows : []) {
+    rows++;
+    if (typeof r?.from === "string" && (from === null || r.from < from)) from = r.from;
+    if (typeof r?.until === "string" && (until === null || r.until > until)) until = r.until;
+  }
+  const metrics = doc.catalog.products.reduce((n: number, p: any) => n + (Array.isArray(p?.metrics) ? p.metrics.length : 0), 0);
+  const name = doc.catalog.profile?.name ?? doc.catalog.profile?.institution_name;
+  return { ok: true, peek: { products: doc.catalog.products.length, metrics, series: doc.series.length, rows, from, until, as_of: doc.as_of,
+    about: typeof doc.about === "string" && doc.about ? doc.about : null, institution: typeof name === "string" ? name : null } };
+}
+
+/** "376 series · 132,769 rows" */
+export const bulkWords = (p: Pick<Peek, "series" | "rows">) => `${n(p.series, "series", "series")} · ${n(p.rows, "row")}`;

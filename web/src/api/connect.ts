@@ -1,6 +1,6 @@
-// The institution's data (imported as a JSON file), the connector's reports, approval and the validation switch.
+// The institution's data (a sample, or a JSON file imported), the connector's reports, approval and the validation switch.
 import type { ImportSummary } from "../pages/admin/importWords";
-import { api } from "./client";
+import { api, ApiError, ME, type Problem } from "./client";
 
 export type CheckStatus = "ready" | "ready_with_gaps" | "not_ready";
 export type StepStatus = "pass" | "warn" | "fail";
@@ -48,8 +48,25 @@ export const connectApi = {
   /** The file as it is, as the body: the server checks it, and nothing is stored unless all of it is valid. */
   importFile: (file: Blob, name: string) => api<Connection>(`${C}:import?file_name=${encodeURIComponent(name)}`,
     { method: "POST", body: file, headers: { "content-type": "application/json" } }),
-  /** Where the example file downloads from (a plain link: the browser saves it). */
+  /** Where the example file downloads from (a plain link: the browser saves it). `scenario` is the sample's conditions
+   *  ("remittances_fall,floods", or "none"); left out, the sample plants the demo's own. */
   exampleUrl: `${C}:example`,
+  exampleHref: (scenario?: string) => `${C}:example${scenario ? `?scenario=${encodeURIComponent(scenario)}` : ""}`,
+  /** The sample bank (or insurer, for an insurer) as a file in memory, with the name the server gives it: this is what
+   *  "use the sample" sends to `importFile`. About 15 MB for a bank. */
+  example: async (scenario?: string): Promise<{ blob: Blob; name: string }> => {
+    let r: Response;
+    try { r = await fetch(connectApi.exampleHref(scenario), { headers: { "X-Amiri-Actor": ME } }); }
+    catch { throw new ApiError({ status: 0, code: "network", detail: "Amiri Agent didn't answer. It may be starting up after a quiet spell: try again in a few seconds." }); }
+    if (!r.ok) {
+      const text = await r.text();
+      let p: Problem | undefined;
+      try { p = JSON.parse(text); } catch { /* a proxy's error page */ }
+      throw new ApiError(p && p.code ? p : { status: r.status, code: "http_" + r.status, detail: text || r.statusText });
+    }
+    const name = /filename="?([^";]+)"?/.exec(r.headers.get("content-disposition") ?? "")?.[1] ?? "sample-data.json";
+    return { blob: await r.blob(), name };
+  },
   check: () => api<Report>(`${C}:check`, { method: "POST" }),
   checks: () => api<{ items: (CheckSummary & { summary: Report["summary"]; run_by: string })[] }>(`${C}/checks`).then(r => r.items),
   report: (id: string) => api<Report>(`${C}/checks/${encodeURIComponent(id)}`),
