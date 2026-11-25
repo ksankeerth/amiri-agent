@@ -15,8 +15,7 @@ import { EventsPage } from "./pages/events/Events";
 import { MonitorsPage } from "./pages/monitors/Monitors";
 import { StudioPage } from "./pages/studio/Studio";
 import { StudioRunPage } from "./pages/studio/StudioRun";
-import { SeriesDetail } from "./pages/SeriesDetail";
-import { SeriesList } from "./pages/SeriesList";
+import { SeriesPage } from "./pages/series/Series";
 import { OverviewPage } from "./pages/Overview";
 import { RadarPage } from "./pages/radar/Radar";
 import { BotCheckPage, PausedPage } from "./pages/Login";
@@ -125,8 +124,7 @@ function Frame({ inst }: { inst: Installation }) {
         <Route path="/monitors/:id?" element={<NeedsInstitution title="Monitors" what="Monitors"><MonitorsPage /></NeedsInstitution>} />
         <Route path="/studio/:id?" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><StudioPage /></NeedsInstitution>} />
         <Route path="/studio/run/:id" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><StudioRunPage /></NeedsInstitution>} />
-        <Route path="/series" element={<SeriesList />} />
-        <Route path="/series/:id" element={<SeriesDetail />} />
+        <Route path="/series/:id?" element={<SeriesPage />} />
         <Route path="/institution" element={<InstitutionPage />} />
         <Route path="/institution/new" element={<NewInstitutionPage />} />
         <Route path="/institution/setup" element={<SetupWizard />} />

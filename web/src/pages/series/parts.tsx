@@ -5,7 +5,6 @@ import { seriesApi, type SeriesStatus } from "../../api/series";
 import { useNow, useRole } from "../../components/ui";
 import { due, zx, ZONE_LABEL } from "../../format";
 import { ruleText } from "../../plain";
-import "../../styles/rd-series.css";
 import { trackPos } from "./words";
 
 export function useSeriesStatus() {

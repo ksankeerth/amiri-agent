@@ -81,7 +81,7 @@ const FIXED: Preset[] = [
   { id: "", label: "None (no theme on findings)", theme: null },
 ];
 // gold and oil look like currency pairs (XAU/USD, XBR/USD): they only get their own meaning, never an exchange rate
-const COMMODITY: Record<string, string> = { XAU: "gold", WTI: "oil", BRENT: "oil", XBR: "oil", XTI: "oil", URALS: "oil", USOIL: "oil", UKOIL: "oil" };
+export const COMMODITY: Record<string, string> = { XAU: "gold", WTI: "oil", BRENT: "oil", XBR: "oil", XTI: "oil", URALS: "oil", USOIL: "oil", UKOIL: "oil" };
 export function themePresets(symbol: string): Preset[] {
   const [a, b] = symbol.toUpperCase().split("/");
   const c = COMMODITY[a ?? ""];
@@ -92,12 +92,12 @@ export function themePresets(symbol: string): Preset[] {
   ] : [];
   return [...fx, ...FIXED];
 }
-const AUTO = "auto";
+export const AUTO = "auto";
 const same = (a: Theme, b: Theme) => a.theme === b.theme && a.direction_up === b.direction_up && (a.item ?? null) === (b.item ?? null)
   && (a.currency ?? null) === (b.currency ?? null);
-const themeId = (t: Theme | null, symbol: string) => (t ? themePresets(symbol).find(x => x.theme && same(x.theme, t))?.id ?? "custom" : "");
-const themeFor = (id: string, symbol: string) => themePresets(symbol).find(t => t.id === id)?.theme ?? null;
-const parsePlaces = (s: string) => s.split(/[,\s]+/).map(x => x.trim().toUpperCase()).filter(Boolean);
+export const themeId = (t: Theme | null, symbol: string) => (t ? themePresets(symbol).find(x => x.theme && same(x.theme, t))?.id ?? "custom" : "");
+export const themeFor = (id: string, symbol: string) => themePresets(symbol).find(t => t.id === id)?.theme ?? null;
+export const parsePlaces = (s: string) => s.split(/[,\s]+/).map(x => x.trim().toUpperCase()).filter(Boolean);
 const METAL: Record<string, string> = { XAU: "gold", XAG: "silver", XPT: "platinum" };  // not currencies to Intl: "a stronger xau"
 const THEME_WORDS: Record<string, string> = { fx: "Exchange rate", commodities: "Commodity price", rates: "Interest rate" };
 /** What a move in this series means, in a sentence a banker would say. */
