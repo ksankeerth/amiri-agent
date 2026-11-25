@@ -23,3 +23,18 @@ export function useRecentFindings() {
   return { items, err, loadedAt, load };
 }
 
+
+/** Findings made by tests ("Try a move" on a market series): kept out of the live picture, so the page asks for them apart
+ *  and shows them only when the person chooses. Same 7 days, same 30 s reload. */
+export function useSandboxFindings() {
+  const [items, setItems] = useState<FindingRow[]>([]);
+  const load = useCallback(async () => {
+    try {
+      const xs = await investigationApi.findings("?world=sandbox&limit=200");
+      const since = Date.now() - DAYS * 86400_000;
+      setItems(xs.filter(f => new Date(f.created_at).getTime() >= since));
+    } catch { /* the live list is the page; tests are extra */ }
+  }, []);
+  useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t); }, [load]);
+  return { items, load };
+}

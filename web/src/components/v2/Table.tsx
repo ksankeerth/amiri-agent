@@ -39,17 +39,17 @@ export function Table({ label, cols, colsPhone, columns, closed, children, class
   );
 }
 
-interface RowBase { children: ReactNode; selected?: boolean; className?: string; cols?: string; colsPhone?: string }
+interface RowBase { children: ReactNode; selected?: boolean; className?: string; cols?: string; colsPhone?: string; /** An anchor for a deep link (#f-...). */ id?: string }
 type RowAction =
   | { to: string; onSelect?: undefined; label: string }   // a link
   | { onSelect: () => void; to?: undefined; label: string } // selects (a list beside a detail): aria-pressed
   | { to?: undefined; onSelect?: undefined; label?: undefined };
 export type RowProps = RowBase & RowAction;
 
-export function Row({ children, selected, className, cols, colsPhone, to, onSelect, label }: RowProps) {
+export function Row({ children, selected, className, cols, colsPhone, id, to, onSelect, label }: RowProps) {
   const interactive = to !== undefined || onSelect !== undefined;
   return (
-    <div role="row" className={`v2-row${interactive ? " is-action" : ""}${selected ? " is-selected" : ""}${className ? ` ${className}` : ""}`} style={colsStyle(cols, colsPhone)}>
+    <div role="row" id={id} className={`v2-row${interactive ? " is-action" : ""}${selected ? " is-selected" : ""}${className ? ` ${className}` : ""}`} style={colsStyle(cols, colsPhone)}>
       {to !== undefined && <div role="cell" className="v2-row__hitcell"><Link to={to} className="v2-row__hit" aria-current={selected ? "true" : undefined}><span className="v2-sr">{label}</span></Link></div>}
       {onSelect && <div role="cell" className="v2-row__hitcell"><button type="button" className="v2-row__hit" aria-pressed={!!selected} onClick={onSelect}><span className="v2-sr">{label}</span></button></div>}
       {children}

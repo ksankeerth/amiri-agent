@@ -16,8 +16,9 @@ import { useCrumbs } from "../../components/v2/Shell";
 import { StaleBanner } from "../../components/v2/StaleBanner";
 import { TabPanel, Tabs } from "../../components/v2/Tabs";
 import { ago, plural, until, ZONE_LABEL } from "../../format";
-import { count, investigationFailed } from "../../plain";
+import { count } from "../../plain";
 import { DAYS, useRecentFindings } from "../findings/recent";
+import { investigationDidntRun } from "../findings/words";
 import { InvestigateNowButton, useInvestigationStatus } from "./investigate";
 import { ClearSimulated, EventsSkeleton, EventsTable, Note, Runs, RunningNote } from "./listParts";
 import { alertsByEvent, confirmedCount, ledeText, page, PAGE_SIZE, RUNS_LIMIT, sortEvents, tabRows, type Show, type Sort } from "./listWords";
@@ -108,7 +109,7 @@ export function EventsPage() {
   const inProgress = (recent.items ?? []).filter(f => f.status === "grouped").length;
   const noEvent = (recent.items ?? []).filter(f => f.status === "set_aside");
   // "set aside" holds both judgements and runs the agent refused: only the first are "no impact found"
-  const notInvestigated = noEvent.filter(f => investigationFailed(f.status, f.outcome?.reason)).length;
+  const notInvestigated = noEvent.filter(investigationDidntRun).length;
   const noImpact = noEvent.length - notInvestigated;
 
   const nextBatch = status?.next_batch_at && status.connected ? (new Date(status.next_batch_at) <= now ? "very soon" : `in ${until(status.next_batch_at, now)}`) : null;

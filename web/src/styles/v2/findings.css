@@ -1,0 +1,89 @@
+/* Findings (board 04; states: board 16 section E; phone: the board's 720 px rule, rows wrap and the place and signal hide). Tokens only. */
+.v2-fd { display: flex; flex-direction: column; gap: var(--v2-sp-28); min-width: 0; }
+
+/* the old stylesheets underline links inside p and li (0,2,1): a link here underlines on hover only */
+.v2 .v2-fd a.v2-arrowlink { text-decoration: none; }
+.v2 .v2-fd a.v2-arrowlink:hover { text-decoration: underline; }
+
+/* ---------- heading and the waiting panel */
+.v2-fd-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--v2-sp-12) var(--v2-sp-16); }
+.v2-fd-head__t { flex: 1 1 420px; min-width: 0; }
+.v2-fd-h1 { font-size: 36px; line-height: 1.15; letter-spacing: -0.03em; font-weight: var(--v2-fw-semibold); }
+.v2-fd-lede { margin-top: var(--v2-sp-6); font-size: var(--v2-fs-lead); color: var(--v2-text-2); }
+.v2-fd-head__act { display: flex; flex-direction: column; align-items: flex-end; gap: var(--v2-sp-6); }
+.v2-fd-fresh { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--v2-sp-4) var(--v2-sp-8); }
+.v2-fd-wait {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-12); padding: var(--v2-sp-10) var(--v2-sp-14);
+  border: 1px solid var(--v2-line); border-radius: var(--v2-r-lg); background: var(--v2-surface); font-size: var(--v2-fs-meta);
+}
+.v2-fd-wait__dot { flex: none; width: 8px; height: 8px; border-radius: 4px; background: var(--v2-dot-warn); }
+
+/* ---------- tabs, the source filter, the test findings */
+.v2-fd-tabs .v2-tabs__bar { margin-bottom: var(--v2-sp-8); }
+.v2-fd-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-4) var(--v2-sp-12); padding-bottom: var(--v2-sp-8); }
+.v2-fd-source { display: flex; align-items: center; gap: var(--v2-sp-8); font-size: var(--v2-fs-meta); color: var(--v2-muted); }
+.v2-fd-select {
+  min-height: 32px; padding: 0 var(--v2-sp-8); border: 1px solid var(--v2-line-input); border-radius: var(--v2-r-nav); background: var(--v2-surface);
+  color: var(--v2-text); font: var(--v2-fw-medium) var(--v2-fs-meta)/1.2 var(--v2-font);
+}
+.v2-fd-sim { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-8) var(--v2-sp-16); margin: var(--v2-sp-10) 0 var(--v2-sp-4); font-size: var(--v2-fs-meta); color: var(--v2-text-2); }
+.v2-fd-sim label { display: flex; align-items: center; gap: var(--v2-sp-8); }
+.v2-fd-sim input { width: 16px; height: 16px; accent-color: var(--v2-brand); }
+
+/* ---------- a group: its heading, its rows, the fold */
+.v2-fd-grp { margin-top: var(--v2-sp-8); }
+.v2-fd-grp .v2-sechead { padding: var(--v2-sp-18) 0 var(--v2-sp-8); margin-bottom: 0; align-items: center; }
+.v2-fd-grp .v2-sechead__t { font-size: var(--v2-fs-title-lg); letter-spacing: 0; }
+.v2-fd-gmeta::before { content: "· "; }
+.v2-fd-more { margin-top: var(--v2-sp-6); padding-left: 0; padding-right: 0; }
+.v2-fd-cap { padding-top: var(--v2-sp-12); }
+.v2-fd-foot { max-width: 720px; padding-top: var(--v2-sp-20); }
+
+/* the column names are for assistive technology only (the board has no header row) */
+.v2-fd-table .v2-row--head { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); border: 0; }
+
+/* ---------- a row: time, who found it, the finding, where, how strong */
+.v2-fd-row { --v2-row-py: 12px; align-items: start; }
+.v2-fd-row > .v2-cell { min-width: 0; }
+.v2-fd-time { font-size: var(--v2-fs-meta); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; padding-top: 1px; }
+.v2-fd-src { display: flex; align-items: center; gap: var(--v2-sp-6); font-size: var(--v2-fs-cap); color: var(--v2-text-2); padding-top: 2px; }
+.v2-fd-src .v2-icon, .v2-fd-src svg { margin-right: 0; }
+.v2-fd-src__t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v2-fd-what { display: flex; flex-direction: column; gap: var(--v2-sp-2); }
+.v2-fd-title { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-4) var(--v2-sp-8); }
+.v2-fd-title .v2-title { font-size: var(--v2-fs-body); font-weight: var(--v2-fw-regular); overflow-wrap: anywhere; }
+.v2-fd-sub { font-size: var(--v2-fs-cap); color: var(--v2-muted); overflow-wrap: anywhere; }
+.v2-fd-where { font-size: var(--v2-fs-cap); padding-top: 2px; overflow-wrap: anywhere; }
+.v2-fd-signal { display: flex; justify-content: flex-end; padding-top: 3px; }
+.v2-fd-sig rect { fill: var(--v2-dot-sep); }
+.v2-fd-sig rect.is-on { fill: var(--v2-text); }
+.v2-fd-check { min-height: 0; padding: 0 var(--v2-sp-4); }
+.v2-fd-row.is-target { background: var(--v2-brand-tint); box-shadow: -3px 0 0 var(--v2-brand); }
+.v2 .v2-fd-row.is-target .v2-fd-sub, .v2 .v2-fd-row.is-target .v2-fd-where, .v2 .v2-fd-row.is-target .v2-fd-time { color: var(--v2-text-2); }  /* A1 */
+.v2 .v2-fd-row.is-action:hover .v2-fd-sub, .v2 .v2-fd-row.is-action:focus-within .v2-fd-sub,
+.v2 .v2-fd-row.is-action:hover .v2-fd-where, .v2 .v2-fd-row.is-action:focus-within .v2-fd-where { color: var(--v2-text-2); }  /* A1: no muted text on a hover fill */
+
+/* ---------- loading: the table's shape */
+.v2-fd-sk { display: block; border-radius: var(--v2-r-xs); background: var(--v2-count-bg); animation: v2-pulse 1.6s ease-in-out infinite; }
+.v2-fd-skel { border-bottom: 1px solid var(--v2-line); margin-top: var(--v2-sp-18); }
+.v2-fd-skel__row { display: grid; grid-template-columns: 52px 168px minmax(0, 1fr) 118px 24px; gap: var(--v2-sp-14); align-items: center; padding: var(--v2-sp-14) 0; border-top: 1px solid var(--v2-line); }
+.v2-fd-skel__src { width: 80%; }
+@media (prefers-reduced-motion: reduce) { .v2-fd-sk { animation: none; } }
+
+/* ---------- phone: time and source on the first line, the finding under them; the place and the signal hide */
+@media (max-width: 719.98px) {
+  .v2-fd { gap: var(--v2-sp-24); }
+  .v2-fd-h1 { font-size: 32px; }
+  .v2-fd-head__act { width: 100%; align-items: stretch; }
+  .v2-fd-fresh { justify-content: flex-start; }
+  .v2-fd-wait { width: 100%; }
+  .v2-fd-tools { padding-bottom: var(--v2-sp-10); }
+  .v2-fd-gmeta::before { content: none; }
+  .v2-fd-select { min-height: var(--v2-hit-phone); }
+  .v2-fd-row { grid-template-columns: 52px minmax(0, 1fr); grid-template-areas: "time src" "what what"; row-gap: var(--v2-sp-4); }
+  .v2-fd-time { grid-area: time; }
+  .v2-fd-src { grid-area: src; }
+  .v2-fd-what { grid-area: what; }
+  .v2-fd-skel__row { grid-template-columns: 52px minmax(0, 1fr); }
+  .v2-fd-skel__row > :nth-child(3) { grid-column: 1 / -1; }
+}

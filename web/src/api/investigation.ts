@@ -62,6 +62,7 @@ const B = "/api/v1";
 export const investigationApi = {
   status: () => api<InvestigationStatus>(`${B}/investigation:status`),
   findings: (q = "") => api<{ items: FindingRow[] }>(`${B}/findings${q}`).then(r => r.items),
+  finding: (id: string) => api<FindingRow>(`${B}/findings/${encodeURIComponent(id)}`),
   investigateNow: (finding_ids?: string[]) =>
     api<Started>(`${B}/investigations`, { method: "POST", json: finding_ids ? { finding_ids } : {} }),
   clearSandbox: () => api<{ findings: number; investigations: number }>(`${B}/sandbox`, { method: "DELETE" }),
