@@ -13,7 +13,7 @@ import "../styles/alerts.css";
 import { FlowFilter } from "../components/FlowFilter";
 import { Icon } from "../components/Icon";
 import { Empty, ListSkeleton, LoadError, useNow, useToast } from "../components/ui";
-import { ago, dayTime } from "../format";
+import { ago, dayTime, person } from "../format";
 import {
   ACTION_MEANS, alertOrder, checkMove, count, earliest, eventTitle, impactText, LEVEL_LABEL, LEVEL_TONE, listText, onDay, relDay, sizeTiming, sourceInfo,
 } from "../plain";
@@ -89,8 +89,8 @@ function AlertLine({ a, ev, label, primary, onChange }: { a: AlertItem; ev?: Eve
           {a.status !== "new" && <button className="btn btn--sm btn--ghost" type="button" title={ACTION_MEANS.reopen} disabled={busy} onClick={() => act("reopen")}>Reopen</button>}
         </span>}
       </span>
-      {a.status === "acknowledged" && <p className="ap-done"><Icon name="check" /><span><b>{a.acknowledged_by}</b> is on it{a.acknowledged_at ? `, ${ago(a.acknowledged_at, now)}` : ""}{a.ack_note ? `: “${a.ack_note}”` : ""}</span></p>}
-      {a.status === "resolved" && <p className="ap-done ok"><Icon name="check" /><span>Resolved by <b>{isAgent(a.resolved_by) ? AGENT : a.resolved_by}</b>{a.resolved_at ? `, ${ago(a.resolved_at, now)}` : ""}{a.resolved_note ? `: “${a.resolved_note}”` : ""}</span></p>}
+      {a.status === "acknowledged" && <p className="ap-done"><Icon name="check" /><span><b>{person(a.acknowledged_by)}</b> is on it{a.acknowledged_at ? `, ${ago(a.acknowledged_at, now)}` : ""}{a.ack_note ? `: “${a.ack_note}”` : ""}</span></p>}
+      {a.status === "resolved" && <p className="ap-done ok"><Icon name="check" /><span>Resolved by <b>{isAgent(a.resolved_by) ? AGENT : person(a.resolved_by)}</b>{a.resolved_at ? `, ${ago(a.resolved_at, now)}` : ""}{a.resolved_note ? `: “${a.resolved_note}”` : ""}</span></p>}
       {open && <div className="ap-x" id={`${id}-x`}>
         <h3>Why AMIRI Agent expects this</h3>
         <p className="dl-ai"><span className="dl-ai-chip"><b aria-hidden="true">AI</b>AMIRI Agent's assessment</span>
@@ -102,7 +102,7 @@ function AlertLine({ a, ev, label, primary, onChange }: { a: AlertItem; ev?: Eve
         {a.via_monitor && <p className="muted">Sent to you because your team owns <Link to={`/monitors/${a.via_monitor}`}>the monitor</Link> that found it.</p>}
         <h3>What changed</h3>
         <ol className="ap-hist">{runs(a).map((r, i) => <li key={i}><b>{CHANGE[r.change] ?? r.change}{r.n > 1 ? ` ${r.n} times` : ""}</b>
-          <span>{r.n > 1 ? "last " : ""}{dayTime(r.at)}{r.by ? ` · ${r.by}` : ""}</span></li>)}</ol>
+          <span>{r.n > 1 ? "last " : ""}{dayTime(r.at)}{r.by ? ` · ${person(r.by)}` : ""}</span></li>)}</ol>
       </div>}
     </li>
   );

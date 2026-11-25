@@ -77,7 +77,7 @@ function NewOwnModal({ onClose }: { onClose: () => void }) {
       <FillFromJson what="a scenario" read={scenariosOf} onFill={c => fillFrom(c.data)}
         example={'{"title": "…", "headlines": [{"title": "…", "day": 1, "time": "09:00"}], "prices": {"direction": "weaker", "size_pct": 5, "ramp_days": 4}}'} />
       <label className="field"><span>Name</span>
-        <input className="input" value={title} maxLength={120} placeholder="e.g. Gulf visa freeze" onChange={e => setTitle(e.target.value)}
+        <input className="input" value={title} maxLength={120} placeholder="e.g. Port strike" onChange={e => setTitle(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && title.trim()) go(); }} /></label>
       {(n > 0 || (p && p.direction !== "none")) && <p className="small muted" style={{ margin: 0 }}>
         {n > 0 ? plural(n, "headline") : "No headlines"}{p && p.direction !== "none" ? `, and the rate moves ${p.size_pct}% ${p.direction} over ${p.ramp_days} days` : ""}: you can change them on the next page.</p>}
@@ -170,7 +170,7 @@ function HeadlineForm({ value, dayLabel, onSave, onCancel }: {
   return (
     <div className="st-form">
       <label className="field"><span>Headline</span>
-        <textarea className="input" rows={2} autoFocus maxLength={200} value={h.title} placeholder="e.g. Saudi Arabia freezes new work visas for six months"
+        <textarea className="input" rows={2} autoFocus maxLength={200} value={h.title} placeholder="e.g. Dockworkers at the main port strike for a week"
           onChange={e => setH({ ...h, title: e.target.value })} /></label>
       <div className="row wrap" style={{ gap: 10, alignItems: "flex-end" }}>
         <label className="field" style={{ width: 190 }}><span>Published on</span>

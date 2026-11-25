@@ -1,0 +1,202 @@
+{
+ "flood_bank": {
+  "country": "LK",
+  "hypotheses": [
+   "pawning.demand.cash_stress",
+   "retail_loan.repayment_stress.disaster",
+   "retail_loan.repayment_stress.disaster"
+  ],
+  "listed": [
+   "business_loan.repayment_stress.disaster",
+   "pawning.demand.cash_stress",
+   "retail_loan.repayment_stress.disaster",
+   "retail_loan.segment.disaster",
+   "savings.channel.disaster",
+   "savings.segment.disaster"
+  ],
+  "tracks_version": "builtin-v2.4"
+ },
+ "flood_insurer": {
+  "country": "LK",
+  "hypotheses": [
+   "motor.claim_frequency.disaster",
+   "motor.claim_frequency.disaster",
+   "property.catastrophe.disaster",
+   "property.catastrophe.disaster"
+  ],
+  "listed": [
+   "motor.claim_frequency.disaster",
+   "property.catastrophe.disaster"
+  ],
+  "tracks_version": "builtin-v2.4"
+ },
+ "foreign_fx_move": {
+  "country": "LK",
+  "hypotheses": [],
+  "listed": [],
+  "tracks_version": "builtin-v2.4"
+ },
+ "foreign_rate_cut": {
+  "country": "LK",
+  "hypotheses": [],
+  "listed": [],
+  "tracks_version": "builtin-v2.4"
+ },
+ "fx_importers": {
+  "country": "LK",
+  "hypotheses": [
+   "business_loan.fx_mismatch.imports",
+   "business_loan.fx_mismatch.imports",
+   "business_loan.utilization.importers",
+   "business_loan.utilization.importers"
+  ],
+  "listed": [
+   "business_loan.fx_mismatch.importer_collections",
+   "business_loan.fx_mismatch.imports",
+   "business_loan.utilization.importers"
+  ],
+  "tracks_version": "builtin-v2.4"
+ },
+ "fx_series_only": {
+  "country": "LK",
+  "hypotheses": [
+   "business_loan.fx_mismatch.imports",
+   "business_loan.fx_mismatch.imports",
+   "business_loan.utilization.importers",
+   "business_loan.utilization.importers"
+  ],
+  "listed": [
+   "business_loan.fx_mismatch.importer_collections",
+   "business_loan.fx_mismatch.imports",
+   "business_loan.utilization.importers"
+  ],
+  "tracks_version": "builtin-v2.4"
+ },
+ "fx_small_move": {
+  "country": "LK",
+  "hypotheses": [],
+  "listed": [],
+  "tracks_version": "builtin-v2.4"
+ },
+ "gold_up": {
+  "country": "LK",
+  "hypotheses": [],
+  "listed": [],
+  "tracks_version": "builtin-v2.4"
+ },
+ "id_dengue": {
+  "country": "ID",
+  "hypotheses": [
+   "micro_insurance.claims.epidemic",
+   "micro_insurance.lapses.squeeze"
+  ],
+  "listed": [
+   "micro_insurance.claims.epidemic",
+   "micro_insurance.lapses.squeeze"
+  ],
+  "tracks_version": "builtin-v2.4"
+ },
+ "id_jakarta_flood": {
+  "country": "ID",
+  "hypotheses": [
+   "agriculture.claims.disaster",
+   "micro_insurance.lapses.squeeze",
+   "motor.claim_frequency.disaster",
+   "property.catastrophe.disaster"
+  ],
+  "listed": [
+   "agriculture.claims.disaster",
+   "micro_insurance.lapses.squeeze",
+   "motor.claim_frequency.disaster",
+   "property.catastrophe.disaster"
+  ],
+  "tracks_version": "builtin-v2.4"
+ },
+ "ph_peso_move": {
+  "country": "PH",
+  "hypotheses": [
+   "business_loan.utilization.importers",
+   "customer_fx.demand.currency_weaker"
+  ],
+  "listed": [
+   "business_loan.fx_mismatch.importer_collections",
+   "business_loan.fx_mismatch.imports",
+   "business_loan.utilization.importers",
+   "customer_fx.demand.currency_weaker"
+  ],
+  "tracks_version": "builtin-v2.4"
+ },
+ "ph_saudi_jobs": {
+  "country": "PH",
+  "hypotheses": [
+   "remittance.corridor.abroad",
+   "remittance.volume.remittance_down",
+   "savings.segment.remittance_volume"
+  ],
+  "listed": [
+   "remittance.corridor.abroad",
+   "remittance.volume.remittance_down",
+   "savings.segment.remittance_volume"
+  ],
+  "tracks_version": "builtin-v2.4"
+ },
+ "ph_typhoon": {
+  "country": "PH",
+  "hypotheses": [
+   "agri_loan.repayment_stress.disaster",
+   "agri_loan.restructure.disaster",
+   "business_loan.repayment_stress.disaster",
+   "savings.channel.disaster",
+   "savings.segment.disaster"
+  ],
+  "listed": [
+   "agri_loan.repayment_stress.disaster",
+   "agri_loan.restructure.disaster",
+   "business_loan.repayment_stress.disaster",
+   "savings.channel.disaster",
+   "savings.segment.disaster"
+  ],
+  "tracks_version": "builtin-v2.4"
+ },
+ "rate_cut": {
+  "country": "LK",
+  "hypotheses": [
+   "pawning.pricing.rate_cut",
+   "savings.rate_competitiveness.rate_moves",
+   "savings.rate_competitiveness.rate_moves",
+   "savings.rate_competitiveness.rate_moves"
+  ],
+  "listed": [
+   "pawning.pricing.rate_cut",
+   "retail_loan.demand.rate_cut",
+   "retail_loan.prepayment.refinance",
+   "savings.rate_competitiveness.rate_moves"
+  ],
+  "tracks_version": "builtin-v2.4"
+ },
+ "remittance_down": {
+  "country": "LK",
+  "hypotheses": [
+   "pawning.demand.cash_stress",
+   "retail_loan.repayment_stress.remittance",
+   "savings.segment.remittance_volume"
+  ],
+  "listed": [
+   "pawning.demand.cash_stress",
+   "retail_loan.repayment_stress.remittance",
+   "savings.segment.remittance_volume"
+  ],
+  "tracks_version": "builtin-v2.4"
+ },
+ "rival_failure": {
+  "country": "LK",
+  "hypotheses": [
+   "savings.flows.rival_trust_inflow",
+   "savings.flows.rival_trust_inflow"
+  ],
+  "listed": [
+   "savings.flows.rival_trust_inflow"
+  ],
+  "tracks_version": "builtin-v2.4"
+ }
+}

@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from app import settings
-from app.geo import Places, fips_to_iso, home_domain
+from app.geo import Places, fips_to_iso, is_home_outlet, on_domains, relevant
 
 STOP = set("a an the of in on at to for and or but with by from as is are was were be been it its this that these "
            "those after before over under amid says said new more than into about up down out off vs via".split())
@@ -49,12 +49,15 @@ def tokens(text: str) -> set[str]:
     return {w for w in words if w not in STOP and len(w) > 1}
 
 
-def clean_title(raw: str | None) -> str:
+def clean_title(raw: str | None, outlet_hyphens: bool = False) -> str:
+    """outlet_hyphens (a region pack): an outlet's name after a spaced separator may itself hold a hyphen
+    ("... | FOX 4 Dallas-Fort Worth"); without it such a name stays, as it always has."""
     t = html.unescape(html.unescape(raw or "")).strip()
     t = re.sub(r"\s+", " ", t)
     # an outlet's name on either side: "... | Daily FT", "... - Reuters", "Arab News | ..."; only the shorter
     # side goes, so "Exclusive | Rupee falls as oil jumps" keeps its headline
-    m = re.match(r"^(.*\S)\s+[|\u2013\u2014-]\s+([^|\u2013\u2014-]{2,40})$", t)
+    tail = r"[^|\u2013\u2014]" if outlet_hyphens else r"[^|\u2013\u2014-]"
+    m = re.match(r"^(.*\S)\s+[|\u2013\u2014-]\s+(" + tail + r"{2,40})$", t)
     if m and len(m.group(2)) < len(m.group(1)):
         t = m.group(1)
     m = re.match(r"^([^|]{2,30})\s\|\s+(.+)$", t)
@@ -77,7 +80,7 @@ def gdelt_time(value) -> datetime:
 
 
 def from_row(row: dict, p: Places) -> Article | None:
-    title = clean_title(row.get("title"))
+    title = clean_title(row.get("title"), outlet_hyphens=bool(p.region))
     if not title or not is_english(title):
         return None
     a = Article(url=row.get("url") or "", outlet=(row.get("outlet") or "").lower(), title=title,
@@ -90,16 +93,32 @@ def from_row(row: dict, p: Places) -> Article | None:
         iso = codes.get(parts[2]) if len(parts) > 2 else None
         if iso in scope_countries:
             mentions[iso] = mentions.get(iso, 0) + 1
+    a.themes = {t.split(",")[0] for t in (row.get("themes") or "").split(";") if t}
     a.places = set(mentions)
     named = p.codes_in_title(title)
+    is_relevant = relevant(a.themes, title, p) if p.region else True
+    if p.region and not is_relevant:
+        # a region pack: a footprint state or city named in the title counts only for a relevant article (an
+        # actor's "Texas Senate race" gets no Texas); the country's names were dropped from the pack's home already
+        named -= {c for c in named if c in p.subdivisions or c in p.named or c == p.home}
     a.in_title = bool(named)
     a.places |= named
     share = settings.number("FOOTPRINT_SHARE")
-    a.about = named | {c for c, n in mentions.items() if n >= 2 and n >= share * len(blocks)}
-    if mentions.get(p.home, 0) >= settings.integer("HOME_MENTIONS") or a.outlet.endswith(home_domain(p.home)):
+    # with a region pack (app/packs/us.json) the home country's share of the mentions doesn't make it home news
+    a.about = named | {c for c, n in mentions.items() if n >= 2 and n >= share * len(blocks)
+                       and not (p.region and c == p.home)}
+    if p.region:  # as queries.SQL_REGION: a footprint name in the title, a footprint state HOME_MENTIONS times or a
+        # station of the pack, for a relevant article; or one of the pack's outlets on its own
+        state_n = sum(1 for parts in blocks if len(parts) > 3 and parts[3] in p.home_adm1)
+        named_home = p.home in named
+        a.about.discard(p.home)
+        if ((named_home or state_n >= settings.integer("HOME_MENTIONS") or on_domains(a.outlet, p.relevant_outlets))
+                and is_relevant) or is_home_outlet(a.outlet, p):
+            a.about.add(p.home)
+            a.places.add(p.home)
+    elif mentions.get(p.home, 0) >= settings.integer("HOME_MENTIONS") or is_home_outlet(a.outlet, p):
         a.about.add(p.home)
         a.places.add(p.home)
-    a.themes = {t.split(",")[0] for t in (row.get("themes") or "").split(";") if t}
     a.orgs = {o.split(",")[0].lower() for o in (row.get("orgs") or "").split(";") if o}
     a.rules = {r for r in ("home", "footprint", "place", "actor") if row.get(f"r_{r}")}
     return a
@@ -107,7 +126,7 @@ def from_row(row: dict, p: Places) -> Article | None:
 
 def from_provided(item, p: Places) -> Article:
     """A simulation's headline: places as given, or as named in the title."""
-    title = clean_title(item.title)
+    title = clean_title(item.title, outlet_hyphens=bool(p.region))
     a = Article(url=item.url or f"provided:{item.id}", outlet=item.outlet or "provided", title=title,
                 published_at=item.published_at.astimezone(UTC), rules={"provided"})
     scope = {p.home, *p.footprint, *p.named, *p.subdivisions}

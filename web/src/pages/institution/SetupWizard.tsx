@@ -132,7 +132,7 @@ export function SetupWizard() {
 
       {step === "where" && <div className="col gap16">
         <div className="card"><div className="hd"><h2>Add where you operate</h2></div><div className="bd grid2">
-          <Field label="Place" hint="Countries, states, provinces or districts."><PlacePicker scope="iso" onPick={p => addFootprint(p.code)} placeholder="e.g. Kerala, Tamil Nadu, Singapore" /></Field>
+          <Field label="Place" hint="Countries, states, provinces or districts."><PlacePicker scope="iso" onPick={p => addFootprint(p.code)} placeholder="e.g. a state, a province or a country" /></Field>
           <Field label="As"><select className="input" value={role} onChange={e => setRole(e.target.value)}>
             {["branches", "subsidiary", "representative_office", "agents", "digital_only", "home"].map(r => <option key={r} value={r}>{r === "home" ? "Home country" : cap(words(r))}</option>)}</select></Field>
         </div></div>

@@ -1,6 +1,8 @@
 """The investigation agent's request (agents/investigation-agent/openapi.yaml 0.5), built by
 code from the profile and the stored findings."""
 
+import re
+
 from app import reference, settings
 from app.investigation import coverage
 
@@ -51,17 +53,63 @@ def products(ctx: dict, currencies: dict[str, list[str]] | None = None) -> list[
              "currencies": cur.get(p["id"]) or []} for p in ctx["products"]]
 
 
-def finding(row: dict, base_currency: str, exposure: dict | None = None) -> dict:
-    themes = []
-    for t in row["themes"] or []:
+MAX_THEMES = 4  # the investigation agent's limit per finding
+THEME_KEYS = ("theme", "direction", "item", "sector", "currency", "implied")
+
+
+def clean_themes(themes: list[dict] | None, base_currency: str) -> list[dict]:
+    """A finding's themes as the investigation agent accepts them, whatever wrote them (Radar's are free text).
+
+    A theme or direction outside the vocabulary is dropped; Radar has no sector field, so a sector theme's item is
+    its sector; an item the theme doesn't have is dropped; a currency is kept for fx only (the base when missing or
+    malformed); at most MAX_THEMES, without repeats. Themes already in the vocabulary come out as they went in."""
+    vocab = reference.themes()
+    out: list[dict] = []
+    for t in themes or []:
+        if not isinstance(t, dict):
+            continue
         t = dict(t)
         if t.get("theme") == "fx" and t.get("direction") in LEGACY_FX:
             t["direction"], t["currency"] = LEGACY_FX[t["direction"]], t.get("currency") or base_currency
-        themes.append(t)
+        spec = vocab.get(t.get("theme"))
+        if not spec or t.get("direction") not in spec["directions"]:
+            continue
+        clean = {k: t[k] for k in THEME_KEYS if k in t and t[k] is not None}
+        if t["theme"] == "sector":
+            sector = clean.get("sector") or clean.pop("item", None)
+            clean.pop("item", None)
+            if isinstance(sector, str) and sector.strip():
+                clean["sector"] = sector.strip()[:80]
+        else:
+            clean.pop("sector", None)
+            if clean.get("item") not in spec.get("items", []):
+                clean.pop("item", None)
+        if spec.get("currency"):
+            cur = clean.get("currency")
+            clean["currency"] = cur if isinstance(cur, str) and re.fullmatch(r"[A-Z]{3}", cur) else base_currency
+        else:
+            clean.pop("currency", None)
+        if not isinstance(clean.get("implied", False), bool):
+            clean.pop("implied")
+        if clean not in out:
+            out.append(clean)
+    return out[:MAX_THEMES]
+
+
+def clean_evidence(evidence: dict | None) -> dict:
+    """Evidence as the agent accepts it: a web page needs an http(s) address."""
+    ev = dict(evidence or {})
+    if ev.get("web"):
+        ev["web"] = [w for w in ev["web"] if isinstance(w, dict) and re.match(r"^https?://", str(w.get("url") or ""))]
+    return ev
+
+
+def finding(row: dict, base_currency: str, exposure: dict | None = None) -> dict:
+    themes = clean_themes(row["themes"], base_currency)
     return {
         "finding_id": row["finding_id"], "institution_id": row["institution_id"], "source": row["source"],
         "source_ref": row["source_ref"], "kind": row["kind"], "title": row["title"], "explanation": row["explanation"],
-        "score": row["score"], "themes": themes, "places": row["places"] or [], "evidence": row["evidence"],
+        "score": row["score"], "themes": themes, "places": row["places"] or [], "evidence": clean_evidence(row["evidence"]),
         "effective_from": row["effective_from"].isoformat() if row["effective_from"] else None,
         "period": row["period"], "created_at": row["created_at"].isoformat(),
         **({"exposure": exposure} if exposure else {}),

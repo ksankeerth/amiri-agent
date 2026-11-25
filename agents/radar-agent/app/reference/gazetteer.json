@@ -19,7 +19,9 @@
     "IN-TN": [11.0, 78.4], "IN-KL": [10.4, 76.4], "IN-KA": [14.7, 75.9], "IN-MH": [19.4, 75.7], "IN-AP": [15.9, 79.7],
     "IN-TS": [17.9, 79.0], "IN-GJ": [22.3, 71.2], "IN-DL": [28.6, 77.2], "IN-WB": [22.99, 87.85], "IN-PB": [31.1, 75.3],
     "IN-OD": [20.9, 84.8], "PK-SD": [26.0, 68.8], "PK-PB": [31.2, 72.7], "MY-03": [5.3, 102.0], "MY-11": [5.0, 103.0],
-    "MY-06": [3.8, 102.5], "AE-DU": [25.1, 55.25], "SA-01": [24.5, 46.0]
+    "MY-06": [3.8, 102.5], "AE-DU": [25.1, 55.25], "SA-01": [24.5, 46.0],
+    "US-TX": [31.0, -99.9], "US-AZ": [34.3, -111.7], "US-UT": [39.3, -111.7], "US-NV": [39.3, -116.6],
+    "US-CA": [36.78, -119.42]
   },
   "places": [
     {"code": "chk:hormuz", "kind": "chokepoint", "name": "Strait of Hormuz", "country": null, "lat": 26.57, "lon": 56.25, "aliases": ["Hormuz"]},
@@ -78,6 +80,13 @@
     {"code": "city:tokyo", "kind": "city", "name": "Tokyo", "country": "JP", "lat": 35.68, "lon": 139.69, "aliases": []},
     {"code": "city:sydney", "kind": "city", "name": "Sydney", "country": "AU", "lat": -33.87, "lon": 151.21, "aliases": []},
     {"code": "city:london", "kind": "city", "name": "London", "country": "GB", "lat": 51.5, "lon": -0.13, "aliases": []},
-    {"code": "city:new-york", "kind": "city", "name": "New York", "country": "US", "lat": 40.71, "lon": -74.0, "aliases": []}
+    {"code": "city:new-york", "kind": "city", "name": "New York", "country": "US", "lat": 40.71, "lon": -74.0, "aliases": []},
+    {"code": "city:dallas", "kind": "city", "name": "Dallas", "country": "US", "parent": "US-TX", "lat": 32.78, "lon": -96.8, "aliases": ["Dallas-Fort Worth", "DFW"]},
+    {"code": "city:houston", "kind": "city", "name": "Houston", "country": "US", "parent": "US-TX", "lat": 29.76, "lon": -95.37, "aliases": []},
+    {"code": "city:fort-worth", "kind": "city", "name": "Fort Worth", "country": "US", "parent": "US-TX", "lat": 32.76, "lon": -97.33, "aliases": []},
+    {"code": "city:austin", "kind": "city", "name": "Austin", "country": "US", "parent": "US-TX", "lat": 30.27, "lon": -97.74, "aliases": []},
+    {"code": "city:san-antonio", "kind": "city", "name": "San Antonio", "country": "US", "parent": "US-TX", "lat": 29.42, "lon": -98.49, "aliases": []},
+    {"code": "city:midland", "kind": "city", "name": "Midland", "country": "US", "parent": "US-TX", "lat": 32.0, "lon": -102.08, "aliases": ["Permian Basin", "Midland-Odessa"]},
+    {"code": "city:san-jose", "kind": "city", "name": "San Jose", "country": "US", "parent": "US-CA", "lat": 37.34, "lon": -121.89, "aliases": ["Silicon Valley"]}
   ]
 }

@@ -3,9 +3,12 @@ covers, how it gathers and concludes, and its tools. Written for a bank or an in
 the data that differs (taxonomy, templates, the rule table) comes from the server."""
 
 from dataclasses import dataclass, field
+from functools import cache
+from pathlib import Path
 from typing import Any
 
 from app import tools as T
+from app.harness import region_for
 
 
 @dataclass(frozen=True)
@@ -135,3 +138,28 @@ GUIDES: dict[str, Guide] = {
   which traces events to the institution's products and customers. The profile is what they all read.""",
         [T.get_section, T.get_readiness, T.conclude]),
 }
+
+
+# ---------------------------------------------------------------- region packs
+
+# A region pack's guide (app/harness.py) is added to every track's instruction once the profile's home country has
+# one (the US); before the home country is set, and for every other country, the guides above are the whole of it.
+REGION_GUIDES = Path(__file__).parent / "region_guides"
+REGION_SAID = {"us": "Got it, a US {kind}: I'll use the US setup guide."}  # said once a session, by code
+
+
+def region_guide(ctx: dict | None, context_pack: dict | None = None) -> tuple[str, str] | None:
+    """(region, guide text) for the profile's home country, or None (the base guides alone). The text is the
+    server's (the context pack's region_guide) when the session began with the country set, else this agent's
+    copy of the same file."""
+    region = region_for((ctx or {}).get("country"))
+    if not region:
+        return None
+    sent = (context_pack or {}).get("region_guide") or {}
+    text = sent.get("text") if sent.get("region") == region else None
+    return region, text or _guide_file(region)
+
+
+@cache
+def _guide_file(region: str) -> str:
+    return (REGION_GUIDES / f"{region}.txt").read_text().strip()

@@ -1,6 +1,7 @@
 """Runs one check: a fresh agent session, limited in steps and time."""
 
 import asyncio
+import logging
 import time
 
 from google.adk.agents.invocation_context import LlmCallsLimitExceededError
@@ -19,6 +20,7 @@ from app.contract import (
     ToolCall,
     Usage,
 )
+from app.packs import pack_for
 from app.tools import (
     STATE_CHECK,
     STATE_REPORTED,
@@ -30,6 +32,7 @@ from app.tools import (
 )
 from app.web_search import SearchUnavailable
 
+logger = logging.getLogger(__name__)
 USER_ID = "server"
 START_MESSAGE = "Run the check."
 _STATUSES = {"ok", "blocked", "error"}
@@ -40,6 +43,9 @@ async def run_check(req: CheckRequest, agent_app: App | None = None) -> CheckRes
         from app.agent import app as agent_app
 
     limits = req.limits or Limits()
+    pack = pack_for(req.institution.country)
+    if pack:  # the harness is recorded in the logs (the result contract has no field for it)
+        logger.info("check %s: %s region pack %s", req.run_id, pack["region"], pack["version"])
     sessions = InMemorySessionService()
     runner = Runner(app=agent_app, session_service=sessions)
     await sessions.create_session(

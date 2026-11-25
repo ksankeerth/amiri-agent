@@ -1,7 +1,7 @@
 // Run with `npm test` (Node runs the TypeScript directly).
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { changeWords, continuedTo, countOf, continueText, fieldWord, nextOpen, setupOrder, stepFrom, trackFor, valueText, waitingForAnswer } from "./setupFlow.ts";
+import { changeWords, continuedTo, countOf, continueText, fieldWord, nextOpen, NEUTRAL_STARTERS, setupOrder, STARTERS, startersFor, stepFrom, trackFor, US_STARTERS, valueText, waitingForAnswer } from "./setupFlow.ts";
 
 test("an unanswered question holds the move; anything said after it releases it", () => {
   const q = { role: "assistant", kind: "question" }, said = { role: "user", kind: "text" }, picked = { role: "user", kind: "answer" };
@@ -95,4 +95,20 @@ test("a change reads as words: names not ids, field names not keys", () => {
   assert.equal(changeWords(flow, "done", { KW: "Kuwait" }).name, "remittances in: Kuwait");
   assert.equal(changeWords({ section: "rivals", op: "delete", id: "old-rival", before: null, after: null }, "propose").name, "Old rival");
   assert.equal(changeWords({ section: "institution", op: "status", before: { status: "setup" }, after: { status: "active" } }, "done").lead, "Went live");
+});
+
+test("the chat's starters follow the home country: Sri Lanka's as before, the US pack's, or neutral ones", () => {
+  assert.equal(startersFor("LK"), STARTERS);
+  assert.deepEqual(STARTERS.institution, ["We're a commercial bank in Sri Lanka", "Our Board Risk Committee owns risk decisions"]);
+  assert.deepEqual(STARTERS.monitors, ["Watch Gulf jobs for our migrant families", "Watch our main rival's deposit rates"]);
+  assert.equal(startersFor("US"), US_STARTERS);
+  assert.equal(startersFor("us"), US_STARTERS);
+  const us = Object.values(US_STARTERS).flat();
+  for (const chip of ["We're a commercial bank in Dallas, Texas", "We lend to data-center contractors and energy firms",
+                      "Watch ERCOT power curtailments"]) assert.ok(us.includes(chip), chip);
+  for (const c of ["ID", "PH", "GB", null, undefined, ""]) assert.equal(startersFor(c), NEUTRAL_STARTERS);
+  const place = /Sri Lanka|Gulf|Kerala|Tamil|Ceylon|migrant|Texas|Dallas|Houston|ERCOT/i;
+  assert.deepEqual(Object.values(NEUTRAL_STARTERS).flat().filter(x => place.test(x)), []);
+  assert.deepEqual(Object.values(US_STARTERS).flat().filter(x => /Sri Lanka|Gulf|Kerala|Tamil|Ceylon|migrant/i.test(x)), []);
+  for (const set of [US_STARTERS, NEUTRAL_STARTERS]) assert.deepEqual(Object.keys(set).sort(), Object.keys(STARTERS).sort());
 });

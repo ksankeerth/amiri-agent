@@ -1,0 +1,867 @@
+{
+ "changes_since_last_session": [],
+ "current_track": null,
+ "filled_by": {
+  "import": 42
+ },
+ "institution": {
+  "clearing_currencies": [
+   "USD",
+   "EUR"
+  ],
+  "corridors": [
+   "KW",
+   "QA",
+   "AE",
+   "SA"
+  ],
+  "counterparties": [
+   {
+    "aliases": [],
+    "kind": "correspondent_bank",
+    "name": "Correspondent bank (USD clearing)"
+   }
+  ],
+  "country": "LK",
+  "currency": "LKR",
+  "flows": [
+   {
+    "counterpart": "US",
+    "goods": "Garments",
+    "kind": "exports",
+    "local": "LK",
+    "value": {
+     "amount": 1960000000.0,
+     "currency": "USD",
+     "sample": false,
+     "source": "Sri Lanka Export Development Board, apparel exports by market (as reported)",
+     "year": 2025
+    }
+   },
+   {
+    "counterpart": "KW",
+    "goods": null,
+    "kind": "remittances_in",
+    "local": "LK",
+    "value": {
+     "amount": 893000000.0,
+     "currency": "USD",
+     "sample": false,
+     "source": "Sri Lanka Bureau of Foreign Employment, remittances from Kuwait (as reported)",
+     "year": 2025
+    }
+   },
+   {
+    "counterpart": "GB",
+    "goods": "Garments",
+    "kind": "exports",
+    "local": "LK",
+    "value": {
+     "amount": 688500000.0,
+     "currency": "USD",
+     "sample": false,
+     "source": "Sri Lanka Export Development Board, apparel exports by market (as reported)",
+     "year": 2025
+    }
+   },
+   {
+    "counterpart": "QA",
+    "goods": null,
+    "kind": "remittances_in",
+    "local": "LK",
+    "value": null
+   },
+   {
+    "counterpart": "AE",
+    "goods": null,
+    "kind": "remittances_in",
+    "local": "LK",
+    "value": null
+   },
+   {
+    "counterpart": "SA",
+    "goods": null,
+    "kind": "remittances_in",
+    "local": "LK",
+    "value": null
+   },
+   {
+    "counterpart": "AE",
+    "goods": "Crude oil",
+    "kind": "imports",
+    "local": "LK",
+    "value": null
+   }
+  ],
+  "footprint": [
+   {
+    "code": "LK",
+    "name": "Sri Lanka",
+    "role": "home"
+   }
+  ],
+  "governance_body": "Board Risk Committee",
+  "institution_id": "serendib-bank",
+  "institution_type": "bank",
+  "islamic": false,
+  "name": "Serendib Commercial Bank",
+  "products": [
+   {
+    "category": "savings",
+    "id": "migrant-savings",
+    "islamic": false,
+    "name": "Migrant Family Savings",
+    "owner": "Retail banking",
+    "product_type": "savings_account",
+    "segments": [
+     "migrant-families"
+    ],
+    "status": "active"
+   },
+   {
+    "category": "savings",
+    "id": "fc-savings",
+    "islamic": false,
+    "name": "FC Savings (NRFC/PFCA)",
+    "owner": "Treasury",
+    "product_type": "fc_deposit",
+    "segments": [
+     "migrant-families"
+    ],
+    "status": "active"
+   },
+   {
+    "category": "savings",
+    "id": "term-deposits",
+    "islamic": false,
+    "name": "Term Deposits",
+    "owner": "Treasury",
+    "product_type": "term_deposit",
+    "segments": [
+     "salaried",
+     "migrant-families"
+    ],
+    "status": "active"
+   },
+   {
+    "category": "gold_loan",
+    "id": "pawning",
+    "islamic": false,
+    "name": "Pawning",
+    "owner": "Pawning",
+    "product_type": "gold_loan",
+    "segments": [
+     "farmers",
+     "migrant-families"
+    ],
+    "status": "active"
+   },
+   {
+    "category": "retail_loan",
+    "id": "personal-loans",
+    "islamic": false,
+    "name": "Personal Loans",
+    "owner": "Retail credit",
+    "product_type": "personal_loan",
+    "segments": [
+     "salaried"
+    ],
+    "status": "active"
+   },
+   {
+    "category": "vehicle_finance",
+    "id": "vehicle-leasing",
+    "islamic": false,
+    "name": "Vehicle Leasing",
+    "owner": "Retail credit",
+    "product_type": "vehicle_lease",
+    "segments": [
+     "salaried",
+     "exporters-smes"
+    ],
+    "status": "active"
+   },
+   {
+    "category": "cards",
+    "id": "credit-cards",
+    "islamic": false,
+    "name": "Credit Cards",
+    "owner": "Cards",
+    "product_type": "credit_card",
+    "segments": [
+     "salaried"
+    ],
+    "status": "active"
+   },
+   {
+    "category": "business_loan",
+    "id": "sme-loans",
+    "islamic": false,
+    "name": "SME Loans",
+    "owner": "Business credit",
+    "product_type": "working_capital",
+    "segments": [
+     "exporters-smes"
+    ],
+    "status": "active"
+   },
+   {
+    "category": "trade_finance",
+    "id": "trade-finance",
+    "islamic": false,
+    "name": "Trade Finance",
+    "owner": "Business credit",
+    "product_type": "import_lc",
+    "segments": [
+     "exporters-smes"
+    ],
+    "status": "active"
+   },
+   {
+    "category": "remittances",
+    "id": "inward-remittances",
+    "islamic": false,
+    "name": "Inward Remittances",
+    "owner": "Retail banking",
+    "product_type": "inward_remittance",
+    "segments": [
+     "migrant-families"
+    ],
+    "status": "active"
+   }
+  ],
+  "profile_version": 1,
+  "radar_scope": {
+   "actors": [
+    "CBSL",
+    "FIU",
+    "OFAC",
+    "Basel",
+    "FATF",
+    "Commercial Bank of Ceylon",
+    "Hatton National Bank",
+    "Sampath Bank",
+    "Seylan Bank",
+    "Coastal Remit",
+    "Correspondent bank (USD clearing)"
+   ],
+   "named_places": [],
+   "places": [
+    "LK",
+    "SA",
+    "AE",
+    "QA",
+    "KW",
+    "chk:hormuz",
+    "chk:bab-el-mandeb",
+    "US",
+    "GB",
+    "BH",
+    "OM",
+    "IR",
+    "sea:persian-gulf",
+    "LK-1",
+    "LK-9",
+    "LK-3",
+    "YE",
+    "sea:red-sea",
+    "chk:suez"
+   ],
+   "themes": [
+    "rates",
+    "sector",
+    "macro",
+    "fx",
+    "commodities",
+    "remittance",
+    "prices",
+    "regulation",
+    "disaster",
+    "trust",
+    "competitor"
+   ],
+   "why": {
+    "AE": [
+     "place to watch: Remittances; fuel imports",
+     "flow: remittances in with LK",
+     "flow: imports (Crude oil) with LK",
+     "risk: Gulf tension meets remittances"
+    ],
+    "BH": [
+     "risk: Gulf tension meets remittances"
+    ],
+    "GB": [
+     "flow: exports (Garments) with LK"
+    ],
+    "IR": [
+     "risk: Gulf tension meets remittances"
+    ],
+    "KW": [
+     "place to watch: Remittances",
+     "flow: remittances in with LK",
+     "risk: Gulf tension meets remittances"
+    ],
+    "LK": [
+     "footprint (home)"
+    ],
+    "LK-1": [
+     "risk: Monsoon floods meet Colombo customers"
+    ],
+    "LK-3": [
+     "risk: Monsoon floods meet Colombo customers"
+    ],
+    "LK-9": [
+     "risk: Monsoon floods meet Colombo customers"
+    ],
+    "OM": [
+     "risk: Gulf tension meets remittances"
+    ],
+    "QA": [
+     "place to watch: Remittances",
+     "flow: remittances in with LK",
+     "risk: Gulf tension meets remittances"
+    ],
+    "SA": [
+     "place to watch: Remittances from migrant workers",
+     "flow: remittances in with LK",
+     "risk: Gulf tension meets remittances"
+    ],
+    "US": [
+     "flow: exports (Garments) with LK"
+    ],
+    "YE": [
+     "risk: Red Sea attacks meet exporters"
+    ],
+    "chk:bab-el-mandeb": [
+     "place to watch: Exports to Europe and the US",
+     "risk: Red Sea attacks meet exporters"
+    ],
+    "chk:hormuz": [
+     "place to watch: Fuel imports",
+     "risk: Gulf tension meets remittances"
+    ],
+    "chk:suez": [
+     "risk: Red Sea attacks meet exporters"
+    ],
+    "sea:persian-gulf": [
+     "risk: Gulf tension meets remittances"
+    ],
+    "sea:red-sea": [
+     "risk: Red Sea attacks meet exporters"
+    ]
+   }
+  },
+  "regulators": [
+   {
+    "area": "banking",
+    "name": "Central Bank of Sri Lanka",
+    "relation": "home",
+    "short": "CBSL"
+   },
+   {
+    "area": "aml",
+    "name": "Financial Intelligence Unit, Sri Lanka",
+    "relation": "home",
+    "short": "FIU"
+   },
+   {
+    "area": "sanctions",
+    "name": "US Treasury sanctions (OFAC)",
+    "relation": "reach",
+    "short": "OFAC"
+   },
+   {
+    "area": "standards",
+    "name": "Basel Committee standards",
+    "relation": "standard",
+    "short": "Basel"
+   },
+   {
+    "area": "aml",
+    "name": "Financial Action Task Force",
+    "relation": "standard",
+    "short": "FATF"
+   }
+  ],
+  "risk_exposures": [
+   {
+    "hazard_id": "gulf-security",
+    "kind": "conflict",
+    "months": [],
+    "places": [
+     "SA",
+     "AE",
+     "QA",
+     "KW",
+     "BH",
+     "OM",
+     "IR",
+     "sea:persian-gulf",
+     "chk:hormuz"
+    ],
+    "title": "Gulf tension meets remittances",
+    "touches": {
+     "flows": [
+      "remit-kw",
+      "remit-qa",
+      "remit-ae",
+      "remit-sa"
+     ],
+     "products": [
+      "migrant-savings",
+      "inward-remittances"
+     ],
+     "routes": [],
+     "segments": [
+      "migrant-families"
+     ],
+     "watch_places": []
+    }
+   },
+   {
+    "hazard_id": "lk-sw-monsoon-floods",
+    "kind": "climate",
+    "months": [
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "places": [
+     "LK-1",
+     "LK-9",
+     "LK-3"
+    ],
+    "title": "Monsoon floods meet Colombo customers",
+    "touches": {
+     "flows": [],
+     "products": [
+      "sme-loans",
+      "personal-loans"
+     ],
+     "routes": [],
+     "segments": [
+      "exporters-smes",
+      "salaried"
+     ],
+     "watch_places": []
+    }
+   },
+   {
+    "hazard_id": "red-sea-attacks",
+    "kind": "conflict",
+    "months": [],
+    "places": [
+     "YE",
+     "sea:red-sea",
+     "chk:bab-el-mandeb",
+     "chk:suez"
+    ],
+    "title": "Red Sea attacks meet exporters",
+    "touches": {
+     "flows": [
+      "garments-us"
+     ],
+     "products": [
+      "trade-finance"
+     ],
+     "routes": [
+      "colombo-suez-europe"
+     ],
+     "segments": [
+      "exporters-smes"
+     ],
+     "watch_places": [
+      "bab-el-mandeb"
+     ]
+    }
+   }
+  ],
+  "rivals": [
+   {
+    "aliases": [
+     "ComBank"
+    ],
+    "name": "Commercial Bank of Ceylon",
+    "overlap": "high",
+    "type": "bank"
+   },
+   {
+    "aliases": [
+     "HNB"
+    ],
+    "name": "Hatton National Bank",
+    "overlap": "high",
+    "type": "bank"
+   },
+   {
+    "aliases": [],
+    "name": "Sampath Bank",
+    "overlap": "medium",
+    "type": "bank"
+   },
+   {
+    "aliases": [],
+    "name": "Seylan Bank",
+    "overlap": "medium",
+    "type": "bank"
+   },
+   {
+    "aliases": [
+     "CoastalRemit"
+    ],
+    "name": "Coastal Remit",
+    "overlap": "high",
+    "type": "wallet"
+   }
+  ],
+  "segments": [
+   {
+    "id": "migrant-families",
+    "income_sources": [
+     "remittances"
+    ],
+    "kind": "individual",
+    "label": "Migrant-worker families",
+    "note": "Households with a member working abroad, mostly in the Gulf.",
+    "places": [
+     "city:jaffna",
+     "LK-61",
+     "LK-12"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "segment",
+      "value": "remittance_linked"
+     }
+    ]
+   },
+   {
+    "id": "exporters-smes",
+    "income_sources": [
+     "business_income"
+    ],
+    "kind": "business",
+    "label": "Exporters, importers and SMEs",
+    "note": "Garment, food and trading firms; many import on LCs.",
+    "places": [
+     "LK-11",
+     "LK-12",
+     "LK-13"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "size_band",
+      "value": "sme"
+     }
+    ]
+   },
+   {
+    "id": "farmers",
+    "income_sources": [
+     "farm_income"
+    ],
+    "kind": "individual",
+    "label": "Farmers and estate workers",
+    "note": "Tea estates, paddy and vegetables.",
+    "places": [
+     "LK-21",
+     "LK-71",
+     "LK-81"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "sector",
+      "value": "A"
+     }
+    ]
+   },
+   {
+    "id": "salaried",
+    "income_sources": [
+     "salary"
+    ],
+    "kind": "individual",
+    "label": "Salaried (IT, services, government)",
+    "note": "Employees of IT and service firms and the state.",
+    "places": [
+     "LK-11",
+     "LK-12",
+     "LK-21"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "segment",
+      "value": "salaried"
+     }
+    ]
+   }
+  ],
+  "status": "setup",
+  "subtype": "commercial",
+  "summary": "Mid-size commercial bank in Sri Lanka: retail deposits and pawning, SME and corporate lending, trade finance, cards and inward remittances from Gulf migrant workers; 172 branches across Sri Lanka.",
+  "time_zone": "Asia/Colombo"
+ },
+ "monitors": [],
+ "pending_proposals": [],
+ "profile_version": 1,
+ "readiness": {
+  "open": [
+   {
+    "fix": "Review the suggested regulators.",
+    "id": "regulators",
+    "level": "recommended",
+    "message": "5 regulators; 4 more suggested by the rule table",
+    "ok": false,
+    "section": "regulators"
+   },
+   {
+    "fix": "Review what the risk finder found.",
+    "id": "risk_exposures",
+    "level": "recommended",
+    "message": "3 risk exposures; the risk finder has 5 more to review",
+    "ok": false,
+    "section": "risk-exposures"
+   },
+   {
+    "fix": "Checks need each product's numbers from a data connection.",
+    "id": "product_data",
+    "level": "info",
+    "message": "0 of 10 products linked to a data connection",
+    "ok": false,
+    "section": "products"
+   }
+  ],
+  "ready": true,
+  "warnings": []
+ },
+ "recent_messages": [],
+ "thread_summary": null,
+ "track_definitions": [
+  {
+   "label": "Institution",
+   "order": 1,
+   "read_only": false,
+   "setup_step": "institution",
+   "shown": true,
+   "tab": "overview",
+   "track": "institution",
+   "writes": [
+    "institution"
+   ]
+  },
+  {
+   "label": "Footprint and flows",
+   "order": 2,
+   "read_only": false,
+   "setup_step": "where",
+   "shown": true,
+   "tab": "footprint",
+   "track": "footprint_flows",
+   "writes": [
+    "footprint",
+    "flows",
+    "watch-places"
+   ]
+  },
+  {
+   "label": "Customers and products",
+   "order": 3,
+   "read_only": false,
+   "setup_step": "customers",
+   "shown": true,
+   "tab": "customers",
+   "track": "customers_products",
+   "writes": [
+    "segments",
+    "products"
+   ]
+  },
+  {
+   "label": "Rules",
+   "order": 4,
+   "read_only": false,
+   "setup_step": "rules",
+   "shown": true,
+   "tab": "rules",
+   "track": "rules",
+   "writes": [
+    "regulators",
+    "institution"
+   ]
+  },
+  {
+   "label": "Rivals and partners",
+   "order": 5,
+   "read_only": false,
+   "setup_step": "rivals",
+   "shown": true,
+   "tab": "rivals",
+   "track": "rivals_partners",
+   "writes": [
+    "rivals",
+    "counterparties"
+   ]
+  },
+  {
+   "label": "Risks",
+   "order": 6,
+   "read_only": false,
+   "setup_step": "risks",
+   "shown": true,
+   "tab": "risks",
+   "track": "risks",
+   "writes": [
+    "risk-exposures"
+   ]
+  },
+  {
+   "label": "Monitors",
+   "order": 7,
+   "read_only": false,
+   "setup_step": "monitors",
+   "shown": true,
+   "tab": null,
+   "track": "monitors",
+   "writes": [
+    "monitors"
+   ]
+  },
+  {
+   "label": "Verification",
+   "order": 8,
+   "read_only": false,
+   "setup_step": "review",
+   "shown": true,
+   "tab": "overview",
+   "track": "verification",
+   "writes": [
+    "institution",
+    "footprint",
+    "watch-places",
+    "segments",
+    "products",
+    "flows",
+    "regulators",
+    "rivals",
+    "counterparties",
+    "risk-exposures"
+   ]
+  },
+  {
+   "label": "History",
+   "order": null,
+   "read_only": true,
+   "setup_step": null,
+   "shown": true,
+   "tab": "history",
+   "track": "history",
+   "writes": []
+  },
+  {
+   "label": "What the agent can see",
+   "order": null,
+   "read_only": true,
+   "setup_step": null,
+   "shown": true,
+   "tab": "agents",
+   "track": "agent_view",
+   "writes": []
+  },
+  {
+   "label": "Question",
+   "order": null,
+   "read_only": true,
+   "setup_step": null,
+   "shown": true,
+   "tab": null,
+   "track": "question",
+   "writes": []
+  },
+  {
+   "label": "Off-topic",
+   "order": null,
+   "read_only": true,
+   "setup_step": null,
+   "shown": false,
+   "tab": null,
+   "track": "offtopic",
+   "writes": []
+  }
+ ],
+ "tracks": [
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "institution"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "footprint_flows"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "customers_products"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "rules"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "rivals_partners"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "risks"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "monitors"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "verification"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "history"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "agent_view"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "question"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "offtopic"
+  }
+ ]
+}

@@ -1,0 +1,237 @@
+{
+ "changes_since_last_session": [],
+ "current_track": null,
+ "filled_by": null,
+ "institution": null,
+ "pending_proposals": [],
+ "profile_version": null,
+ "readiness": null,
+ "recent_messages": [],
+ "thread_summary": null,
+ "track_definitions": [
+  {
+   "label": "Institution",
+   "order": 1,
+   "read_only": false,
+   "setup_step": "institution",
+   "shown": true,
+   "tab": "overview",
+   "track": "institution",
+   "writes": [
+    "institution"
+   ]
+  },
+  {
+   "label": "Footprint and flows",
+   "order": 2,
+   "read_only": false,
+   "setup_step": "where",
+   "shown": true,
+   "tab": "footprint",
+   "track": "footprint_flows",
+   "writes": [
+    "footprint",
+    "flows",
+    "watch-places"
+   ]
+  },
+  {
+   "label": "Customers and products",
+   "order": 3,
+   "read_only": false,
+   "setup_step": "customers",
+   "shown": true,
+   "tab": "customers",
+   "track": "customers_products",
+   "writes": [
+    "segments",
+    "products"
+   ]
+  },
+  {
+   "label": "Rules",
+   "order": 4,
+   "read_only": false,
+   "setup_step": "rules",
+   "shown": true,
+   "tab": "rules",
+   "track": "rules",
+   "writes": [
+    "regulators",
+    "institution"
+   ]
+  },
+  {
+   "label": "Rivals and partners",
+   "order": 5,
+   "read_only": false,
+   "setup_step": "rivals",
+   "shown": true,
+   "tab": "rivals",
+   "track": "rivals_partners",
+   "writes": [
+    "rivals",
+    "counterparties"
+   ]
+  },
+  {
+   "label": "Risks",
+   "order": 6,
+   "read_only": false,
+   "setup_step": "risks",
+   "shown": true,
+   "tab": "risks",
+   "track": "risks",
+   "writes": [
+    "risk-exposures"
+   ]
+  },
+  {
+   "label": "Monitors",
+   "order": 7,
+   "read_only": false,
+   "setup_step": "monitors",
+   "shown": true,
+   "tab": null,
+   "track": "monitors",
+   "writes": [
+    "monitors"
+   ]
+  },
+  {
+   "label": "Verification",
+   "order": 8,
+   "read_only": false,
+   "setup_step": "review",
+   "shown": true,
+   "tab": "overview",
+   "track": "verification",
+   "writes": [
+    "institution",
+    "footprint",
+    "watch-places",
+    "segments",
+    "products",
+    "flows",
+    "regulators",
+    "rivals",
+    "counterparties",
+    "risk-exposures"
+   ]
+  },
+  {
+   "label": "History",
+   "order": null,
+   "read_only": true,
+   "setup_step": null,
+   "shown": true,
+   "tab": "history",
+   "track": "history",
+   "writes": []
+  },
+  {
+   "label": "What the agent can see",
+   "order": null,
+   "read_only": true,
+   "setup_step": null,
+   "shown": true,
+   "tab": "agents",
+   "track": "agent_view",
+   "writes": []
+  },
+  {
+   "label": "Question",
+   "order": null,
+   "read_only": true,
+   "setup_step": null,
+   "shown": true,
+   "tab": null,
+   "track": "question",
+   "writes": []
+  },
+  {
+   "label": "Off-topic",
+   "order": null,
+   "read_only": true,
+   "setup_step": null,
+   "shown": false,
+   "tab": null,
+   "track": "offtopic",
+   "writes": []
+  }
+ ],
+ "tracks": [
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "institution"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "footprint_flows"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "customers_products"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "rules"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "rivals_partners"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "risks"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "monitors"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "verification"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "history"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "agent_view"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "question"
+  },
+  {
+   "notes": [],
+   "status": "not_started",
+   "summary": null,
+   "track": "offtopic"
+  }
+ ]
+}

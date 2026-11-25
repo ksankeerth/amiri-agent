@@ -41,6 +41,7 @@ def _slug(text: str) -> str:
 class Monitors:
     def __init__(self, pool: AsyncConnectionPool, institutions: Institutions, client: MonitorClient, clock: Clock):
         self.pool, self.institutions, self.client, self.clock = pool, institutions, client, clock
+        self.investigations = None  # set by the app: a Check now's findings are investigated at once
 
     # ------------------------------------------------------------ reads
 
@@ -497,6 +498,13 @@ class Monitors:
                        WHERE monitor_id = %s""", (now, "fired" if n else "quiet", n, run["monitor_id"]))
         step["done"] = step.get("done", 0) + 1
         step["findings"] = step.get("findings", 0) + n
+        if run["trigger"] == "now" and n and self.investigations is not None:
+            async with self.pool.connection() as conn:
+                cur = await conn.execute(
+                    """SELECT finding_id FROM signals.findings WHERE source = 'monitor' AND status = 'new'
+                       AND source_ref ->> 'check_run_id' = %s ORDER BY finding_id""", (run_id,))
+                ids = [r["finding_id"] for r in await cur.fetchall()]
+            await self.investigations.investigate_now(ids)
 
 
 async def write_findings(conn, result: dict, spec: dict, *, run_id: str, monitor_id: str, version: int, world: str,

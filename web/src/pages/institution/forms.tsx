@@ -154,7 +154,7 @@ const BODIES: Record<SectionName, Body> = {
     const { d, set, err, ctx } = p;
     return (<>
       <Group first>The product</Group>
-      <Field req label="Name" error={err.name} full><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} placeholder="e.g. Migrant Family Savings" /></Field>
+      <Field req label="Name" error={err.name} full><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} placeholder="e.g. Business Current Account" /></Field>
       <ProductCategory {...p} />
       <Field label="Owner (business unit)" error={err.owner}><input className="input" value={d.owner ?? ""} onChange={e => set("owner", e.target.value || null)} placeholder="e.g. Retail banking" /></Field>
       <Field label="Status" error={err.status}><select className="input" value={d.status} onChange={e => set("status", e.target.value)}>{opt(["active", "launching", "closing", "closed"])}</select></Field>
@@ -193,7 +193,7 @@ const BODIES: Record<SectionName, Body> = {
   </>),
   regulators: ({ d, set, err }) => (<>
     <Field req label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} /></Field>
-    <Field label="Short name" error={err.short}><input className="input" value={d.short ?? ""} onChange={e => set("short", e.target.value || null)} placeholder="e.g. CBSL" /></Field>
+    <Field label="Short name" error={err.short}><input className="input" value={d.short ?? ""} onChange={e => set("short", e.target.value || null)} placeholder="e.g. FATF" /></Field>
     <Field label="Country" error={err.country}><CountrySelect value={d.country ?? null} allowEmpty onChange={v => set("country", v)} /></Field>
     <Field req label="Area" error={err.area}><select className="input" value={d.area} onChange={e => set("area", e.target.value)}>{opt(AREAS, AREA_WORDS)}</select></Field>
     <Field req label="How it reaches you" error={err.relation} full><select className="input" value={d.relation} onChange={e => set("relation", e.target.value)}>{opt(Object.keys(RELATION_WORDS), RELATION_WORDS)}</select></Field>
@@ -223,7 +223,7 @@ const BODIES: Record<SectionName, Body> = {
   </>),
   "risk-exposures": ({ d, set, err, ctx }) => (<>
     <Group first>The risk</Group>
-    <Field req label="Title" error={err.title} full><input className="input" value={d.title ?? ""} onChange={e => set("title", e.target.value)} placeholder="e.g. Gulf tension meets remittances" /></Field>
+    <Field req label="Title" error={err.title} full><input className="input" value={d.title ?? ""} onChange={e => set("title", e.target.value)} placeholder="e.g. Floods meet our branches" /></Field>
     <Field req label="Kind" error={err.kind}><select className="input" value={d.kind} onChange={e => set("kind", e.target.value)}>{opt(RISK_KINDS)}</select></Field>
     <Field label="Status" error={err.status}><select className="input" value={d.status} onChange={e => set("status", e.target.value)}><option value="active">active</option><option value="dismissed">dismissed (not relevant)</option></select></Field>
     <Field label="Where" error={err.places} full><PlacesField value={d.places ?? []} names={names(ctx)} onChange={v => set("places", v)} /></Field>
@@ -323,7 +323,7 @@ export function InstitutionFields({ d, set, err, creating, fill }: { d: Draft; s
   const t = (d.institution_type ?? "bank") as InstitutionType;
   return (
     <div className="grid2">
-      <Field req label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} placeholder="e.g. Serendib Commercial Bank" /></Field>
+      <Field req label="Name" error={err.name}><input className="input" value={d.name ?? ""} onChange={e => set("name", e.target.value)} placeholder="The institution's name" /></Field>
       <Field label="Legal name" error={err.legal_name}><input className="input" value={d.legal_name ?? ""} onChange={e => set("legal_name", e.target.value || null)} /></Field>
       <Field req label="Type" error={err.institution_type} hint={!creating ? "Can't change while products of this type exist." : undefined}>
         <div className="seg">{(["bank", "insurer"] as const).map(x => <button key={x} type="button" aria-pressed={t === x} onClick={() => { set("institution_type", x); set("subtype", null); }}>{x === "bank" ? "Bank" : "Insurer"}</button>)}</div>

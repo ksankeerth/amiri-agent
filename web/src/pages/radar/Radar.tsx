@@ -9,7 +9,7 @@ import { ChipFilter } from "../../components/FlowFilter";
 import { Icon } from "../../components/Icon";
 import { HowItWorks, PageHeader } from "../../components/blocks";
 import { Banner, Empty, ListSkeleton, LoadError, useNow, useRole, useToast } from "../../components/ui";
-import { ago, dateKey, day, dayTime, placeName, placeOrder, plural, when } from "../../format";
+import { ago, dateKey, day, dayTime, person, placeName, placeOrder, plural, when } from "../../format";
 import { eventTitle, undated } from "../../plain";
 import { themeText } from "../events/Events";
 import "../../styles/radar.css";
@@ -38,14 +38,14 @@ function Reader({ s, place, act, admin }: { s: RadarStory; place: (p: string) =>
   useLayoutEffect(() => { setSrc(false); box.current?.scrollTo(0, 0); }, [s.story_id]);  // each story opens at its top
   const os = outlets(s);
   return <article ref={box} className={`rd-read ${s.status}`} aria-labelledby="rd-read-h">
-    <span className="label">{dayTime(s.last_seen_at)} · {STATE[s.status]}{s.status === "sent" && s.sent_by && s.sent_by !== "agent" ? ` by ${s.sent_by}` : ""} · {REL[s.relevance]}</span>
+    <span className="label">{dayTime(s.last_seen_at)} · {STATE[s.status]}{s.status === "sent" && s.sent_by && s.sent_by !== "agent" ? ` by ${person(s.sent_by)}` : ""} · {REL[s.relevance]}</span>
     <h2 id="rd-read-h">{undated(s.title)}</h2>
     <div className="rd-acts">
       <Outcome s={s} />
       {s.status === "below" && <><span className="rd-out quiet rd-full">Relevant, but Radar judged it not important enough to investigate.</span>
         <button className="btn btn--sm" type="button" onClick={() => act(() => radarApi.investigate(s.story_id), "Sent for investigation")}>Investigate anyway</button>
         <button className="btn btn--sm btn--ghost" type="button" onClick={() => act(() => radarApi.dismiss(s.story_id), "Dismissed")}>Dismiss</button></>}
-      {s.status === "dismissed" && <><span className="rd-out quiet">by {s.dismissed_by}{s.dismissed_at ? ` ${ago(s.dismissed_at)}` : ""}</span>
+      {s.status === "dismissed" && <><span className="rd-out quiet">by {person(s.dismissed_by)}{s.dismissed_at ? ` ${ago(s.dismissed_at)}` : ""}</span>
         <button className="btn btn--sm btn--ghost" type="button" onClick={() => act(() => radarApi.restore(s.story_id), "Restored")}>Restore</button></>}
     </div>
     <p className="rd-why"><b>{s.status === "sent" ? "Why it matters to you." : "Why Radar held it back."}</b> {s.why}</p>

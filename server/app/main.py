@@ -80,6 +80,7 @@ def create_app(*, database_url: str | None = None, provider: TwelveDataClient | 
         app.state.alerts = Alerts(pool, clock or Clock())
         radar_client = radar or RadarClient()
         app.state.radar = Radar(pool, app.state.institutions, radar_client, clock or Clock())
+        app.state.monitors.investigations = app.state.radar.investigations = app.state.investigations
         app.state.studio = Studio(pool, app.state.institutions, inv_client, mon_client, clock or Clock())
         app.state.mock_institutions = MockInstitutions(pool, app.state.institutions, clock or Clock())
         app.state.data_connection = DataConnection(pool, app.state.institutions, clock or Clock())

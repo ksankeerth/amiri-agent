@@ -1,0 +1,501 @@
+{
+ "institution": {
+  "institution_id": "austin-tech-bank",
+  "name": "Austin Tech Bank",
+  "short_name": "Austin Tech",
+  "institution_type": "bank",
+  "subtype": "commercial",
+  "home_country": "US",
+  "base_currency": "USD",
+  "time_zone": "America/Chicago",
+  "clearing_currencies": [
+   "USD"
+  ],
+  "governance_body": "Board Risk Committee",
+  "size_band": "mid",
+  "summary": "Synthetic mid-size bank in Austin, Texas, built from the public product mix of US technology lenders and Texas commercial banks: deposits from startups and venture funds, venture debt and capital-call lines, loans to data-center contractors, chip-industry suppliers and energy firms, and mortgages for tech employees, many written near Austin's 2022 price peak."
+ },
+ "sections": {
+  "footprint": [
+   {
+    "code": "US",
+    "role": "home",
+    "scope": "part",
+    "note": "Texas home market, plus a startup office in California."
+   },
+   {
+    "code": "US-TX",
+    "role": "branches",
+    "scope": "all",
+    "branch_count": 22,
+    "note": "Austin, Dallas-Fort Worth, Houston, San Antonio"
+   },
+   {
+    "code": "US-CA",
+    "role": "branches",
+    "scope": "part",
+    "branch_count": 2,
+    "note": "Startup and venture-fund office in San Jose"
+   }
+  ],
+  "watch-places": [
+   {
+    "name": "Silicon Valley",
+    "code": "city:san-jose",
+    "kind": "city",
+    "reason": "Where many startup clients' investors and peers are; funding news starts here"
+   },
+   {
+    "name": "Austin",
+    "code": "city:austin",
+    "kind": "city",
+    "reason": "Home market: startups, chip plants and data centers"
+   },
+   {
+    "name": "Dallas-Fort Worth",
+    "code": "city:dallas",
+    "kind": "city",
+    "reason": "Data-center construction clients"
+   },
+   {
+    "name": "Permian Basin",
+    "code": "city:midland",
+    "kind": "city",
+    "reason": "Energy-lending clients; power for Texas data centers"
+   }
+  ],
+  "segments": [
+   {
+    "id": "startups",
+    "label": "Venture-backed startups",
+    "kind": "business",
+    "note": "AI, software and hardware startups; deposits are mostly cash raised from investors.",
+    "places": [
+     "US-TX",
+     "US-CA",
+     "city:austin",
+     "city:san-jose"
+    ],
+    "income_sources": [
+     "business_income"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "size_band",
+      "value": "startup"
+     },
+     {
+      "dimension": "sector",
+      "value": "J"
+     }
+    ],
+    "share_of_customers_pct": 18
+   },
+   {
+    "id": "venture-funds",
+    "label": "Venture and private-credit funds",
+    "kind": "financial",
+    "note": "Funds that bank with us and draw capital-call lines.",
+    "places": [
+     "US-TX",
+     "US-CA",
+     "city:austin",
+     "city:san-jose"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "segment",
+      "value": "non_bank_financial"
+     },
+     {
+      "dimension": "sector",
+      "value": "K"
+     }
+    ],
+    "share_of_customers_pct": 2
+   },
+   {
+    "id": "dc-contractors",
+    "label": "Data-center contractors",
+    "kind": "business",
+    "note": "Electrical, mechanical and site contractors building data centers in Austin and Dallas-Fort Worth.",
+    "places": [
+     "US-TX",
+     "city:austin",
+     "city:dallas"
+    ],
+    "income_sources": [
+     "business_income"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "sector",
+      "value": "F"
+     },
+     {
+      "dimension": "sector_l2",
+      "value": "43"
+     }
+    ],
+    "share_of_customers_pct": 4
+   },
+   {
+    "id": "chip-suppliers",
+    "label": "Chip-industry suppliers",
+    "kind": "business",
+    "note": "Manufacturers and service firms supplying the Austin-area chip plants; heavy power users.",
+    "places": [
+     "US-TX",
+     "city:austin"
+    ],
+    "income_sources": [
+     "business_income"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "sector",
+      "value": "C"
+     },
+     {
+      "dimension": "sector_l2",
+      "value": "26"
+     }
+    ],
+    "share_of_customers_pct": 3
+   },
+   {
+    "id": "energy-firms",
+    "label": "Oil and gas firms",
+    "kind": "business",
+    "note": "Permian producers and oilfield-service companies.",
+    "places": [
+     "US-TX",
+     "city:midland",
+     "city:houston"
+    ],
+    "income_sources": [
+     "business_income"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "sector",
+      "value": "B"
+     },
+     {
+      "dimension": "sector_l2",
+      "value": "06"
+     }
+    ],
+    "share_of_customers_pct": 3
+   },
+   {
+    "id": "tech-employees",
+    "label": "Tech employees",
+    "kind": "individual",
+    "note": "Salaried staff of technology companies, many paid partly in shares.",
+    "places": [
+     "US-TX",
+     "US-CA",
+     "city:austin",
+     "city:san-jose"
+    ],
+    "income_sources": [
+     "salary"
+    ],
+    "spec_mapping": [
+     {
+      "dimension": "segment",
+      "value": "salaried"
+     },
+     {
+      "dimension": "employer_sector",
+      "value": "J"
+     }
+    ],
+    "share_of_customers_pct": 40
+   }
+  ],
+  "products": [
+   {
+    "id": "startup-deposits",
+    "name": "Startup Operating Accounts",
+    "category": "savings",
+    "product_type": "current_account",
+    "segments": [
+     "startups"
+    ],
+    "owner": "Technology banking",
+    "currencies": [
+     "USD"
+    ],
+    "book_size": {
+     "amount": 9200000000,
+     "currency": "USD"
+    },
+    "note": "The largest deposit book; balances fall when startups burn cash faster than they raise it.",
+    "status": "active"
+   },
+   {
+    "id": "fund-deposits",
+    "name": "Venture Fund Deposits",
+    "category": "savings",
+    "product_type": "current_account",
+    "segments": [
+     "venture-funds"
+    ],
+    "owner": "Fund banking",
+    "currencies": [
+     "USD"
+    ],
+    "book_size": {
+     "amount": 3800000000,
+     "currency": "USD"
+    },
+    "status": "active"
+   },
+   {
+    "id": "employee-savings",
+    "name": "Tech Employee Savings",
+    "category": "savings",
+    "product_type": "savings_account",
+    "segments": [
+     "tech-employees"
+    ],
+    "owner": "Retail banking",
+    "currencies": [
+     "USD"
+    ],
+    "book_size": {
+     "amount": 2100000000,
+     "currency": "USD"
+    },
+    "status": "active"
+   },
+   {
+    "id": "venture-debt",
+    "name": "Venture Debt and Startup Credit Lines",
+    "category": "business_loan",
+    "product_type": "working_capital",
+    "segments": [
+     "startups"
+    ],
+    "owner": "Technology banking",
+    "currencies": [
+     "USD"
+    ],
+    "book_size": {
+     "amount": 3400000000,
+     "currency": "USD"
+    },
+    "status": "active"
+   },
+   {
+    "id": "capital-call-lines",
+    "name": "Capital-Call Lines",
+    "category": "business_loan",
+    "product_type": "working_capital",
+    "segments": [
+     "venture-funds"
+    ],
+    "owner": "Fund banking",
+    "currencies": [
+     "USD"
+    ],
+    "book_size": {
+     "amount": 4900000000,
+     "currency": "USD"
+    },
+    "note": "Short lines funds draw before their investors pay in.",
+    "status": "active"
+   },
+   {
+    "id": "dc-contractor-loans",
+    "name": "Data-Center Contractor Loans",
+    "category": "business_loan",
+    "product_type": "term_loan",
+    "segments": [
+     "dc-contractors"
+    ],
+    "owner": "Commercial banking",
+    "currencies": [
+     "USD"
+    ],
+    "book_size": {
+     "amount": 2200000000,
+     "currency": "USD"
+    },
+    "status": "active"
+   },
+   {
+    "id": "dc-contractor-lines",
+    "name": "Data-Center Contractor Credit Lines",
+    "category": "business_loan",
+    "product_type": "working_capital",
+    "segments": [
+     "dc-contractors"
+    ],
+    "owner": "Commercial banking",
+    "currencies": [
+     "USD"
+    ],
+    "book_size": {
+     "amount": 900000000,
+     "currency": "USD"
+    },
+    "note": "Revolving lines contractors draw on while they wait to be paid; they draw harder when projects stall.",
+    "status": "active"
+   },
+   {
+    "id": "chip-supplier-lines",
+    "name": "Chip-Supplier Credit Lines",
+    "category": "business_loan",
+    "product_type": "working_capital",
+    "segments": [
+     "chip-suppliers"
+    ],
+    "owner": "Commercial banking",
+    "currencies": [
+     "USD"
+    ],
+    "book_size": {
+     "amount": 1500000000,
+     "currency": "USD"
+    },
+    "status": "active"
+   },
+   {
+    "id": "energy-loans",
+    "name": "Energy Loans",
+    "category": "business_loan",
+    "product_type": "term_loan",
+    "segments": [
+     "energy-firms"
+    ],
+    "owner": "Energy lending",
+    "currencies": [
+     "USD"
+    ],
+    "book_size": {
+     "amount": 1800000000,
+     "currency": "USD"
+    },
+    "status": "active"
+   },
+   {
+    "id": "employee-mortgages",
+    "name": "Founder and Employee Mortgages",
+    "category": "retail_loan",
+    "product_type": "housing_loan",
+    "segments": [
+     "tech-employees"
+    ],
+    "owner": "Retail banking",
+    "currencies": [
+     "USD"
+    ],
+    "book_size": {
+     "amount": 3000000000,
+     "currency": "USD"
+    },
+    "note": "Many written in 2021-22, near Austin's price peak; Austin home prices have since fallen, so a laid-off borrower often can't sell to clear the loan.",
+    "status": "active"
+   },
+   {
+    "id": "corporate-cards",
+    "name": "Startup Corporate Cards",
+    "category": "cards",
+    "product_type": "credit_card",
+    "segments": [
+     "startups"
+    ],
+    "owner": "Technology banking",
+    "currencies": [
+     "USD"
+    ],
+    "book_size": {
+     "amount": 400000000,
+     "currency": "USD"
+    },
+    "status": "active"
+   },
+   {
+    "id": "founder-wealth",
+    "name": "Founder and Employee Investment Accounts",
+    "category": "wealth",
+    "product_type": "investment_funds",
+    "segments": [
+     "tech-employees"
+    ],
+    "owner": "Private banking",
+    "currencies": [
+     "USD"
+    ],
+    "book_size": {
+     "amount": 1600000000,
+     "currency": "USD"
+    },
+    "note": "Much of it is tech shares; when tech shares fall, clients redeem or move cash.",
+    "status": "active"
+   }
+  ],
+  "flows": [],
+  "regulators": [
+   {
+    "regulator_id": "us-fed",
+    "relation": "home",
+    "basis": "rule"
+   },
+   {
+    "regulator_id": "us-fdic",
+    "relation": "home",
+    "basis": "rule"
+   },
+   {
+    "regulator_id": "us-texas-dob",
+    "relation": "home",
+    "basis": "rule"
+   },
+   {
+    "regulator_id": "us-cfpb",
+    "relation": "home",
+    "basis": "rule"
+   },
+   {
+    "name": "Financial Crimes Enforcement Network",
+    "short": "FinCEN",
+    "country": "US",
+    "area": "aml",
+    "relation": "home"
+   },
+   {
+    "regulator_id": "sanctions-ofac",
+    "relation": "home",
+    "basis": "rule"
+   }
+  ],
+  "rivals": [],
+  "counterparties": [
+   {
+    "name": "Fedwire Funds Service",
+    "kind": "payment_scheme",
+    "places": [
+     "US"
+    ],
+    "importance": "critical"
+   },
+   {
+    "name": "ERCOT",
+    "kind": "other",
+    "places": [
+     "US-TX"
+    ],
+    "importance": "important",
+    "aliases": [
+     "Electric Reliability Council of Texas"
+    ],
+    "note": "Texas grid operator; listed so Radar listens for it."
+   }
+  ],
+  "risk-exposures": []
+ }
+}

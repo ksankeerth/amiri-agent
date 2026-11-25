@@ -651,6 +651,67 @@
      "Capital-market rules"
     ]
    }
+  ],
+  "US": [
+   {
+    "name": "Board of Governors of the Federal Reserve System",
+    "short": "Fed",
+    "area": "banking",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Supervision of bank holding companies and state member banks",
+     "Monetary policy and rates"
+    ]
+   },
+   {
+    "name": "Office of the Comptroller of the Currency",
+    "short": "OCC",
+    "area": "banking",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Supervision of national banks and federal savings associations"
+    ]
+   },
+   {
+    "name": "Federal Deposit Insurance Corporation",
+    "short": "FDIC",
+    "area": "banking",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Deposit insurance",
+     "Supervision of state non-member banks",
+     "Bank resolution"
+    ]
+   },
+   {
+    "name": "Consumer Financial Protection Bureau",
+    "short": "CFPB",
+    "area": "conduct",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Consumer financial protection rules"
+    ]
+   },
+   {
+    "name": "Texas Department of Banking",
+    "short": "Texas DOB",
+    "area": "banking",
+    "subdivision": "US-TX",
+    "for": [
+     "bank"
+    ],
+    "controls": [
+     "Supervision of Texas state-chartered banks"
+    ]
+   }
   ]
  },
  "sanctions": {

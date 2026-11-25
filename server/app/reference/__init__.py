@@ -15,6 +15,7 @@ foreign keys and these in-memory checks agree.
 """
 
 import json
+import logging
 import zoneinfo
 from functools import cache
 from pathlib import Path
@@ -22,6 +23,7 @@ from pathlib import Path
 import pycountry
 
 HERE = Path(__file__).parent
+log = logging.getLogger(__name__)
 
 # Countries ISO 3166-1 lists that pycountry has under another code, kept simple.
 EXTRA_COUNTRY_NAMES = {"XK": "Kosovo"}
@@ -67,16 +69,24 @@ def country_currency(country: str) -> str | None:
 
 
 def region() -> dict | None:
-    """The region the prototype supports (SUPPORTED_REGION; empty: everywhere): {id, label, countries, currencies}."""
+    """The regions the prototype supports (SUPPORTED_REGION, a comma list of regions.json ids: "japac,us"), as one:
+    {id, label, countries, currencies}, the union of the listed regions with their ids and labels joined. An id
+    regions.json doesn't have is ignored, with a warning; None (anywhere) when none is known. An empty variable is
+    the default (japac), as for every setting (settings.raw), so it never means anywhere."""
     from app import settings
 
-    rid = settings.raw("SUPPORTED_REGION").strip().lower()
-    r = _file("regions.json")["regions"].get(rid) if rid else None
-    if not r:
+    table = _file("regions.json")["regions"]
+    ids = [x.lower() for x in settings.names("SUPPORTED_REGION")]
+    for rid in ids:
+        if rid not in table:
+            log.warning("SUPPORTED_REGION: no region %r in regions.json (one of %s); ignored", rid, ", ".join(table))
+    known = list(dict.fromkeys(rid for rid in ids if rid in table))
+    if not known:
         return None
-    table = _file("country_currencies.json")["currencies"]
-    return {"id": rid, "label": r["label"], "countries": r["countries"],
-            "currencies": sorted({table[c] for c in r["countries"] if c in table})}
+    countries = list(dict.fromkeys(c for rid in known for c in table[rid]["countries"]))
+    cur = _file("country_currencies.json")["currencies"]
+    return {"id": ",".join(known), "label": " and ".join(table[rid]["label"] for rid in known), "countries": countries,
+            "currencies": sorted({cur[c] for c in countries if c in cur})}
 
 
 def countries_using(currency: str) -> list[str]:

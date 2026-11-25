@@ -73,6 +73,10 @@ const PLACES: Record<string, string> = {
   "chk:suez": "Suez Canal", "chk:panama": "Panama Canal", "chk:bosporus": "Bosporus", "chk:gibraltar": "Strait of Gibraltar",
   "chk:taiwan": "Taiwan Strait", "chk:cape-of-good-hope": "Cape of Good Hope",
   "IN-TN": "Tamil Nadu", "IN-KL": "Kerala", "IN-MH": "Maharashtra", "IN-KA": "Karnataka", "IN-DL": "Delhi",
+  // the US pack's places (server/app/reference/gazetteer.json)
+  "US-TX": "Texas", "US-AZ": "Arizona", "US-UT": "Utah", "US-NV": "Nevada",
+  "city:dallas": "Dallas", "city:houston": "Houston", "city:fort-worth": "Fort Worth", "city:austin": "Austin",
+  "city:san-antonio": "San Antonio", "city:midland": "Midland", "US-CA": "California", "city:san-jose": "San Jose",
 };
 const titleWords = (s: string) => s.replace(/[-_]+/g, " ").replace(/\b([a-z])/g, (_, c: string) => c.toUpperCase()).replace(/\b(Of|The|And|El)\b/g, w => w.toLowerCase());
 export function placeName(code: string): string {
@@ -81,6 +85,14 @@ export function placeName(code: string): string {
   const sub = code.match(/^([A-Z]{2})-([A-Z0-9]+)$/);  // a state or province: "IN-TN" → "India (TN)" unless named above
   if (sub) return `${placeName(sub[1])} (${sub[2]})`;
   return titleWords(code.replace(/^[a-z]+:/, ""));
+}
+/** Who did something, as a person reads it: a name, never an email address. Actors are free text; older
+ *  records hold an email ("dilan@serendib.lk" → "Dilan", "assistant for dilan@serendib.lk" → "assistant for Dilan"). */
+export function person(actor: string | null | undefined): string {
+  return (actor ?? "").replace(/([A-Za-z0-9._%+-]+)@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+/g, (_, local: string) => {
+    const name = local.split(/[._+-]/)[0] || local;
+    return name[0].toUpperCase() + name.slice(1);
+  });
 }
 /** Seas, straits and regions before countries: they say more about where something happened. */
 export const placeOrder = (codes: string[]) => [...codes].sort((a, b) => Number(/^[A-Z]{2}$/.test(a)) - Number(/^[A-Z]{2}$/.test(b)));

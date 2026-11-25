@@ -1,0 +1,8 @@
+{
+  "_about": "The event monitor's US pack (app/packs/__init__.py), used only for an institution based in the US: hints added to the check's instruction (app/prompt.py).",
+  "version": "us-1",
+  "prompt_hints": [
+    "Prefer US sources: US outlets, and the regulators and operators themselves (the Federal Reserve, FDIC and OCC for banking; ERCOT for Texas power).",
+    "Skip elections, campaigns and party politics: they are never a finding for this institution, even when they name a watched place or topic."
+  ]
+}

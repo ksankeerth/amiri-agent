@@ -391,3 +391,75 @@ def evaluate(s: Scenario, result: dict) -> list[dict]:
     checks.append({"check": "finished", "ok": result["stop_reason"] == "finished",
                    "detail": result["stop_reason"]})  # fmt: skip
     return checks
+
+
+# Austin Tech Bank, the US demo bank (demo/austin-tech-bank/bundle.json; the US pack's rules; coverage from
+# tests/fixtures/profiles/us_bank.json, the same profile).
+US_BANK = {
+    "name": "Austin Tech Bank", "institution_type": "bank", "country": "US", "country_name": "United States",
+    "currency": "USD", "time_zone": "America/Chicago",
+    "summary": "Synthetic mid-size bank in Austin, Texas: deposits from startups and venture funds, venture debt and "
+    "capital-call lines, loans to data-center contractors, chip-industry suppliers and energy firms, and mortgages "
+    "for tech employees, many written near Austin's 2022 price peak.",
+    "regulators": ["Federal Reserve", "FDIC", "Texas Department of Banking"],
+}  # fmt: skip
+US_PRODUCTS = [
+    {"product_id": "startup-deposits", "name": "Startup Operating Accounts", "category": "savings", "product_type": "current_account"},
+    {"product_id": "employee-savings", "name": "Tech Employee Savings", "category": "savings", "product_type": "savings_account"},
+    {"product_id": "venture-debt", "name": "Venture Debt and Startup Credit Lines", "category": "business_loan", "product_type": "working_capital"},
+    {"product_id": "chip-supplier-lines", "name": "Chip-Supplier Credit Lines", "category": "business_loan", "product_type": "working_capital"},
+    {"product_id": "dc-contractor-loans", "name": "Data-Center Contractor Loans", "category": "business_loan", "product_type": "term_loan"},
+    {"product_id": "dc-contractor-lines", "name": "Data-Center Contractor Credit Lines", "category": "business_loan", "product_type": "working_capital"},
+    {"product_id": "employee-mortgages", "name": "Founder and Employee Mortgages", "category": "retail_loan", "product_type": "housing_loan"},
+]  # fmt: skip
+
+
+def sector_shock(sector: str, **kw) -> dict:
+    r = reading("sector:shock", **kw)
+    r["themes"][0]["sector"] = sector
+    return r
+
+
+# A sector-cut task's value is the model's pick (offline: the first option), so only the metric is required
+# here; a live run should cut it by ISIC F (construction) or J (information and communication).
+SCENARIOS += [
+    Scenario(
+        "us_ai_buildout_pause", "AI build-out pause: data-center contractors draw harder on their credit lines.",
+        US_BANK, US_PRODUCTS,
+        [finding("f-dc-pause", "Dallas-area data-center projects paused as AI build-out slows",
+                 "Developers paused several data-center projects in the Dallas-Fort Worth area; contractors' "
+                 "work was put on hold.",
+                 headlines=[headline("Data-center projects paused across Dallas-Fort Worth as AI spending slows",
+                                     "2026-11-17T14:00:00Z", "Dallas Morning News")],
+                 places=["US-TX"])],
+        {"f-dc-pause": sector_shock("construction")},
+        # business_loan.utilization.sector on the contractors' credit lines (term loans have no facility_utilization)
+        tasks=[("dc-contractor-lines", "facility_utilization", {})],
+        coverage="us-bank",
+    ),
+    Scenario(
+        "us_ai_funding_cools", "AI funding cools: startups burn cash and draw down their deposits.",
+        US_BANK, US_PRODUCTS,
+        [finding("f-ai-funding", "Venture funding for AI start-ups falls for a second quarter",
+                 "Funding rounds for AI and software start-ups shrank again; Texas tech firms are cutting spending.",
+                 headlines=[headline("AI start-up funding cools for a second straight quarter",
+                                     "2026-11-16T15:00:00Z", "Reuters")],
+                 places=["US"])],
+        {"f-ai-funding": sector_shock("information and communication")},
+        # large_depositor_net_flow is the savings category's own metric (no breakdowns): one task for the category
+        tasks=[("group-savings", "large_depositor_net_flow", {})],
+        coverage="us-bank",
+    ),
+    Scenario(
+        "us_tech_layoffs", "Tech layoffs in Austin: employees with mortgages miss payments (the lead story).",
+        US_BANK, US_PRODUCTS,
+        [finding("f-layoffs", "Tech employers cut jobs in Austin to fund AI spending",
+                 "Several technology companies with Austin offices announced job cuts, citing AI investment.",
+                 headlines=[headline("Austin tech workers hit by new round of layoffs as firms shift spending to AI",
+                                     "2026-11-18T13:00:00Z", "Austin American-Statesman")],
+                 places=["US-TX"])],
+        {"f-layoffs": sector_shock("information and communication")},
+        tasks=[("employee-mortgages", "installment_collection_rate", {})],
+        coverage="us-bank",
+    ),
+]  # fmt: skip

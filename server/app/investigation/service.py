@@ -28,7 +28,7 @@ from datetime import datetime, timedelta
 from psycopg.types.json import Jsonb
 from psycopg_pool import AsyncConnectionPool
 
-from app import settings
+from app import reference, settings
 from app.alerts import service as alerts
 from app.clock import Clock
 from app.institutions.service import Institutions
@@ -40,6 +40,16 @@ from app.text import plural
 from app.validation import explain
 
 log = logging.getLogger("amiri.investigation")
+
+
+def _place_names(title: str, places: list[str]) -> str:
+    """The agent writes place codes into a title ("A drought hit in US-TX"); a reader sees their names (Texas).
+    Whole codes only, so a currency such as LKR is never touched."""
+    for code in sorted(places or [], key=len, reverse=True):
+        name = reference.place_name(code)
+        if name and name != code:
+            title = re.sub(rf"(?<![A-Za-z0-9-]){re.escape(code)}(?![A-Za-z0-9-])", name, title)
+    return title
 
 
 def _lead(theme: dict) -> dict:
@@ -81,6 +91,7 @@ async def _add_themes(conn, event_id: str, themes: list[dict]) -> None:
         await conn.execute("UPDATE cases.events SET themes = themes || %s WHERE event_id = %s", (Jsonb(new), event_id))
 
 MAX_FINDINGS = 20
+MAX_RESENDS = 3  # a batch the agent refuses findings of is sent again without them, this many times
 MAX_REPOSTS = 3
 FINISHED = ("completed", "stopped_early")
 TICK_WORLDS = ("live", "sandbox")
@@ -338,14 +349,38 @@ class Investigations:
                  attempt, now, now))
             await conn.execute("UPDATE signals.findings SET status = 'grouped', run_id = %s WHERE finding_id = ANY(%s)",
                                (run_id, [r["finding_id"] for r in rows]))
-        try:
-            st = await self.client.start(req)
-        except AgentError as e:
-            await self._failed(run_id, f"the agent refused or couldn't take the run: {e}", step, retry=e.retry)
-            return {"run_id": run_id, "finding_ids": [r["finding_id"] for r in rows]}
+        sent = [r["finding_id"] for r in rows]
+        for _ in range(MAX_RESENDS + 1):
+            try:
+                st = await self.client.start(req)
+                break
+            except AgentError as e:
+                refused = sorted(i for i in e.refused if 0 <= i < len(req["findings"]))
+                if not refused or len(refused) == len(req["findings"]):
+                    await self._failed(run_id, f"the agent refused or couldn't take the run: {e}", step, retry=e.retry)
+                    return {"run_id": run_id, "finding_ids": sent}
+                # one bad finding never costs the batch: set those aside, with the reason, and send the rest
+                dropped = [req["findings"][i]["finding_id"] for i in refused]
+                req["findings"] = [f for i, f in enumerate(req["findings"]) if i not in set(refused)]
+                sent = [f for f in sent if f not in dropped]
+                await self._refused(run_id, dropped, sent, req, str(e))
+        else:
+            await self._failed(run_id, "the agent kept refusing findings", step, retry=False)
+            return {"run_id": run_id, "finding_ids": sent}
         if st.get("status") in FINISHED or st.get("status") == "failed":
             await self._finish(run_id, st, step)
-        return {"run_id": run_id, "finding_ids": [r["finding_id"] for r in rows]}
+        return {"run_id": run_id, "finding_ids": sent}
+
+    async def _refused(self, run_id: str, dropped: list[str], kept: list[str], req: dict, error: str) -> None:
+        log.warning("investigation %s: the agent refused %s; sending the rest", run_id, ", ".join(dropped))
+        async with self.pool.connection() as conn, conn.transaction():
+            await conn.execute(
+                """UPDATE signals.findings SET status = 'set_aside', run_id = NULL, outcome = %s
+                   WHERE finding_id = ANY(%s)""",
+                (Jsonb({"reason": "investigation_failed",
+                        "note": f"the investigation agent refused this finding: {error[:400]}"}), dropped))
+            await conn.execute("UPDATE cases.investigations SET finding_ids = %s, request = %s WHERE run_id = %s",
+                               (kept, Jsonb(req), run_id))
 
     async def _collect_due(self, step: dict) -> None:
         async with self.pool.connection() as conn:
@@ -458,7 +493,8 @@ class Investigations:
                      country_code, anchor, anchor_basis, size, places, regions, finding_ids, created_at, open_until)
                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                 (ev[e["event_id"]], run["run_id"], run["institution_id"], run["world"],
-                 e.get("title") or ", ".join(f"{t['theme']} {t['direction']}" for t in e["themes"]),
+                 _place_names(e.get("title") or ", ".join(f"{t['theme']} {t['direction']}" for t in e["themes"]),
+                              e.get("places", [])),
                  Jsonb(e["themes"]), e["country"], e.get("country_code"), e["anchor"], e["anchor_basis"],
                  Jsonb(e["size"]) if e.get("size") else None, e.get("places", []), e.get("regions", []),
                  e["finding_ids"], now, now + timedelta(days=settings.integer("EVENT_OPEN_DAYS"))))
@@ -538,12 +574,49 @@ class Investigations:
             return await cur.fetchall()
 
     async def finding(self, finding_id: str) -> dict:
+        """A finding; while a run that holds it is running, the agent is asked for that run's result first, so a
+        page polling the finding sees its event as soon as the agent is done (not on the next tick)."""
+        row = await self._finding(finding_id)
+        if row["status"] in ("grouped", "linked") and row["world"] != "studio" and self.client.connected():
+            async with self.pool.connection() as conn:
+                cur = await conn.execute(
+                    """SELECT run_id FROM cases.investigations WHERE status = 'running' AND finding_ids @> %s::text[]
+                       ORDER BY created_at""", ([finding_id],))
+                running = [r["run_id"] for r in await cur.fetchall()]
+            for run_id in running:
+                await self.collect(run_id)
+            if running:
+                row = await self._finding(finding_id)
+        return row
+
+    async def _finding(self, finding_id: str) -> dict:
         async with self.pool.connection() as conn:
             cur = await conn.execute("SELECT * FROM signals.findings WHERE finding_id = %s", (finding_id,))
             row = await cur.fetchone()
         if not row:
             raise Problem(404, "not_found", f"No finding {finding_id}.")
         return row
+
+    async def check(self, run_id: str) -> dict:
+        """A run; a running one is asked for its result first (a page polling it doesn't wait for the tick).
+        Studio runs are left to the Studio's own steps, which keep its clock."""
+        row = await self.run(run_id)
+        if row["status"] == "running" and row["world"] != "studio" and self.client.connected():
+            await self.collect(run_id)
+            row = await self.run(run_id)
+        return row
+
+    async def investigate_now(self, finding_ids: list[str]) -> list[str]:
+        """Findings a person asked for (a monitor's or Radar's Check now, Investigate anyway) skip the batch wait.
+        Never raises: whatever can't start here is investigated by the tick, as before."""
+        if not finding_ids or not self.client.connected():
+            return []
+        try:
+            out = await self.start_now(finding_ids, None)
+        except Problem as e:
+            log.info("investigate now for %s: %s", ", ".join(finding_ids), e.detail)
+            return []
+        return [r["run_id"] for r in out["items"]]
 
     async def runs(self, limit: int, world: str | None = None) -> list[dict]:
         async with self.pool.connection() as conn:

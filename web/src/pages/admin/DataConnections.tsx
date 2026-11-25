@@ -9,7 +9,7 @@ import type { Candidate } from "../../components/fillJson";
 import { Icon } from "../../components/Icon";
 import { PageHeader } from "../../components/blocks";
 import { Banner, Empty, errText, ListSkeleton, LoadError, PageHead, useToast } from "../../components/ui";
-import { ago, dayTime, plural } from "../../format";
+import { ago, dayTime, person, plural } from "../../format";
 import "../../styles/polish-forms.css";
 
 const STATUS_BADGE: Record<CheckStatus, [string, string]> = {
@@ -135,7 +135,7 @@ function ConnectionCard({ conn, samples, checking, onSaved, onCheck, onApprove, 
           {latest?.server_version && <div className="small">{latest.server_version.split(".")[0] === SPEC.split(".")[0]
             ? <>Compatible with Metrics Spec {SPEC.split(".")[0]}.x <span className="muted">(the API serves {latest.server_version})</span></>
             : <b style={{ color: "var(--critical-ink)" }}>Not compatible: the API serves Metrics Spec {latest.server_version}, and AMIRI Agent reads {SPEC.split(".")[0]}.x</b>}</div>}
-          <div className="small">{conn.approved ? <>Approved by {conn.approved.by} {ago(conn.approved.at)}.</> : latest
+          <div className="small">{conn.approved ? <>Approved by {person(conn.approved.by)} {ago(conn.approved.at)}.</> : latest
             ? latest.current ? <>Checked {ago(latest.started_at)}: <b>{STATUS_BADGE[latest.status][1].toLowerCase()}</b>. Not approved yet.</> : <>Changed since the last check: check it again.</>
             : <>Not checked yet.</>}</div>
         </div>}
@@ -205,7 +205,7 @@ function ReportCard({ report, history, current, onPick }: { report: Report; hist
           <button className="btn btn--sm" type="button" onClick={download}>Download JSON</button></span></div>
       <div className="bd col gap16">
         {report.withdrawn && <Banner kind="warn" icon="warn">{report.withdrawn}</Banner>}
-        <div><b>{report.headline}</b><div className="small muted">{report.target} · {dayTime(report.started_at)} by {report.run_by} ·
+        <div><b>{report.headline}</b><div className="small muted">{report.target} · {dayTime(report.started_at)} by {person(report.run_by)} ·
           {" "}{plural(report.summary.calls, "call")} in {report.summary.seconds} s · checked against Metrics Spec {report.spec_version}{report.server_version ? `, the API says ${report.server_version}` : ""}</div></div>
         <ol className="col gap8" style={{ listStyle: "none", padding: 0, margin: 0 }} aria-label="Steps">
           {report.steps.map((s, i) => { const [ico, color] = STEP_ICON[s.status]; return (

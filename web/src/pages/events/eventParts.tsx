@@ -9,7 +9,7 @@ import { CheckPill } from "../../components/checks";
 import { Icon } from "../../components/Icon";
 import { Markdown } from "../../components/markdown";
 import { useRole } from "../../components/ui";
-import { dayTime, placeName } from "../../format";
+import { dayTime, person, placeName } from "../../format";
 import {
   angleLabel, count, dateRange, earliest, eventTitle, impactText, listText, metricWords, onDay, productTypeLabel, relDay, SCREENING,
   sizeTiming, sourceInfo, splitCheckText, themeLabel, words, type VerdictKey,
@@ -28,7 +28,7 @@ const firstSentence = (s: string) => (s.match(/^.*?[.!?](\s|$)/)?.[0] ?? s).trim
 const productOf = (h: Hypothesis) => h.product_name ?? h.product_id;
 /** An alert's level and status as words after "has": "an early warning, waiting for review". */
 const LEVEL_PHRASE: Record<string, string> = { warning: "an early warning", developing: "an alert showing early signs", adverse: "an alert confirmed by your data" };
-const STATUS_PHRASE = (a: AlertItem) => a.status === "new" ? "waiting for review" : a.status === "acknowledged" ? (a.acknowledged_by ? `taken on by ${a.acknowledged_by}` : "taken on") : "resolved";
+const STATUS_PHRASE = (a: AlertItem) => a.status === "new" ? "waiting for review" : a.status === "acknowledged" ? (a.acknowledged_by ? `taken on by ${person(a.acknowledged_by)}` : "taken on") : "resolved";
 export const alertPhrase = (a: AlertItem) => `${LEVEL_PHRASE[a.level] ?? "an alert"}, ${STATUS_PHRASE(a)}`;
 
 /** Everything the page says, worked out once from the event and its alerts. */

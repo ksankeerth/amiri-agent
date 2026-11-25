@@ -7,6 +7,8 @@ short profile), "batch" (the stories: key, watched places with why, headlines, r
 
 import json
 
+from app.packs import pack_for
+
 RULES = """You judge news stories for {name}, a {kind} in {country}, for its Risk Managers.
 
 About {name}: {summary}
@@ -39,10 +41,20 @@ Stories:
 """
 
 
+# A region pack's judging rule (app/packs/us.json: judge_rules) goes just before the vocabulary.
+_VOCABULARY = "\nTheme vocabulary (theme: direction = meaning):"
+
+
 def build_instruction(state: dict) -> str:
     i = state.get("institution", {})
     batch = state.get("batch", [])
-    return RULES.format(
+    pack = pack_for(i.get("country"))
+    rules = RULES
+    if pack and pack.get("judge_rules"):
+        assert RULES.count(_VOCABULARY) == 1
+        rules = RULES.replace(_VOCABULARY, "\n" + pack["judge_rules"].replace("{", "{{").replace("}", "}}") + "\n"
+                              + _VOCABULARY)
+    return rules.format(
         name=i.get("name", "the institution"), kind=i.get("institution_type", "bank"),
         country=i.get("country_name") or i.get("country", ""), summary=i.get("summary") or "-",
         segments="; ".join(i.get("segments", [])) or "-", products="; ".join(i.get("products", [])) or "-",
