@@ -59,6 +59,7 @@ const NONE: string[] = [];
 export function PlacePicker({ onPick, scope = "any", placeholder = "Search a country, region, city, port or strait…", exclude = NONE }: {
   onPick: (p: PlaceInfo) => void; scope?: PlaceScope; placeholder?: string; exclude?: string[];
 }) {
+  const fieldLabel = useFieldLabel();
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<PlaceInfo[]>([]);
   const [open, setOpen] = useState(false);
@@ -82,7 +83,7 @@ export function PlacePicker({ onPick, scope = "any", placeholder = "Search a cou
   }, [q, scope, excluded]);
   return (
     <div style={{ position: "relative" }}>
-      <input className="input" value={q} placeholder={placeholder} onChange={e => setQ(e.target.value)}
+      <input className="input" aria-labelledby={fieldLabel} aria-label={fieldLabel ? undefined : placeholder} value={q} placeholder={placeholder} onChange={e => setQ(e.target.value)}
         onFocus={() => hits.length && setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)} />
       {open && hits.length > 0 && (
         <div className="results" style={{ position: "absolute", zIndex: 20, left: 0, right: 0, top: 38, background: "var(--surface)", boxShadow: "var(--e-pop)" }}>
@@ -172,9 +173,10 @@ export function CurrenciesField({ value, onChange }: { value: string[]; onChange
 
 export function TimeZoneInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const tz = useLoad(() => ref.timeZones());
+  const fieldLabel = useFieldLabel();
   return (
     <>
-      <input className="input" list="amiri-tz" value={value} placeholder="e.g. Europe/London" onChange={e => onChange(e.target.value)} />
+      <input className="input" aria-labelledby={fieldLabel} list="amiri-tz" value={value} placeholder="e.g. Europe/London" onChange={e => onChange(e.target.value)} />
       <datalist id="amiri-tz">{(tz ?? []).map(z => <option key={z} value={z} />)}</datalist>
     </>
   );

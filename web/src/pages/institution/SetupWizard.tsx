@@ -1,277 +1,235 @@
-// Guided setup without the assistant: the interview's steps as forms. Each step saves as
-// it goes (every add is its own all-or-nothing change), so leaving keeps what's done.
-import { useContext, useEffect, useState, type ReactNode } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { ApiError } from "../../api/client";
+// The guided setup (P15b; no board draws it, decision D5: the Institution page's tables, forms and Setup agent, and board 14's steps):
+// the interview's ten steps as forms, one at a time, with the Setup agent beside them. /institution/setup is the first step,
+// /institution/setup/:step is a step (institution, where, customers, products, flows, rules, rivals, risks, monitors, review).
+// Each step saves as it goes (every add is its own all-or-nothing change), so leaving keeps what is done. The last step checks the
+// profile and goes live. The step logic is wizardWords.ts (tested); the tables and dialogs are the Institution page's.
+//
+// Asking, and how often: the list, the profile and its checks once, and again after something saved or a proposal was applied in the
+// Setup agent's panel. Nothing polls (the panel looks at its own thread, SetupAgent.tsx).
+import { useState, type ReactNode } from "react";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { inst } from "../../api/institutions";
-import { Fold, PageTitle, Section, TextButton, TextTabs } from "../../components/rd";
-import { askSetupAgent, WithChat } from "../../components/SetupChat";
-import { LockBtn, LockFields, LockNote } from "../../components/lock";
-import { ChatToggleCtx, LoadError, useToast, PageSkeleton, type Status } from "../../components/ui";
-import "../../styles/setup.css";
-import "../../styles/rd-setup.css";
+import type { Proposal, TrackDef } from "../../api/assistant";
+import { LockFields, useDemoLock } from "../../components/lock";
+import { useNow, useRefusalToast, useToast } from "../../components/ui";
+import { Button } from "../../components/v2/Button";
+import { LoadError } from "../../components/v2/LoadError";
+import { Pill } from "../../components/v2/Pill";
+import { SectionHead } from "../../components/v2/SectionHead";
+import { useCrumbs, usePhone } from "../../components/v2/Shell";
+import { Skeleton } from "../../components/v2/Skeleton";
+import { StaleBanner } from "../../components/v2/StaleBanner";
+import { placeName } from "../../format";
+import { cap, words } from "../../plain";
+import { MonitorsStep } from "../monitors/step";
 import { CurrenciesField, Field, PlacePicker } from "./fields";
-import { InstitutionModal } from "./forms";
-import { CreateInstitution, ReadinessList, useInstitution } from "./InstitutionPage";
+import { DetailsDialog } from "./edit";
+import { NewInstitutionForm } from "./NewInstitution";
 import { MAP_KEY } from "./overview";
 import { ProfileMap } from "./ProfileMap";
-import { MonitorsStep } from "../monitors/Monitors";
-import { LinkGrid, SectionList, SuggestionPicker } from "./sections";
-import { cap, words } from "../../plain";
+import { GoLiveDialog, ReviewChecks } from "./review";
+import { SetupAgent, useAgentPanel } from "./SetupAgent";
+import { LinkGrid, SectionBlock } from "./tables";
+import { useInstitution } from "./useInstitution";
+import { liveWords, statusLook, typeWords } from "./words";
+import { progressLine, requiredLine, STEPS, stepAria, stepIndex, stepMark, stepStates, whyNotLive } from "./wizardWords";
+import "../../styles/v2/institution.css";
+import "../../styles/v2/setup.css";
 
-const STEPS = [
-  ["institution", "Institution", "Who you are"],
-  ["where", "Where", "Where you operate"],
-  ["customers", "Customers", "Who your customers are"],
-  ["products", "Products", "What you sell, and to whom"],
-  ["flows", "Flows", "Money and goods moving with places abroad"],
-  ["rules", "Rules", "Regulators and rules that reach you"],
-  ["rivals", "Rivals", "Rivals and firms you depend on"],
-  ["risks", "Risks", "Risks that meet what you depend on"],
-  ["monitors", "Monitors", "News to watch for what you depend on"],
-  ["review", "Review", "Check and go live"],
-] as const;
-type Step = (typeof STEPS)[number][0];
-const REQUIRED_BY_STEP: Partial<Record<Step, string[]>> = { institution: ["identity"], where: ["footprint_home"], customers: ["segments"], products: ["products"] };
-const RECOMMENDED_BY_STEP: Partial<Record<Step, string[]>> = { customers: ["segment_mapping"], products: ["product_segments"], flows: ["flows"], rules: ["regulators"], rivals: ["rivals"], risks: ["risk_exposures"] };
+const ROLES = ["branches", "subsidiary", "representative_office", "agents", "digital_only", "home"];
 
-/** "Commercial bank (Islamic)" rather than "bank · commercial". */
-const kindText = (i: { institution_type: string; subtype?: string | null; islamic?: boolean }) => {
-  const kind = i.subtype ? `${i.subtype.replace(/_/g, " ")} ${i.institution_type === "bank" ? "bank" : "insurer"}` : i.institution_type;
-  return `${cap(kind)}${i.islamic ? " (Islamic)" : ""}`;
-};
-/** A step's state as a shape and a word, never colour alone: ● done · ◐ part still open · ◆ required · ○ not started. */
-const MARK: Record<Status, [shape: string, word: string]> = { done: ["●", "Done"], partial: ["◐", "Part open"], required: ["◆", "Required"], open: ["○", "Not started"] };
-const STATE_WORDS: Record<Status, string> = { done: "done", partial: "a recommended part is still open", required: "required, not done yet", open: "not started" };
-
-/** The lede under each step's title: what to do here, in one line. */
-const LEDE: Record<Step, string> = {
-  institution: "Check the basics Amiri Agent starts from. Change them any time with Edit details.",
-  where: "Add the countries, states or provinces where you operate. The first one should be your home country.",
-  customers: "Pick the customer groups you serve, then say where each is concentrated and how your data identifies it.",
-  products: "Pick what you sell, then say which customer groups each product is for.",
-  flows: "Money and goods that move between your footprint and places abroad. Each figure shows where it comes from.",
-  rules: "Regulators and rules that reach you, from your home country, where you operate and the currencies you settle in.",
-  rivals: "Firms you compete with, and firms you depend on to do business.",
-  risks: "Known hazards that meet your places, customers, flows and sea routes.",
-  monitors: "Watch the news for what your profile says matters. Optional: you can go live without any.",
-  review: "Check what is still open, then go live. You can keep changing the profile afterwards.",
-};
-
-/** The page's root. Beside the Setup agent's panel the page is about 540 px wide: narrower rules apply then. */
-function Root({ children }: { children: ReactNode }) {
-  const chat = useContext(ChatToggleCtx);
-  return <div className={`page rd rd-inst rd-setup${chat?.open ? " ins-narrow wz-chat" : ""}`}>{children}</div>;
-}
-
-/** The two ways to answer a step. Picking "Ask" opens the Setup agent beside the page; "Fill the form" closes it. */
-function TwoWays() {
-  const chat = useContext(ChatToggleCtx);
-  const ask = !!chat?.open;
+/** The ten steps as one row, in order: a dot per step with its number or its state's shape, and a word for the one you are on. A step
+ *  is a real link, so the arrows of the browser and Tab both get you anywhere. */
+function Steps({ idx, states }: { idx: number; states: ReturnType<typeof stepStates> }) {
+  const cur = STEPS[idx];
   return (
-    <div className="wz-ways">
-      <TextTabs label="Two ways to answer this step" value={ask ? "ask" : "form"}
-        items={[{ key: "form", label: "Fill the form" }, { key: "ask", label: "Ask the Setup agent" }]}
-        onChange={k => { if (k === "ask") askSetupAgent(); else if (chat?.open) chat.toggle(); }} />
-      <p className="rd-fine wz-ways-s">{ask ? "The Setup agent drafts changes for you. Nothing is saved until you press Apply." : "Each change saves as you go."}</p>
-    </div>
-  );
-}
-
-/** The step list. With room it stands beside the form; beside the Setup agent's panel it folds into one line. */
-function Steps({ cur, idx, states, done }: { cur: Step; idx: number; states: Status[]; done: number }) {
-  const chat = useContext(ChatToggleCtx);
-  const list = (
-    <>
-      <ol>{STEPS.map(([k, label], n) => {
-        const [shape, word] = MARK[states[n]];
-        return (
-          <li key={k} data-s={states[n]}><Link to={`/institution/setup/${k}`} aria-current={k === cur ? "step" : undefined}
-            title={`Step ${n + 1}, ${label}: ${STATE_WORDS[states[n]]}`}>
-            <span className="wz-shape" aria-hidden="true">{shape}</span>
-            <span className="wz-n" aria-hidden="true">{n + 1}</span>
-            <span className="wz-l">{label}</span>
-            <span className="wz-w"><span className="sr">, </span>{k === "review" ? (states[n] === "done" ? "Ready" : "Not ready") : word}</span>
-            {k === cur && <span className="sr">, this step</span>}
-          </Link></li>);
-      })}</ol>
-      <p className="rd-fine wz-key">● done · ◐ part still open · ◆ required · ○ not started</p>
-    </>);
-  return (
-    <nav className="wz-steps" aria-label="Setup steps">
-      {chat?.open
-        ? <Fold title={`Step ${idx + 1} of ${STEPS.length}: ${STEPS[idx][1]}`} summary={`${done} of ${STEPS.length} done · all steps`}>{list}</Fold>
-        : <><p className="wz-prog">{done} of {STEPS.length} steps done</p>{list}</>}
+    <nav className="v2-sw-nav" aria-label="Setup steps">
+      <ol className="v2-sw-steps">
+        {STEPS.map((s, n) => {
+          const m = stepMark(states[n], s.key);
+          return (
+            <li key={s.key} className={`is-${states[n]}${n === idx ? " is-cur" : ""}`}>
+              <Link to={`/institution/setup/${s.key}`} aria-current={n === idx ? "step" : undefined} aria-label={stepAria(n + 1, s.label, states[n], s.key)} title={`${s.label}: ${m.word.toLowerCase()}`}>
+                <span className="v2-sw-dot" aria-hidden="true">{m.shape || n + 1}</span>
+                <span className="v2-sw-lbl" aria-hidden="true">{s.label}</span>
+              </Link>
+            </li>);
+        })}
+      </ol>
+      <p className="v2-sw-where"><b>Step {idx + 1} of {STEPS.length}: {cur.label}</b><span aria-hidden="true"> · </span>{progressLine(states)}</p>
+      <p className="v2-sw-key"><span aria-hidden="true">✓</span> done · <span aria-hidden="true">◐</span> part still open · <span aria-hidden="true">◆</span> required · a number: not started</p>
     </nav>
   );
 }
 
 export function SetupWizard() {
   const S = useInstitution();
-  const { step = "institution" } = useParams();
+  const { step } = useParams();
   const nav = useNavigate();
-  const toast = useToast();
+  const toast = useToast(), refuse = useRefusalToast();
+  const locked = useDemoLock();
+  const phone = usePhone();
+  const now = useNow(30_000);
+  const panel = useAgentPanel();
   const [editing, setEditing] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  const [going, setGoing] = useState(false);
   const [role, setRole] = useState("branches");
-  const { profile, readiness, ctx } = S;
-  const idx = STEPS.findIndex(s => s[0] === step);
+  const { profile, readiness, list, loadedAt } = S;
+  const idx = stepIndex(step);
   const cur = STEPS[Math.max(0, idx)];
-  useEffect(() => { document.querySelector(".main")?.scrollTo({ top: 0 }); }, [step]);
 
-  const follow = (t: { setup_step: string | null }) => { if (t.setup_step) nav(`/institution/setup/${t.setup_step}`); };
-  const applied = (p: { kind: string; result: Record<string, any> | null }) => {
+  useCrumbs([{ label: "Your institution" }, ...(profile && idx >= 0 ? [{ label: "Set up", to: "/institution/setup" }, { label: cur.label }] : [{ label: "Set up" }])]);
+
+  const follow = (t: TrackDef) => { if (t.setup_step) nav(`/institution/setup/${t.setup_step}`); };
+  const applied = (p: Pick<Proposal, "kind" | "result">) => {
     if (p.kind === "create_institution" && p.result?.institution_id) { S.select(p.result.institution_id); S.reloadList(); }
     else S.reload();
   };
+  const id = profile?.institution.institution_id ?? null;
+  const agent = <SetupAgent key={id ?? "new"} panel={panel} institutionId={id} onTrack={follow} onApplied={applied}
+    at={{ step: cur.key, label: cur.label }} profileVersion={profile?.institution.profile_version ?? null} names={profile?.place_names ?? {}} />;
+  const agentBtn = !panel.open && <Button onClick={() => panel.setOpen(true)} aria-haspopup={phone ? "dialog" : undefined}>Setup agent</Button>;
+  const shell = (body: ReactNode, withAgent = false) => <div className="v2-in-wrap"><div className="v2-in v2-sw">{body}</div>{withAgent && agent}</div>;
+  const plainHead = (sub?: string, btns?: ReactNode) => (
+    <header className="v2-in-head"><div className="v2-in-head__t"><h1 className="v2-in-h1">Set up your institution</h1>{sub && <p className="v2-in-sub1">{sub}</p>}</div>
+      {btns && <div className="v2-in-head__btns">{btns}</div>}</header>);
+
+  // ---------------------------------------------------------------- loading, failing, nothing yet
   // a failed load is not "no institution yet": say the server didn't answer instead of offering to create one
-  if (S.error != null && !profile) return <div className="page rd"><PageTitle title="Set up your institution" crumbs={<Link to="/institution">Institution</Link>} /><LoadError error={S.error} onRetry={S.reload} what="the institution" /></div>;
-  if (S.list === null) return <PageSkeleton />;
-  if (!S.list.length || !profile || !readiness) {
-    return (
-      <WithChat institutionId={null} onTrack={follow} onApplied={applied} at={{ step: "institution", label: `Step 1 · ${STEPS[0][1]}` }}><Root>
-        <PageTitle title="Set up your institution" crumbs={<Link to="/institution">Institution</Link>}
-          status={<><span>Step 1 of {STEPS.length}</span><span>Who you are</span></>}
-          actions={<Link className="rd-tbtn" to="/institution">Leave setup</Link>} />
-        <TwoWays />
-        <CreateInstitution onCreated={id => { S.select(id); S.reloadList(); nav("/institution/setup/where"); }} />
-      </Root></WithChat>
-    );
+  if (S.error != null && !profile) return shell(<>{plainHead()}<LoadError error={S.error} onRetry={S.reload} what="the institution" safe="Your profile is safe; this page just couldn't reach it." /></>);
+  if (list === null || (list.length > 0 && (!profile || !readiness))) return shell(<>{plainHead()}<Skeleton rows={7} label="Loading the guided setup" /></>);
+  if (!list.length || !profile || !readiness) {
+    return shell(<>
+      {plainHead("Step 1 of 10: who you are. Tell Amiri Agent what kind of institution you are, then the steps add where you operate, your customers, products, flows, rules, rivals and risks.",
+        <><Button as="link" to="/institution">Leave setup</Button>{agentBtn}</>)}
+      <NewInstitutionForm onCreated={newId => { S.select(newId); S.reloadList(); nav("/institution/setup/where"); }} />
+    </>, true);
   }
+  // an address that names no step
+  if (idx < 0) return <Navigate to="/institution/setup" replace />;
+
   const i = profile.institution;
-  const ok = (ids: string[] | undefined) => (ids ?? []).every(id => readiness.checks.find(c => c.id === id)?.ok);
-  const stepState = (s: Step): Status => (s === "review" ? (readiness.ready ? "done" : "open")
-    : !ok(REQUIRED_BY_STEP[s]) ? (REQUIRED_BY_STEP[s] ? "required" : "open") : ok(RECOMMENDED_BY_STEP[s]) ? "done" : "partial");
-  const states = STEPS.map(([k]) => stepState(k));
-  const done = states.filter(x => x === "done").length;
-  const next = STEPS[idx + 1]?.[0], prev = STEPS[idx - 1]?.[0];
+  const r = readiness;
+  const states = stepStates(r);
+  const next = STEPS[idx + 1], prev = STEPS[idx - 1];
+  const setup = i.status === "setup";
+  const look = statusLook(i.status);
+  const ctx = S.ctx;
+  const stale = S.error != null && loadedAt != null;
+  const goStep = (s: string) => nav(`/institution/setup/${s}`);
+  const why = whyNotLive(r);
+
   const addFootprint = async (code: string) => {
     try { await inst.create_item(i.institution_id, "footprint", { code, role }); toast("Added to the footprint."); S.reload(); }
-    catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
+    catch (e) { refuse(e, "Couldn't add it"); }
   };
   const setClearing = async (v: string[]) => {
     try { await inst.patch(i.institution_id, i.version, { clearing_currencies: v }); S.reload(); }
-    catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
+    catch (e) { refuse(e, "Couldn't save it"); S.reload(); }
   };
   const activate = async () => {
-    try { await inst.status(i.institution_id, "activate"); toast("Active: the agents now use this profile."); nav("/institution"); }
-    catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
+    setGoing(true);
+    try {
+      await inst.status(i.institution_id, "activate");
+      toast("Active: Amiri Agent now uses this profile.");
+      window.dispatchEvent(new Event("amiri:installation"));
+      nav("/institution");
+    } catch (e) { refuse(e, "Couldn't go live"); setConfirm(false); }
+    finally { setGoing(false); }
   };
-  const stateLine = i.status === "active" ? ["Active:", "Amiri Agent uses this profile"] : i.status === "archived" ? ["Archived:", "Amiri Agent does not use this profile"] : ["Being set up:", "Amiri Agent does not use it until it is activated"];
-  const goStep = (s: string) => nav(`/institution/setup/${s}`);
-  const fixStep = (section: string) => goStep(({ footprint: "where", "watch-places": "where", segments: "customers", products: "products", flows: "flows", regulators: "rules", rivals: "rivals", counterparties: "rivals", "risk-exposures": "risks" } as Record<string, string>)[section] ?? "institution");
+  const grid = (rows: "products" | "flows", title: string, summary: string) => <LinkGrid ctx={ctx} rows={rows} cols="segments" field="segments" reload={S.reload} title={title} summary={summary} />;
+  const map = (height: number) => (
+    <section className="v2-in-sec" aria-labelledby="sw-map">
+      <SectionHead title={step === "review" ? "Your profile on the map" : "Your footprint on the map"} id="sw-map" />
+      <div className="v2-in-map"><ProfileMap profile={profile} height={height} legend={false} /></div>
+      <p className="v2-in-key">{MAP_KEY}</p>
+    </section>);
 
-  return (
-    <WithChat institutionId={i.institution_id} onTrack={follow} onApplied={applied} at={{ step: cur[0], label: `Step ${idx + 1} · ${cur[1]}` }}><Root>
-      <PageTitle crumbs={<><Link to="/institution">Institution</Link><span> / </span><span>Guided setup</span></>}
-        title={cur[2]}
-        status={<>
-          <span><b className="ins-state">{stateLine[0]}</b> {stateLine[1]}</span>
-          <span>{i.name}</span></>}
-        lede={cur[0] === "review" && i.status === "active" ? "The profile is live. Check what is still open; you can keep changing it." : LEDE[cur[0]]}
-        actions={<Link className="rd-tbtn" to="/institution">Leave setup</Link>} />
+  const lede = cur.key === "review" && !setup ? "The profile is live. Check what is still open; you can keep changing it." : cur.lede;
+  const body = (() => {
+    switch (cur.key) {
+      case "institution": return (
+        <section className="v2-in-sec" aria-labelledby="sw-inst">
+          <SectionHead title={i.name} id="sw-inst" action={i.status === "archived" ? undefined : <Button locked={locked} onClick={() => setEditing(true)}>Edit details</Button>} />
+          <dl className="v2-in-kv v2-sw-kv">
+            <dt>Type</dt><dd>{typeWords(i)}</dd>
+            <dt>Home</dt><dd>{profile.place_names[i.home_country] ?? placeName(i.home_country)} · {i.base_currency} · {i.time_zone}</dd>
+            <dt>Settles abroad in</dt><dd>{i.clearing_currencies?.join(", ") || "—"}</dd>
+            <dt>Owns risk decisions</dt><dd>{i.governance_body ?? "—"}</dd>
+            <dt>Summary</dt><dd>{i.summary ?? "—"}</dd>
+          </dl>
+        </section>);
+      case "where": return (<>
+        <section className="v2-in-sec" aria-labelledby="sw-add">
+          <SectionHead title="Add where you operate" id="sw-add" />
+          <LockFields><div className="v2-in-form"><div className="grid2">
+            <Field label="Place" hint="Countries, states, provinces or districts. Picking one adds it."><PlacePicker scope="iso" onPick={p => addFootprint(p.code)} placeholder="e.g. a state, a province or a country" /></Field>
+            <Field label="As"><select className="input" value={role} onChange={e => setRole(e.target.value)}>
+              {ROLES.map(x => <option key={x} value={x}>{x === "home" ? "Home country" : cap(words(x))}</option>)}</select></Field>
+          </div></div></LockFields>
+        </section>
+        {map(320)}
+        <SectionBlock section="footprint" ctx={ctx} reload={S.reload} />
+        <SectionBlock section="watch-places" ctx={ctx} reload={S.reload} />
+      </>);
+      case "customers": return <SectionBlock section="segments" ctx={ctx} reload={S.reload} suggest
+        note="Edit each group to say where it is concentrated and how your data identifies it, so checks can look at just that group." />;
+      case "products": return <SectionBlock section="products" ctx={ctx} reload={S.reload} suggest extra={grid("products", "Edit who uses which product", "a grid you can tick")} />;
+      case "flows": return <SectionBlock section="flows" ctx={ctx} reload={S.reload} suggest extra={grid("flows", "Edit which customer groups each flow concerns", "a grid you can tick")} />;
+      case "rules": return (<>
+        <section className="v2-in-sec" aria-labelledby="sw-cur">
+          <SectionHead title="Currencies you settle in abroad" id="sw-cur" />
+          <p className="v2-in-sec__note">USD brings US sanctions (OFAC); EUR the EU's; GBP the UK's.</p>
+          <LockFields><div className="v2-in-form"><CurrenciesField value={i.clearing_currencies ?? []} onChange={setClearing} /></div></LockFields>
+        </section>
+        <SectionBlock section="regulators" ctx={ctx} reload={S.reload} suggest />
+      </>);
+      case "rivals": return (<>
+        <SectionBlock section="rivals" ctx={ctx} reload={S.reload} suggest />
+        <SectionBlock section="counterparties" ctx={ctx} reload={S.reload} />
+      </>);
+      case "risks": return <SectionBlock section="risk-exposures" ctx={ctx} reload={S.reload} suggest
+        note="The risk finder checks a library of known hazards against your footprint, customer groups, flows and the sea routes your goods take. Code only, no model. Dismiss what doesn't apply and it won't be offered again." />;
+      case "monitors": return <MonitorsStep institutionId={i.institution_id} />;
+      default: return (<>
+        <section className="v2-in-sec" aria-labelledby="sw-live">
+          <SectionHead title="Ready to go live?" id="sw-live" meta={<span className="v2-in-sec__meta">{requiredLine(r.checks)}</span>} />
+          <p className="v2-sw-live"><Pill tone={r.ready ? "good" : "unusual"} mark={r.ready ? "●" : "◆"}>{r.ready ? "Ready" : "Not ready"}</Pill> <span>{liveWords(r)}</span></p>
+          <ReviewChecks readiness={r} onFix={goStep} onEdit={() => setEditing(true)} />
+        </section>
+        {map(300)}
+      </>);
+    }
+  })();
 
-      <div className="wz-layout">
-        <Steps cur={cur[0]} idx={idx} states={states} done={done} />
-
-        <div className="wz-body">
-          <LockNote />
-          <TwoWays />
-          {step === "institution" && <Section title={i.name} action={<TextButton edits onClick={() => setEditing(true)}>Edit details</TextButton>}>
-            <dl className="ins-kv wz-kv">
-              <dt>Type</dt><dd>{kindText(i)}</dd>
-              <dt>Home</dt><dd>{profile.place_names[i.home_country] ?? i.home_country} · {i.base_currency} · {i.time_zone}</dd>
-              <dt>Owns risk decisions</dt><dd>{i.governance_body ?? "—"}</dd>
-              <dt>Summary</dt><dd>{i.summary ?? "—"}</dd>
-            </dl>
-          </Section>}
-
-          {step === "where" && <>
-            <Section title="Add where you operate">
-              <LockFields><div className="wz-form grid2">
-                <Field label="Place" hint="Countries, states, provinces or districts."><PlacePicker scope="iso" onPick={p => addFootprint(p.code)} placeholder="e.g. a state, a province or a country" /></Field>
-                <Field label="As"><select className="input" value={role} onChange={e => setRole(e.target.value)}>
-                  {["branches", "subsidiary", "representative_office", "agents", "digital_only", "home"].map(r => <option key={r} value={r}>{r === "home" ? "Home country" : cap(words(r))}</option>)}</select></Field>
-              </div></LockFields>
-            </Section>
-            <Section title="Your footprint on the map" className="ins-map-sec">
-              <ProfileMap profile={profile} height={340} legend={false} />
-              <p className="rd-fine ins-key">{MAP_KEY}</p>
-            </Section>
-            <SectionList rd section="footprint" ctx={ctx} reload={S.reload} />
-            <SectionList rd section="watch-places" ctx={ctx} reload={S.reload} />
-          </>}
-
-          {step === "customers" && <>
-            <Section title={`Usual customer groups for ${i.institution_type === "bank" ? "a bank" : "an insurer"}`}>
-              <SuggestionPicker inline section="segments" ctx={ctx} onAdded={S.reload} />
-            </Section>
-            <SectionList rd section="segments" ctx={ctx} reload={S.reload} />
-            <p className="rd-fine rd-prose wz-after">Edit each group to say where it is concentrated and how your data identifies it, so checks can look at just that group.</p>
-          </>}
-
-          {step === "products" && <>
-            <Section title="What do you offer?">
-              <SuggestionPicker inline section="products" ctx={ctx} onAdded={S.reload} />
-            </Section>
-            <SectionList rd section="products" ctx={ctx} reload={S.reload} />
-            <LinkGrid rd ctx={ctx} rows="products" cols="segments" field="segments" reload={S.reload} title="Edit who uses which product" summary="a grid you can tick" />
-          </>}
-
-          {step === "flows" && <>
-            <Section title="Published figures for your footprint">
-              <SuggestionPicker inline section="flows" ctx={ctx} onAdded={S.reload} />
-            </Section>
-            <SectionList rd section="flows" ctx={ctx} reload={S.reload} />
-            <LinkGrid rd ctx={ctx} rows="flows" cols="segments" field="segments" reload={S.reload} title="Edit which customer groups each flow concerns" summary="a grid you can tick" />
-          </>}
-
-          {step === "rules" && <>
-            <Section title="Currencies you settle in abroad">
-              <LockFields><div className="wz-form"><CurrenciesField value={i.clearing_currencies ?? []} onChange={setClearing} /></div></LockFields>
-              <p className="rd-fine wz-after">USD brings US sanctions (OFAC); EUR the EU's; GBP the UK's.</p>
-            </Section>
-            <Section title="From the rule table">
-              <SuggestionPicker inline section="regulators" ctx={ctx} onAdded={S.reload} />
-            </Section>
-            <SectionList rd section="regulators" ctx={ctx} reload={S.reload} />
-          </>}
-
-          {step === "rivals" && <>
-            <SectionList rd section="rivals" ctx={ctx} reload={S.reload} />
-            <SectionList rd section="counterparties" ctx={ctx} reload={S.reload} />
-          </>}
-
-          {step === "risks" && <>
-            <Section title="The risk finder" meta="known hazards that meet your places, customers, flows and sea routes">
-              <SuggestionPicker inline section="risk-exposures" ctx={ctx} onAdded={S.reload} />
-            </Section>
-            <SectionList rd section="risk-exposures" ctx={ctx} reload={S.reload} />
-          </>}
-
-          {step === "monitors" && <MonitorsStep institutionId={i.institution_id} />}
-
-          {step === "review" && <>
-            <Section title="Your profile on the map" className="ins-map-sec">
-              <ProfileMap profile={profile} height={320} legend={false} />
-              <p className="rd-fine ins-key">{MAP_KEY}</p>
-            </Section>
-            <Section title="Ready to go live?" meta={`${readiness.checks.filter(c => c.level === "required" && c.ok).length} of ${readiness.checks.filter(c => c.level === "required").length} required parts done`}>
-              <ReadinessList r={readiness} onFix={fixStep} />
-            </Section>
-          </>}
-
-          <div className="wz-foot">
-            <div className="wz-foot-in">
-              {prev && <button className="btn" type="button" onClick={() => goStep(prev)}>← Back</button>}
-              <span className="wz-foot-s">Step {idx + 1} of {STEPS.length}</span>
-              {next && <button className="btn btn--primary" type="button" onClick={() => goStep(next)}>Next: {STEPS[idx + 1][1]} →</button>}
-              {!next && i.status === "setup" && <LockBtn className="btn btn--primary" disabled={!readiness.ready}
-                title={readiness.ready ? "" : "Required parts are missing"} onClick={activate}>Activate</LockBtn>}
-            </div>
-          </div>
-        </div>
+  return shell(<>
+    {stale && <StaleBanner loadedAt={loadedAt!} now={now.getTime()} onRetry={S.reload} />}
+    <header className="v2-in-head">
+      <div className="v2-in-head__t">
+        <div className="v2-in-head__row"><span className="v2-sw-kicker">Guided setup for {i.name}</span><span title={look.hint}><Pill tone={look.tone} mark={look.tone === "good" ? "●" : undefined}>{look.word}</Pill></span></div>
+        <h1 className="v2-in-h1 v2-sw-h1">{cur.title}</h1>
+        <p className="v2-in-sub1">{lede}</p>
       </div>
-      {editing && <InstitutionModal profile={profile} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); S.reload(); }} />}
-    </Root></WithChat>
-  );
+      <div className="v2-in-head__btns"><Button as="link" to="/institution">Leave setup</Button>{agentBtn}</div>
+    </header>
+    <Steps idx={idx} states={states} />
+    <p className="v2-meta v2-sw-save">Each change saves as you go, so you can leave and come back. The Setup agent drafts changes too; nothing it drafts is saved until you press Apply.</p>
+    <div className="v2-sw-body">{body}</div>
+    <div className="v2-sw-foot">
+      <div className="v2-sw-foot__in">
+        {prev ? <Button as="link" to={`/institution/setup/${prev.key}`}><span aria-hidden="true">←</span> Back</Button> : <span />}
+        <span className="v2-meta v2-sw-foot__s">Step {idx + 1} of {STEPS.length}</span>
+        {next ? <Button as="link" to={`/institution/setup/${next.key}`} variant="primary">Next: {next.label} <span aria-hidden="true">→</span></Button>
+          : setup ? <>
+            {why && <span id="sw-why" className="v2-sw-why">{why}</span>}
+            <Button variant="primary" locked={locked} className={r.ready ? undefined : "is-idle"} aria-disabled={!r.ready || undefined} aria-describedby={why ? "sw-why" : undefined}
+              onClick={() => { if (r.ready) setConfirm(true); }}>Go live</Button></>
+          : <Button as="link" to="/institution" variant="primary">Back to the institution</Button>}
+      </div>
+    </div>
+
+    {editing && <DetailsDialog profile={profile} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); S.reload(); }} />}
+    {confirm && <GoLiveDialog name={i.name} readiness={r} busy={going} onClose={() => setConfirm(false)} onConfirm={activate} />}
+  </>, true);
 }

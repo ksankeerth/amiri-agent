@@ -348,7 +348,20 @@ export function InstitutionFields({ d, set, err, creating, fill, grouped }: { d:
       {!grouped && islamic}
       <Field label="Currencies you settle in abroad" error={err.clearing_currencies} full hint="Decides which sanctions regimes reach you (USD → OFAC).">
         <CurrenciesField value={d.clearing_currencies ?? []} onChange={v => set("clearing_currencies", v)} /></Field>
-      {grouped && <Group>More about you (optional)</Group>}
+      {grouped ? (
+        <details className="pf-more" open={["governance_body", "size_band", "fiscal_year_start_month", "lei", "short_name", "website", "summary"].some(k => err[k]) || undefined}>
+          <summary>More about you <span>(optional)</span></summary>
+          <div className="grid2">
+            <Field label="Who owns risk decisions" error={err.governance_body}><input className="input" value={d.governance_body ?? ""} onChange={e => set("governance_body", e.target.value || null)} placeholder="e.g. Board Risk Committee" /></Field>
+            <Field label="Size" error={err.size_band}><select className="input" value={d.size_band ?? ""} onChange={e => set("size_band", e.target.value || null)}><option value="">—</option>{opt(["small", "mid", "large", "systemic"], { mid: "mid-size", systemic: "systemically important" })}</select></Field>
+            <Field label="Financial year starts in" error={err.fiscal_year_start_month}><select className="input" value={d.fiscal_year_start_month ?? 1} onChange={e => set("fiscal_year_start_month", Number(e.target.value))}>{MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select></Field>
+            <Field label="LEI" error={err.lei}><input className="input mono" value={d.lei ?? ""} onChange={e => set("lei", e.target.value.toUpperCase() || null)} placeholder="20 characters" /></Field>
+            <Field label="Short name" error={err.short_name}><input className="input" value={d.short_name ?? ""} onChange={e => set("short_name", e.target.value || null)} /></Field>
+            <Field label="Website" error={err.website}><input className="input" value={d.website ?? ""} onChange={e => set("website", e.target.value || null)} placeholder="https://" /></Field>
+            <Field label="In a few lines: what you do" error={err.summary} full><textarea className="input" value={d.summary ?? ""} onChange={e => set("summary", e.target.value || null)} /></Field>
+          </div>
+        </details>
+      ) : <>
       <Field label="Who owns risk decisions" error={err.governance_body}><input className="input" value={d.governance_body ?? ""} onChange={e => set("governance_body", e.target.value || null)} placeholder="e.g. Board Risk Committee" /></Field>
       <Field label="Size" error={err.size_band}><select className="input" value={d.size_band ?? ""} onChange={e => set("size_band", e.target.value || null)}><option value="">—</option>{opt(["small", "mid", "large", "systemic"], { mid: "mid-size", systemic: "systemically important" })}</select></Field>
       <Field label="Financial year starts in" error={err.fiscal_year_start_month}><select className="input" value={d.fiscal_year_start_month ?? 1} onChange={e => set("fiscal_year_start_month", Number(e.target.value))}>{MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}</select></Field>
@@ -356,6 +369,7 @@ export function InstitutionFields({ d, set, err, creating, fill, grouped }: { d:
       <Field label="Short name" error={err.short_name}><input className="input" value={d.short_name ?? ""} onChange={e => set("short_name", e.target.value || null)} /></Field>
       <Field label="Website" error={err.website}><input className="input" value={d.website ?? ""} onChange={e => set("website", e.target.value || null)} placeholder="https://" /></Field>
       <Field label="In a few lines: what you do" error={err.summary} full><textarea className="input" value={d.summary ?? ""} onChange={e => set("summary", e.target.value || null)} /></Field>
+      </>}
       {fill && <FillFromJson what="the institution" read={institutionsOf} onFill={c => fill(c.data)}
         example={'{"institution": {"name": "…", "institution_type": "bank", "home_country": "LK", …}}, or those fields on their own'} />}
     </div>

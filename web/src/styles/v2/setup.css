@@ -1,0 +1,100 @@
+/* The guided setup (/institution/setup, /institution/setup/:step), the new-institution form (/institution/new) and the setup's Monitors step
+   (P15b; no board draws them, decision D5). They are built from the Institution page: its wrapper (.v2-in-wrap / .v2-in), tables, folds, checks
+   and form controls come from institution.css, and the Setup agent's panel from setup-chat.css. This file is only what those pages add.
+   Tokens only. Prefix v2-sw-. Phone (under 720 px): one column, the steps are a row of small dots, Back and Next share the foot. */
+
+/* the column is a container: the step names fit under their dots only when there is room (beside the Setup agent's panel there is not) */
+.v2-sw { container-type: inline-size; container-name: sw; }
+
+/* ---------- heading */
+.v2-sw-kicker { font-size: var(--v2-fs-meta); font-weight: var(--v2-fw-medium); color: var(--v2-text-2); overflow-wrap: anywhere; }
+.v2-sw-h1 { margin-top: var(--v2-sp-4) !important; font-size: 30px; line-height: 1.2; }
+
+/* ---------- the ten steps: a dot each, in order, joined by a line */
+.v2-sw-nav { display: flex; flex-direction: column; gap: var(--v2-sp-4); margin-top: calc(-1 * var(--v2-sp-4)); }
+.v2-sw-steps { display: flex; }
+.v2-sw-steps > li { position: relative; flex: 1 1 0; min-width: 0; }
+.v2-sw-steps > li:not(:last-child)::before {
+  content: ""; position: absolute; top: 19px; left: calc(50% + 19px); right: calc(-50% + 19px); height: 2px; background: var(--v2-line);
+}
+.v2-sw-steps > li.is-done:not(:last-child)::before { background: var(--v2-text); }
+.v2 .v2-sw-steps a {
+  display: flex; flex-direction: column; align-items: center; gap: var(--v2-sp-6); padding: var(--v2-sp-4) var(--v2-sp-2) var(--v2-sp-6);
+  border-radius: var(--v2-r-btn); color: var(--v2-text-2); text-decoration: none;
+}
+.v2 .v2-sw-steps a:hover { text-decoration: none; background: var(--v2-hover); }
+.v2-sw-dot {
+  position: relative; z-index: 1; display: grid; place-items: center; width: 30px; height: 30px; border: 1.5px dashed var(--v2-line-input); border-radius: 50%;
+  background: var(--v2-surface); color: var(--v2-text-2); font-size: var(--v2-fs-meta); font-weight: var(--v2-fw-semibold); line-height: 1;
+}
+.v2-sw-steps li.is-done .v2-sw-dot { border-style: solid; border-color: var(--v2-ink-btn); background: var(--v2-ink-btn); color: var(--v2-ink-btn-text); }
+.v2-sw-steps li.is-partial .v2-sw-dot { border-style: solid; border-color: var(--v2-text); color: var(--v2-text); font-size: var(--v2-fs-title); }
+.v2-sw-steps li.is-required .v2-sw-dot { border-style: solid; border-color: var(--v2-bad); color: var(--v2-bad); font-size: var(--v2-fs-title); }
+.v2-sw-steps li.is-cur .v2-sw-dot { box-shadow: 0 0 0 3px var(--v2-page), 0 0 0 5px var(--v2-text); }
+.v2-sw-lbl { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--v2-fs-cap); font-weight: var(--v2-fw-medium); }
+.v2-sw-steps li.is-cur .v2-sw-lbl { color: var(--v2-text); font-weight: var(--v2-fw-semibold); }
+.v2-sw-where { margin-top: var(--v2-sp-6) !important; font-size: var(--v2-fs-body); color: var(--v2-text-2); }
+.v2-sw-where b { color: var(--v2-text); font-weight: var(--v2-fw-semibold); }
+.v2-sw-key { font-size: var(--v2-fs-cap); color: var(--v2-muted); }
+.v2-sw-save { max-width: 72ch; margin-top: calc(-1 * var(--v2-sp-8)) !important; }
+@container sw (max-width: 619px) { .v2-sw-lbl { display: none; } }
+
+/* ---------- a step's content */
+.v2-sw-body { display: flex; flex-direction: column; gap: var(--v2-sp-24); min-width: 0; }
+.v2-sw-kv { margin-bottom: 0 !important; }
+.v2-sw-live { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-10); margin: var(--v2-sp-4) 0 var(--v2-sp-8) !important; font-size: var(--v2-fs-body); color: var(--v2-text-2); }
+
+/* ---------- Back and Next, in view at the foot of the column */
+.v2-sw-foot { position: sticky; bottom: 0; z-index: 3; margin-top: var(--v2-sp-8); padding: var(--v2-sp-12) 0; background: var(--v2-page); border-top: 1px solid var(--v2-line); }
+.v2-sw-foot__in { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-12); }
+.v2-sw-foot__s { margin: 0 auto; }
+.v2-sw-why { font-size: var(--v2-fs-meta); color: var(--v2-text-2); }
+
+/* ---------- the new-institution form (also the first screen of the guided setup when there is nothing yet) */
+.v2-sw-form { display: flex; flex-direction: column; gap: var(--v2-sp-20); max-width: 760px; min-width: 0; margin: 0; }
+.v2-sw-form .v2-in-reqtop { margin: 0 !important; }
+.v2-sw-lock {
+  display: flex; gap: var(--v2-sp-8); margin: 0; padding: var(--v2-sp-12) var(--v2-sp-16); border: 1px solid var(--v2-warn-line); border-radius: var(--v2-r-lg);
+  background: var(--v2-warn-bg); color: var(--v2-warn-ink); font-size: var(--v2-fs-meta);
+}
+.v2-sw-lock > span:first-child { color: var(--v2-unusual); }
+.v2-sw-sum { margin: 0; }
+.v2-sw-formfoot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-12); padding-top: var(--v2-sp-4); }
+.v2 .v2-sw-form .fillfile .btn { margin-left: calc(-1 * var(--v2-sp-12)); }
+.v2-sw-demos { max-width: 72ch; margin: 0; }
+.v2 .v2-sw-demos a { color: var(--v2-brand); font-weight: var(--v2-fw-semibold); }
+/* the optional lines fold away: the first two groups are all a start needs */
+.v2 .v2-in-form .pf-more { grid-column: 1 / -1; border-top: 1px solid var(--v2-line); }
+.v2 .v2-in-form .pf-more > summary {
+  display: flex; align-items: center; gap: var(--v2-sp-10); min-height: 44px; cursor: pointer; list-style: none; font-size: var(--v2-fs-body); font-weight: var(--v2-fw-semibold);
+}
+.v2 .v2-in-form .pf-more > summary::-webkit-details-marker { display: none; }
+.v2 .v2-in-form .pf-more > summary::before { content: ""; flex: none; border-left: 6px solid var(--v2-text); border-top: 4.5px solid transparent; border-bottom: 4.5px solid transparent; }
+.v2 .v2-in-form .pf-more[open] > summary::before { transform: rotate(90deg); }
+.v2 .v2-in-form .pf-more > summary span { font-weight: var(--v2-fw-regular); color: var(--v2-muted); }
+.v2 .v2-in-form .pf-more > .grid2 { padding: var(--v2-sp-8) 0 var(--v2-sp-4); }
+
+/* ---------- the Monitors step */
+.v2-sw-draft { margin-top: var(--v2-sp-16); }
+.v2-sw-draft > h3 { margin-bottom: var(--v2-sp-8) !important; }
+.v2-sw-draft__l { display: flex; flex-wrap: wrap; gap: var(--v2-sp-8); }
+.v2-sw-mons { display: flex; flex-direction: column; margin-top: var(--v2-sp-4); }
+.v2-sw-mons > li { display: flex; flex-direction: column; gap: var(--v2-sp-4); padding: var(--v2-sp-14) 0; border-top: 1px solid var(--v2-line); }
+.v2-sw-mons > li:first-child { border-top: 0; }
+.v2-sw-mons__top { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-4) var(--v2-sp-8); }
+.v2 .v2-sw-mons__name { font-size: var(--v2-fs-body); font-weight: var(--v2-fw-semibold); color: var(--v2-text); overflow-wrap: anywhere; }
+.v2-sw-mons__s { font-size: var(--v2-fs-body); color: var(--v2-text-2); overflow-wrap: anywhere; }
+
+/* ---------- phone */
+@media (max-width: 719.98px) {
+  .v2-sw-h1 { font-size: 26px; }
+  .v2-sw-dot { width: 24px; height: 24px; font-size: var(--v2-fs-cap); }
+  .v2-sw-steps li.is-partial .v2-sw-dot, .v2-sw-steps li.is-required .v2-sw-dot { font-size: var(--v2-fs-body); }
+  .v2-sw-steps li.is-cur .v2-sw-dot { box-shadow: 0 0 0 2px var(--v2-page), 0 0 0 4px var(--v2-text); }
+  .v2-sw-steps > li:not(:last-child)::before { top: 16px; left: calc(50% + 14px); right: calc(-50% + 14px); }
+  .v2 .v2-sw-steps a { padding-left: 0; padding-right: 0; }
+  .v2-sw-foot__in > .v2-btn { flex: 1 1 0; }
+  .v2-sw-foot__s { flex-basis: 100%; order: -1; text-align: center; margin: 0; }
+  .v2-sw-formfoot > .v2-btn { flex: 1 1 100%; }
+  .v2-sw-form .v2-in-file { justify-content: center; }
+}

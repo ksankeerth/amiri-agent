@@ -2,7 +2,7 @@
 // Agent knows about it, one part of the profile at a time, with the Setup agent beside it. /institution is the overview (the map and what
 // is still open); /institution/:part is a section (products, flows, …), the history, or what the agents see. The older names the
 // Setup agent still uses (customers, rules, risks) go to their section. The guided setup and the new-institution form are
-// InstitutionPage.tsx and SetupWizard.tsx (restyled in P15).
+// NewInstitution.tsx and SetupWizard.tsx.
 //
 // Asking, and how often: the profile and its checks every 60 s, and not while the tab is hidden; and after something saved. The Setup
 // agent's panel looks at its own thread (SetupAgent.tsx).

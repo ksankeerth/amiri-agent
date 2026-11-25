@@ -1,51 +1,81 @@
-// The guided setup's Monitors step: what the profile can be watched for, and the monitors so far. (The setup wizard is
-// still in its old look; it is redone with the rest of the setup pages.)
-import { useEffect, useState } from "react";
+// The guided setup's Monitors step (P15b; no board draws it, decision D5: the Monitors page's words and pills, the Institution page's
+// sections): what the profile can be watched for, and the monitors so far. A draft is only a draft: a Risk Manager approves it on the
+// Monitors page before it runs, and the demo lock greys the drafting (the server guards it).
+//
+// Asking, and how often: what can be drafted and the monitors list, once when the step opens and again on "Try again". Nothing polls.
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ApiError } from "../../api/client";
 import { monitorsApi, type Draftable, type MonitorRow } from "../../api/monitors";
-import { Section, TextButton } from "../../components/rd";
-import { useNow, useToast } from "../../components/ui";
+import { useDemoLock } from "../../components/lock";
+import { useNow, useRefusalToast } from "../../components/ui";
+import { ArrowLink } from "../../components/v2/ArrowLink";
+import { Button } from "../../components/v2/Button";
+import { Empty } from "../../components/v2/Empty";
+import { LoadError } from "../../components/v2/LoadError";
+import { Pill } from "../../components/v2/Pill";
+import { SectionHead } from "../../components/v2/SectionHead";
+import { Skeleton } from "../../components/v2/Skeleton";
 import { ago } from "../../format";
-import { MONITOR_STATUS } from "../../plain";
 import { SECTION_WORDS } from "./draft";
+import { rowLine, statusLook } from "./words";
+import "../../styles/v2/institution.css";
+import "../../styles/v2/setup.css";
 
 /** The guided setup's Monitors step: what the profile can be watched for, and the monitors so far. */
 export function MonitorsStep({ institutionId }: { institutionId: string }) {
   const nav = useNavigate();
-  const toast = useToast();
+  const refuse = useRefusalToast();
+  const locked = useDemoLock();
   const now = useNow(60_000);
   const [items, setItems] = useState<Draftable[] | null>(null);
   const [mine, setMine] = useState<MonitorRow[]>([]);
+  const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  useEffect(() => {
-    Promise.all([monitorsApi.draftable(institutionId), monitorsApi.list(institutionId)])
-      .then(([d, m]) => { setItems(d); setMine(m); }).catch(e => toast(e instanceof ApiError ? e.full : String(e)));
-  }, [institutionId, toast]);
+  const load = useCallback(() => {
+    setError(null);
+    return Promise.all([monitorsApi.draftable(institutionId), monitorsApi.list(institutionId)])
+      .then(([d, m]) => { setItems(d); setMine(m); }).catch(setError);
+  }, [institutionId]);
+  useEffect(() => { load(); }, [load]);
   const draft = async (d: Draftable) => {
     setBusy(d.item_id);
     try { const m = await monitorsApi.draft(d.section, d.item_id, institutionId); nav(`/monitors/${m.monitor_id}`); }
-    catch (e) { toast(e instanceof ApiError ? e.full : String(e)); setBusy(null); }
+    catch (e) { refuse(e, "Couldn't draft the monitor"); setBusy(null); }
   };
-  const open = (items ?? []).filter(i => !i.monitor_id);
+  if (error != null) return <LoadError error={error} onRetry={load} what="the monitors" safe="Your monitors are safe; this page just couldn't reach them." />;
+  if (items === null) return <Skeleton rows={4} label="Loading the monitors" />;
+  const open = items.filter(i => !i.monitor_id);
   return (
     <>
-      <Section title="Draft from your profile">
-        <p className="rd-fine rd-prose wz-after">Each monitor runs after a Risk Manager approves it on the Monitors page. You can also ask the Setup agent: "watch our main rival's deposit rates".</p>
-        {items === null ? <p className="rd-fine">Loading…</p> : !open.length ? <p className="rd-row-d ins-none">Everything the profile offers is watched, or there is nothing to draft from yet.</p>
+      <section className="v2-in-sec" aria-labelledby="sw-draft">
+        <SectionHead title="Draft from your profile" id="sw-draft" />
+        <p className="v2-in-sec__note">Each monitor runs after a Risk Manager approves it on the Monitors page. You can also ask the Setup agent: “watch our main rival's deposit rates”.</p>
+        {!open.length
+          ? <Empty title="Nothing left to draft" plain className="v2-in-empty">Everything the profile offers is watched, or there is nothing to draft from yet. Add rivals, flows or risks first, and they show up here.</Empty>
           : Object.entries(SECTION_WORDS).map(([s, w]) => {
             const xs = open.filter(i => i.section === s);
-            return xs.length ? <div key={s} className="wz-draft"><h3 className="wz-pick-h">{w}</h3>
-              <ul className="wz-draft-list">{xs.map(i => <li key={i.item_id}><TextButton edits disabled={!!busy} onClick={() => draft(i)}>{busy === i.item_id ? "Drafting…" : `+ ${i.label}`}</TextButton></li>)}</ul></div> : null;
+            return xs.length ? (
+              <div key={s} className="v2-sw-draft">
+                <h3 className="v2-cap">{w}</h3>
+                <ul className="v2-sw-draft__l">{xs.map(i => (
+                  <li key={i.item_id}><Button size="sm" locked={locked} disabled={!!busy && busy !== i.item_id} onClick={() => draft(i)}>
+                    {busy === i.item_id ? "Drafting…" : <><span aria-hidden="true">+ </span>{i.label}</>}</Button></li>))}</ul>
+              </div>) : null;
           })}
-      </Section>
-      <Section title="Your monitors" count={mine.length} action={<Link className="rd-go" to="/monitors">Monitors page →</Link>}>
-        {!mine.length ? <p className="rd-row-d ins-none">None yet.</p> : <ul className="ins-rows" aria-label="Monitors so far">{mine.map(m => (
-          <li key={m.monitor_id} className="rd-row">
-            <div className="rd-row-t"><Link className="rd-name" to={`/monitors/${m.monitor_id}`}>{m.name}</Link></div>
-            <p className="rd-row-m"><b className="ins-k">{MONITOR_STATUS[m.status]?.[0] ?? m.status}</b> · {m.sentence}{m.last_check ? ` · last check ${ago(m.last_check.at, now)}` : ""}</p>
-          </li>))}</ul>}
-      </Section>
+      </section>
+      <section className="v2-in-sec" aria-labelledby="sw-mons">
+        <SectionHead title="Your monitors" id="sw-mons" count={mine.length} action={<ArrowLink to="/monitors">Monitors page</ArrowLink>} />
+        {!mine.length ? <p className="v2-in-none">None yet. You can go live without any, and add them later.</p> : (
+          <ul className="v2-sw-mons" aria-label="Monitors so far">{mine.map(m => {
+            const look = statusLook(m), line = rowLine(m, now, iso => ago(iso, now));
+            return (
+              <li key={m.monitor_id}>
+                <span className="v2-sw-mons__top"><Link className="v2-sw-mons__name" to={`/monitors/${m.monitor_id}`}>{m.name}</Link><Pill tone={look.tone} dashed={look.dashed}>{look.label}</Pill></span>
+                <span className="v2-sw-mons__s">{m.sentence}</span>
+                <span className="v2-meta">{line.lead}</span>
+              </li>);
+          })}</ul>)}
+      </section>
     </>
   );
 }
