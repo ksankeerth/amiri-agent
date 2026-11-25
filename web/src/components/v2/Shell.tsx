@@ -44,7 +44,7 @@ function useTheme() {
 }
 
 const PHONE = "(max-width: 719.98px)";
-function usePhone() {
+export function usePhone() {
   const [phone, setPhone] = useState(() => matchMedia(PHONE).matches);
   useEffect(() => {
     const m = matchMedia(PHONE), f = () => setPhone(m.matches);

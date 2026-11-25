@@ -26,5 +26,20 @@ export function budgetResets(now: Date): string {
   const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
   return clock(new Date(next).toISOString());
 }
+/** The same with the day, as the page says it: "tomorrow 18:00". */
+export function budgetResetsAt(now: Date): string {
+  return dayWord(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)).toISOString(), now);
+}
+
+/** A moment as people say it, in the institution's zone: "today 06:15", "yesterday 06:15", "tomorrow 06:00", else "25 Nov 06:15". */
+export function dayWord(iso: string, now: Date): string {
+  const t = new Date(iso);
+  if (isToday(iso, now)) return `today ${clock(iso)}`;
+  if (isToday(iso, new Date(now.getTime() + 864e5))) return `tomorrow ${clock(iso)}`;
+  if (isToday(iso, new Date(now.getTime() - 864e5))) return `yesterday ${clock(iso)}`;
+  return `${new Intl.DateTimeFormat("en-GB", { timeZone: TIME_ZONE, day: "numeric", month: "short" }).format(t)} ${clock(iso)}`;
+}
+/** The same for a moment already past, or due: a time that has gone by says "due now" (the scheduler is late). */
+export const nextWord = (iso: string, now: Date): string => (new Date(iso) <= now ? "due now" : dayWord(iso, now));
 
 export const plainCount = (n: number | null | undefined) => (n ?? 0).toLocaleString("en-GB");
