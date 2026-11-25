@@ -1,6 +1,6 @@
 // One event as a chain (board 02): the news, the event, and what it traced to your products with what your data says,
 // then Amiri Agent's assessment, the alerts raised and when you'll know. GET /events/:id (with the alerts for the event);
-// the page refreshes itself, quickly while the investigation is still running. Opening an impact shows it as expected (the
+// the page refreshes itself every minute (not while the tab is hidden). Opening an impact shows it as expected (the
 // AI's assessment) against your data (counted by code). The states: nothing exposed, closed, stopped early, running.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
@@ -14,11 +14,12 @@ import { useCrumbs, type Crumb } from "../../components/v2/Shell";
 import { StaleBanner } from "../../components/v2/StaleBanner";
 import { earliest, eventTitle, metricWords, splitCheckText } from "../../plain";
 import { plural } from "../../format";
-import { adverseFor, runState, toneFrom } from "./eventWords";
+import { adverseFor, toneFrom } from "./eventWords";
 import { Assessment, Chain, EventHead, ImpactPanel, NotFound, RunBanner, SideColumn, TechnicalDetails, type EventModel, type Task } from "./parts";
+import { usePolling } from "../../components/usePolling";
 import "../../styles/v2/event.css";
 
-const REFRESH_MS = 60_000, RUNNING_MS = 8_000;
+const REFRESH_MS = 60_000;
 const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ block: "start" });
 
 export function EventDetailPage() {
@@ -43,12 +44,8 @@ export function EventDetailPage() {
     } catch (x) { setErr(x); }
   }, [id]);
   useEffect(() => { setE(null); setErr(null); setLoadedAt(null); setAlerts([]); setOpen(null); setReportOpen(false); setAsideOpen(false); }, [id]);
-  const running = e ? runState(e.run.status) === "running" : false;
-  useEffect(() => {
-    load();
-    const t = setInterval(load, running ? RUNNING_MS : REFRESH_MS);
-    return () => clearInterval(t);
-  }, [load, running]);
+  useEffect(() => { load(); }, [load]);
+  usePolling(load, REFRESH_MS);  // passive: every minute, not while hidden (even while a run is going)
 
   // a link to one impact (#impact-<id>) opens it
   useEffect(() => {

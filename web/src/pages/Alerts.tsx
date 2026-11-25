@@ -16,6 +16,7 @@ import { AlertList, AlertsSkeleton, Article, changedAt, EmptyList, LevelsHelp, M
 import {
   countAt, LEVELS, LIST_LIMIT, ledeText, limitNote, MANY, neighbour, parseLevel, parseTab, pickAlert, TABS, type LevelKey, type Tab,
 } from "./alerts/words";
+import { usePolling } from "../components/usePolling";
 import "../styles/v2/alerts.css";
 
 const REFRESH_MS = 60_000;
@@ -97,7 +98,8 @@ export function AlertsPage() {
     } catch (e) { if (mine === seq.current) setErr(e); }
   }, [tab, team, level]);
   useEffect(() => { setItems(null); }, [tab, team, level]);  // another filter: wait for its list rather than show the old one
-  useEffect(() => { load(); const t = setInterval(load, REFRESH_MS); return () => clearInterval(t); }, [load]);
+  useEffect(() => { load(); }, [load]);
+  usePolling(load, REFRESH_MS);  // every minute, not while the tab is hidden
 
   // the list as shown: an alert acted on leaves a tab it no longer belongs to at once, before the next load; most serious first
   const queue = useMemo(() => (items ?? []).filter(a => a.status === tab).sort((x, y) => alertOrder({ ...x, at: changedAt(x) }, { ...y, at: changedAt(y) })), [items, tab]);

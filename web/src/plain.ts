@@ -134,10 +134,6 @@ export function checkMove(what: string): { move: string; against: string } | nul
 
 // ---------------------------------------------------------------- checks against the institution's data
 export type VerdictKey = "confirms" | "contradicts" | "no_effect" | "insufficient_data" | "masked" | "not_yet" | "error";
-export const VERDICT_LABEL: Record<VerdictKey, string> = {
-  confirms: "Confirmed", contradicts: "Moved the other way", no_effect: "No effect seen", insufficient_data: "Not enough data",
-  masked: "Hidden by a relief measure", not_yet: "Too early to check", error: "Couldn't check",
-};
 /** The colour of a check result: a confirmed impact is red when it's bad for you, green when it's good. */
 export function verdictTone(v: VerdictKey, alert?: string | null, adverse?: boolean | null): Tone {
   if (v === "confirms") return alert === "opportunity" || adverse === false ? "green" : "red";
@@ -172,7 +168,6 @@ export function alertChangeText(h: { change: string; text?: string | null }): st
   return ALERT_CHANGE[h.change] ?? words(h.change);
 }
 export const LEVEL_LABEL: Record<LevelKey, string> = { warning: "Early warning", developing: "Showing early signs", adverse: "Confirmed by your data" };
-export const LEVEL_TONE: Record<LevelKey, Tone> = { warning: "amber", developing: "amber", adverse: "red" };
 const LEVEL_RANK: Record<string, number> = { adverse: 0, developing: 1, warning: 2 };
 const STATUS_RANK: Record<string, number> = { new: 0, acknowledged: 1, resolved: 2 };
 /** The order of an alert queue: still open before resolved, then the most serious level, then the latest. */
@@ -180,9 +175,6 @@ export function alertOrder(a: { level: string; status: string; at: string }, b: 
   return (STATUS_RANK[a.status] === 2 ? 1 : 0) - (STATUS_RANK[b.status] === 2 ? 1 : 0)
     || (LEVEL_RANK[a.level] ?? 3) - (LEVEL_RANK[b.level] ?? 3) || (a.at < b.at ? 1 : a.at > b.at ? -1 : 0);
 }
-export const ALERT_STATUS: Record<string, [string, Tone]> = {
-  new: ["Waiting for review", "red"], acknowledged: ["Acknowledged", "blue"], resolved: ["Resolved", "green"],
-};
 /** What each alert action means, in a few words. */
 export const ACTION_MEANS = {
   ack: "Acknowledge: tell your team you're on it.",
@@ -190,24 +182,6 @@ export const ACTION_MEANS = {
   reopen: "Reopen: put it back on the review list.",
 };
 
-// ---------------------------------------------------------------- monitors, series, findings
-export const MONITOR_CHECK: Record<"fired" | "quiet" | "error", (n: number) => [string, Tone]> = {
-  fired: n => [`Found ${n}`, "blue"], quiet: () => ["Nothing new", "grey"], error: () => ["Couldn't check (tries again soon)", "amber"],
-};
-export const MONITOR_STATUS: Record<string, [string, Tone]> = {
-  draft: ["Draft", "grey"], submitted: ["Waiting for approval", "blue"], live: ["Live", "green"], paused: ["Paused", "amber"], retired: ["Retired", "grey"],
-};
-export const SERIES_STATE: Record<string, [string, Tone]> = {
-  pending: ["Waiting for prices", "grey"], warming_up: ["Learning what's usual", "blue"], normal: ["Normal", "green"],
-  moved: ["Unusual move", "red"], stale: ["Prices not updated", "amber"], paused: ["Paused", "grey"],
-};
-/** How often a monitor checks: "Every hour", "Every 15 minutes", "Once a day". */
-export function everyText(min: number): string {
-  if (min === 1440) return "Once a day";
-  if (min === 60) return "Every hour";
-  if (min % 60 === 0) return `Every ${min / 60} hours`;
-  return `Every ${min} minutes`;
-}
 /** "flags a move 3× bigger than usual". */
 export const ruleText = (k: number) => `flags a move ${k}× bigger than usual`;
 export const FINDING_STATUS: Record<string, [string, Tone]> = {
@@ -236,8 +210,6 @@ export function signalStrength(score: number | null | undefined): [string, Tone]
   return score >= 70 ? ["Strong signal", "blue"] : score >= 40 ? ["Moderate signal", "grey"] : ["Weak signal", "grey"];
 }
 export const setAsideReason = (reason?: string | null) => (reason ? SET_ASIDE_REASON[reason] ?? words(reason) : "");
-/** Why an angle was considered and dropped for an event, in a few words. */
-export const SCREENING: Record<string, string> = { rejected: "No clear link", cut_by_cap: "Less likely than the others" };
 export const SOURCE: Record<string, { label: string; icon: string }> = {
   monitor: { label: "News monitor", icon: "news" }, timeseries: { label: "Market price", icon: "series" },
   radar: { label: "Radar", icon: "radar" }, studio: { label: "Scenario Studio", icon: "studio" },

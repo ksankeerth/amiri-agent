@@ -22,4 +22,3 @@ export function Pill({ tone = "neutral", dashed = false, mark, className, childr
   );
 }
 /** The same component, under the name the boards use for a status word in a table. */
-export const Badge = Pill;

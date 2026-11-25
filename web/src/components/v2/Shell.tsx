@@ -100,7 +100,7 @@ function useOverview() {
     window.addEventListener("amiri:installation", load);  // "Try again" on a page checks again here too
     // ask only when nothing has come in for over a minute: on the Overview page its own minute's answer always has
     // (looking every 10 s, not every 60, so the two timers can't line up and both ask)
-    const t = setInterval(() => { if (Date.now() - last > 65_000) load(); }, 10_000);
+    const t = setInterval(() => { if (!document.hidden && Date.now() - last > 65_000) load(); }, 10_000);  // not while the tab is hidden
     load();
     return () => { clearInterval(t); window.removeEventListener("amiri:installation", load); window.removeEventListener(OVERVIEW_EVENT, heard); };
   }, []);
@@ -111,7 +111,7 @@ function useAlertSummary() {
   const [alerts, setAlerts] = useState<AlertSummary | null>(null);
   useEffect(() => {  // the menu badge: alerts to review
     const load = () => alertsApi.summary().then(setAlerts).catch(() => {});
-    load(); const t = setInterval(load, 60_000);
+    load(); const t = setInterval(() => { if (!document.hidden) load(); }, 60_000);  // not while the tab is hidden
     window.addEventListener("amiri:alerts", load);
     return () => { clearInterval(t); window.removeEventListener("amiri:alerts", load); };
   }, []);

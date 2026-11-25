@@ -32,6 +32,3 @@ export const alertsApi = {
     api<AlertItem>(`${B}/${enc(id)}:${action}`, { method: "POST", json: action === "reopen" ? {} : { note: note || null } }),
 };
 
-export const LEVEL: Record<Level, [string, string]> = {
-  warning: ["b-down", "EARLY WARNING"], developing: ["b-warn", "DEVELOPING"], adverse: ["b-down", "CONFIRMED"],
-};

@@ -4,7 +4,7 @@ export let TIME_ZONE = "UTC";
 export let ZONE_LABEL = "UTC";
 
 const dt = (opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("en-GB", { timeZone: TIME_ZONE, ...opts });
-let fDayTime: Intl.DateTimeFormat, fTime: Intl.DateTimeFormat, fDay: Intl.DateTimeFormat, fFull: Intl.DateTimeFormat, dayKey: Intl.DateTimeFormat;
+let fDayTime: Intl.DateTimeFormat, fTime: Intl.DateTimeFormat, fDay: Intl.DateTimeFormat, dayKey: Intl.DateTimeFormat;
 
 /** "Asia/Ho_Chi_Minh" → "Ho Chi Minh". */
 export function setZone(zone: string) {
@@ -14,7 +14,6 @@ export function setZone(zone: string) {
   fDayTime = dt({ day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
   fTime = dt({ hour: "2-digit", minute: "2-digit", hour12: false });
   fDay = dt({ day: "numeric", month: "short" });
-  fFull = dt({ weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
   dayKey = dt({ year: "numeric", month: "2-digit", day: "2-digit" });
 }
 setZone("UTC");
@@ -31,7 +30,6 @@ export const due = (iso: string | null | undefined, now = new Date()) =>
   !iso ? "—" : new Date(iso) <= now ? "overdue: waiting for the scheduler" : when(iso, now);
 export const dayTime = (iso: string) => noComma(fDayTime.format(new Date(iso)));
 export const day = (iso: string) => fDay.format(new Date(iso));
-export const fullNow = (d: Date) => noComma(fFull.format(d));
 
 export function ago(iso: string | null | undefined, now = new Date()): string {
   if (!iso) return "never";

@@ -13,6 +13,7 @@ import { TIME_ZONE } from "../format";
 import { cap } from "../plain";
 import { FirstRun } from "./overview/FirstRun";
 import { Hero, Latest, NeedsYou, needRows, OpenEvents, OverviewSkeleton, Prices, rankEvents, ScenarioRow, Tiles } from "./overview/parts";
+import { usePolling } from "../components/usePolling";
 import "../styles/v2/overview.css";
 
 const REFRESH_MS = 60_000;
@@ -36,7 +37,8 @@ export function OverviewPage() {
       if (!x.first_run) alertsApi.summary().then(s => setTeams(s.teams.filter(t => t.to_review > 0).length)).catch(() => setTeams(null));
     } catch (e) { setErr(e); }
   }, [admin]);
-  useEffect(() => { load(); const t = setInterval(load, REFRESH_MS); return () => clearInterval(t); }, [load]);
+  useEffect(() => { load(); }, [load]);
+  usePolling(load, REFRESH_MS);  // every minute, not while the tab is hidden
 
   if (!o) {
     return err

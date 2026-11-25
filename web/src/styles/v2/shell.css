@@ -50,7 +50,7 @@
 /* ---------- menu */
 .v2-nav { display: flex; flex-direction: column; }
 .v2-nav__cap { padding: var(--v2-sp-16) var(--v2-sp-10) var(--v2-sp-6); }
-/* "li a" in app.css underlines every link in a list (specificity 0,3,1): the selectors below beat it */
+/* menu links: no underline, and the active one is marked by shape and weight, not colour alone */
 .v2 .v2-nav li > a.v2-nav__a {
   display: flex; align-items: center; gap: var(--v2-sp-10); min-height: 34px; padding: var(--v2-sp-6) var(--v2-sp-10); border-radius: var(--v2-r-nav);
   color: var(--v2-text-2); font-size: var(--v2-fs-body); font-weight: var(--v2-fw-medium); text-decoration: none;
@@ -111,14 +111,6 @@
 
 .v2-main { flex: 1 1 auto; min-height: 0; overflow: auto; padding: var(--v2-page-pad); }
 .v2 .v2-main:focus-visible { outline: none; }  /* a landmark that takes focus after navigation or the skip link, not a control */
-
-/* Pages not yet moved to v2 (removed page by page; P16 deletes this block): they keep the old type and bring no padding
-   of their own, since the main area now has it. */
-.v2-main .page { padding: 0; font: 16px/1.55 var(--font-ui); color: var(--ink-2); }
-:where(.v2-main .page) a { color: var(--accent-ink); font-weight: inherit; }  /* base.css's link colour is for v2 pages */
-:where(.v2-main .page) a:hover { color: var(--accent-ink); }
-.v2-main > .banner { margin: 0 0 var(--v2-sp-16); }
-@media (min-width: 1101px) { .v2-main .chatside { height: calc(100dvh - 62px - 24px - 32px); } }  /* the Setup chat: the viewport minus top bar, its margins and the main padding */
 
 /* ---------- Go to */
 .v2-goto-scrim {
@@ -191,3 +183,19 @@
   .v2-goto-scrim { padding-top: var(--v2-sp-48); }
 }
 @media (prefers-reduced-motion: reduce) { .v2-side { transition: none; } }
+
+/* ---------- the server's notes about this installation (above the page) and the first load before the shell exists */
+.v2-notebar { margin: var(--v2-sp-14) var(--v2-sp-24) 0; }
+.v2-boot { min-height: 100%; padding: var(--v2-sp-32) var(--v2-sp-16); }
+.v2-boot > * { max-width: 960px; margin: 0 auto; }
+
+/* ---------- demo lock: the one tooltip for locked controls (components/lock.tsx) and read-only fieldsets */
+.lock-tip {
+  position: fixed; z-index: 200; transform: translate(-50%, -100%); max-width: 300px; padding: var(--v2-sp-10) var(--v2-sp-14); border-radius: var(--v2-r-lg);
+  background: var(--v2-toast-bg); color: var(--v2-toast-text); font-size: var(--v2-fs-body); line-height: 1.4; font-weight: var(--v2-fw-medium);
+  box-shadow: var(--v2-shadow-toast); pointer-events: none; text-align: center;
+}
+.lock-tip.below { transform: translate(-50%, 0); }
+.lock-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.lock-fields:disabled :is(input, select, textarea) { cursor: not-allowed; color: var(--v2-text-2); opacity: 1; -webkit-text-fill-color: var(--v2-text-2); }
+.lock-fields:disabled :is(input[type="checkbox"], input[type="radio"], select) { opacity: .6; }

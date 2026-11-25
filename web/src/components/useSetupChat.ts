@@ -1,11 +1,11 @@
 // The setup agent's chat, without a look: its state and its calls, for whichever panel draws it. One thread per institution
 // (shared by every viewer), the topic ("track") the chat is on, the proposals to apply or reject, the agent waking or offline.
-// Drawn by the Institution page's panel (pages/institution/SetupAgent.tsx) and by the guided setup's (SetupChat.tsx, until P15).
+// Drawn by the Institution page's panel (pages/institution/SetupAgent.tsx).
 //
 // Asking, and how often: the thread and the agent's status when the panel opens, and after each turn. The agent's status again every
-// 10 s while it is starting (every 2.5 s if this viewer has sent something), and every few minutes only while someone is using the
-// page (when the server asks for keep-warm). A reply being written by someone else is looked at every 15 s, for a few minutes at most.
-// No polling while the tab is hidden.
+// 30 s while it is starting (every 2.5 s if this viewer has sent something), and only while someone is using the page (when
+// the server asks for keep-warm; never faster than every 30 s). A reply being written by someone else is looked at every 30 s
+// (every 3 s if this viewer sent it), for a few minutes at most. No polling while the tab is hidden.
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { ApiError } from "../api/client";
 import { chat, type AssistantStatus, type ChatMessage, type Proposal, type TrackDef, type TrackState } from "../api/assistant";
@@ -34,8 +34,7 @@ export interface SetupChatProps {
   askKey?: number;                                         // bumped by "Ask the Setup agent": focus the message box
 }
 
-/** The chat's state and actions, for whichever look draws it: the Institution page's panel (pages/institution/SetupAgent.tsx)
- *  or the guided setup's (SetupChat below, until P15). */
+/** The chat's state and actions, for the look that draws it: the Institution page's panel (pages/institution/SetupAgent.tsx). */
 export function useSetupChat({ institutionId, onTrack, onApplied, at, askKey = 0 }: SetupChatProps) {
   const chatToggle = useContext(ChatToggleCtx);
   const toast = useToast();
@@ -72,7 +71,7 @@ export function useSetupChat({ institutionId, onTrack, onApplied, at, askKey = 0
   useEffect(() => {
     if (!writing || busy) return;
     const until = Date.now() + 3 * 60_000;
-    const t = setInterval(() => { if (!document.hidden && Date.now() < until) load().catch(() => {}); }, acted.current ? 3000 : 15_000);
+    const t = setInterval(() => { if (!document.hidden && Date.now() < until) load().catch(() => {}); }, acted.current ? 3000 : 30_000);
     return () => clearInterval(t);
   }, [writing, busy, load]);
   // The setup agent is its own service: Cloud Run stops it after about 15 idle minutes, and starting it again takes
@@ -88,7 +87,7 @@ export function useSetupChat({ institutionId, onTrack, onApplied, at, askKey = 0
   useEffect(() => {
     if (!status?.starting) return;
     const until = Date.now() + 120_000;
-    const t = setInterval(() => { if (!document.hidden && Date.now() < until) checkStatus(); }, acted.current ? 2500 : 10_000);
+    const t = setInterval(() => { if (!document.hidden && Date.now() < until) checkStatus(); }, acted.current ? 2500 : 30_000);
     return () => clearInterval(t);
   }, [status?.starting, checkStatus]);
   const warmEvery = (status?.keep_warm_seconds ?? 0) * 1000, warmFor = (status?.keep_warm_idle_minutes ?? 0) * 60_000;
@@ -102,7 +101,7 @@ export function useSetupChat({ institutionId, onTrack, onApplied, at, askKey = 0
     const back = () => { if (document.visibilityState === "visible") used(); };
     window.addEventListener("pointerdown", used); window.addEventListener("keydown", used); window.addEventListener("focus", used);
     document.addEventListener("visibilitychange", back);
-    const t = setInterval(() => { if (Date.now() - lastUse.current < warmFor) checkStatus(); }, warmEvery);
+    const t = setInterval(() => { if (!document.hidden && Date.now() - lastUse.current < warmFor) checkStatus(); }, Math.max(warmEvery, 30_000));
     return () => {
       clearInterval(t);
       window.removeEventListener("pointerdown", used); window.removeEventListener("keydown", used); window.removeEventListener("focus", used);

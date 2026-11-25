@@ -2,13 +2,10 @@
 // saving creates the item, or sends only the fields that changed (If-Match: version).
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ApiError } from "../../api/client";
-import { inst, type InstitutionType, type Item, type Profile, type SectionName } from "../../api/institutions";
+import { type InstitutionType, type Item, type Profile, type SectionName } from "../../api/institutions";
 import { ref, type Category } from "../../api/reference";
 import { FillFromJson } from "../../components/FillFromJson";
-import { Icon } from "../../components/Icon";
-import { askSetupAgent } from "../../components/useSetupChat";
-import { draftFrom, institutionsOf, itemsOf } from "../../components/fillJson";
-import { Modal, useToast } from "../../components/ui";
+import { institutionsOf } from "../../components/fillJson";
 import {
   ChipsInput, CountrySelect, CurrenciesField, CurrencySelect, Field, FlowValueField, KVField, MoneyField, MonthStrip,
   PlaceField, PlacesField, RefsField, SpecField, TimeZoneInput, Toggles, useFieldLabel, useLoad, useRoutes,
@@ -255,70 +252,9 @@ export const DEFAULTS: Record<SectionName, (ctx: Ctx) => Draft> = {
 export const META = new Set(["id", "version", "created_at", "updated_at", "updated_by", "used_by", "warnings"]);
 export const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
-/** Add or edit one item of a section. */
-export function ItemModal({ section, ctx, editing, initial, onClose, onSaved, onDelete }: {
-  section: SectionName; ctx: Ctx; editing: Item | null; initial?: Draft; onClose: () => void; onSaved: () => void;
-  /** Editing only: a "Delete" in the footer (the Institution page keeps delete inside the editor); the caller asks before deleting. */
-  onDelete?: () => void;
-}) {
-  const toast = useToast();
-  const iid = ctx.profile!.institution.institution_id;
-  const start: Draft = editing ? Object.fromEntries(Object.entries(editing).filter(([k]) => !META.has(k))) : { ...DEFAULTS[section](ctx), ...(initial ?? {}) };
-  const [d, setD] = useState<Draft>(start);
-  const [err, setErr] = useState<Errors>({});
-  const [general, setGeneral] = useState<string[]>([]);
-  const [busy, setBusy] = useState(false);
-  const set = (k: string, v: any) => setD(x => ({ ...x, [k]: v }));
-  const Body = BODIES[section];
-  const { box, hidden } = useHiddenErrors(err);
-  // a file's item fills the form's fields (to check and edit, then save); a regulator that only names its rule-table
-  // entry is completed from that table, as the server does when it saves it
-  const fillFrom = async (item: Record<string, any>) => {
-    let it = item;
-    if (section === "regulators" && it.regulator_id && !it.name) it = { ...(await ref.regulator(it.regulator_id)), ...it };
-    // a risk that only names its hazard is completed from the hazard library (title, kind, months, places)
-    if (section === "risk-exposures" && it.hazard_id && !it.title) {
-      const h = (await ref.hazards()).find(x => x.hazard_id === it.hazard_id);
-      if (h) it = { title: h.name, kind: h.kind, months: h.months, places: h.places, ...it };
-    }
-    setErr({}); setGeneral([]);
-    setD(draftFrom(DEFAULTS[section](ctx), it, { keepId: !editing, base: editing ? start : undefined }));
-  };
-  const save = async () => {
-    setBusy(true); setErr({}); setGeneral([]);
-    try {
-      const { id: ownId, ...rest } = d;
-      const r = editing
-        ? await inst.patch_item(iid, section, editing, Object.fromEntries(Object.entries(d).filter(([k, v]) => !same(v, start[k]))))
-        : ownId  // from a file: other items refer to this id, so it is kept (the server takes it as the operation's id)
-          ? await inst.batch(iid, [{ op: "create", section, id: String(ownId), data: rest }])
-          : await inst.create_item(iid, section, d);
-      toast(`${editing ? "Saved" : "Added"}.${r.warnings.length ? " Note: " + r.warnings.map(w => w.message).join("; ") : ""}`);
-      onSaved();
-    } catch (e) {
-      const s = splitErrors(e);
-      setErr(s.fields); setGeneral(s.general);
-    } finally { setBusy(false); }
-  };
-  return (
-    <Modal wide title={`${editing ? "Edit" : "Add a"} ${LABELS[section].one}`} onClose={onClose} footer={<>
-      {editing && onDelete && <button className="btn btn--danger" type="button" onClick={onDelete}>Delete this {LABELS[section].one}</button>}
-      <span className="small muted" style={{ marginRight: "auto" }}><span className="req">*</span> required; the rest is optional</span>
-      <button className="btn" type="button" onClick={onClose}>Cancel</button>
-      <button className="btn btn--primary" type="button" onClick={save} disabled={busy}>{editing ? "Save" : "Add"}</button></>}>
-      <div className="grid2" ref={box}>
-        <FillFromJson what={`${LABELS[section].one === "place in the footprint" ? "a place" : "a " + LABELS[section].one}`}
-          read={doc => itemsOf(doc, section)} onFill={c => fillFrom(c.data)}
-          example={`one ${LABELS[section].one} as JSON, a list of them, {"items": [...]}, or a whole profile`} />
-        <Body d={d} set={set} err={err} ctx={ctx} editing={editing} /></div>
-      {general.concat(hidden).length > 0 && <div className="rawerr" role="alert">{general.concat(hidden).join(" · ")}</div>}
-    </Modal>
-  );
-}
-
 // ---------------------------------------------------------------- the institution itself
 
-export const SUBTYPES: Record<InstitutionType, string[]> = {
+const SUBTYPES: Record<InstitutionType, string[]> = {
   bank: ["commercial", "savings", "cooperative", "development", "islamic", "microfinance", "finance_company", "digital", "rural"],
   insurer: ["life", "general", "composite", "health", "takaful", "reinsurer", "micro"],
 };
@@ -373,34 +309,5 @@ export function InstitutionFields({ d, set, err, creating, fill, grouped }: { d:
       {fill && <FillFromJson what="the institution" read={institutionsOf} onFill={c => fill(c.data)}
         example={'{"institution": {"name": "…", "institution_type": "bank", "home_country": "LK", …}}, or those fields on their own'} />}
     </div>
-  );
-}
-
-export function InstitutionModal({ profile, onClose, onSaved }: { profile: Profile; onClose: () => void; onSaved: () => void }) {
-  const toast = useToast();
-  const i = profile.institution;
-  const KEYS = ["name", "legal_name", "short_name", "institution_type", "subtype", "islamic", "lei", "home_country", "base_currency", "time_zone", "clearing_currencies", "summary", "governance_body", "size_band", "fiscal_year_start_month", "website"];
-  const start = Object.fromEntries(KEYS.map(k => [k, (i as any)[k] ?? null]));
-  const [d, setD] = useState<Draft>(start);
-  const [err, setErr] = useState<Errors>({});
-  const [general, setGeneral] = useState<string[]>([]);
-  const { box, hidden } = useHiddenErrors(err);
-  const save = async () => {
-    setErr({}); setGeneral([]);
-    try {
-      await inst.patch(i.institution_id, i.version, Object.fromEntries(Object.entries(d).filter(([k, v]) => !same(v, start[k]))));
-      toast("Saved."); onSaved();
-    } catch (e) { const s = splitErrors(e); setErr(s.fields); setGeneral(s.general); }
-  };
-  return (
-    <Modal wide title="Institution details" onClose={onClose} footer={<>
-      <button className="btn btn--ghost" type="button" style={{ marginRight: "auto" }} title="Close this form and tell the Setup agent instead; its changes wait for your Apply"
-        onClick={() => { onClose(); askSetupAgent(); }}><Icon name="chat" />Ask the Setup agent instead</button>
-      <span className="small muted"><span className="req">*</span> required</span>
-      <button className="btn" type="button" onClick={onClose}>Cancel</button><button className="btn btn--primary" type="button" onClick={save}>Save</button></>}>
-      <div ref={box}><InstitutionFields d={d} set={(k, v) => setD(x => ({ ...x, [k]: v }))} err={err} creating={false}
-        fill={data => { setErr({}); setGeneral([]); setD(x => ({ ...x, ...data })); }} /></div>
-      {general.concat(hidden).length > 0 && <div className="rawerr" role="alert">{general.concat(hidden).join(" · ")}</div>}
-    </Modal>
   );
 }

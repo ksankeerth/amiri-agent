@@ -29,7 +29,6 @@ import { groupMonitors, pickDefault } from "./words";
 import "../../styles/v2/monitors.css";
 
 export { DraftFromProfile } from "./draft";
-export { MonitorsStep } from "./step";
 
 const REFRESH_MS = 60_000;      // passive: no faster than every 30 s
 const NEXT: { label: string; to?: string }[] = [{ label: "What it watches" }];

@@ -1,9 +1,7 @@
 /* Amiri Agent UI v2: design tokens.
    Light and dark twins for every colour; dark values are from board 13 section 7
    (docs/ux/v2/pages/13_*.html), the rest are derived and checked by `npm run contrast`.
-   Every name starts with --v2- so the old stylesheets (app.css and the rd-*.css files)
-   and their tokens are untouched. Theming works as in app.css: the OS setting, unless the
-   toggle says light; or the toggle says dark. Edit the two dark blocks together. */
+   Every name starts with --v2-. Theming: the OS setting, unless the toggle says light; or the toggle says dark. Edit the two dark blocks together. */
 :root {
   /* fonts (D6: self-hosted, see base.css) */
   --v2-font:'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;

@@ -1,11 +1,9 @@
 // Recent findings and the words for what became of them: shared by the Findings and Events pages.
 import { useCallback, useEffect, useState } from "react";
+import { usePolling } from "../../components/usePolling";
 import { investigationApi, type FindingRow } from "../../api/investigation";
-import { setAsideReason } from "../../plain";
 
 export const DAYS = 7;
-// why the investigation set a finding aside, in a few words (plain.ts holds the words)
-export const reasonText = (f: FindingRow) => setAsideReason(f.outcome?.reason);
 
 /** Live findings of the last 7 days, newest first; reloads every 30 s. */
 export function useRecentFindings() {
@@ -19,7 +17,8 @@ export function useRecentFindings() {
       setItems(xs.filter(f => new Date(f.created_at).getTime() >= since)); setErr(null); setLoadedAt(new Date());
     } catch (e) { setErr(e); }
   }, []);
-  useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t); }, [load]);
+  useEffect(() => { load(); }, [load]);
+  usePolling(load, 30_000);
   return { items, err, loadedAt, load };
 }
 
@@ -35,6 +34,7 @@ export function useSandboxFindings() {
       setItems(xs.filter(f => new Date(f.created_at).getTime() >= since));
     } catch { /* the live list is the page; tests are extra */ }
   }, []);
-  useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t); }, [load]);
+  useEffect(() => { load(); }, [load]);
+  usePolling(load, 30_000);
   return { items, load };
 }

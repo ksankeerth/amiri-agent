@@ -44,10 +44,6 @@ export interface Check {
   supersedes: { as_of: string; verdict: Verdict; text: string } | null;
   versions: { spec: string | null; catalog: string | null; validator: string | null; data: string | null }; spec_link: string;
 }
-export const VERDICT_BADGE: Record<Verdict, string> = {
-  confirms: "b-confirmed", contradicts: "b-warn", no_effect: "b-noeffect", insufficient_data: "b-insufficient",
-  masked: "b-masked", not_yet: "b-notyet", error: "b-error",
-};
 export interface EventDetail extends Omit<EventRow, "hypotheses" | "tasks" | "developments"> {
   findings: (FindingRow & { evidence?: { headlines?: { title?: string; url?: string | null; outlet?: string | null; published_at?: string }[] } | null })[];
   hypotheses: Hypothesis[]; country_name: string | null; developments: Development[];

@@ -9,7 +9,7 @@ export const isActive = (status: string): boolean => status === "running" || sta
 
 // ---------------------------------------------------------------- carrying on by itself
 /** A day takes more than one ask when agents are out: the page asks again until the day moves (or, to play on, to the end). */
-export const RUNNING_MS = 1200, WAITING_MS = 2500, REFRESH_MS = 5000;
+export const RUNNING_MS = 1200, WAITING_MS = 2500, REFRESH_MS = 30_000;  // a viewer who isn't driving the run: passive, so no faster than every 30 s
 export interface Drive { until: number }
 /** Next day: one day on from where the run is. Play: to the end. */
 export const driveNext = (step: number): Drive => ({ until: step + 1 });

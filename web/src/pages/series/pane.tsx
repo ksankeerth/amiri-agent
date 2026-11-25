@@ -52,9 +52,10 @@ function outcomeText(name: string, f: { status: string; bars_new: number; findin
 
 function RefreshNow({ s, onDone }: { s: Series; onDone: (s: Series) => void }) {
   const toast = useToast(), refuse = useRefusalToast();
-  const now = useNow(1000);
   const [busy, setBusy] = useState(false);
   const [retryAt, setRetryAt] = useState<string | null>(null);
+  const cooling = [s.fetch.refresh_available_at, retryAt].some(x => !!x && new Date(x).getTime() > Date.now());
+  const now = useNow(cooling ? 1000 : 30_000);  // the countdown ticks each second; otherwise the page isn't redrawn every second
   const wait = [s.fetch.refresh_available_at, retryAt].filter((x): x is string => !!x && new Date(x) > now).sort().pop();
   const working = busy || s.fetch.in_progress;
   const disabled = working || !s.enabled || !!wait;

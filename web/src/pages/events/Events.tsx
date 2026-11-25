@@ -22,9 +22,10 @@ import { investigationDidntRun } from "../findings/words";
 import { InvestigateNowButton, useInvestigationStatus } from "./investigate";
 import { ClearSimulated, EventsSkeleton, EventsTable, Note, Runs, RunningNote } from "./listParts";
 import { alertsByEvent, confirmedCount, ledeText, page, PAGE_SIZE, RUNS_LIMIT, sortEvents, tabRows, type Show, type Sort } from "./listWords";
+import { usePolling } from "../../components/usePolling";
 import "../../styles/v2/events.css";
 
-const REFRESH_MS = 30_000, RUNNING_MS = 8_000, EVENTS_LIMIT = 200, DETAIL_BATCH = 8, DETAIL_FRESH_MS = 90_000, DETAIL_MAX = 60;
+const REFRESH_MS = 30_000, EVENTS_LIMIT = 200, DETAIL_BATCH = 8, DETAIL_FRESH_MS = 90_000, DETAIL_MAX = 60;
 const CRUMBS = [{ label: "What it found" }, { label: "Events" }];
 
 // ---------------------------------------------------------------- each event's detail (its products and last news)
@@ -84,7 +85,8 @@ export function EventsPage() {
   const reloadAll = useCallback(() => { load(); loadRuns(); }, [load, loadRuns]);
   const refresh = () => { reloadAll(); recent.load(); };
   const running = (status?.runs_running ?? 0) > 0;
-  useEffect(() => { reloadAll(); const t = setInterval(reloadAll, running ? RUNNING_MS : REFRESH_MS); return () => clearInterval(t); }, [reloadAll, running]);
+  useEffect(() => { reloadAll(); }, [reloadAll]);
+  usePolling(reloadAll, REFRESH_MS);  // passive: every 30 s, not while hidden (a run this viewer starts is followed by InvestigateNowButton)
   useEffect(() => { setShownN(PAGE_SIZE); }, [show, sort, sim]);
 
   const all = events ?? [];

@@ -3,8 +3,6 @@ import { api } from "./client";
 
 export type SectionName = "footprint" | "watch-places" | "segments" | "products" | "flows" | "regulators"
   | "rivals" | "counterparties" | "risk-exposures";
-export const SECTION_NAMES: SectionName[] = ["footprint", "watch-places", "segments", "products", "flows",
-  "regulators", "rivals", "counterparties", "risk-exposures"];
 export type InstitutionType = "bank" | "insurer";
 
 export interface Institution {

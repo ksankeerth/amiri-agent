@@ -1,6 +1,5 @@
 /* Amiri Agent UI v2: fonts, the .v2 root, type scale, focus ring, reduced motion, skip link.
-   Nothing here touches html, body or any element outside .v2, so pages that still use the old
-   CSS look exactly as before. The App shell (T2) puts class "v2" on its root element. */
+   Outside .v2 it only sets the page itself (height, body margin and colour). The App shell puts class "v2" on its root. */
 
 /* D6: Geist and Geist Mono, self-hosted (OFL: /fonts/OFL.txt). Variable fonts, so one file per
    subset covers every weight; the unicode-range split means the latin-ext file is only fetched
@@ -25,6 +24,11 @@
   src: url('/fonts/geist-mono-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
+
+/* The page itself (what the old app.css gave every page): full height, no body margin, the page colour behind
+   everything so the first-load skeleton and an overscroll never show white. */
+html, body, #root { height: 100%; }
+body { margin: 0; background: var(--v2-page); color: var(--v2-text); font-family: var(--v2-font); }
 
 /* The root of every v2 screen. */
 .v2 {
@@ -51,6 +55,15 @@
 :where(.v2) button, :where(.v2) input, :where(.v2) select, :where(.v2) textarea { font: inherit; color: inherit; }
 :where(.v2) button { cursor: pointer; }
 :where(.v2) button:disabled, :where(.v2) [aria-disabled="true"] { cursor: not-allowed; }
+/* Ticks and radios, and the label around one, are clickable; a disabled field says no. */
+:where(.v2) input[type="checkbox"], :where(.v2) input[type="radio"], :where(.v2) label:has(> input[type="checkbox"], > input[type="radio"]) { cursor: pointer; }
+:where(.v2) input:disabled { cursor: not-allowed; }
+:where(.v2) summary { min-height: 24px; }  /* a disclosure's whole line is the target (WCAG 2.5.8) */
+/* A link in running text is underlined as well as coloured (not colour alone). Navigation and breadcrumb links aren't in a paragraph. */
+:where(.v2) p a:not([class]) { text-decoration: underline; text-underline-offset: 2px; }
+/* The busy spinner on a refresh icon (a button that is working); still when motion is reduced. */
+.spin { animation: v2-spin .9s linear infinite; }
+@keyframes v2-spin { to { transform: rotate(360deg); } }
 :where(.v2) a { color: var(--v2-brand); font-weight: var(--v2-fw-semibold); text-decoration: none; }
 :where(.v2) a:hover { color: var(--v2-brand-hover); text-decoration: underline; }
 .v2 [hidden] { display: none !important; }

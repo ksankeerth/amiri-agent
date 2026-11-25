@@ -86,7 +86,7 @@ export function PlacePicker({ onPick, scope = "any", placeholder = "Search a cou
       <input className="input" aria-labelledby={fieldLabel} aria-label={fieldLabel ? undefined : placeholder} value={q} placeholder={placeholder} onChange={e => setQ(e.target.value)}
         onFocus={() => hits.length && setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)} />
       {open && hits.length > 0 && (
-        <div className="results" style={{ position: "absolute", zIndex: 20, left: 0, right: 0, top: 38, background: "var(--surface)", boxShadow: "var(--e-pop)" }}>
+        <div className="results" style={{ position: "absolute", zIndex: 20, left: 0, right: 0, top: 38, background: "var(--v2-surface)", boxShadow: "var(--v2-shadow-pop)" }}>
           {hits.map(p => (
             <button key={p.code} type="button" onMouseDown={e => { e.preventDefault(); onPick(p); setQ(""); setHits([]); setOpen(false); }}>
               <b>{p.name}</b><span className="small muted" style={{ flex: 1 }}>{p.kind}{p.parent ? ` · in ${p.parent}` : ""}</span>

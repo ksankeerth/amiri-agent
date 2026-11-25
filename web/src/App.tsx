@@ -1,7 +1,6 @@
 import { createContext, lazy, Suspense, useContext, useEffect, useState, type ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { Icon } from "./components/Icon";
-import { PageSkeleton } from "./components/ui";
+import { Skeleton } from "./components/v2/Skeleton";
 import { api } from "./api/client";
 import { setZone } from "./format";
 import { Shell } from "./components/v2/Shell";
@@ -52,6 +51,11 @@ function NeedsInstitution({ title, what, children }: { title: string; what: stri
 }
 
 
+/** The first load, before the shell exists: the same quiet rows every page uses while it loads. */
+function PageSkeleton() {
+  return <div className="v2 v2-boot"><Skeleton rows={5} label="Loading" /></div>;
+}
+
 export function App() {
   // first: has this browser passed the bot check? (no login; AUTH_MODE=off: no check at all)
   const [gate, setGate] = useState<{ cfg: AuthConfig; signedIn: boolean } | null>(null);
@@ -94,7 +98,7 @@ function Installed() {
 function Frame({ inst }: { inst: Installation }) {
   return (
     <Shell inst={inst}>
-      {inst.notes.map(n => <div key={n} className="banner warn"><Icon name="warn" /><div>{n}</div></div>)}
+      {inst.notes.map(n => <div key={n} className="v2-stale v2-notebar" role="status"><span aria-hidden="true">⚠</span><span>{n}</span></div>)}
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<OverviewPage />} />
@@ -115,7 +119,7 @@ function Frame({ inst }: { inst: Installation }) {
         <Route path="/admin/data" element={<DataConnectionsPage />} />
         <Route path="/admin/settings" element={<SettingsPage />} />
         <Route path="/spec" element={<SpecPage />} />
-        {DevGallery && <Route path="/dev/v2" element={<Suspense fallback={<PageSkeleton bare />}><DevGallery /></Suspense>} />}
+        {DevGallery && <Route path="/dev/v2" element={<Suspense fallback={<PageSkeleton />}><DevGallery /></Suspense>} />}
         {[...NAV.risk_manager, ...NAV.platform_admin].filter(([, , to]) => !BUILT.has(to)).map(([, label, to]) => (
           <Route key={to} path={to} element={<NotFoundPage title={label} />} />
         ))}

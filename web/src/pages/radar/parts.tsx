@@ -10,7 +10,7 @@ import { Cell, Row, Table } from "../../components/v2/Table";
 import { Pill } from "../../components/v2/Pill";
 import { dayTime, person, placeName, placeOrder, plural, when } from "../../format";
 import { themeText } from "../events/investigate";
-import { clock, dayWord, plainCount, zoneName } from "./words";
+import { clock, dayWord, plainCount } from "./words";
 import {
   followUpOf, placeList, publishers, RELEVANCE, seenIn, whereWent, type FunnelStat, type Where, type Went,
 } from "./storyWords";
@@ -319,4 +319,3 @@ export function HowItWorks({ name, status, schedule, zone }: { name: string; sta
   );
 }
 
-export const zoneOf = (st: RadarStatus | null) => zoneName(st?.time_zone);

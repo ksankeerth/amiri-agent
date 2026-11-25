@@ -68,6 +68,3 @@ export const studioApi = {
   stop: (id: string) => api<Simulation>(`${B}/simulations/${enc(id)}:stop`, { method: "POST" }),
 };
 
-export const TONE: Record<Tone, [string, string]> = {
-  good: ["b-ok", "GOOD FOR YOU"], bad: ["b-down", "BAD FOR YOU"], mixed: ["b-warn", "MIXED"], neutral: ["b-noeffect", "NEUTRAL"],
-};
