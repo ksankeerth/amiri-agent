@@ -12,7 +12,6 @@ import { InstitutionPage, NewInstitutionPage } from "./pages/institution/Institu
 import { SetupWizard } from "./pages/institution/SetupWizard";
 import { EventDetailPage } from "./pages/events/EventDetail";
 import { EventsPage } from "./pages/events/Events";
-import { MonitorPage } from "./pages/monitors/MonitorPage";
 import { MonitorsPage } from "./pages/monitors/Monitors";
 import { StudioPage } from "./pages/studio/Studio";
 import { StudioRunPage } from "./pages/studio/StudioRun";
@@ -123,8 +122,7 @@ function Frame({ inst }: { inst: Installation }) {
         <Route path="/findings" element={<NeedsInstitution title="Findings" what="Findings"><FindingsPage /></NeedsInstitution>} />
         <Route path="/events" element={<NeedsInstitution title="Events" what="Events"><EventsPage /></NeedsInstitution>} />
         <Route path="/events/:id" element={<NeedsInstitution title="Events" what="Events"><EventDetailPage /></NeedsInstitution>} />
-        <Route path="/monitors" element={<NeedsInstitution title="Monitors" what="Monitors"><MonitorsPage /></NeedsInstitution>} />
-        <Route path="/monitors/:id" element={<NeedsInstitution title="Monitors" what="Monitors"><MonitorPage /></NeedsInstitution>} />
+        <Route path="/monitors/:id?" element={<NeedsInstitution title="Monitors" what="Monitors"><MonitorsPage /></NeedsInstitution>} />
         <Route path="/studio/:id?" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><StudioPage /></NeedsInstitution>} />
         <Route path="/studio/run/:id" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><StudioRunPage /></NeedsInstitution>} />
         <Route path="/series" element={<SeriesList />} />
