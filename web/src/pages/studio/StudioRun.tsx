@@ -1,89 +1,54 @@
-// A simulation as it runs (the demo screen): one control line, the chain as four figures, the price beside what the
-// scenario expected and what Amiri Agent found, then the alerts, the events and what happened. Nothing animates but
-// the day advancing; a new alert is one quiet line under the controls.
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+// A simulation as it runs (board 10; states: board 15 B): the title, the day and the controls, what Amiri Agent has done so far
+// (four tiles), the stories the scenario expected beside what was found, the alerts it would raise, the price and the timeline.
+// Nothing here is saved or sent: the run is in the Studio's own world. The page drives the run: Next day and Play ask the server
+// to step (POST :step), again and again while agents work, until the day moves (or, for Play, the run ends). A run that nobody
+// is driving is looked at every few seconds, so a stop or an agent answering elsewhere shows. Stop, Run again and Replay are
+// open under the demo lock: the server guards only a scenario's edit and delete (server/app/studio/api.py).
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "../../api/client";
-import { studioApi, type Simulation, type TimelineItem } from "../../api/studio";
-import { PriceChart, type Mark } from "../../components/charts";
-import { Icon } from "../../components/Icon";
-import { Figures, GoLink, PageTitle, QuietWarn, Section, TextButton, ToneMark, TONE_WORD } from "../../components/rd";
-import { LoadError, PageSkeleton, useToast } from "../../components/ui";
-import { ZONE_LABEL, clockText, dayTime, plural } from "../../format";
-import { cap, eventTitle, listText, themeLabel, words } from "../../plain";
-import { eventsSplit, findingsSplit, howRun, storyWord, trackDays } from "./words";
-import "../../styles/rd-studio.css";
+import { studioApi, type Mode, type Scenario, type Simulation, type TimelineItem } from "../../api/studio";
+import { useNow, useRefusalToast } from "../../components/ui";
+import { Button } from "../../components/v2/Button";
+import { LoadError } from "../../components/v2/LoadError";
+import { useCrumbs, type Crumb } from "../../components/v2/Shell";
+import { Skeleton } from "../../components/v2/Skeleton";
+import { StaleBanner } from "../../components/v2/StaleBanner";
+import { eventTitle } from "../../plain";
+import { AlertsRaised, EndPanel, ExpectedFound, PricePanel, RunHead, RunSkeleton, RunTiles, StopDialog, Timeline } from "./runParts";
+import {
+  driveDelay, driveDone, driveNext, drivePlay, foundCount, isActive, liveText, priceName, REFRESH_MS, storyRows, workingText, type Drive,
+} from "./runWords";
+import { StartDialog } from "./parts";
+import "../../styles/v2/studio-run.css";
 
-const PLAY_MS = 1200;
-/** What each kind of row is called. The agents' own steps (checks, investigations, joins) are shown on request. */
-const KIND: Record<string, string> = {
-  headline: "Headline", price: "Flagged move", finding: "Finding", check: "Monitor check",
-  investigation: "Investigation", event: "Event", development: "Joined an event", note: "",
-};
-const STORY = new Set(["headline", "finding", "event"]);
-
-function line(t: TimelineItem): string {
-  const d = t.data;
-  switch (t.kind) {
-    case "headline": return `${d.title}`;
-    case "price": return `Unusual move: ${t.ref} ${Math.abs(d.z).toFixed(1)}× a typical day (${d.change_pct >= 0 ? "+" : ""}${d.change_pct}% since the start)`;
-    case "finding": return `${d.source === "timeseries" ? "Market series" : "Monitor"}: ${d.title}`;
-    case "check": return d.status === "started" ? `Reading ${plural(d.headlines, "headline")}` : `${d.status}${d.findings ? ` · ${plural(d.findings, "finding")}` : ""}${d.error ? ` · ${d.error}` : ""}`;
-    case "investigation": return d.status === "started" ? `Investigating ${plural(d.findings, "finding")}` : `${d.status}${d.error ? ` · ${d.error}` : ""}`;
-    case "development": return d.reason;
-    default: return d.text ?? "";
-  }
-}
-
-type Alert = Simulation["alerts"][number];
-
-/** The control line: Play (the one filled button), Step, Stop as text, the day, the date and a track of the days. */
-function Controls({ sim, timeline, active, playing, setPlaying, stopping, setStopping, onStep, onStop }: {
-  sim: Simulation; timeline: TimelineItem[]; active: boolean; playing: boolean; setPlaying: (f: (p: boolean) => boolean) => void;
-  stopping: boolean; setStopping: (b: boolean) => void; onStep: () => void; onStop: () => void;
-}) {
-  const days = trackDays(sim.steps, sim.step, timeline);
-  const formed = days.filter(d => d.event).map(d => d.day);
-  const summary = `${sim.step} of ${sim.steps} days run${formed.length ? `; an event formed on day ${listText(formed.map(String), 30)}` : ""}`;
-  return (
-    <div className="rds-ctl" role="group" aria-label="Run controls">
-      <div className="rds-btns">{active ? <>
-        <button className="btn btn--primary btn--lg" type="button" onClick={() => setPlaying(p => !p)}><Icon name={playing ? "pause" : "play"} />{playing ? "Pause" : "Play"}</button>
-        <button className="btn btn--lg" type="button" disabled={playing} onClick={onStep} title="Run one simulated day">Step</button>
-        {stopping ? <span className="rds-quiet" style={{ margin: 0 }}><span>End this run for good? It can't carry on after.</span>
-          <TextButton onClick={onStop}>Stop the run</TextButton><TextButton onClick={() => setStopping(false)}>Keep it</TextButton></span>
-          : <TextButton onClick={() => setStopping(true)} title="End this run (Pause keeps it, Stop ends it)">Stop</TextButton>}</>
-        : <span className="rds-state">{sim.status === "finished" ? "Finished" : cap(words(sim.status))}</span>}</div>
-      <div className="rds-day" aria-live="polite"><b>Day {sim.step}</b><span>of {sim.steps}</span></div>
-      <div className="rds-when">
-        <div className="rds-date">{clockText(sim.virtual_now, sim.institution.time_zone)} <span className="rd-fine">(simulated, {ZONE_LABEL} time)</span></div>
-        <div className="rds-track" role="img" aria-label={summary}>
-          {days.map(d => <span key={d.day} className={`rds-seg${d.ran ? " ran" : ""}${d.event ? " ev" : ""}${d.headlines ? " hd" : ""}`}
-            title={`Day ${d.day}${d.event ? ": an event formed" : ""}${d.headlines ? `${d.event ? "," : ":"} headlines` : ""}`} />)}
-        </div>
-        <div className="rds-key">Marked days: an event formed · dots: headlines arrived</div>
-      </div>
-    </div>
-  );
-}
+const CRUMBS: Crumb[] = [{ label: "Try it" }, { label: "Scenario Studio", to: "/studio" }];
 
 export function StudioRunPage() {
   const { id = "" } = useParams();
-  const toast = useToast();
+  const nav = useNavigate();
+  const refuse = useRefusalToast();
+  const now = useNow(30_000);
   const [sim, setSim] = useState<Simulation | null>(null);
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
-  const [playing, setPlaying] = useState(false);
-  const [stopping, setStopping] = useState(false);  // Stop asks once: it ends the run for good, unlike Pause
-  const [err, setErr] = useState<string | null>(null);
-  const [loadErr, setLoadErr] = useState<unknown>(null);  // the first load: the page has nothing to show without it
-  const [showAll, setShowAll] = useState(false);
+  const [scenario, setScenario] = useState<Scenario | null>(null);
+  const [drive, setDrive] = useState<Drive | null>(null);
+  const [stopping, setStopping] = useState(false);       // the "Stop this run?" box
+  const [stopBusy, setStopBusy] = useState(false);
+  const [confirm, setConfirm] = useState<Mode | null>(null);  // "Start a new run?": a start clears this one
+  const [starting, setStarting] = useState(false);
+  const [loadErr, setLoadErr] = useState<unknown>(null);  // the first load: nothing to show without it
+  const [pollErr, setPollErr] = useState<unknown>(null);  // a later look failed: what is on screen is kept
+  const [loadedAt, setLoadedAt] = useState<number | null>(null);
+  const [tick, setTick] = useState(0);                  // a finished ask wakes the carry-on loop even when nothing on screen changed
+  const [steps, setSteps] = useState(false);              // the agents' own steps in the timeline
+  const [moment, setMoment] = useState<Simulation["alerts"][number] | null>(null);
   const busy = useRef(false);
   const seq = useRef(0);
   const seen = useRef<Set<string> | null>(null);  // alerts already on screen: only a new one gets the line
-  const [moment, setMoment] = useState<Alert | null>(null);
 
   const take = useCallback((s: Simulation) => {
-    setSim(s);
+    setSim(s); setLoadedAt(Date.now()); setPollErr(null);
     const keys = s.alerts.map(a => `${a.event_id}|${a.owner}`);
     if (seen.current === null) seen.current = new Set(keys);
     else {
@@ -98,137 +63,115 @@ export function StudioRunPage() {
     }
   }, []);
   const first = useCallback(() => studioApi.get(id).then(s => { take(s); setLoadErr(null); }).catch(setLoadErr), [id, take]);
-  useEffect(() => { seq.current = 0; seen.current = null; setTimeline([]); setMoment(null); first(); }, [first]);
-
-  const step = useCallback(async () => {
-    if (!sim || busy.current || !["running", "waiting"].includes(sim.status)) return;
-    busy.current = true;
-    try { take(await studioApi.step(id, sim.step)); setErr(null); }
-    catch (e) {
-      if (e instanceof ApiError && (e.code === "busy" || e.code === "step_moved")) { studioApi.get(id, seq.current).then(take).catch(() => {}); }
-      else { setPlaying(false); setErr(e instanceof ApiError ? e.full : String(e)); }
-    } finally { busy.current = false; }
-  }, [id, sim, take]);
-
-  // play: one step at a time; a waiting step comes back quickly and is asked again
   useEffect(() => {
-    if (!playing) return;
-    const t = setInterval(() => { step(); }, PLAY_MS);
-    return () => clearInterval(t);
-  }, [playing, step]);
-  useEffect(() => { if (sim && !["running", "waiting"].includes(sim.status)) setPlaying(false); }, [sim]);
+    seq.current = 0; seen.current = null; busy.current = false;
+    setSim(null); setTimeline([]); setScenario(null); setDrive(null); setMoment(null); setLoadErr(null); setPollErr(null); setLoadedAt(null);
+    first();
+  }, [first]);
 
-  if (!sim) return <div className="page rd rd-studio">{loadErr != null
-    ? <><PageTitle title="Scenario run" crumbs={<Link to="/studio">Scenario Studio</Link>} /><LoadError error={loadErr} onRetry={first} what="this run" /></>
-    : <PageSkeleton bare />}</div>;
+  // one more look at the run (quietly: what is on screen stays if it fails)
+  const look = useCallback(() => studioApi.get(id, seq.current).then(take).catch(setPollErr), [id, take]);
 
-  const active = ["running", "waiting"].includes(sim.status);
-  const stopped = sim.status.startsWith("stopped");
-  const heads = timeline.filter(t => t.kind === "headline");
-  const findings = timeline.filter(t => t.kind === "finding");
-  const marks: Mark[] = findings.filter(f => f.data.source === "timeseries").map(f => ({ t: f.at, color: "var(--high)", label: f.data.title, tag: "Flagged move" }));
-  const stop = async () => { setStopping(false); setPlaying(false); try { take(await studioApi.stop(id)); } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); } };
-  const evById = new Map(sim.events.map(e => [e.event_id, e]));
-  const evName = (event_id: string, title: string) => { const e = evById.get(event_id); return eventTitle({ title, themes: e?.themes }); };
-  const exp = sim.summary.stories.filter(s => s.expected);
-  const foundN = exp.filter(s => s.found).length;
-  const story = timeline.filter(t => STORY.has(t.kind));
-  const rows = [...timeline].reverse();
-  // by default one line per simulated day, newest first; "Show all" opens the full list underneath
-  const days = [...new Set(story.map(t => t.step))].sort((a, b) => b - a).map(d => {
-    const xs = story.filter(t => t.step === d);
-    const hs = xs.filter(t => t.kind === "headline").length, fs = xs.filter(t => t.kind === "finding").length;
-    const evs = xs.filter(t => t.kind === "event");
-    return { day: d, at: xs[0].at, hs, fs, evs };
-  });
+  // the scenario: its headline plan ("its headline comes on day 6") and whether a recording can be replayed
+  const ended = sim ? !isActive(sim.status) : false;
+  const scenarioId = sim?.scenario_id;
+  useEffect(() => {
+    if (!scenarioId) return;
+    let off = false;
+    studioApi.scenario(scenarioId).then(x => { if (!off) setScenario(x); }).catch(() => {});
+    return () => { off = true; };
+  }, [scenarioId, ended]);
+
+  // one ask: run what is due. A busy or moved answer is not a failure: look again and carry on.
+  const step = useCallback(async () => {
+    if (!sim || busy.current || !isActive(sim.status)) return;
+    busy.current = true;
+    try { take(await studioApi.step(id, sim.step)); }
+    catch (e) {
+      if (e instanceof ApiError && ["busy", "step_moved", "not_running"].includes(e.code)) { await look(); }
+      else { setDrive(null); refuse(e, "Couldn't run the day"); }
+    } finally { busy.current = false; setTick(t => t + 1); }
+  }, [id, sim, take, look, refuse]);
+
+  // carrying on by itself: ask, wait (longer while agents work), ask again, until the clock gets where it was asked to
+  useEffect(() => {
+    if (!drive || !sim) return;
+    if (driveDone(drive, sim)) { setDrive(null); return; }
+    const t = setTimeout(step, driveDelay(sim.status));
+    return () => clearTimeout(t);
+  }, [drive, sim, step, tick]);
+  // nobody driving: look every few seconds while the run is going (and when the tab is looked at again)
+  const going = !!sim && isActive(sim.status);
+  useEffect(() => {
+    if (!going || drive) return;
+    const f = () => { if (document.visibilityState === "visible" && !busy.current) look(); };
+    const t = setInterval(f, REFRESH_MS);
+    document.addEventListener("visibilitychange", f);
+    return () => { clearInterval(t); document.removeEventListener("visibilitychange", f); };
+  }, [going, drive, look]);
+
+  const stop = async () => {
+    setStopBusy(true); setDrive(null);
+    try { take(await studioApi.stop(id)); setStopping(false); }
+    catch (e) { setStopping(false); refuse(e, "Couldn't stop the run"); }
+    finally { setStopBusy(false); }
+  };
+  const go = async (mode: Mode) => {
+    if (!sim) return;
+    setConfirm(null); setStarting(true);
+    try { const n = await studioApi.start(sim.scenario_id, mode); nav(`/studio/run/${n.sim_id}`); }
+    catch (e) { refuse(e); }
+    finally { setStarting(false); }
+  };
+
+  const evName = useMemo(() => {
+    const by = new Map((sim?.events ?? []).map(e => [e.event_id, e]));
+    return (event_id: string, title: string) => eventTitle({ title, themes: by.get(event_id)?.themes });
+  }, [sim?.events]);
+  useCrumbs(useMemo<Crumb[]>(() => [...CRUMBS, ...(sim ? [{ label: sim.title, to: `/studio/${sim.scenario_id}` }] : []), { label: "This run" }], [sim?.title, sim?.scenario_id]));  // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!sim) {
+    return (
+      <div className="v2-run">
+        <h1 className="v2-sr">Scenario run</h1>
+        {loadErr != null
+          ? <><LoadError error={loadErr} onRetry={first} what="this run" safe="Your scenarios are safe; this page just couldn't reach the run." />
+            <p><Button as="link" to="/studio" variant="quiet">Back to the Scenario Studio</Button></p></>
+          : <><RunSkeleton /><Skeleton rows={5} label="Loading the run" /></>}
+      </div>);
+  }
+
+  const active = isActive(sim.status);
+  const planned = scenario ? scenario.built.headlines.length : null;
+  const rows = storyRows(sim.summary, active, sim.step, scenario?.built.headlines ?? null, evName);
+  const flagged = timeline.filter(t => t.kind === "price" && t.data.fires).map(t => t.at);
+  const name = priceName(sim.symbol, (scenario?.built.prices as { name?: string } | undefined)?.name);
+  const c = foundCount(rows);
+  const working = workingText(sim.pending, timeline);
 
   return (
-    <div className="page rd rd-studio">
-      <PageTitle title={sim.title}
-        crumbs={<><Link to="/studio">Scenario Studio</Link> / <Link to={`/studio/${sim.scenario_id}`}>The scenario</Link> / This run</>}
-        status={<><span>Simulated</span><span>{howRun(sim.mode)}</span><span>nothing here reaches your live pages</span></>} />
-      <Controls sim={sim} timeline={timeline} active={active} playing={playing} setPlaying={setPlaying} stopping={stopping} setStopping={setStopping} onStep={step} onStop={stop} />
-      {moment && <div className="rd-moment" role="status" style={{ marginTop: 14 }}>
-        <span><b>New alert · {moment.owner}</b></span><span style={{ flex: 1 }}>{moment.title}</span>
-        <TextButton onClick={() => setMoment(null)}>Close</TextButton></div>}
-      {err && <QuietWarn>{err}</QuietWarn>}
-      {stopped && <p className="rds-quiet">This run was stopped on day {sim.step} of {sim.steps}, so its clock won't move again. What it found up to then stays below.
-        <GoLink to={`/studio/${sim.scenario_id}`}>Back to the scenario</GoLink></p>}
-      {active && sim.pending.length > 0 && <p className="rds-quiet">Waiting for {sim.pending.map(p => `the ${p.kind === "check" ? "monitor agent" : "investigation agent"} (${p.seconds} s)`).join(" and ")}. The clock moves on when {sim.pending.length > 1 ? "they answer" : "it answers"}.</p>}
-
-      <Figures label="What Amiri Agent has done so far" size={36} items={[
-        { value: heads.length, label: "headlines read", sub: heads.length ? undefined : "waiting for the first day" },
-        { value: findings.length, label: "findings", sub: findingsSplit(timeline) },
-        { value: sim.events.length, label: "events traced to you", sub: eventsSplit(sim.events) },
-        { value: sim.alerts.length ? <><span className="rd-shape" aria-hidden="true" style={{ fontSize: "0.8em" }}>▲</span>{sim.alerts.length}</> : 0, label: "team alerts", hot: sim.alerts.length > 0,
-          sub: sim.alerts.length ? [...new Set(sim.alerts.map(a => a.owner))].join(", ") : "no product at risk yet" },
-      ]} />
-
-      <div className="rds-two">
-        <Section title={sim.symbol} meta="daily close, simulated" action={<span className="rd-fine"><span className="rds-dot" aria-hidden="true" />flagged move</span>}>
-          <div className="rds-chart">{sim.bars.length > 1
-            ? <PriceChart points={sim.bars.map(b => ({ t: b.ts, v: b.close }))} marks={marks} height={240}
-              fmtX={t => dayTime(t).split(" ").slice(0, 2).join(" ")} fmtY={v => v.toFixed(2)} fmtTip={t => dayTime(t)} />
-            : <p className="rd-row-d">Press Play: the price is drawn day by day.</p>}</div>
-        </Section>
-        <Section title="Expected vs found" meta={`${foundN} of ${exp.length} ${active ? "so far" : "found"}`}>
-          <ul className="rds-score">
-            {exp.map(s => {
-              const w = storyWord(s.found, active);
-              return <li key={s.key}><span className={`rds-w${w === "Not yet" ? " rds-no" : ""}`}>{w}</span>
-                <span><ToneMark tone={s.tone} label={TONE_WORD[s.tone]} />
-                  {s.found && s.event_id ? <Link className="rd-name" to={`/events/${s.event_id}`} title={s.event_title ?? undefined}>{s.label}</Link> : s.label}</span></li>;
-            })}
-          </ul>
-          {sim.summary.other_events.map(e => <p key={e.event_id} className="rd-row-m" style={{ marginTop: 10 }}>Also found: <ToneMark tone={e.tone} label={TONE_WORD[e.tone]} />
-            <Link className="rd-name" to={`/events/${e.event_id}`}>{evName(e.event_id, e.title)}</Link></p>)}
-          <p className="rd-fine rds-more">Findings: {Object.entries(sim.summary.findings).map(([k, v]) => `${v.found} of ${v.expected}+ expected from ${k === "timeseries" ? "prices" : k === "monitor" ? "news" : k}`).join(" · ")}</p>
-        </Section>
+    <div className="v2-run">
+      {pollErr != null && loadedAt != null && <StaleBanner loadedAt={loadedAt} now={now.getTime()} onRetry={look} />}
+      <div className="v2-sr" aria-live="polite" aria-atomic="true">{liveText(sim, c.found, c.expected)}</div>
+      <RunHead sim={sim} timeline={timeline} working={working} driving={!!drive} playing={drive?.until === Infinity}
+        onNext={() => setDrive(driveNext(sim.step))} onPlay={() => setDrive(d => (d?.until === Infinity ? null : drivePlay()))} onStop={() => setStopping(true)} />
+      {!active && <EndPanel sim={sim} scenario={scenario} rows={rows} busy={starting} onStart={m => setConfirm(m)} />}
+      {moment && (
+        <div className="v2-run-moment" role="status">
+          <span><b>New alert · {moment.owner}</b></span><span className="v2-run-moment__t">{moment.title}</span>
+          <Button size="sm" variant="quiet" onClick={() => setMoment(null)}>Close</Button>
+        </div>)}
+      <RunTiles sim={sim} timeline={timeline} planned={planned} />
+      <div className="v2-run-cols">
+        <div className="v2-run-main">
+          <ExpectedFound rows={rows} findings={sim.summary.findings} active={active} />
+          <AlertsRaised alerts={sim.alerts} evName={evName} active={active} />
+          <PricePanel title={name} bars={sim.bars} flagged={flagged} step={sim.step} />
+        </div>
+        <Timeline timeline={timeline} tz={sim.institution.time_zone} more={steps} onMore={setSteps} />
       </div>
-
-      <div className="rds-pair">
-      <Section title="Alerts it would raise" count={sim.alerts.length || undefined} meta="for the team that owns each product">
-        {!sim.alerts.length ? <p className="rd-row-d" style={{ marginTop: 12 }}>{active ? "None yet. An alert appears when an event is traced to a product's risk." : "No event in this run puts a product at risk."}</p>
-          : sim.alerts.map((a, n) => (
-            <div key={n} className="rd-row">
-              <div className="rd-row-t rd-clamp1" title={a.title}>{a.title}</div>
-              <div className="rd-row-d rd-clamp1" title={`${a.owner} · ${listText([...new Set(a.effects.map(x => x.product))])}`}>{a.owner} · {listText([...new Set(a.effects.map(x => x.product))])}</div>
-              <div className="rd-row-m rd-clamp1">From <Link className="rd-name" to={`/events/${a.event_id}`}>{evName(a.event_id, a.event_title)}</Link></div>
-            </div>))}
-      </Section>
-
-      <Section title="Events" count={sim.events.length || undefined} meta={sim.events.length ? "traced to your products" : undefined}>
-        {!sim.events.length ? <p className="rd-row-d" style={{ marginTop: 12 }}>None yet. The first investigation starts after day 2, so a story's first findings go in together.</p>
-          : sim.events.map(e => (
-            <div key={e.event_id} className="rd-row">
-              <div className="rd-row-t rd-clamp1" title={eventTitle({ title: e.title, themes: e.themes })}><ToneMark tone={e.tone} label={TONE_WORD[e.tone]} /><Link className="rd-name" to={`/events/${e.event_id}`}>{eventTitle({ title: e.title, themes: e.themes })}</Link></div>
-              <div className="rd-row-m rd-clamp1">{[e.themes.length ? [...new Set(e.themes.map(themeLabel))].join(", ") : "", plural(e.effects, "possible impact"), e.developments ? `${plural(e.developments, "later finding")} joined` : ""].filter(Boolean).join(" · ")}</div>
-            </div>))}
-      </Section>
-      </div>
-
-      <Section title="What happened" meta={`newest first · ${ZONE_LABEL} time`} className="rds-happ">
-        {!rows.length ? <p className="rd-row-d" style={{ marginTop: 12 }}>Press Play or Step: each simulated day's headlines, findings and events appear here.</p>
-          : <ul className="rds-days" aria-label="One line for each simulated day">{days.map(d => (
-            <li key={d.day} className="rd-dots" title={dayTime(d.at)}><b className="rds-dn">Day {d.day}</b>
-              <span>{[d.hs ? plural(d.hs, "headline") : "", d.fs ? plural(d.fs, "finding") : ""].filter(Boolean).join(" · ")}</span>
-              {d.evs.length > 0 && <span className="rds-evf">{d.evs.length === 1 && d.evs[0].ref
-                ? <Link className="rd-name" to={`/events/${d.evs[0].ref}`} title={eventTitle({ title: d.evs[0].data.title, themes: d.evs[0].data.themes })}>event formed</Link>
-                : `${d.evs.length} events formed`}</span>}
-            </li>))}</ul>}
-        {timeline.length > 0 && <p className="rds-showall"><TextButton aria-expanded={showAll} aria-controls="rds-all" onClick={() => setShowAll(a => !a)}>
-          {showAll ? "Show one line per day" : `Show all ${timeline.length}, including the agents' own steps`}</TextButton></p>}
-        {showAll && <div id="rds-all">{rows.map(t => {
-            const isStep = !STORY.has(t.kind);
-            const tone = t.kind === "event" ? t.data.tone : null;
-            const title = t.kind === "event" && t.ref ? eventTitle({ title: t.data.title, themes: t.data.themes }) : line(t);
-            return <div key={t.seq} className={`rd-row${isStep ? " rds-step" : ""}`}>
-              <div className="rd-row-t rd-clamp1" title={title}>{tone && <ToneMark tone={tone} label={TONE_WORD[tone as keyof typeof TONE_WORD]} />}
-                {t.kind === "event" && t.ref ? <Link className="rd-name" to={`/events/${t.ref}`}>{title}</Link> : title}</div>
-              <div className="rd-row-m">Day {t.step} · {dayTime(t.at)} · {t.kind === "headline" && t.data.outlet ? t.data.outlet : t.kind === "event" ? `${plural(t.data.effects, "effect")} to watch` : KIND[t.kind] || "Note"}</div>
-            </div>;
-          })}</div>}
-      </Section>
+      {stopping && <StopDialog busy={stopBusy} onCancel={() => setStopping(false)} onGo={stop} />}
+      {confirm && <StartDialog clears={sim.title} onCancel={() => setConfirm(null)} onGo={() => go(confirm)} />}
     </div>
   );
 }
