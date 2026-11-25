@@ -1,133 +1,100 @@
-// The Institution page's overview: the profile at a glance (six figures), the map, and what is still open.
-// While a profile is live only the checks not done are shown; while it is being set up, today's full checklist.
-import { Fragment } from "react";
+// The Institution page's overview: the profile on its map beside what is still open (board 15 section C draws the open part), and
+// a short "about". While a profile is being set up the open part is the whole go-live checklist; once it is live, only what is not done.
 import { Link } from "react-router-dom";
-import type { Check, Profile, Readiness } from "../../api/institutions";
-import { Figures, Fold, Section, TextButton } from "../../components/rd";
-import { plural } from "../../format";
+import type { Profile, Readiness } from "../../api/institutions";
+import { useDemoLock } from "../../components/lock";
+import { Button } from "../../components/v2/Button";
+import { Pill } from "../../components/v2/Pill";
+import { SectionHead } from "../../components/v2/SectionHead";
+import { dayTime, plural, ZONE_LABEL } from "../../format";
 import { ProfileMap } from "./ProfileMap";
-
-export const TAB_OF_SECTION: Record<string, string> = {
-  footprint: "footprint", "watch-places": "footprint", flows: "footprint", segments: "customers", products: "customers",
-  regulators: "rules", rivals: "rivals", counterparties: "rivals", "risk-exposures": "risks", institution: "overview",
-};
-
-/** The six figures, each a link to the tab that holds them. */
-export function ProfileFigures({ profile }: { profile: Profile }) {
-  const c = profile.institution.counts;
-  return <Figures label="The profile at a glance" size={34} items={[
-    { value: c.segments, label: "customer groups", to: "/institution/customers" },
-    { value: c.products, label: "products", to: "/institution/customers" },
-    { value: c.flows, label: "money flows", to: "/institution/footprint" },
-    { value: c.regulators, label: "regulators", to: "/institution/rules" },
-    { value: c.rivals, label: "rivals", to: "/institution/rivals" },
-    { value: c["risk-exposures"], label: "known risks", to: "/institution/risks" },
-  ]} />;
-}
+import { isSection, liveWords, openWords, readinessRows, viewPath } from "./words";
 
 /** The map's key in one line. The shapes are the map's own: the marks differ in shape and fill, not only colour. */
 export const MAP_KEY = "Curved lines: money flows, thicker for bigger ones · filled dots: customer groups · crosses: rivals · rings: places to watch and parts of the footprint · dashed circles: risk areas · dotted lines: sea routes";
 
-const firstNumber = (m: string, re: RegExp) => { const x = re.exec(m); return x ? Number(x[1]) : null; };
-
-interface OpenCheck { title: string; sub?: string; action: string; to?: string }
-/** A check that isn't done, in plain words, with its one action. `to` is missing when the action is "Edit details". */
-function openWords(c: Check): OpenCheck {
-  switch (c.id) {
-    case "regulators": {
-      const n = firstNumber(c.message, /(\d+) more suggested/);
-      return { title: n ? `Review the ${n} suggested regulators` : "Review the suggested regulators", sub: "from the rule table", action: "Review", to: "/institution/rules" };
-    }
-    case "risk_exposures": {
-      const n = firstNumber(c.message, /finder has (\d+) more/);
-      return { title: "Review what the risk finder found", sub: n ? `${plural(n, "more known risk")} to look at` : undefined, action: "Review", to: "/institution/risks" };
-    }
-    case "flows": return { title: "Review the suggested money flows", sub: c.message, action: "Review", to: "/institution/footprint" };
-    case "product_data": {
-      const m = /(\d+) of (\d+)/.exec(c.message);
-      return { title: "Link products to your institution's data", sub: m ? `${m[1]} of ${m[2]} linked: checks need each product's numbers` : c.fix, action: "Link", to: "/institution/customers" };
-    }
-    default: {
-      const tab = TAB_OF_SECTION[c.section] ?? "overview";
-      return { title: c.fix || c.message, sub: c.message, action: c.section === "institution" ? "Edit details" : "Fix", to: c.section === "institution" ? undefined : `/institution/${tab}` };
-    }
-  }
-}
-
-function OpenRow({ w, onEdit }: { w: OpenCheck; onEdit?: () => void }) {
-  return (
-    <li className="rd-row ins-open-row">
-      <div className="ins-main"><div className="rd-row-t ins-open-t">{w.title}</div>{w.sub && <p className="rd-row-m">{w.sub}</p>}</div>
-      <div className="ins-acts">{w.to ? <Link className="rd-go" to={w.to}>{w.action} →</Link> : onEdit && <TextButton edits onClick={onEdit}>{w.action}</TextButton>}</div>
-    </li>
-  );
-}
-
-const LEVEL_WORD: Record<string, string> = { required: "Required", recommended: "Recommended", info: "Good to have" };
-const ORDER: Record<string, number> = { required: 0, recommended: 1, info: 2 };
-
-/** The right-hand column. */
-export function StillOpen({ readiness, setup, onEdit }: { readiness: Readiness; setup: boolean; onEdit: () => void }) {
-  const checks = readiness.checks;
-  const open = checks.filter(c => !c.ok);
-  const done = checks.filter(c => c.ok);
+function Checks({ readiness, setup, onEdit }: { readiness: Readiness; setup: boolean; onEdit: () => void }) {
   const warns = readiness.warnings;
-
-  if (setup) {
-    const sorted = [...checks].sort((a, b) => ORDER[a.level] - ORDER[b.level]);
-    const req = checks.filter(c => c.level === "required");
-    return (
-      <Section title="Ready to go live?" meta={`${req.filter(c => c.ok).length} of ${req.length} required parts done`} className="ins-open-sec">
-        <ul className="ins-rows" aria-label="Checks before going live">{sorted.map(c => {
-          const w = openWords(c);
-          return (
-            <li key={c.id} className="rd-row ins-open-row">
-              <div className="ins-main">
-                <div className="rd-row-t ins-open-t">{c.message}</div>
-                <p className="rd-row-m">{LEVEL_WORD[c.level]} · <b className="ins-k">{c.ok ? "Done" : "Still to do"}</b>{!c.ok && c.fix ? `: ${c.fix}` : ""}</p>
-              </div>
-              {!c.ok && <div className="ins-acts">{c.section === "institution" ? <TextButton edits onClick={onEdit}>Edit details</TextButton>
-                : <Link className="rd-go" to={w.to ?? "/institution"}>{c.level === "info" ? w.action : "Fix"} →</Link>}</div>}
-            </li>);
-        })}</ul>
-      </Section>
-    );
-  }
-
-  const reqDone = done.filter(c => c.level === "required").length;
-  const reqAll = checks.filter(c => c.level === "required").length;
+  const rows = readinessRows(readiness.checks).filter(r => setup || !r.ok);
+  const done = readiness.checks.filter(c => c.ok);
+  const reqDone = done.filter(c => c.level === "required").length, reqAll = readiness.checks.filter(c => c.level === "required").length;
   const rest = done.length - reqDone;
   const doneSummary = `${reqDone === reqAll ? "everything required" : `${reqDone} of ${reqAll} required`}${rest ? `, and ${rest} recommended` : ""}`;
   return (
-    <Section title="Still open" meta={`${open.length + warns.length} of ${checks.length} checks`} className="ins-open-sec">
-      {open.length + warns.length === 0 && <p className="rd-row-d ins-none">Nothing is open. Every check is done.</p>}
-      {(open.length > 0 || warns.length > 0) && <ul className="ins-rows" aria-label="Checks still open">
-        {open.map(c => <OpenRow key={c.id} w={openWords(c)} onEdit={onEdit} />)}
-        {warns.map((w, k) => <li key={`w${k}`} className="rd-row ins-open-row">
-          <div className="ins-main"><div className="rd-row-t ins-open-t"><span className="rd-warn"><span className="rd-shape rd-t-mixed" aria-hidden="true">◆</span> {w.message}</span></div></div>
-          <div className="ins-acts"><Link className="rd-go" to={`/institution/${TAB_OF_SECTION[w.section ?? ""] ?? "overview"}`}>Look →</Link></div></li>)}
-      </ul>}
-      {done.length > 0 && <Fold title={`${done.length} done`} summary={doneSummary} remember="inst-done">
-        <ul className="ins-done" aria-label="Checks done">{done.map(c => <li key={c.id}>{c.message}<span className="rd-fine"> · {LEVEL_WORD[c.level].toLowerCase()}</span></li>)}</ul>
-      </Fold>}
-    </Section>
+    <>
+      {rows.length + warns.length === 0 && <p className="v2-in-none">Nothing is open. Every check is done.</p>}
+      {(rows.length > 0 || warns.length > 0) && (
+        <ul className="v2-in-chk" aria-label={setup ? "Checks before going live" : "Checks still open"}>
+          {rows.map(r => (
+            <li key={r.id} className={r.ok ? "is-done" : undefined}>
+              <span className={`v2-in-chk__shape is-${r.ok ? "done" : r.level}`} aria-hidden="true">{r.shape}</span>
+              <span className="v2-in-chk__body">
+                <span className="v2-in-chk__t">{setup ? r.text : openWords(readiness.checks.find(c => c.id === r.id)!).title}</span>
+                <span className="v2-in-chk__m"><b>{r.word}</b>{!r.ok && r.fix ? ` · ${r.fix}` : ""}</span>
+              </span>
+              {!r.ok && (r.edit
+                ? <Button size="sm" variant="quiet" className="v2-in-chk__go" onClick={onEdit}>Edit details</Button>
+                : r.to && <Link className="v2-arrowlink v2-in-chk__go" to={r.to}>{r.level === "info" ? openWords(readiness.checks.find(c => c.id === r.id)!).action : "Fix"}<span aria-hidden="true"> →</span></Link>)}
+            </li>))}
+          {warns.map((w, k) => (
+            <li key={`w${k}`}>
+              <span className="v2-in-chk__shape is-recommended" aria-hidden="true">◆</span>
+              <span className="v2-in-chk__body"><span className="v2-in-chk__t">{w.message}</span><span className="v2-in-chk__m"><b>Look at it</b></span></span>
+              <Link className="v2-arrowlink v2-in-chk__go" to={viewPath(isSection(w.section ?? "") ? (w.section as never) : "overview")}>Look<span aria-hidden="true"> →</span></Link>
+            </li>))}
+        </ul>)}
+      {!setup && done.length > 0 && (
+        <details className="v2-in-donefold">
+          <summary><span>{done.length} done</span><span className="v2-in-fold__m">{doneSummary}</span></summary>
+          <ul className="v2-in-done" aria-label="Checks done">{done.map(c => <li key={c.id}>{c.message}</li>)}</ul>
+        </details>)}
+    </>
   );
 }
 
-/** The overview tab: figures, then the map beside what's still open. */
-export function Overview({ profile, readiness, setup, mapTitle, onEdit }: {
-  profile: Profile; readiness: Readiness; setup: boolean; mapTitle: string; onEdit: () => void;
+/** The overview tab. */
+export function Overview({ profile, readiness, setup, mapTitle, onEdit, onActivate }: {
+  profile: Profile; readiness: Readiness; setup: boolean; mapTitle: string; onEdit: () => void; onActivate: () => void;
 }) {
+  const locked = useDemoLock();
+  const i = profile.institution, c = i.counts;
+  const req = readiness.checks.filter(x => x.level === "required");
   return (
-    <Fragment>
-      <ProfileFigures profile={profile} />
-      <div className="ins-cols">
-        <Section title={mapTitle} className="ins-map-sec">
-          <ProfileMap profile={profile} height={360} legend={false} />
-          <p className="rd-fine ins-key">{MAP_KEY}</p>
-        </Section>
-        <StillOpen readiness={readiness} setup={setup} onEdit={onEdit} />
-      </div>
-    </Fragment>
+    <div className="v2-in-ov">
+      <section className="v2-in-ov__map" aria-labelledby="ov-map">
+        <SectionHead title={mapTitle} id="ov-map" />
+        <div className="v2-in-map"><ProfileMap profile={profile} height={360} legend={false} /></div>
+        <p className="v2-in-key">{MAP_KEY}</p>
+      </section>
+      <section className="v2-in-ov__open" aria-labelledby="ov-open">
+        {setup ? (
+          <>
+            <div className="v2-in-live">
+              <Pill>Setting up</Pill>
+              <h2 id="ov-open" className="v2-in-live__t">{liveWords(readiness)}</h2>
+              <Button variant="primary" locked={locked} disabled={!readiness.ready} title={readiness.ready ? undefined : "Required parts are missing"} onClick={onActivate}>Activate</Button>
+            </div>
+            <p className="v2-meta v2-in-open__n">{req.filter(x => x.ok).length} of {req.length} required parts done</p>
+          </>
+        ) : (
+          <SectionHead title="Still open" id="ov-open" meta={<span className="v2-in-sec__meta">{readiness.checks.filter(x => !x.ok).length + readiness.warnings.length} of {readiness.checks.length} checks</span>} />
+        )}
+        <Checks readiness={readiness} setup={setup} onEdit={onEdit} />
+      </section>
+      <section className="v2-in-ov__about" aria-labelledby="ov-about">
+        <SectionHead title="About this institution" id="ov-about" />
+        {i.summary && <p className="v2-in-about__p">{i.summary}</p>}
+        <dl className="v2-in-kv">
+          <dt>Time zone</dt><dd>{i.time_zone}</dd>
+          <dt>Owns risk decisions</dt><dd>{i.governance_body ?? "—"}</dd>
+          <dt>Settles abroad in</dt><dd>{i.clearing_currencies?.join(", ") || "—"}</dd>
+          <dt>Also in the profile</dt>
+          <dd><Link to={viewPath("footprint")}>{plural(c.footprint, "place")} in the footprint</Link>{" · "}<Link to={viewPath("watch-places")}>{plural(c["watch-places"], "place")} to watch</Link>{" · "}
+            <Link to={viewPath("counterparties")}>{plural(c.counterparties, "firm")} you depend on</Link></dd>
+          <dt>Version</dt><dd>{i.profile_version} · changed {dayTime(i.updated_at)} ({ZONE_LABEL} time)</dd>
+        </dl>
+        <p className="v2-meta">Amiri Agent reads this profile to decide what matters to you: where you operate, your customers and products, your flows, rules, rivals and risks.</p>
+      </section>
+    </div>
   );
 }

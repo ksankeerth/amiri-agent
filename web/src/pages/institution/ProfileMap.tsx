@@ -231,11 +231,11 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
           setZoom(z => ({ ...z, x: z.x + dx, y: z.y + dy }));
         }}
         onPointerUp={() => { drag.current = null; }} onPointerLeave={() => { drag.current = null; }}>
-        {world && <g>{world.features.map(f => {
+        {world && <g>{world.features.map((f, k) => {
           const iso = Object.values(P).find(p => p.numeric && String(Number(p.numeric)) === String(Number(f.id)))?.code;
           const isHome = on.has("footprint") && iso === home;
           const inFp = on.has("footprint") && iso && fpCountries.has(iso);
-          return <path key={String(f.id)} d={path(f) ?? ""} fill={isHome || (inFp && fpWhole.has(iso!)) ? "var(--map-home-fill)" : inFp ? "var(--accent-soft)" : "var(--map-land)"}
+          return <path key={`${f.id}-${k}`} d={path(f) ?? ""} fill={isHome || (inFp && fpWhole.has(iso!)) ? "var(--map-home-fill)" : inFp ? "var(--accent-soft)" : "var(--map-land)"}
             stroke={inFp ? "var(--map-home)" : "var(--map-border)"} strokeWidth={inFp ? 1 : 0.75} />;
         })}</g>}
         {on.has("risks") && riskHazards.map(h => {

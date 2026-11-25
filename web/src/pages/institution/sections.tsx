@@ -1,28 +1,27 @@
 // Lists of each profile section, with add / edit / delete, suggestion pickers and link grids.
-import { Fragment, useEffect, useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { ApiError } from "../../api/client";
 import { showProposal } from "../../api/assistant";
-import { inst, type Item, type Operation, type SectionName, type Suggestion } from "../../api/institutions";
+import { inst, type Item, type SectionName } from "../../api/institutions";
 import { dayTime, person, plural } from "../../format";
 import { Icon } from "../../components/Icon";
 import { Modal, useToast } from "../../components/ui";
 import { LockBtn, LockFields, useDemoLock } from "../../components/lock";
 import { lockAttrs } from "../../components/demoLock";
 import { Fold, Section, TextButton } from "../../components/rd";
-import { dimWord, monthsText, PlaceName, usdText, useRoutes, valueWord } from "./fields";
-import { AREA_WORDS, ItemModal, LABELS, splitErrors, type Ctx } from "./forms";
+import { dimWord, monthsText, usdText, valueWord } from "./fields";
+import { AREA_WORDS, ItemModal, LABELS, type Ctx } from "./forms";
 import { FLOW_WORDS } from "../../components/setupFlow";
 import { cap, productTypeLabel } from "../../plain";
 import { Link } from "react-router-dom";
 import "../../styles/polish-forms.css";
+import { cw, withShort } from "./rows";
+import { byId, flags, pn, useImportItems, useLinkGrid, useSuggestionPicker } from "./profileKit";
 
-const pn = (ctx: Ctx, c: string) => <PlaceName code={c} names={ctx.profile?.place_names} />;
+// the hooks and the plain words are in profileKit.tsx, shared with the Institution page; re-exported for the guided setup
+export { byId, flags, suggestionText, useImportItems, useLinkGrid, useSuggestionPicker, viaProposal } from "./profileKit";
+
 const join = (xs: ReactNode[]) => xs.reduce<ReactNode[]>((a, x, i) => (i ? [...a, ", ", x] : [x]), []);
-const byId = (ctx: Ctx, s: SectionName, id: string, key: string) => ctx.profile?.sections[s].find(x => x.id === id)?.[key] ?? id;
-/** An enum value as a word: "finance_company" → "Finance company". */
-const cw = (s: string) => cap(s.replace(/_/g, " "));
-/** "US Treasury sanctions (OFAC)" stays as it is; "Central Bank of Sri Lanka" gets "(CBSL)". */
-const withShort = (name: string, short?: string | null) => (short && !name.includes(`(${short})`) ? `${name} (${short})` : name);
 
 /** A row's details as separate pieces: [label, value]. A piece without a label is the item's kind, shown as a quiet tag. */
 type Meta = [string | null, ReactNode][];
@@ -86,44 +85,18 @@ function MetaLine({ meta }: { meta: Meta }) {
     : <span key={i} className="pf-tag">{v}</span>)}</div>;
 }
 
-/** Every section's list, with Add / Edit / Delete. */
-/** Items for a section from a JSON file: a list of items, {items: [...]}, or a whole profile ({sections: {...}}).
- * Checked by the server first (a dry run), shown, and added only when confirmed, all or nothing. */
 function ImportItems({ section, iid, onAdded, text }: { section: SectionName; iid: string; onAdded: () => void; text?: boolean }) {
-  const toast = useToast();
   const locked = useDemoLock();
-  const [ops, setOps] = useState<Operation[] | null>(null);
-  const [problems, setProblems] = useState<string[]>([]);
-  const [busy, setBusy] = useState(false);
-  const read = async (f: File) => {
-    setProblems([]);
-    try {
-      const doc = JSON.parse(await f.text());
-      const list: Record<string, any>[] = Array.isArray(doc) ? doc : doc.items ?? doc.sections?.[section] ?? [];
-      if (!list.length) { setOps([]); setProblems([`No ${LABELS[section].many.toLowerCase()} in this file.`]); return; }
-      const o: Operation[] = list.map(({ id, ...data }) => ({ op: "create", section, ...(id ? { id: String(id) } : {}), data }));
-      await inst.batch(iid, o, true);  // checked, nothing written
-      setOps(o);
-    } catch (e) {
-      setOps([]);
-      setProblems(e instanceof ApiError ? Object.values(splitErrors(e).fields).concat(splitErrors(e).general) : [`Not a JSON file: ${String(e)}`]);
-    }
-  };
-  const add = async () => {
-    if (!ops?.length) return;
-    setBusy(true);
-    try { const r = await inst.batch(iid, ops); toast(`Imported ${r.results.length}.`); setOps(null); onAdded(); }
-    catch (e) { setProblems(e instanceof ApiError ? [e.full] : [String(e)]); }
-    finally { setBusy(false); }
-  };
+  const imp = useImportItems(section, iid, onAdded);
+  const { ops, problems, busy } = imp;
   return (
     <>
       {locked ? <LockBtn className={text ? "rd-tbtn ins-import" : "btn btn--sm"}>{!text && <Icon name="plus" />}Import</LockBtn>
         : <label className={text ? "rd-tbtn ins-import" : "btn btn--sm"} title={`Import ${LABELS[section].many.toLowerCase()} from a JSON file`}>{!text && <Icon name="plus" />}Import
-          <input type="file" accept="application/json" className="sr" onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) read(f); }} /></label>}
-      {ops !== null && <Modal title={`Import ${LABELS[section].many.toLowerCase()}`} onClose={() => setOps(null)} footer={<>
-        <button className="btn" type="button" onClick={() => setOps(null)}>Cancel</button>
-        <button className="btn btn--primary" type="button" disabled={busy || !ops.length || problems.length > 0} onClick={add}>Import {ops.length || ""}</button></>}>
+          <input type="file" accept="application/json" className="sr" onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) imp.read(f); }} /></label>}
+      {ops !== null && <Modal title={`Import ${LABELS[section].many.toLowerCase()}`} onClose={imp.close} footer={<>
+        <button className="btn" type="button" onClick={imp.close}>Cancel</button>
+        <button className="btn btn--primary" type="button" disabled={busy || !ops.length || problems.length > 0} onClick={imp.add}>Import {ops.length || ""}</button></>}>
         {problems.length ? <div className="rawerr">{problems.join(" · ")}</div>
           : <p className="small" style={{ margin: 0 }}>{plural(ops.length, LABELS[section].one)} checked and ready to add, all together.</p>}
         <p className="small muted" style={{ margin: 0 }}>The file is a list of items, <span className="mono">{"{\"items\": [...]}"}</span>, or a whole profile (its {LABELS[section].many.toLowerCase()} are used).</p>
@@ -216,26 +189,6 @@ export function SectionList({ section, ctx, reload, suggest, extra, compact, ite
 
 // ---------------------------------------------------------------- the redesigned look (Institution page)
 
-/** What a row says in words where it used to carry a pill: "◆ No data value yet" is a warning, the rest is plain. */
-function flags(section: SectionName, it: Item): { warn: boolean; text: string }[] {
-  const f: { warn: boolean; text: string }[] = [];
-  const add = (text: string, warn = false) => f.push({ warn, text });
-  switch (section) {
-    case "footprint": if (it.role === "home") add("Home"); break;
-    case "segments": if (!it.spec_mapping.length) add("No data value yet, so checks can't be scoped to this group", true); break;
-    case "products":
-      if (it.status !== "active") add(cap(it.status));
-      if (it.islamic) add("Islamic");
-      if (!it.segments.length) add("No customer group", true);
-      break;
-    case "flows": if (it.status === "suggested") add("To check", true); if (it.source.sample) add("Sample figure", true); break;
-    case "regulators": add(it.relation === "home" ? "Home" : it.relation === "reach" ? "Reaches you from abroad" : cap(it.relation)); if (it.basis === "rule") add("From the rule table"); break;
-    case "rivals": add(`${cap(it.overlap)} overlap`); break;
-    case "counterparties": if (it.importance === "critical") add("Critical to you"); break;
-    case "risk-exposures": if (it.status === "dismissed") add("Dismissed"); if (it.source === "finder") add("Found by the risk finder"); break;
-  }
-  return f;
-}
 const RD_TITLE: Partial<Record<SectionName, string>> = { "risk-exposures": "Known risks" };
 
 /** The details line of a row: the facts as small print, labels in ink ("in your data: …"), warnings with ◆. */
@@ -330,60 +283,9 @@ function ProductsTable({ ctx, items, archived, picked, setPicked, onEdit, itemAc
   );
 }
 
-/** What one suggestion looks like in the picker. */
-function suggestionText(section: SectionName, s: Suggestion, ctx: Ctx, routeName: (id: string) => string): { title: ReactNode; sub: ReactNode; group?: string } {
-  const i = s.item;
-  switch (section) {
-    case "products": return { title: i.name, sub: <>{s.typical_products}{s.islamic_variant ? ` · Islamic: ${s.islamic_variant}` : ""}</>, group: s.category_name };
-    case "segments": return { title: i.label, sub: <>{i.note || cw(i.kind)}</> };
-    case "regulators": return { title: withShort(i.name, i.short), sub: <>{s.why} · {AREA_WORDS[i.area] ?? cw(i.area)}</>, group: i.relation };
-    case "rivals": return { title: <>{i.name}{i.aliases?.length ? ` (${i.aliases[0]})` : ""}</>, sub: <>{s.why} · overlap {i.overlap}</>, group: `${i.overlap} overlap` };
-    case "flows": return { title: <>{FLOW_WORDS[i.kind]} {i.goods ? `(${i.goods}) ` : ""}· {pn(ctx, i.local)} ↔ {pn(ctx, i.counterpart)}</>,
-      sub: <>{usdText(i.value.amount)} a year · {i.source.dataset} ({i.source.dataset_year}){i.source.sample ? " · sample figure" : ""}</>, group: FLOW_WORDS[i.kind] };
-    case "risk-exposures": {
-      const m = s.matched;
-      const what = [m.footprint.length && `footprint: ${m.footprint.join(", ")}`, m.segments.length && `${plural(m.segments.length, "customer group")}`,
-        m.flows.length && `${plural(m.flows.length, "flow")}`, m.routes.length && `route: ${m.routes.map(routeName).join(", ")}`].filter(Boolean).join(" · ");
-      return { title: i.title, sub: <>{s.hazard.note} <span className="muted">· {monthsText(i.months)} · meets {what}</span></>, group: s.hazard.kind };
-    }
-    default: return { title: JSON.stringify(i), sub: "" };
-  }
-}
-
-/** Ticks of code-made suggestions, added in one batch. Already-added ones are greyed out. */
 export function SuggestionPicker({ section, ctx, onAdded, inline }: { section: SectionName; ctx: Ctx; onAdded: () => void; inline?: boolean }) {
-  const toast = useToast();
-  const routes = useRoutes();
-  const iid = ctx.profile?.institution.institution_id ?? "";
-  const [data, setData] = useState<{ note: string; items: Suggestion[] } | null>(null);
-  const [picked, setPicked] = useState<Set<number>>(new Set());
-  const [err, setErr] = useState<string[]>([]);
-  const [busy, setBusy] = useState(false);
-  const pv = ctx.profile?.institution.profile_version;
-  useEffect(() => {
-    inst.suggestions(iid, section).then(r => {
-      setData(r);
-      // the rule table, reference flows and the risk finder start ticked; products and groups are chosen
-      const pre = section === "regulators" || section === "risk-exposures" || section === "flows";
-      setPicked(new Set(pre ? r.items.map((x, i) => (x.added ? -1 : i)).filter(i => i >= 0) : []));
-    }).catch(e => setErr([e instanceof ApiError ? e.full : String(e)]));
-  }, [iid, section, pv]);
+  const { data, picked, err, busy, add, groups, open, textOf, tickAll, toggle } = useSuggestionPicker(section, ctx, onAdded);
   if (!data) return <div className="muted small">{err.length ? err.join(" ") : "Loading…"}</div>;
-  const add = async () => {
-    setBusy(true); setErr([]);
-    const ops: Operation[] = [...picked].map(i => ({ op: "create", section, data: data.items[i].item }));
-    try {
-      const r = await inst.batch(iid, ops);
-      toast(`Added ${r.results.length}.${r.warnings.length ? ` ${plural(r.warnings.length, "note")} to look at.` : ""}`);
-      setPicked(new Set()); onAdded();
-    } catch (e) { setErr(splitErrors(e).general.concat(Object.values(splitErrors(e).fields))); }
-    finally { setBusy(false); }
-  };
-  const groups = new Map<string, number[]>();
-  data.items.forEach((s, i) => { const g = suggestionText(section, s, ctx, id => routes.find(r => r.route_id === id)?.name ?? id).group ?? ""; groups.set(g, [...(groups.get(g) ?? []), i]); });
-  const open = data.items.filter(x => !x.added).length;
-  const textOf = (i: number) => suggestionText(section, data.items[i], ctx, id => routes.find(r => r.route_id === id)?.name ?? id);
-  const tickAll = () => setPicked(new Set(data.items.map((x, i) => (x.added ? -1 : i)).filter(i => i >= 0)));
   if (inline) return (
     <div className="wz-pick">
       <p className="rd-fine rd-prose wz-pick-note">{data.note} {open ? `${open} not added yet.` : "Everything here is already in your profile."}</p>
@@ -395,8 +297,7 @@ export function SuggestionPicker({ section, ctx, onAdded, inline }: { section: S
               const s = data.items[i], t = textOf(i);
               return (
                 <label key={i} className="wz-pick-row">
-                  <input type="checkbox" disabled={s.added} checked={s.added || picked.has(i)}
-                    onChange={e => setPicked(p => { const n = new Set(p); if (e.target.checked) n.add(i); else n.delete(i); return n; })} />
+                  <input type="checkbox" disabled={s.added} checked={s.added || picked.has(i)} onChange={e => toggle(i, e.target.checked)} />
                   <span><span className="wz-pick-t">{t.title}{s.added && <span className="wz-pick-added"> · {s.status === "dismissed" ? "dismissed" : "already added"}</span>}</span>
                     <span className="wz-pick-s">{t.sub}</span></span>
                 </label>);
@@ -423,8 +324,7 @@ export function SuggestionPicker({ section, ctx, onAdded, inline }: { section: S
               const t = textOf(i);
               return (
                 <label key={i} className="check" style={{ padding: "8px 12px", borderBottom: "1px solid var(--hairline)" }}>
-                  <input type="checkbox" disabled={s.added} checked={s.added || picked.has(i)}
-                    onChange={e => setPicked(p => { const n = new Set(p); if (e.target.checked) n.add(i); else n.delete(i); return n; })} />
+                  <input type="checkbox" disabled={s.added} checked={s.added || picked.has(i)} onChange={e => toggle(i, e.target.checked)} />
                   <span className="col" style={{ gap: 2 }}><b style={{ color: "var(--ink)" }}>{t.title}{s.added && <span className="badge b-ok" style={{ marginLeft: 8 }}>{s.status === "dismissed" ? "DISMISSED" : "ADDED"}</span>}</b><span className="small muted">{t.sub}</span></span>
                 </label>
               );
@@ -440,49 +340,31 @@ export function SuggestionPicker({ section, ctx, onAdded, inline }: { section: S
   );
 }
 
-/** A checkbox grid linking rows (e.g. products) to columns (e.g. customer groups), saved in one batch. */
 export function LinkGrid({ ctx, rows, cols, field, reload, title, rd, summary }: {
   ctx: Ctx; rows: SectionName; cols: SectionName; field: string; reload: () => void; title: string;
-  /** The redesigned look: a fold ("Edit who uses which product"), the grid inside it. */
+  /** The wizard's look: a fold ("Edit who uses which product"), the grid inside it. */
   rd?: boolean; summary?: ReactNode;
 }) {
-  const toast = useToast();
   const locked = useDemoLock();
-  const R = ctx.profile?.sections[rows] ?? [];
-  const C = ctx.profile?.sections[cols] ?? [];
-  const start = () => Object.fromEntries(R.map(r => [r.id, new Set<string>(r[field] ?? [])]));
-  const [m, setM] = useState<Record<string, Set<string>>>(start);
-  const [busy, setBusy] = useState(false);
-  useEffect(() => { setM(start()); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [ctx.profile?.institution.profile_version]);
+  const g = useLinkGrid(ctx, rows, cols, field, reload);
+  const { R, C, m, busy, dirty } = g;
   if (!R.length || !C.length) return null;
-  const dirty = R.filter(r => JSON.stringify([...m[r.id] ?? []].sort()) !== JSON.stringify([...(r[field] ?? [])].sort()));
-  const save = async () => {
-    setBusy(true);
-    try {
-      await inst.batch(ctx.profile!.institution.institution_id, dirty.map(r => ({
-        op: "update", section: rows, id: r.id, if_version: r.version, data: { [field]: C.map(c => c.id).filter(id => m[r.id].has(id)) } })));
-      toast(`Saved ${plural(dirty.length, "change")}.`); reload();
-    } catch (e) { toast(e instanceof ApiError ? e.full : String(e)); }
-    finally { setBusy(false); }
-  };
-  const place = (c: string) => ctx.profile?.place_names?.[c] ?? c;
-  const rowLabel = (r: Item) => rows === "flows" ? `${cw(FLOW_WORDS[r.kind] ?? r.kind)}${r.goods ? ` (${r.goods})` : ""}: ${place(r.counterpart)}` : r[LABELS[rows].nameKey];
   const grid = (
     <table className={rd ? "rd-table ins-linkgrid" : "tbl"}>
-      <thead><tr><th><span className="sr">{LABELS[rows].many} and {LABELS[cols].many}</span></th>{C.map(c => <th key={c.id} style={{ textAlign: "center", whiteSpace: "normal", minWidth: 90 }}>{c[LABELS[cols].nameKey]}</th>)}</tr></thead>
+      <thead><tr><th><span className="sr">{LABELS[rows].many} and {LABELS[cols].many}</span></th>{C.map(c => <th key={c.id} style={{ textAlign: "center", whiteSpace: "normal", minWidth: 90 }}>{g.colLabel(c)}</th>)}</tr></thead>
       <tbody>{R.map(r => (
-        <tr key={r.id}><td className={rd ? "rd-strong" : "strong"}>{rowLabel(r)}</td>
+        <tr key={r.id}><td className={rd ? "rd-strong" : "strong"}>{g.rowLabel(r)}</td>
           {C.map(c => <td key={c.id} style={{ textAlign: "center" }}>
-            <input type="checkbox" aria-label={`${rowLabel(r)}: ${c[LABELS[cols].nameKey]}`} style={{ accentColor: "var(--accent)" }} checked={m[r.id]?.has(c.id) ?? false}
-              {...lockAttrs(locked)} onChange={e => locked ? undefined : setM(x => { const n = { ...x, [r.id]: new Set(x[r.id]) }; if (e.target.checked) n[r.id].add(c.id); else n[r.id].delete(c.id); return n; })} /></td>)}
+            <input type="checkbox" aria-label={`${g.rowLabel(r)}: ${g.colLabel(c)}`} style={{ accentColor: "var(--accent)" }} checked={m[r.id]?.has(c.id) ?? false}
+              {...lockAttrs(locked)} onChange={e => locked ? undefined : g.toggle(r.id, c.id, e.target.checked)} /></td>)}
         </tr>))}</tbody>
     </table>);
   if (rd) return (
     <Fold title={title} summary={dirty.length ? `${plural(dirty.length, "change")} not saved yet` : summary} remember={`inst-grid-${rows}`}>
       <div className="ins-grid">
         <div className="ins-grid-bar">{dirty.length > 0 ? <>
-          <TextButton onClick={() => setM(start())}>Undo</TextButton>
-          <LockBtn className="btn btn--primary" disabled={busy} onClick={save}>Save {plural(dirty.length, "change")}</LockBtn></>
+          <TextButton onClick={g.reset}>Undo</TextButton>
+          <LockBtn className="btn btn--primary" disabled={busy} onClick={g.save}>Save {plural(dirty.length, "change")}</LockBtn></>
           : <span className="rd-fine">Tick the customer groups each row is for. Nothing is saved until you press Save.</span>}</div>
         <div className="ins-grid-wrap">{grid}</div>
       </div>
@@ -491,8 +373,8 @@ export function LinkGrid({ ctx, rows, cols, field, reload, title, rd, summary }:
   return (
     <div className="card">
       <div className="hd"><h2>{title}</h2><span className="spacer" />
-        {dirty.length > 0 && <><button className="btn btn--sm" type="button" onClick={() => setM(start())}>Undo</button>
-          <LockBtn className="btn btn--sm btn--primary" disabled={busy} onClick={save}>Save {plural(dirty.length, "change")}</LockBtn></>}</div>
+        {dirty.length > 0 && <><button className="btn btn--sm" type="button" onClick={g.reset}>Undo</button>
+          <LockBtn className="btn btn--sm btn--primary" disabled={busy} onClick={g.save}>Save {plural(dirty.length, "change")}</LockBtn></>}</div>
       <div className="tblwrap">{grid}</div>
     </div>
   );

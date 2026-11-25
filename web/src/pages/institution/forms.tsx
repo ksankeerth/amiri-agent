@@ -6,7 +6,7 @@ import { inst, type InstitutionType, type Item, type Profile, type SectionName }
 import { ref, type Category } from "../../api/reference";
 import { FillFromJson } from "../../components/FillFromJson";
 import { Icon } from "../../components/Icon";
-import { askSetupAgent } from "../../components/SetupChat";
+import { askSetupAgent } from "../../components/useSetupChat";
 import { draftFrom, institutionsOf, itemsOf } from "../../components/fillJson";
 import { Modal, useToast } from "../../components/ui";
 import {
@@ -14,10 +14,13 @@ import {
   PlaceField, PlacesField, RefsField, SpecField, TimeZoneInput, Toggles, useFieldLabel, useLoad, useRoutes,
 } from "./fields";
 import { FLOW_WORDS } from "../../components/setupFlow";
+import { AREA_WORDS } from "./fieldWords";
+
+export { AREA_WORDS };
 import { cap } from "../../plain";
 
-type Draft = Record<string, any>;
-type Errors = Record<string, string>;
+export type Draft = Record<string, any>;
+export type Errors = Record<string, string>;
 export interface Ctx { profile: Profile | null; type: InstitutionType }
 
 /** Errors for fields the form doesn't show (the server names them, no input has a place for them): said at the bottom. */
@@ -65,12 +68,11 @@ const RIVAL_TYPES = ["bank", "insurer", "takaful", "wallet", "fintech", "microfi
 const CP_KINDS = ["correspondent_bank", "reinsurer", "payment_scheme", "clearing_house", "technology_provider", "distribution_partner", "outsourcer", "other"];
 const RISK_KINDS = ["conflict", "climate", "economic", "regulatory", "market", "health", "technology", "other"];
 const AREAS = ["banking", "insurance", "securities", "aml", "data_protection", "sanctions", "conduct", "standards", "other"];
-export const AREA_WORDS: Record<string, string> = { aml: "Anti-money-laundering", data_protection: "Data protection", banking: "Banking", insurance: "Insurance", securities: "Securities", sanctions: "Sanctions", conduct: "Conduct", standards: "Global standards", other: "Other" };
 const RELATION_WORDS: Record<string, string> = { home: "home: your home country", host: "host: a country you operate in", reach: "reach: through a currency or market", standard: "standard: a global standard" };
 
 // ---------------------------------------------------------------- per-section form bodies
 
-type Body = (p: { d: Draft; set: (k: string, v: any) => void; err: Errors; ctx: Ctx; editing: Item | null }) => ReactNode;
+export type Body = (p: { d: Draft; set: (k: string, v: any) => void; err: Errors; ctx: Ctx; editing: Item | null }) => ReactNode;
 
 const names = (ctx: Ctx) => ctx.profile?.place_names ?? {};
 /** A heading that groups the fields under it, across both columns. */
@@ -118,7 +120,7 @@ function RivalCategories({ value, onChange }: { value: string[]; onChange: (v: s
   return <Toggles options={(tax ?? []).map(c => [c.id, c.name] as [string, string])} value={value} onChange={onChange} />;
 }
 
-const BODIES: Record<SectionName, Body> = {
+export const BODIES: Record<SectionName, Body> = {
   footprint: ({ d, set, err, ctx, editing }) => (<>
     <Field req label="Place (country or region)" error={err.code} full hint={editing ? "To move it, delete this entry and add the new place." : "Countries, states, provinces, districts (ISO 3166)."}>
       {editing ? <span className="chip sel">{names(ctx)[d.code] ?? d.code} <span className="mono">{d.code}</span></span>
@@ -238,7 +240,7 @@ const BODIES: Record<SectionName, Body> = {
   </>),
 };
 
-const DEFAULTS: Record<SectionName, (ctx: Ctx) => Draft> = {
+export const DEFAULTS: Record<SectionName, (ctx: Ctx) => Draft> = {
   footprint: () => ({ code: null, role: "branches", scope: "all", branch_count: null, note: null }),
   "watch-places": () => ({ name: "", code: null, kind: "country", reason: null }),
   segments: () => ({ label: "", kind: "individual", places: [], income_sources: [], spec_mapping: [], note: null }),
@@ -250,8 +252,8 @@ const DEFAULTS: Record<SectionName, (ctx: Ctx) => Draft> = {
   "risk-exposures": () => ({ title: "", kind: "climate", places: [], months: [], status: "active", source: "user", touches: { segments: [], products: [], flows: [], routes: [], watch_places: [] } }),
 };
 
-const META = new Set(["id", "version", "created_at", "updated_at", "updated_by", "used_by", "warnings"]);
-const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+export const META = new Set(["id", "version", "created_at", "updated_at", "updated_by", "used_by", "warnings"]);
+export const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
 /** Add or edit one item of a section. */
 export function ItemModal({ section, ctx, editing, initial, onClose, onSaved, onDelete }: {
@@ -316,7 +318,7 @@ export function ItemModal({ section, ctx, editing, initial, onClose, onSaved, on
 
 // ---------------------------------------------------------------- the institution itself
 
-const SUBTYPES: Record<InstitutionType, string[]> = {
+export const SUBTYPES: Record<InstitutionType, string[]> = {
   bank: ["commercial", "savings", "cooperative", "development", "islamic", "microfinance", "finance_company", "digital", "rural"],
   insurer: ["life", "general", "composite", "health", "takaful", "reinsurer", "micro"],
 };
