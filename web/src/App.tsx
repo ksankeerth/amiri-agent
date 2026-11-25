@@ -5,7 +5,7 @@ import { PageTitle } from "./components/rd";
 import { PageSkeleton } from "./components/ui";
 import { api } from "./api/client";
 import { setZone } from "./format";
-import "./styles/shell.css";  // only .btn--lg is still used (Login, Studio); the shell itself is styles/v2/shell.css
+import "./styles/shell.css";  // only .btn--lg is still used (Login); the shell itself is styles/v2/shell.css
 import { Shell } from "./components/v2/Shell";
 import { BUILT, NAV } from "./components/v2/nav";
 import { InstitutionPage, NewInstitutionPage } from "./pages/institution/InstitutionPage";
@@ -14,7 +14,7 @@ import { EventDetailPage } from "./pages/events/EventDetail";
 import { EventsPage } from "./pages/events/Events";
 import { MonitorPage } from "./pages/monitors/MonitorPage";
 import { MonitorsPage } from "./pages/monitors/Monitors";
-import { ScenarioPage, StudioPage } from "./pages/studio/Studio";
+import { StudioPage } from "./pages/studio/Studio";
 import { StudioRunPage } from "./pages/studio/StudioRun";
 import { SeriesDetail } from "./pages/SeriesDetail";
 import { SeriesList } from "./pages/SeriesList";
@@ -125,9 +125,8 @@ function Frame({ inst }: { inst: Installation }) {
         <Route path="/events/:id" element={<NeedsInstitution title="Events" what="Events"><EventDetailPage /></NeedsInstitution>} />
         <Route path="/monitors" element={<NeedsInstitution title="Monitors" what="Monitors"><MonitorsPage /></NeedsInstitution>} />
         <Route path="/monitors/:id" element={<NeedsInstitution title="Monitors" what="Monitors"><MonitorPage /></NeedsInstitution>} />
-        <Route path="/studio" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><StudioPage /></NeedsInstitution>} />
+        <Route path="/studio/:id?" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><StudioPage /></NeedsInstitution>} />
         <Route path="/studio/run/:id" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><StudioRunPage /></NeedsInstitution>} />
-        <Route path="/studio/:id" element={<NeedsInstitution title="Scenario Studio" what="Scenarios"><ScenarioPage /></NeedsInstitution>} />
         <Route path="/series" element={<SeriesList />} />
         <Route path="/series/:id" element={<SeriesDetail />} />
         <Route path="/institution" element={<InstitutionPage />} />

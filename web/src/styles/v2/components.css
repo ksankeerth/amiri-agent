@@ -248,3 +248,31 @@
 
 /* inline icons in a cell (the Icon component has no size of its own) */
 .v2-cell svg:not(.v2-spark):not(.v2-dir) { width: 14px; height: 14px; flex: none; vertical-align: -2px; margin-right: var(--v2-sp-4); }
+
+/* ---------- dialog (board 15 B: "Start a new run?") and the "⋯" menu (board 09) */
+.v2.v2-dlg-scrim {
+  position: fixed; inset: 0; z-index: 95; display: flex; justify-content: center; align-items: center;
+  padding: var(--v2-sp-16); overflow-y: auto; background: var(--v2-scrim);
+}
+.v2-dlg {
+  width: 460px; max-width: 100%; max-height: 100%; overflow-y: auto; padding: var(--v2-sp-24) 26px; display: flex; flex-direction: column; gap: var(--v2-sp-12);
+  background: var(--v2-surface); border: 1px solid var(--v2-line); border-radius: var(--v2-r-panel); box-shadow: var(--v2-shadow-pop);
+}
+.v2-dlg.is-wide { width: 560px; }
+.v2 .v2-dlg:focus-visible { outline: none; }
+.v2-dlg__t { font-size: 18px; font-weight: var(--v2-fw-semibold); }
+.v2-dlg__body { display: flex; flex-direction: column; gap: var(--v2-sp-12); font-size: var(--v2-fs-body); line-height: var(--v2-lh-copy); color: var(--v2-text-2); }
+.v2-dlg__foot { display: flex; flex-wrap: wrap; gap: var(--v2-sp-8); justify-content: flex-end; margin-top: var(--v2-sp-4); }
+
+.v2-more { position: relative; display: inline-block; }
+.v2-more__menu {
+  position: absolute; z-index: 20; top: calc(100% + 4px); right: 0; min-width: 160px; padding: var(--v2-sp-4); display: flex; flex-direction: column;
+  background: var(--v2-surface); border: 1px solid var(--v2-line); border-radius: var(--v2-r-ctl); box-shadow: var(--v2-shadow-pop);
+}
+.v2-more__item {
+  min-height: 36px; padding: 0 var(--v2-sp-12); border: 0; border-radius: var(--v2-r-nav); background: none; color: var(--v2-text);
+  font: var(--v2-fw-medium) var(--v2-fs-body)/1.2 var(--v2-font); text-align: left;
+}
+.v2 .v2-more__item:hover { background: var(--v2-hover); }
+.v2 .v2-more__item.is-danger { color: var(--v2-bad); }
+@media (max-width: 719.98px) { .v2-more__item { min-height: var(--v2-hit-phone); } }
