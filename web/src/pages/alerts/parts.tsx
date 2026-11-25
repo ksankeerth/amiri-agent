@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import type { AlertItem } from "../../api/alerts";
 import type { EventDetail } from "../../api/investigation";
 import { usePlaceNames } from "../../components/blocks";
+import { useDemoLock } from "../../components/lock";
 import { Button } from "../../components/v2/Button";
 import { Empty } from "../../components/v2/Empty";
 import { Pill } from "../../components/v2/Pill";
@@ -151,6 +152,7 @@ export interface ArticleProps {
 }
 export function Article({ a, ev, now, busy, note, onNote, onAct, titleOf = a => a.event_title }: ArticleProps) {
   const lv = levelPill(a.level);
+  const locked = useDemoLock();  // the demo lock keeps alerts as they were set up
   const name = usePlaceNames(a.places);
   const places = placesText(placeOrder(a.places).map(name), 2);
   const t0 = today(now);
@@ -171,10 +173,10 @@ export function Article({ a, ev, now, busy, note, onNote, onAct, titleOf = a => 
         <Pill>{statusWord(a.status)}</Pill>
         <span className="v2-al-art__raised">Raised {ago(a.created_at, now)} · for <b>{a.owner}</b></span>
         <div className="v2-al-art__acts">
-          {a.status !== "new" && <Button variant={a.status === "resolved" ? "primary" : "secondary"} disabled={busy} title={ACTION_MEANS.reopen} onClick={() => onAct("reopen")}>Reopen</Button>}
-          {a.status === "new" && <Button disabled={busy} title={ACTION_MEANS.resolve} onClick={() => onAct("resolve")}>Resolve</Button>}
-          {a.status === "acknowledged" && <Button variant="primary" disabled={busy} title={ACTION_MEANS.resolve} onClick={() => onAct("resolve")}>Resolve</Button>}
-          {a.status === "new" && <Button variant="primary" disabled={busy} title={ACTION_MEANS.ack} onClick={() => onAct("ack")}>Acknowledge</Button>}
+          {a.status !== "new" && <Button variant={a.status === "resolved" ? "primary" : "secondary"} locked={locked} disabled={busy} title={ACTION_MEANS.reopen} onClick={() => onAct("reopen")}>Reopen</Button>}
+          {a.status === "new" && <Button locked={locked} disabled={busy} title={ACTION_MEANS.resolve} onClick={() => onAct("resolve")}>Resolve</Button>}
+          {a.status === "acknowledged" && <Button variant="primary" locked={locked} disabled={busy} title={ACTION_MEANS.resolve} onClick={() => onAct("resolve")}>Resolve</Button>}
+          {a.status === "new" && <Button variant="primary" locked={locked} disabled={busy} title={ACTION_MEANS.ack} onClick={() => onAct("ack")}>Acknowledge</Button>}
         </div>
       </div>
 
@@ -206,7 +208,7 @@ export function Article({ a, ev, now, busy, note, onNote, onAct, titleOf = a => 
 
       {a.via_monitor && <p className="v2-meta v2-al-art__via">Sent to you because your team owns <Link to={`/monitors/${a.via_monitor}`}>the monitor</Link> that found it.</p>}
 
-      {a.status !== "resolved" && <NoteBox a={a} busy={busy} note={note} onNote={onNote} onAct={onAct} />}
+      {a.status !== "resolved" && !locked && <NoteBox a={a} busy={busy} note={note} onNote={onNote} onAct={onAct} />}
     </article>
   );
 }

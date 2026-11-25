@@ -260,7 +260,7 @@ export function MonitorPane({ id, status, profile, eventTitles, askEventTitles, 
 
   const actions = retired ? null : editMode ? null : (
     <>
-      <Button disabled={running || !connected} aria-describedby={!connected ? "mn-offline" : undefined} onClick={checkNow}
+      <Button locked={locked} disabled={running || !connected} aria-describedby={!connected ? "mn-offline" : undefined} onClick={checkNow}
         title={test ? "Test it now; what it finds is kept apart from your real findings" : undefined}>
         {running ? "Checking…" : test ? "Run a test" : "Run a check now"}</Button>
       {m.status === "paused" && <Button locked={locked} disabled={busy || !!full} onClick={() => act("resume")}>Resume</Button>}

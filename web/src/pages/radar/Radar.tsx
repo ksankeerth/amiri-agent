@@ -22,6 +22,7 @@ import { Button } from "../../components/v2/Button";
 import { Empty } from "../../components/v2/Empty";
 import { LoadError } from "../../components/v2/LoadError";
 import { useCrumbs, usePhone } from "../../components/v2/Shell";
+import { useDemoLock } from "../../components/lock";
 import { StaleBanner } from "../../components/v2/StaleBanner";
 import { TabPanel, Tabs } from "../../components/v2/Tabs";
 import { ago, plural, placeName as codeName } from "../../format";
@@ -65,6 +66,7 @@ export function RadarPage() {
   const [loadedAt, setLoadedAt] = useState<number | null>(null);
   const [reasons, setReasons] = useState<Record<string, string | null>>({});   // why each set-aside finding was set aside
   const [titles, setTitles] = useState<Record<string, string>>({});            // each event's name as the other pages show it
+  const locked = useDemoLock();  // Check now spends the day's budget: locked for a demo
   const [starting, setStarting] = useState(false);                             // Check now was pressed, the server hasn't answered
   const [runWait, setRunWait] = useState<{ id: string; since: string } | null>(null);  // this viewer's read, asked about every 3 s
   const [watching, setWatching] = useState<ReadonlySet<string>>(new Set());     // findings asked about every 3 s
@@ -306,7 +308,7 @@ export function RadarPage() {
             <div className="v2-rd-head__btns">
               <Button as="link" to="/institution/agents">What it watches{scopeText && <span className="v2-rd-btn__sub"> · {scopeText}</span>}</Button>
               {connected && (
-                <Button variant="primary" onClick={checkNow} disabled={!!why} aria-describedby={why && !running ? "rd-why" : undefined}>
+                <Button variant="primary" locked={locked} onClick={checkNow} disabled={!!why} aria-describedby={why && !running ? "rd-why" : undefined}>
                   <Icon name="refresh" className={starting || runWait ? "spin" : undefined} />
                   {starting || runWait ? "Checking…" : <>Check now <span className="v2-rd-btn__sub">{leftToday(left)}</span></>}
                 </Button>

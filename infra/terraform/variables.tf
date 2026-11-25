@@ -57,7 +57,7 @@ variable "prototype_reset" {
 }
 
 variable "demo_lock" {
-  description = "Lock editing, deleting and the reset in the app (for a live demo where many people click around). Alerts can still be acknowledged and Scenario Studio still runs."
+  description = "Lock editing, deleting and the reset in the app (for a live demo where many people click around). Alerts and the checks that spend budget (Check now) are locked too; Scenario Studio and Investigate now still run."
   type        = bool
   default     = false
 }

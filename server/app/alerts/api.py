@@ -6,6 +6,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel, ConfigDict, Field
 
+from app import demo_lock
 from app.alerts.service import Alerts
 from app.institutions.api import Actor, who
 
@@ -41,14 +42,17 @@ async def alert(request: Request, alert_id: str):
 
 @router.post("/alerts/{alert_id}:ack", summary="Acknowledge: someone has looked at it (with an optional note)")
 async def ack(request: Request, alert_id: str, body: Note | None = None, actor: Actor = None):
+    demo_lock.guard()
     return await svc(request).act(alert_id, "ack", who(actor, None)[0], (body or Note()).note)
 
 
 @router.post("/alerts/{alert_id}:resolve", summary="Resolve: nothing more to do")
 async def resolve(request: Request, alert_id: str, body: Note | None = None, actor: Actor = None):
+    demo_lock.guard()
     return await svc(request).act(alert_id, "resolve", who(actor, None)[0], (body or Note()).note)
 
 
 @router.post("/alerts/{alert_id}:reopen", summary="Back to review")
 async def reopen(request: Request, alert_id: str, actor: Actor = None):
+    demo_lock.guard()
     return await svc(request).act(alert_id, "reopen", who(actor, None)[0], None)

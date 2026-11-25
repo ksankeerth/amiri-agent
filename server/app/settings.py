@@ -231,7 +231,7 @@ SETTINGS: dict[str, Setting] = {
         Setting("PROTOTYPE_RESET", "true", "Allow the prototype reset (wipes the institution and all Amiri Agent made for it; "
                 "keeps market prices and reference data). Switch off for a real deployment."),
         Setting("DEMO_LOCK", "false", "Lock editing, deleting and the reset in the app (for a live demo where many people "
-                "click around). Alerts can still be acknowledged and Scenario Studio still runs."),
+                "click around). Alert actions and Check now are locked too; Scenario Studio and Investigate now still run."),
         # The institution's data (imported as a JSON file, served in-process as the Metrics Spec reference API)
         Setting("DATA_IMPORT_MAX_MB", "25", "The largest data file an import takes, in MB (the sample bank's example is "
                 "about 15 MB; Cloud Run takes requests up to 32 MB)."),

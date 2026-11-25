@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Query, Request
 
+from app import demo_lock
 from app.institutions.api import Actor, who
 from app.radar.service import Radar
 
@@ -22,6 +23,7 @@ async def status(request: Request):
 
 @router.post("/radar:run", status_code=202, summary="Check now: a run at once (the daily byte cap applies)")
 async def run_now(request: Request, actor: Actor = None):
+    demo_lock.guard()  # each read spends the day's budget
     return await svc(request).run_now(who(actor, None)[0])
 
 

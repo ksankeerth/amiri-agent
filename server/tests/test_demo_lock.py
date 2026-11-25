@@ -1,6 +1,6 @@
 """The demo lock (DEMO_LOCK=true): every endpoint that edits, deletes or resets something someone set up answers
-403 demo_locked. What the demo itself needs (alerts, Scenario Studio runs, Check, Check now, asking the assistant)
-keeps working. With the lock off nothing changes."""
+403 demo_locked, and so do the alert actions and the checks that spend budget (a monitor's Check now, Radar's Run
+now). What the demo itself needs (Scenario Studio runs, the connection's Check, asking the assistant) keeps working. With the lock off nothing changes."""
 
 import pytest
 
@@ -97,11 +97,12 @@ async def test_the_demo_itself_keeps_working(client, env, sql, clock, agent, mon
     await investigate(client)
     alert = (await client.get("/api/v1/alerts")).json()["items"][0]["alert_id"]
     env.setenv("DEMO_LOCK", "true")
-    # alerts
+    # alerts stay as they were set up: acknowledge, resolve and reopen are locked
     a = f"/api/v1/alerts/{alert}"
-    assert (await client.post(f"{a}:ack", json={"note": "looking"}, headers=ME)).status_code == 200
-    assert (await client.post(f"{a}:resolve", headers=ME)).status_code == 200
-    assert (await client.post(f"{a}:reopen", headers=ME)).status_code == 200
+    assert refused(await client.post(f"{a}:ack", json={"note": "looking"}, headers=ME))
+    assert refused(await client.post(f"{a}:resolve", headers=ME))
+    assert refused(await client.post(f"{a}:reopen", headers=ME))
+    assert (await client.get(f"{a}")).json()["status"] == "new"
     # Scenario Studio: a new scenario and a run
     r = await client.post(f"{S}/scenarios", json={"template_id": "currency-depreciation", "intensity": "medium"},
                           headers=STUDIO_H)
@@ -111,9 +112,11 @@ async def test_the_demo_itself_keeps_working(client, env, sql, clock, agent, mon
     assert sim.status_code == 201, sim.text
     sim_id = sim.json()["sim_id"]
     assert (await client.post(f"{S}/simulations/{sim_id}:stop", headers=STUDIO_H)).status_code == 200
-    # Check now, Run now, the connection's Check
-    for url in (f"/api/v1/monitors/{m['monitor_id']}:run", "/api/v1/radar:run", "/api/v1/data-connection:check"):
-        assert (await client.post(url, headers=H)).status_code != 403, url  # a check may be busy (409), never locked
+    # Check now and Run now spend budget: locked. The connection's Check stays open.
+    for url in (f"/api/v1/monitors/{m['monitor_id']}:run", "/api/v1/radar:run"):
+        assert refused(await client.post(url, headers=H)), url
+    r = await client.post("/api/v1/data-connection:check", headers=H)
+    assert r.status_code != 403  # it may be busy (409), never locked
     # asking the setup assistant (a session)
     r = await client.post("/api/v1/assistant/sessions", json={"institution_id": "serendib-bank"}, headers=ME)
     assert r.status_code in (200, 201), r.text

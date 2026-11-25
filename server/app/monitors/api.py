@@ -124,6 +124,7 @@ async def retire(request: Request, monitor_id: str, actor: Actor = None):
 @router.post("/monitors/{monitor_id}:run", status_code=202,
              summary="Check now: a live monitor's live version, or a test of a draft whose findings go to the sandbox")
 async def run_now(request: Request, monitor_id: str, actor: Actor = None):
+    demo_lock.guard()  # each check spends search budget
     return await svc(request).run_now(monitor_id, who(actor, None)[0])
 
 
