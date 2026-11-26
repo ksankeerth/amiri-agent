@@ -8,10 +8,11 @@
 //   passive: status and stories every 60 s, and not while the tab is hidden.
 //   Check now: the run every 3 s while it is `running`, up to 2 min; then each sent story's finding every 3 s until it lands.
 //   Investigate anyway: that story's finding every 3 s until it lands, up to 2 min.
+import { Select } from "../../components/v2/Field";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useInstallation } from "../../App";
-import { ApiError } from "../../api/client";
+import { ApiError, peek, quietly } from "../../api/client";
 import { inst, type Profile } from "../../api/institutions";
 import { investigationApi } from "../../api/investigation";
 import { radarApi, scheduleText, type RadarRun, type RadarStatus, type RadarStory } from "../../api/radar";
@@ -20,6 +21,7 @@ import { useNow, useRefusalToast, useRole, useToast } from "../../components/ui"
 import { AgentState } from "../../components/v2/AgentState";
 import { Button } from "../../components/v2/Button";
 import { Empty } from "../../components/v2/Empty";
+import { ListPane, PaneBack, PaneView } from "../../components/v2/ListPane";
 import { LoadError } from "../../components/v2/LoadError";
 import { useCrumbs, usePhone } from "../../components/v2/Shell";
 import { useDemoLock } from "../../components/lock";
@@ -57,15 +59,17 @@ export function RadarPage() {
   const placeId = useId();
 
   const tab = parseTab(sp.get("tab")), place = sp.get("place") ?? "", storyId = sp.get("story");
-  const [status, setStatus] = useState<RadarStatus | null>(null);
-  const [items, setItems] = useState<RadarStory[] | null>(null);
-  const [runs, setRuns] = useState<RadarRun[] | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [scope, setScope] = useState<Scope | null>(null);
+  // seen before: the last answers show at once and are refreshed below (F4)
+  const [status, setStatus] = useState<RadarStatus | null>(() => peek(() => radarApi.status()) ?? null);
+  const [items, setItems] = useState<RadarStory[] | null>(() => peek(() => radarApi.stories()) ?? null);
+  const [runs, setRuns] = useState<RadarRun[] | null>(() => peek(() => radarApi.runs()) ?? null);
+  const [profile, setProfile] = useState<Profile | null>(() => (iid ? peek(() => inst.profile(iid)) ?? null : null));
+  const [scope, setScope] = useState<Scope | null>(() => (iid ? peek(() => inst.context(iid))?.radar_scope ?? null : null));
   const [err, setErr] = useState<unknown>(null);
   const [loadedAt, setLoadedAt] = useState<number | null>(null);
   const [reasons, setReasons] = useState<Record<string, string | null>>({});   // why each set-aside finding was set aside
-  const [titles, setTitles] = useState<Record<string, string>>({});            // each event's name as the other pages show it
+  const [notes, setNotes] = useState<Record<string, string | null>>({});       // the investigation's own note on each (the reason a failed one gives)
+  const [titles, setTitles] = useState<Record<string, string>>(() => Object.fromEntries((peek(() => investigationApi.events(200)) ?? []).map(e => [e.event_id, eventTitle(e)])));  // each event's name as the other pages show it
   const locked = useDemoLock();  // Check now spends the day's budget: locked for a demo
   const [starting, setStarting] = useState(false);                             // Check now was pressed, the server hasn't answered
   const [runWait, setRunWait] = useState<{ id: string; since: string } | null>(null);  // this viewer's read, asked about every 3 s
@@ -111,15 +115,15 @@ export function RadarPage() {
       if (aside && aside !== known.current.aside) {  // a failed run and "no impact" share a status: the finding's reason tells them apart
         known.current.aside = aside;
         investigationApi.findings("?world=live&status=set_aside&limit=200")
-          .then(fs => alive.current && setReasons(Object.fromEntries(fs.map(f => [f.finding_id, f.outcome?.reason ?? null])))).catch(() => {});
+          .then(fs => { if (!alive.current) return; setReasons(Object.fromEntries(fs.map(f => [f.finding_id, f.outcome?.reason ?? null]))); setNotes(Object.fromEntries(fs.map(f => [f.finding_id, f.outcome?.note ?? null]))); }).catch(() => {});
       }
       return ss;
     } catch (e) { if (alive.current && mine === seq.current) setErr(e); return null; }
   }, []);
   useEffect(() => {
     load();
-    const t = setInterval(() => { if (!document.hidden) load(); }, REFRESH_MS);
-    const vis = () => { if (!document.hidden) load(); };  // back on the tab: catch up at once, not at the next minute
+    const t = setInterval(() => { if (!document.hidden) quietly(load); }, REFRESH_MS);
+    const vis = () => { if (!document.hidden) quietly(load); };  // back on the tab: catch up at once, not at the next minute
     document.addEventListener("visibilitychange", vis);
     return () => { clearInterval(t); document.removeEventListener("visibilitychange", vis); };
   }, [load]);
@@ -189,7 +193,7 @@ export function RadarPage() {
   const all = items ?? [];
   const names = useMemo(() => profile?.place_names ?? {}, [profile]);
   const nameOf = useCallback((code: string) => names[code] ?? codeName(code), [names]);
-  const w: Where = useMemo(() => ({ reasons, titles, watching }), [reasons, titles, watching]);
+  const w: Where = useMemo(() => ({ reasons, notes, titles, watching }), [reasons, notes, titles, watching]);
   const counts = useMemo(() => tabCounts(all, place), [all, place]);
   const rows = useMemo(() => listFor(all, tab, place), [all, tab, place]);
   const selected = pickStory(rows, storyId, phone);
@@ -261,7 +265,7 @@ export function RadarPage() {
   const resets = budgetResetsAt(now), zone = zoneName(status?.time_zone);
   const schedule = status ? scheduleText(status.every_minutes, status.run_at) : "";
   const why = status ? cantCheck({ connected, budgetSpent: status.budget_spent, running, left, limit: status.run_now.limit, budgetBack: resets, runAt: status.run_at }) : null;
-  const lede = status ? ledeText(status, schedule, iso => dayWord(iso, now), iso => nextWord(iso, now)) : "";
+  const lede = status ? ledeText(status, schedule, iso => dayWord(iso, now), iso => nextWord(iso, now), now) : "";
   const last = status?.last_run;
   const shownRun = funnelRun(last, runs);
   const stats = funnelOf(shownRun);
@@ -274,20 +278,20 @@ export function RadarPage() {
   const placeSelect = places.length > 1 && (
     <span className="v2-rd-sel">
       <label htmlFor={placeId}>Place</label>
-      <select id={placeId} className="v2-rd-select" value={place} onChange={e => setFilter({ place: e.target.value || null })}>
+      <Select inline id={placeId} value={place} onChange={e => setFilter({ place: e.target.value || null })}>
         <option value="">All places</option>
         {places.map(p => <option key={p} value={p}>{nameOf(p)}</option>)}
-      </select>
+      </Select>
     </span>
   );
 
   const list = (
-    <div className="v2-rd-col">
+    <>
       <h2 id="rd-list-h" tabIndex={-1} className="v2-sr">{TABS.find(t => t.id === tab)!.label} stories, sent first</h2>
       <StoryList rows={shown} all={all} selectedId={selected?.story_id ?? null} names={names} w={w} now={now} hrefFor={hrefFor} onOpen={open}
         more={hidden > 0 && <button type="button" className="v2-rd-more" aria-expanded="false" onClick={() => setExpanded(e => ({ ...e, [listKey]: true }))}><span aria-hidden="true">▸ </span>{moreWord(tab, hidden)}</button>} />
       {all.length >= 50 && <p className="v2-meta v2-rd-limit">Showing the newest 50 stories.</p>}
-    </div>
+    </>
   );
   const pane = selected && (
     <Story s={selected} all={all} names={names} w={w} now={now} admin={admin} busy={busyId === selected.story_id}
@@ -308,9 +312,9 @@ export function RadarPage() {
             <div className="v2-rd-head__btns">
               <Button as="link" to="/institution/agents">What it watches{scopeText && <span className="v2-rd-btn__sub"> · {scopeText}</span>}</Button>
               {connected && (
-                <Button variant="primary" locked={locked} onClick={checkNow} disabled={!!why} aria-describedby={why && !running ? "rd-why" : undefined}>
-                  <Icon name="refresh" className={starting || runWait ? "spin" : undefined} />
-                  {starting || runWait ? "Checking…" : <>Check now <span className="v2-rd-btn__sub">{leftToday(left)}</span></>}
+                <Button variant="primary" locked={locked} onClick={checkNow} disabled={!!why} busy={starting || !!runWait} busyLabel="Checking…" aria-describedby={why && !running ? "rd-why" : undefined}>
+                  <Icon name="refresh" />
+                  Check now <span className="v2-rd-btn__sub">{leftToday(left)}</span>
                 </Button>
               )}
             </div>
@@ -340,10 +344,7 @@ export function RadarPage() {
       {status === null && err == null && <RadarSkeleton phone={phone} />}
 
       {status && (reading && selected ? (
-        <div className="v2-rd-read">
-          <Link to="?" className="v2-rd-back" onClick={e => { e.preventDefault(); back(); }}><span aria-hidden="true">←</span>All stories</Link>
-          {pane}
-        </div>
+        <PaneView back={<PaneBack to="?" onClick={e => { e.preventDefault(); back(); }}>All stories</PaneBack>}>{pane}</PaneView>
       ) : (
         <Tabs label="Which stories" value={tab} onChange={id => setFilter({ tab: id === "all" ? null : id })} className="v2-rd-tabs"
           tabs={TABS.map(t => ({ id: t.id, label: t.label, count: items ? counts[t.id] : undefined, countLabel: t.countLabel }))}
@@ -354,10 +355,7 @@ export function RadarPage() {
                 ? <Empty title={empty.title} className="v2-rd-empty"
                     action={empty.clear ? <Button onClick={() => setFilter({ place: null })}>Show all places</Button>
                       : !all.length && !connected ? <Button as="link" to="/institution/agents">See what Radar will read</Button> : undefined}>{empty.text}</Empty>
-                : <div className="v2-rd-body">
-                  {list}
-                  {!phone && selected && <div className="v2-rd-pane">{pane}</div>}
-                </div>}
+                : <ListPane list={list} pane={!phone && pane} itemKey={selected?.story_id} />}
           </TabPanel>
         </Tabs>
       ))}

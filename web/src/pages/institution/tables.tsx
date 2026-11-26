@@ -1,12 +1,12 @@
 // One section of the profile as the board draws Products (board 08): a heading with its count and actions, then a table of the
 // items, one row each, with a pencil to edit. A long list shows its first six and "N more". Adding, editing, deleting, the
 // suggestions and the import are here; the dialogs are in edit.tsx.
+import { Checkbox } from "../../components/v2/Choice";
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../../api/client";
 import { showProposal } from "../../api/assistant";
 import { inst, type Item, type SectionName } from "../../api/institutions";
-import { lockAttrs } from "../../components/demoLock";
 import { useDemoLock } from "../../components/lock";
 import { useRefusalToast, useToast } from "../../components/ui";
 import { Button } from "../../components/v2/Button";
@@ -105,7 +105,7 @@ export function SectionBlock({ section, ctx, reload, suggest, note, extra, draft
             const r = rowText(section, it, items, rc);
             const f = flags(section, it);
             return (
-              <Row key={it.id} className="v2-in-row">
+              <Row key={it.id} id={`in-row-${it.id}`} className="v2-in-row">
                 <Cell className="v2-in-name">
                   <span className="v2-in-name__t">{r.name}<Via o={ctx.profile?.origins?.[section]?.[it.id]} /></span>
                   {f.length > 0 && <span className="v2-in-flags">{f.map((x, i) => <span key={i} className={x.warn ? "is-warn" : undefined}>{x.warn && <span aria-hidden="true">◆ </span>}{x.text}</span>)}</span>}
@@ -128,9 +128,9 @@ export function SectionBlock({ section, ctx, reload, suggest, note, extra, draft
         onDelete={editing !== "new" ? () => { setDeleting({ item: editing }); setEditing(null); } : undefined} />}
       {suggesting && <SuggestDialog section={section} ctx={ctx} onClose={() => setSuggesting(false)} onAdded={() => { setSuggesting(false); reload(); }} />}
       {deleting && (
-        <Dialog title={`Delete this ${L.one}?`} onClose={() => setDeleting(null)} footer={<>
+        <Dialog tone="danger" title={`Delete this ${L.one}?`} onClose={() => setDeleting(null)} actions={<>
           <Button onClick={() => setDeleting(null)}>Cancel</Button>
-          <Button className="v2-btn--danger" locked={locked} onClick={() => del(!!deleting.referrers)}>{deleting.referrers ? "Delete and remove those links" : "Delete"}</Button></>}>
+          <Button variant="primary" locked={locked} onClick={() => del(!!deleting.referrers)}>{deleting.referrers ? "Delete and remove those links" : "Delete"}</Button></>}>
           <p className="v2-in-dlgtext"><b>{nameOf(deleting.item)}</b></p>
           {deleting.referrers && <p className="v2-in-dlgtext">Other items point at it: {deleting.referrers.map(r => `${LABELS[r.section as SectionName]?.one ?? r.section} “${byId(ctx, r.section as SectionName, r.id, LABELS[r.section as SectionName]?.nameKey ?? "id")}”`).join("; ")}.
             Deleting it also removes it from them (each change is kept in the history).</p>}
@@ -149,9 +149,9 @@ export function LinkGrid({ ctx, rows, cols, field, reload, title, summary }: {
   const g = useLinkGrid(ctx, rows, cols, field, reload);
   const { R, C, m, busy, dirty } = g;
   if (!R.length || !C.length || ctx.profile?.institution.status === "archived") return null;
-  const box = (r: Item, c: Item) => (
-    <input type="checkbox" aria-label={phone ? undefined : `${g.rowLabel(r)}: ${g.colLabel(c)}`} checked={m[r.id]?.has(c.id) ?? false}
-      {...lockAttrs(locked)} onChange={e => (locked ? undefined : g.toggle(r.id, c.id, e.target.checked))} />);
+  const box = (r: Item, c: Item, named = false) => (
+    <Checkbox aria-label={named ? undefined : `${g.rowLabel(r)}: ${g.colLabel(c)}`} label={named ? g.colLabel(c) : undefined} checked={m[r.id]?.has(c.id) ?? false}
+      locked={locked} onChange={e => g.toggle(r.id, c.id, e.target.checked)} />);
   return (
     <details className="v2-in-fold">
       <summary><span className="v2-in-fold__t">{title}</span><span className="v2-in-fold__m">{dirty.length ? `${plural(dirty.length, "change")} not saved yet` : summary}</span></summary>
@@ -165,7 +165,7 @@ export function LinkGrid({ ctx, rows, cols, field, reload, title, summary }: {
         {phone ? (
           <div className="v2-in-grid__stack">{R.map(r => (
             <fieldset key={r.id} className="v2-in-grid__set"><legend>{g.rowLabel(r)}</legend>
-              {C.map(c => <label key={c.id} className="v2-in-grid__opt">{box(r, c)}<span>{g.colLabel(c)}</span></label>)}</fieldset>))}</div>
+              {C.map(c => <div key={c.id}>{box(r, c, true)}</div>)}</fieldset>))}</div>
         ) : (
           <div className="v2-in-grid__wrap" role="region" aria-label={`${title}: a grid of ticks`} tabIndex={0}>
             <table className="v2-in-grid__t">

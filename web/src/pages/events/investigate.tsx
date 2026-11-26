@@ -1,6 +1,7 @@
 // What the Events page shares with Findings and a market series: the investigation's status, the "Investigate now" button
 // (it waits for the answer, see poll.ts), and a theme tag in words.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { peek } from "../../api/client";
 import { investigationApi, type InvestigationStatus, type Theme } from "../../api/investigation";
 import { Icon } from "../../components/Icon";
 import { useRefusalToast, useToast } from "../../components/ui";
@@ -13,7 +14,7 @@ import { finishedText, pollRun } from "./poll";
 export const themeText = (t: Theme) => themeLabel(t);
 
 export function useInvestigationStatus() {
-  const [status, setStatus] = useState<InvestigationStatus | null>(null);
+  const [status, setStatus] = useState<InvestigationStatus | null>(() => peek(() => investigationApi.status()) ?? null);
   const reload = useCallback(() => { investigationApi.status().then(setStatus).catch(() => {}); }, []);
   useEffect(() => { reload(); }, [reload]);
   return { status, reload };
@@ -56,8 +57,8 @@ export function InvestigateNowButton({ ids, onDone, small }: { ids?: string[]; o
     finally { if (alive.current) setBusy(false); }
   };
   return (
-    <Button size={small ? "sm" : "md"} onClick={go} disabled={busy} title="Skips the wait for the next batch">
-      <Icon name={busy ? "refresh" : "play"} className={busy ? "spin" : undefined} />{busy ? "Working on it…" : "Investigate now"}
+    <Button size={small ? "sm" : "md"} onClick={go} disabled={busy} busy={busy} busyLabel="Working on it…" title="Skips the wait for the next batch">
+      <Icon name="play" />Investigate now
     </Button>
   );
 }

@@ -2,7 +2,7 @@
 // source filter count, how the groups are made and ordered, the words on a row and under a group. No React and no
 // imports of app code beyond plain.ts, so `npm test` runs it.
 import type { FindingRow } from "../../api/investigation";
-import { setAsideReason } from "../../plain.ts";
+import { notInvestigatedWhy, setAsideReason } from "../../plain.ts";
 
 // ---------------------------------------------------------------- what kind of finding
 /** What became of a finding, in the page's words: waiting, being investigated, in an event, no impact found, or the
@@ -123,6 +123,12 @@ export function noImpactWhy(f: Pick<FindingRow, "outcome">): string {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
+/** Why a finding couldn't be investigated, as a sentence for the row: "The investigation agent didn't answer" (never the server's raw note). */
+export function notInvestigatedLine(f: Pick<FindingRow, "outcome">): string {
+  const t = notInvestigatedWhy(f.outcome?.note);
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 /** A finding that was tried and went back to waiting (or is running again): how many tries so far; null when it is the first. */
 export function triesOf(f: Pick<FindingRow, "status" | "outcome">): number | null {
   const n = f.outcome?.attempts;
@@ -133,7 +139,7 @@ export const retryWord = (n: number) => `Retried ${n}×`;
 /** The line under a group's title, in words. */
 export function groupMeta(g: Group, o: { waitMinutes: number | null; shown: number }): string {
   const folded = g.items.length > o.shown ? `showing ${o.shown}` : "";
-  const lead = g.kind === "waiting" ? (o.waitMinutes ? `Amiri Agent investigates every ${o.waitMinutes} minutes` : "")
+  const lead = g.kind === "waiting" ? (o.waitMinutes ? `AMIRI Agent investigates every ${o.waitMinutes} minutes` : "")
     : g.kind === "failed" ? "These won't be tried again"
     : g.kind === "investigating" ? "The result arrives on its own"
     : "";

@@ -1,15 +1,15 @@
 // One event as a chain (board 02): the news, the event, and what it traced to your products with what your data says,
-// then Amiri Agent's assessment, the alerts raised and when you'll know. GET /events/:id (with the alerts for the event);
+// then AMIRI Agent's assessment, the alerts raised and when you'll know. GET /events/:id (with the alerts for the event);
 // the page refreshes itself every minute (not while the tab is hidden). Opening an impact shows it as expected (the
 // AI's assessment) against your data (counted by code). The states: nothing exposed, closed, stopped early, running.
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { alertsApi, type AlertItem } from "../../api/alerts";
-import { ApiError } from "../../api/client";
+import { ApiError, peek } from "../../api/client";
 import { investigationApi, type EventDetail, type Hypothesis } from "../../api/investigation";
 import { useRefusalToast, useToast, useNow } from "../../components/ui";
 import { LoadError } from "../../components/v2/LoadError";
-import { Skeleton } from "../../components/v2/Skeleton";
+import { SkBar, Skeleton } from "../../components/v2/Skeleton";
 import { useCrumbs, type Crumb } from "../../components/v2/Shell";
 import { StaleBanner } from "../../components/v2/StaleBanner";
 import { earliest, eventTitle, metricWords, splitCheckText } from "../../plain";
@@ -17,19 +17,33 @@ import { plural } from "../../format";
 import { adverseFor, toneFrom } from "./eventWords";
 import { Assessment, Chain, EventHead, ImpactPanel, NotFound, RunBanner, SideColumn, TechnicalDetails, type EventModel, type Task } from "./parts";
 import { usePolling } from "../../components/usePolling";
+import { useEnterFade } from "../../components/v2/useItemFade";
 import "../../styles/v2/event.css";
 
 const REFRESH_MS = 60_000;
 const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ block: "start" });
 
+/** One event. Another event (same page, F4b) is drawn fresh, so it never shows the last one's words for a moment, and its column fades in. */
 export function EventDetailPage() {
   const { id = "" } = useParams();
+  const last = useRef<string | null>(null);
+  const enter = last.current !== null && last.current !== id;
+  useEffect(() => { last.current = id; });
+  return <EventDetailView key={id} id={id} enter={enter} />;
+}
+
+function EventDetailView({ id, enter }: { id: string; enter: boolean }) {
+  const root = useRef<HTMLDivElement>(null);
+  useEnterFade(root, enter);
   const loc = useLocation();
   const now = useNow(30_000);
-  const [e, setE] = useState<EventDetail | null>(null);
+  const [e, setE] = useState<EventDetail | null>(() => peek(() => investigationApi.event(id)) ?? null);  // seen before: shown at once, refreshed below
   const [err, setErr] = useState<unknown>(null);
   const [loadedAt, setLoadedAt] = useState<number | null>(null);
-  const [alerts, setAlerts] = useState<AlertItem[]>([]);
+  const [alerts, setAlerts] = useState<AlertItem[]>(() => peek(() => alertsApi.list({ event_id: id })) ?? []);
+  // Which side an effect falls on ("Bad for you") comes from the alerts. Until they have answered the page waits, rather than draw a
+  // "Neutral" that turns into "Bad for you" a moment later (F4b: that is text blinking).
+  const [alertsReady, setAlertsReady] = useState(() => peek(() => alertsApi.list({ event_id: id })) !== undefined);
   const [open, setOpen] = useState<string | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [asideOpen, setAsideOpen] = useState(false);
@@ -40,10 +54,9 @@ export function EventDetailPage() {
     try {
       const x = await investigationApi.event(id);
       setE(x); setErr(null); setLoadedAt(Date.now());
-      alertsApi.list({ event_id: id }).then(setAlerts).catch(() => { /* the chain still reads without them */ });
+      alertsApi.list({ event_id: id }).then(a => { setAlerts(a); setAlertsReady(true); }).catch(() => { setAlertsReady(true); /* the chain still reads without them */ });
     } catch (x) { setErr(x); }
   }, [id]);
-  useEffect(() => { setE(null); setErr(null); setLoadedAt(null); setAlerts([]); setOpen(null); setReportOpen(false); setAsideOpen(false); }, [id]);
   useEffect(() => { load(); }, [load]);
   usePolling(load, REFRESH_MS);  // passive: every minute, not while hidden (even while a run is going)
 
@@ -77,23 +90,23 @@ export function EventDetailPage() {
     finally { setBusy(false); }
   };
 
-  if (!e) {
-    if (err instanceof ApiError && err.status === 404) return <NotFound />;
-    return err != null
-      ? <div className="v2-ev"><h1 className="v2-sr">Event</h1><LoadError what="this event" error={err} onRetry={load} /></div>
-      : <div className="v2-ev">
+  if (!e || (!alertsReady && err == null)) {
+    if (!e && err instanceof ApiError && err.status === 404) return <NotFound />;
+    return err != null && !e
+      ? <div ref={root} className="v2-ev"><h1 className="v2-sr">Event</h1><LoadError what="this event" error={err} onRetry={load} /></div>
+      : <div ref={root} className="v2-ev">
         <h1 className="v2-sr">Event</h1>
         <div className="v2-ev-skhead" aria-hidden="true">
-          <span className="v2-ev-sk" style={{ width: 200, height: 24 }} />
-          <span className="v2-ev-sk" style={{ width: "min(460px, 100%)", height: 46 }} />
-          <span className="v2-ev-sk" style={{ width: "min(640px, 100%)", height: 32 }} />
+          <SkBar w={200} h={24} />
+          <SkBar w="min(460px, 100%)" h={46} />
+          <SkBar w="min(640px, 100%)" h={32} />
         </div>
         <Skeleton rows={5} label="Loading the event" />
       </div>;
   }
   const m = modelOf(e, alerts, title!);
   return (
-    <div className="v2-ev">
+    <div ref={root} className="v2-ev">
       {err != null && loadedAt != null && <StaleBanner loadedAt={loadedAt} now={now.getTime()} onRetry={load} />}
       <EventHead m={m} />
       <RunBanner status={e.run.status} busy={busy} onAgain={again} />

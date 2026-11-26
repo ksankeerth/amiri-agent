@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Amiri Agent</title>
+<title>AMIRI Agent</title>
+<script>/* dark unless this browser chose light (the theme button); set before anything draws, so nothing flashes */
+try { document.documentElement.dataset.theme = localStorage.getItem("amiri.theme") || "dark"; } catch (e) { document.documentElement.dataset.theme = "dark"; }</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230F3D2E'/%3E%3Cpath d='M9.2 25 15 7h2l5.8 18h-3.1L16 13.1 12.3 25z' fill='%23F1F5EC'/%3E%3Crect x='14.2' y='16' width='3.6' height='5.2' fill='%23F05A28'/%3E%3C/svg%3E">
 </head>
 <body>

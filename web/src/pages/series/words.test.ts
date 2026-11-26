@@ -2,8 +2,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  asRefusal, barFill, ledeParts, listNotice, matchesQuery, moveLine, oneDayZ, placesLine, refusalTitle, rowState, seriesNotes, seriesNotice, seriesType,
-  shortMeaning, sortSeries, tabCounts, tabOf, takeaway, trackPos, typeOptions, windowWord,
+  asRefusal, friendlySeriesText, barFill, ledeParts, listNotice, matchesQuery, moveLine, oneDayZ, placesLine, refusalTitle, rowState, seriesNotes, seriesNotice, seriesType,
+  shortMeaning, seriesName, sortSeries, tabCounts, tabOf, takeaway, trackPos, typeOptions, windowWord,
 } from "./words.ts";
 
 test("the day's z is the one-day window's, not the largest", () => {
@@ -27,9 +27,9 @@ test("what a move means, short", () => {
 
 test("the list says 'not updated' once", () => {
   const o = { total: 4, stale: 4, oldestDay: "10 Nov", configured: false, admin: false };
-  assert.equal(listNotice(o), "Prices haven't updated since 10 Nov. Your Platform Admin has been told.");
-  assert.equal(listNotice({ ...o, stale: 1 }), "1 of 4 prices haven't updated; the oldest since 10 Nov. Your Platform Admin has been told.");
-  assert.match(listNotice({ ...o, admin: true })!, /^Prices haven't updated since 10 Nov\. Twelve Data isn't configured/);
+  assert.equal(listNotice(o), "No new prices since 10 Nov. Your Platform Admin has been told.");
+  assert.equal(listNotice({ ...o, stale: 1 }), "1 of 4 prices have no new price; the oldest since 10 Nov. Your Platform Admin has been told.");
+  assert.match(listNotice({ ...o, admin: true })!, /^No new prices since 10 Nov\. Twelve Data isn't configured/);
   assert.equal(listNotice({ ...o, stale: 0, configured: true }), null);
   assert.equal(listNotice({ ...o, stale: 0 }), "Prices can't be updated right now. Your Platform Admin has been told.");
 });
@@ -91,16 +91,16 @@ test("the bar: the flag line is at three quarters, and a big move fills it", () 
 
 test("the state column", () => {
   assert.deepEqual(rowState(row("a", "moved", 4), null), { label: "Unusual", tone: "unusual", mark: "◆" });
-  assert.equal(rowState(row("a", "stale", null), "09:00").label, "Late · since 09:00");
-  assert.equal(rowState(row("a", "stale", null), null).label, "Late");
-  assert.equal(rowState(row("a", "stale", null), "10 Nov 03:00").label, "Late · 10 Nov");
+  assert.deepEqual(rowState(row("a", "stale", null), "09:00"), { label: "Waiting for prices", tone: "neutral", detail: "No new price since 09:00" });
+  assert.equal(rowState(row("a", "stale", null), null).detail, "No new price lately");
+  assert.equal(rowState(row("a", "stale", null), "20 Nov 15:30").detail, "No new price since 20 Nov 15:30");
   assert.equal(rowState(row("a", "normal", 1), null).tone, null);
   assert.equal(rowState(row("a", "normal", 1, { fetch: { last_status: "error" } }), null).label, "Update failed");
 });
 
 test("the heading's line", () => {
   const o = { unusual: 3, late: 1, total: 22, max: 30, everyMinutes: 60, lastRun: "11:00", threshold: 3 };
-  assert.deepEqual(ledeParts(o), { strong: "3 unusual", rest: "1 late · 22 of 30 series · checked every hour, last 11:00 · a move over 3× a usual day becomes a finding" });
+  assert.deepEqual(ledeParts(o), { strong: "3 unusual", rest: "1 waiting for prices · 22 of 30 slots used · checked every hour, last 11:00 · a move over 3× a usual day becomes a finding" });
   assert.equal(ledeParts({ ...o, unusual: 0, late: 0, total: 0 }).rest.slice(0, 13), "no series yet");
   assert.deepEqual(ledeParts({ ...o, unusual: 0, late: 0, max: null, everyMinutes: null }), { strong: null, rest: "22 series · a move over 3× a usual day becomes a finding" });
 });
@@ -131,4 +131,16 @@ test("the chart's takeaway and the small words", () => {
   assert.equal(placesLine(["a", "b", "c", "d", "e"]), "a, b, c +2");
   assert.equal(windowWord(1), "1 day");
   assert.equal(windowWord(3), "3 days");
+});
+
+test("a provider's name reads as a fund; the symbol is shown apart", () => {
+  assert.equal(seriesName("SHY (iShares 1-3 Year Treasury Bond ETF)"), "1-3 Year Treasury fund");
+  assert.equal(seriesName("QQQ (Invesco QQQ Trust)"), "QQQ (Invesco QQQ Trust)");
+  assert.equal(seriesName("Natural gas fund (drives Texas power prices)"), "Natural gas fund (drives Texas power prices)");
+  assert.equal(seriesName("XAU/USD"), "XAU/USD");
+});
+
+test("provider names inside a sentence become friendly; other brackets stay", () => {
+  assert.equal(friendlySeriesText("Natural gas fund (drives Texas power prices), SHY (iShares 1-3 Year Treasury Bond ETF)"),
+    "Natural gas fund (drives Texas power prices), 1-3 Year Treasury fund");
 });

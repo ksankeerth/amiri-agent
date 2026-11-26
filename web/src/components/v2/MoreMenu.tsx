@@ -1,8 +1,10 @@
 // The "⋯" button and its small menu (board 09: "More: rename or delete"). The button names what it is for (A11); the menu
 // opens under it, Up/Down move between items, Esc closes and returns focus to the button, a click elsewhere closes it.
 // Items are buttons; a locked one (demo lock) stays focusable, greyed, with the reason as its tooltip.
+// Motion (F3): the menu fades in and scales .98 to 1 from its corner (160 ms) and fades out (120 ms) before it leaves the page.
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { guarded, lockAttrs } from "../demoLock";
+import { usePresence } from "./useMotion";
 
 export interface MoreItem { label: string; onSelect: () => void; locked?: boolean; danger?: boolean }
 
@@ -11,6 +13,7 @@ export function MoreMenu({ label, items, className }: { label: string; items: Mo
   const root = useRef<HTMLSpanElement>(null);
   const btn = useRef<HTMLButtonElement>(null);
   const id = useId();
+  const { mounted, leaving } = usePresence(open);
   useEffect(() => {
     if (!open) return;
     const away = (e: Event) => { if (!root.current?.contains(e.target as Node)) setOpen(false); };
@@ -34,8 +37,8 @@ export function MoreMenu({ label, items, className }: { label: string; items: Mo
     <span className={`v2-more${className ? ` ${className}` : ""}`} ref={root} onKeyDown={onKey}>
       <button ref={btn} type="button" className="v2-btn v2-btn--secondary v2-btn--icon v2-btn--sm" aria-label={label} aria-haspopup="menu" aria-expanded={open}
         aria-controls={open ? id : undefined} onClick={() => setOpen(o => !o)}><span aria-hidden="true">⋯</span></button>
-      {open && (
-        <div id={id} className="v2-more__menu" role="menu" aria-label={label}>
+      {mounted && (
+        <div id={id} className={`v2-more__menu${leaving ? " is-leaving" : ""}`} role="menu" aria-label={label} aria-hidden={leaving || undefined} inert={leaving || undefined}>
           {items.map(it => (
             <button key={it.label} type="button" role="menuitem" className={`v2-more__item${it.danger ? " is-danger" : ""}`} {...lockAttrs(!!it.locked)}
               onClick={guarded(!!it.locked, () => { setOpen(false); btn.current?.focus(); it.onSelect(); })}>{it.label}</button>

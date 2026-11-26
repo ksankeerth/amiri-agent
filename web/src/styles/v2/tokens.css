@@ -1,4 +1,4 @@
-/* Amiri Agent UI v2: design tokens.
+/* AMIRI Agent UI v2: design tokens.
    Light and dark twins for every colour; dark values are from board 13 section 7
    (docs/ux/v2/pages/13_*.html), the rest are derived and checked by `npm run contrast`.
    Every name starts with --v2-. Theming: the OS setting, unless the toggle says light; or the toggle says dark. Edit the two dark blocks together. */
@@ -46,9 +46,22 @@
   --v2-page-pad:32px 36px 64px;   /* main area; 20px 16px 48px under 720 px */
   --v2-hit:32px;                  /* A11: minimum hit area of an icon button */
   --v2-hit-phone:44px;            /* buttons under 720 px */
+  --v2-hit-ctl:40px;              /* F6: every text control, select and segmented control (44 px under 720 px, forms.css) */
 
   /* motion */
-  --v2-dur-fast:120ms; --v2-dur:180ms; --v2-ease:cubic-bezier(.2,.6,.2,1);
+  /* F3: calm and quick. fast = hover and fades in and out; dur = press, menus, dialogs; slow = folds, panels, the tab underline.
+     Everything moves on the one ease; a thing leaving uses the exit ease. All of it is switched off under prefers-reduced-motion (base.css). */
+  --v2-dur-fast:120ms; --v2-dur:160ms; --v2-dur-slow:220ms;
+  --v2-ease:cubic-bezier(.2,.7,.2,1); --v2-ease-exit:cubic-bezier(.4,0,1,1);
+  /* F4b: a page change fades through (old out, then new in; they barely overlap). Total 120 + 300 = 420 ms. */
+  --v2-dur-page-out:160ms;        /* the old page fading out (exit ease) */
+  --v2-dur-page-in:300ms;         /* the new page fading in and rising (ease-out) */
+  --v2-dur-page-delay:120ms;       /* the new one starts this long after the old one begins */
+  --v2-sp-page-rise:6px;             /* how far the new page rises as it arrives */
+  --v2-dur-item:200ms;            /* the same page showing another item: the pane's content fades in */
+  --v2-sp-item-rise:4px;
+  --v2-dur-content:160ms;         /* a placeholder replaced by the real content: it fades in */
+  interpolate-size:allow-keywords;   /* lets a fold animate to height:auto (Chrome 129+; elsewhere it opens at once) */
 
   /* surfaces */
   --v2-page:#F6F6F3;
@@ -198,3 +211,8 @@
   --v2-shadow-pop:0 20px 50px rgba(0,0,0,.60);
   --v2-scrim:rgba(0,0,0,.62);
 }
+
+/* the browser's own scrollbars and form controls follow the theme (the app's .v2 root is inside <html>) */
+:root { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; } }

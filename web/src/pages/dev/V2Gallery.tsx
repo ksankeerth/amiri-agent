@@ -7,6 +7,10 @@ import { useRefusalToast, useToast } from "../../components/ui";
 import { AgentState } from "../../components/v2/AgentState";
 import { ArrowLink } from "../../components/v2/ArrowLink";
 import { Button } from "../../components/v2/Button";
+import { Checkbox, RadioGroup, Segmented, Switch } from "../../components/v2/Choice";
+import { Dialog, type DialogSize } from "../../components/v2/Dialog";
+import { Field, Input, Select, Textarea } from "../../components/v2/Field";
+import { FileDrop } from "../../components/v2/FilePicker";
 import { Count } from "../../components/v2/Count";
 import { Direction, DirectionMark, DirectionPill } from "../../components/v2/Direction";
 import { DotMap, type DotPlace } from "../../components/v2/DotMap";
@@ -32,8 +36,8 @@ import "./V2Gallery.css";
 // ---- fixtures
 const LIVE: LiveState[] = [
   { tone: "live", word: "Live", why: "updates ran 4 min ago" },
-  { tone: "late", word: "Prices late", why: "Clean energy fund since 09:00" },
-  { tone: "idle", word: "Paused", why: "updates last ran 2 h ago" },
+  { tone: "late", word: "Waiting for prices", why: "Clean energy fund: no new price since 09:00" },
+  { tone: "idle", word: "Updates delayed", why: "last ran 2 h ago" },
   { tone: "idle", word: "Not watching yet", why: "set up an institution" },
   { tone: "down", word: "No answer", why: "trying again every minute" },
 ];
@@ -92,6 +96,15 @@ export default function V2Gallery() {
   const [retries, setRetries] = useState(0);
   const [reloaded, setReloaded] = useState(0);
   const [gone, setGone] = useState(false);
+  const [txt, setTxt] = useState("Austin Tech Bank");
+  const [grow, setGrow] = useState("A note that grows with its text.\nA second line.");
+  const [sel, setSel] = useState("bank");
+  const [chk, setChk] = useState(true);
+  const [sw, setSw] = useState(true);
+  const [rad, setRad] = useState<"bank" | "insurer" | "file">("bank");
+  const [seg, setSeg] = useState<"low" | "medium" | "high">("medium");
+  const [dropMsg, setDropMsg] = useState("Nothing chosen yet.");
+  const [dlg, setDlg] = useState<null | { size: DialogSize; danger?: boolean; long?: boolean }>(null);
 
   return (
     <div className="gal">
@@ -107,6 +120,9 @@ export default function V2Gallery() {
           <div className="gal-row"><Button variant="primary">Acknowledge</Button><Button>Resolve</Button><Button variant="quiet">Draft from your profile</Button></div>
           <div className="gal-row"><Button variant="primary" size="sm">Reload</Button><Button size="sm">Investigate now</Button><Button variant="quiet" size="sm">Open</Button></div>
           <div className="gal-row"><Button as="link" to="/home" variant="primary" size="lg">Review the alerts →</Button><Button as="link" to="/events" size="lg">4 open events</Button></div>
+        </Spec>
+        <Spec name="Busy (F3)" field="busy · busyLabel: the label stays, a spinner sits over it, the width never changes">
+          <div className="gal-row"><Button variant="primary" busy busyLabel="Checking…">Check now</Button><Button busy busyLabel="Saving…">Save</Button><Button variant="quiet" busy>Refresh now</Button></div>
         </Spec>
         <Spec name="Disabled and locked" field="disabled · demoLock (locked)">
           <div className="gal-row">
@@ -164,7 +180,7 @@ export default function V2Gallery() {
         <Spec name="Tabs with a red count and filters (board 01)" field="alerts.to_review · acknowledged · resolved" wide>
           <Tabs label="Status" value={alertTab} onChange={setAlertTab}
             tabs={[{ id: "new", label: "New", count: 3, countTone: "hot", countLabel: "to review" }, { id: "ack", label: "Acknowledged", count: 5 }, { id: "res", label: "Resolved", count: 9 }]}
-            trailing={<label className="gal-sel">Team <select defaultValue="all"><option value="all">All teams (3)</option><option>Retail banking (2)</option></select></label>}>
+            trailing={<label className="gal-sel">Team <Select inline defaultValue="all"><option value="all">All teams (3)</option><option>Retail banking (2)</option></Select></label>}>
             <TabPanel id={alertTab}><p className="v2-meta gal-pad">Panel for “{alertTab}”. Tab onto the row, then ←/→ or Home/End.</p></TabPanel>
           </Tabs>
         </Spec>
@@ -201,7 +217,7 @@ export default function V2Gallery() {
                 <Cell><Sparkline values={p.v} tone={p.tone} /></Cell><Cell align="right" num><b>{p.chg}</b></Cell>
               </Row>
             ))}
-            <Row className="gal-price"><Cell><div className="gal-name">Clean energy fund</div><div className="v2-mono v2-muted">ICLN · 13.40</div></Cell><Cell><Pill>Late</Pill></Cell><Cell align="right" muted className="gal-late">no new price since 09:00</Cell></Row>
+            <Row className="gal-price"><Cell><div className="gal-name">Clean energy fund</div><div className="v2-mono v2-muted">ICLN · 13.40</div></Cell><Cell><Pill>Waiting for prices</Pill></Cell><Cell align="right" muted className="gal-late">no new price since 09:00</Cell></Row>
           </Table>
         </Spec>
         <Spec name="Overview tiles (board 00)" field="counts · alerts_to_review" wide>
@@ -219,13 +235,98 @@ export default function V2Gallery() {
           </div>
         </Spec>
         <Spec name="Empty" field="events.length = 0 · findings waiting = 0">
-          <Empty title="Nothing open right now" action={<Button as="link" to="/studio" variant="secondary" size="sm">Try a what-if</Button>}>Amiri Agent is watching 30 sources. Open events appear here.</Empty>
-          <Empty title="No alerts for your teams" plain>Amiri Agent is following 2 open events; none needs a team yet.</Empty>
+          <Empty title="Nothing open right now" action={<Button as="link" to="/studio" variant="secondary" size="sm">Try a what-if</Button>}>AMIRI Agent is watching 30 sources. Open events appear here.</Empty>
+          <Empty title="No alerts for your teams" plain>AMIRI Agent is following 2 open events; none needs a team yet.</Empty>
         </Spec>
       </Section>
 
+      <Section n="0c · Forms" title="Fields, inputs, choices" lede="One height (40 px, 44 under 720 px), one border (--v2-line-input), one focus ring, one error look. A Field ties its label, hint and error to the control with aria-describedby. Hover: move the pointer over a control, its border steps up. Focus: press Tab; the ring is the second column.">
+        <Spec name="Input and Textarea: default, hover, focus, error, disabled, locked" field="Field · Input · Textarea" wide>
+          <div className="gal-forms">
+            <Field label="Default" hint="A hint under the field."><Input value={txt} onChange={e => setTxt(e.target.value)} placeholder="Placeholder" /></Field>
+            <Field label="Empty, with a placeholder"><Input defaultValue="" placeholder="e.g. Business Current Account" /></Field>
+            <Field req label="Focused (Tab here)"><Input autoFocus={false} defaultValue="Tab to me" /></Field>
+            <Field req label="With an error" error="Give it a name of at least 3 characters."><Input defaultValue="ab" /></Field>
+            <Field label="Disabled" hint="Cannot be changed."><Input defaultValue="Locked by the system" disabled /></Field>
+            <Field label="Locked by the demo" hint="Hover or focus it to see why."><Input defaultValue="Austin Tech Bank" locked /></Field>
+            <Field label="Mono, for codes"><Input mono defaultValue="US-TX-0042" /></Field>
+            <Field label="Search"><Input type="search" placeholder="Find a series or symbol" /></Field>
+            <Field label="Auto-grow textarea" hint="Grows to 12 lines, then scrolls." optional><Textarea autoGrow value={grow} onChange={e => setGrow(e.target.value)} /></Field>
+            <Field label="Textarea with an error" error="Say what to watch for in at least 10 characters."><Textarea defaultValue="Short" rows={2} /></Field>
+          </div>
+        </Spec>
+        <Spec name="Select: default, error, disabled, locked, inline (filters)" field="Select">
+          <div className="gal-forms">
+            <Field label="Default"><Select value={sel} onChange={e => setSel(e.target.value)}><option value="bank">Bank</option><option value="insurer">Insurer</option></Select></Field>
+            <Field label="With an error" error="Choose one."><Select defaultValue=""><option value="">Choose…</option><option>Retail</option></Select></Field>
+            <Field label="Disabled"><Select disabled defaultValue="a"><option value="a">Not available</option></Select></Field>
+            <Field label="Locked by the demo"><Select locked defaultValue="a"><option value="a">Weaker</option></Select></Field>
+          </div>
+          <div className="gal-row"><label className="gal-sel">Sort <Select inline defaultValue="a"><option value="a">Newest first</option><option>Most serious</option></Select></label></div>
+        </Spec>
+        <Spec name="Checkbox, Switch" field="Checkbox · Switch">
+          <div className="gal-col">
+            <Checkbox checked={chk} onChange={e => setChk(e.target.checked)} label="Islamic or takaful variant" hint="Shown on the Metrics Spec." />
+            <Checkbox label="Unticked" />
+            <Checkbox label="Disabled" disabled />
+            <Checkbox label="Locked by the demo" locked defaultChecked />
+            <Switch checked={sw} onChange={e => setSw(e.target.checked)} label="A currency slide hits importers" />
+            <Switch large checked={sw} onChange={e => setSw(e.target.checked)} label="Checks against your data" />
+            <Switch label="Disabled" disabled />
+            <Switch label="Locked by the demo" locked defaultChecked />
+          </div>
+        </Spec>
+        <Spec name="Radio group: list and cards" field="RadioGroup">
+          <RadioGroup legend="List" variant="list" value={rad} onChange={setRad}
+            options={[{ value: "bank", label: "Bank", description: "Branches, loans and deposits" }, { value: "insurer", label: "Insurer", description: "Policies and claims" }, { value: "file", label: "Import a file", disabled: true, why: "Switched off here." }]} />
+          <RadioGroup legend="Cards (Data connection sources)" variant="cards" value={rad} onChange={setRad}
+            options={[{ value: "bank", label: "The sample bank", description: "Shaped by your profile" }, { value: "insurer", label: "The sample insurer", description: "A bundled insurer", disabled: true, why: "Only for an insurer: this institution is a bank." }, { value: "file", label: "Import a JSON file", description: "Your own figures" }]} />
+          <RadioGroup legend="Locked by the demo" variant="cards" locked value="bank" onChange={() => {}} options={[{ value: "bank", label: "The sample bank", description: "Greyed, focusable" }, { value: "insurer", label: "The sample insurer" }]} />
+        </Spec>
+        <Spec name="Segmented" field="Segmented">
+          <div className="gal-col">
+            <Segmented caption label="How hard it hits" value={seg} onChange={setSeg} options={[{ value: "low", label: "Low" }, { value: "medium", label: "Medium" }, { value: "high", label: "High" }]} />
+            <Segmented caption label="Locked by the demo" locked value="medium" onChange={() => {}} options={[{ value: "low", label: "Low" }, { value: "medium", label: "Medium" }, { value: "high", label: "High" }]} />
+          </div>
+        </Spec>
+        <Spec name="File drop: button and zone" field="FileDrop (drop a file on either; a wrong kind says why)">
+          <FileDrop accept="application/json,.json" noun="a JSON file" pickLabel="Fill from a JSON file" onFile={f => setDropMsg(`Chose ${f.name}`)} onReject={setDropMsg} />
+          <FileDrop variant="zone" accept="application/json,.json" noun="a JSON file" maxBytes={2 * 1024 * 1024} label="Drop a JSON file here" hint="One file, up to 2 MB." pickLabel="Choose a file" size="md"
+            onFile={f => setDropMsg(`Chose ${f.name}`)} onReject={setDropMsg}><a href="/dev/v2#drop">Download an example file</a></FileDrop>
+          <FileDrop variant="zone" locked label="Drop a JSON file here" hint="Locked by the demo." pickLabel="Choose a file" size="md" onFile={() => {}} />
+          <p className="v2-meta" role="status">{dropMsg}</p>
+        </Spec>
+      </Section>
+
+      <Section n="0d · Dialogs" title="One layout, three sizes" lede="Header (title, optional line), a body that scrolls on its own, a footer with the actions right-aligned (primary last). S 400, M 560, L 760. Under 720 px it is a bottom sheet: narrow the window to see it. Esc closes; focus returns here.">
+        <Spec name="Open one" field="Dialog size · tone · description · actions" wide>
+          <div className="gal-row">
+            <Button onClick={() => setDlg({ size: "S" })}>Size S (400)</Button>
+            <Button onClick={() => setDlg({ size: "M" })}>Size M (560)</Button>
+            <Button onClick={() => setDlg({ size: "L" })}>Size L (760)</Button>
+            <Button onClick={() => setDlg({ size: "S", danger: true })}>Danger</Button>
+            <Button onClick={() => setDlg({ size: "M", long: true })}>Long content</Button>
+          </div>
+        </Spec>
+      </Section>
+      {dlg && (
+        <Dialog size={dlg.size} tone={dlg.danger ? "danger" : "default"} onClose={() => setDlg(null)}
+          title={dlg.danger ? "Delete this scenario?" : dlg.long ? "A long form" : `A size ${dlg.size} dialog`}
+          description={dlg.danger ? undefined : "One line saying what this is about."}
+          actions={<>
+            {dlg.size === "L" && !dlg.danger && <Button variant="quiet" className="v2-dlg__aside">Ask the Setup agent instead</Button>}
+            <Button onClick={() => setDlg(null)}>Cancel</Button>
+            <Button variant="primary" onClick={() => setDlg(null)}>{dlg.danger ? "Delete it" : "Save"}</Button></>}>
+          {dlg.danger ? <p><b>Port strike</b> and its runs will be gone. This can't be undone.</p> : (
+            <>
+              <Field req label="Name"><Input defaultValue="Port strike" /></Field>
+              <Field label="Kind"><Select defaultValue="a"><option value="a">Country</option></Select></Field>
+              {dlg.long && Array.from({ length: 10 }, (_, i) => <Field key={i} label={`Field ${i + 3}`} hint="The body scrolls; the header and footer stay."><Input defaultValue={`Value ${i + 3}`} /></Field>)}
+            </>)}
+        </Dialog>)}
+
       <Section n="1 · Status" title="The Live pill, five states" lede="Sits in the sidebar on every page. The word says the state; the line says why. Comes from the Overview call the page already makes.">
-        <Spec name="Live, Prices late, Paused, Not watching yet, No answer" field="services.tick.ok · markets[].state · first_run · request failed" wide>
+        <Spec name="Live, Waiting for prices, Updates delayed, Not watching yet, No answer" field="services.tick.ok · markets[].state · first_run · request failed" wide>
           <div className="gal-row gal-live">{LIVE.map(l => <LivePill key={l.word} live={l} />)}</div>
         </Spec>
       </Section>

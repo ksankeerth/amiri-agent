@@ -6,13 +6,15 @@ import { Link } from "react-router-dom";
 import type { RadarRun, RadarStatus, RadarStory } from "../../api/radar";
 import { gb } from "../../api/radar";
 import { Button } from "../../components/v2/Button";
+import { ListPane } from "../../components/v2/ListPane";
 import { Cell, Row, Table } from "../../components/v2/Table";
 import { Pill } from "../../components/v2/Pill";
 import { dayTime, person, placeName, placeOrder, plural, when } from "../../format";
 import { themeText } from "../events/investigate";
 import { clock, dayWord, plainCount } from "./words";
+import { SkBar } from "../../components/v2/Skeleton";
 import {
-  followUpOf, placeList, publishers, RELEVANCE, seenIn, whereWent, type FunnelStat, type Where, type Went,
+  followUpOf, placeList, publishers, RELEVANCE, seenIn, storyStatus, whereWent, type FunnelStat, type Where, type Went,
 } from "./storyWords";
 
 export type Names = Record<string, string | null>;
@@ -22,7 +24,8 @@ const placeNames = (s: RadarStory, names: Names) => placeOrder(s.places).map(p =
 /** What the latest finished read did: four numbers, and a bar that steps down from all the articles to the few sent (decoration). */
 export function Funnel({ stats, run, now }: { stats: FunnelStat[]; run: RadarRun; now: Date }) {
   return (
-    <section className="v2-rd-funnel" aria-label="What the latest read did">
+    <section className="v2-rd-funnel" aria-label="What the last read did">
+      <h2 className="v2-cap v2-rd-funnel__h">Last read</h2>
       <div className="v2-rd-bar" aria-hidden="true"><span /><span /><span /><span /></div>
       <ul className="v2-rd-stats">
         {stats.map(s => (
@@ -83,23 +86,24 @@ export function StoryList({ rows, all, selectedId, names, w, now, hrefFor, onOpe
       <ul className="v2-rd-list">
         {rows.map(s => {
           const on = s.story_id === selectedId, rel = RELEVANCE[s.relevance], went = whereWent(s, w), follow = followUpOf(s, all);
-          const status = s.status === "sent" ? { tone: "good" as const, label: "Sent", dashed: false } : s.status === "below" ? { tone: "neutral" as const, label: "Held back", dashed: false } : { tone: "neutral" as const, label: "Dismissed", dashed: true };
+          const status = storyStatus(s, went);
           const line = [placeList(placeNames(s, names)), publishers(s.publishers)].filter(Boolean).join(" · ");
           return (
             <li key={s.story_id}>
-              <Link id={`rd-row-${s.story_id}`} to={hrefFor(s.story_id)} className={`v2-rd-row${on ? " is-on" : ""}`} aria-current={on ? "true" : undefined}
+              <Link id={`rd-row-${s.story_id}`} to={hrefFor(s.story_id)} className={`v2-rowlink v2-rd-row${on ? " is-on" : ""}`} aria-current={on ? "true" : undefined}
                 onClick={e => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return; e.preventDefault(); onOpen(s.story_id); }}>
                 <span className={`v2-rd-dot is-${s.relevance}`} aria-hidden="true" title={`${REL_TITLE[s.relevance]} relevance`} />
                 <span className="v2-rd-row__body">
                   <span className="v2-rd-row__t"><span className="v2-sr">{rel.word}. </span>{s.title}</span>
                   <span className="v2-rd-row__m">
                     {line}
-                    {went.text && <> · <b className={`v2-rd-row__went is-${went.kind}`}>{went.text}</b></>}
+                    {went.kind !== "failed" && went.text && <> · <b className={`v2-rd-row__went is-${went.kind}`}>{went.text}</b></>}
                   </span>
+                  {went.kind === "failed" && <span className="v2-rd-row__state"><Pill tone={status.tone}>{status.label}</Pill><span className="v2-rd-row__m">{went.reason}</span></span>}
                   {follow && <span className="v2-rd-row__m">{follow}</span>}
                   {s.status === "dismissed" && <span className="v2-rd-row__m">Dismissed by {person(s.dismissed_by) || "someone"}{s.dismissed_at ? `, ${dayWord(s.dismissed_at, now)}` : ""}</span>}
                 </span>
-                <span className="v2-rd-row__pill"><Pill tone={status.tone} dashed={status.dashed}>{status.label}</Pill></span>
+                {went.kind !== "failed" && <span className="v2-rd-row__pill"><Pill tone={status.tone} dashed={status.dashed}>{status.label}</Pill></span>}
               </Link>
             </li>
           );
@@ -130,11 +134,12 @@ export function Story({ s, all, names, w, now, admin, busy, onInvestigate, onDis
   const more = s.headlines.length - 2;
   const places = placeNames(s, names);
   const reason = s.finding_id ? w.reasons[s.finding_id] : undefined;
-  const state = s.status === "sent" ? { tone: "good" as const, label: "Sent to investigate" } : s.status === "below" ? { tone: "neutral" as const, label: "Held back" } : { tone: "neutral" as const, label: "Dismissed" };
+  const state = s.status === "sent" ? (went.kind === "failed" ? { tone: "unusual" as const, label: "Sent · couldn't be investigated" } : { tone: "good" as const, label: "Sent to investigate" })
+    : s.status === "below" ? { tone: "neutral" as const, label: "Held back" } : { tone: "neutral" as const, label: "Dismissed" };
   const by = s.sent_by && s.sent_by !== "agent" ? `sent by ${person(s.sent_by)}` : "";
   const themes = s.themes.map(themeText).join(", ");
   return (
-    <article className="v2-panel v2-rd-art" aria-labelledby="rd-story-title">
+    <article className="v2-panel v2-lp__panel v2-rd-art" aria-labelledby="rd-story-title">
       <div className="v2-rd-art__top">
         <Pill tone={state.tone} dashed={s.status === "dismissed"}>{state.label}</Pill>
         <Pill tone={rel.pill}>{rel.word}</Pill>
@@ -185,10 +190,10 @@ export function Story({ s, all, names, w, now, admin, busy, onInvestigate, onDis
         {s.status === "sent" && went.eventId && <Button as="link" variant="primary" to={`/events/${went.eventId}`}>Open the event →</Button>}
         {s.status === "sent" && !went.eventId && s.finding_id && <Button as="link" to={`/findings#f-${s.finding_id}`}>See the finding →</Button>}
         {s.status === "below" && <>
-          <Button variant="primary" onClick={onInvestigate} disabled={busy}>{busy ? "Sending…" : "Investigate anyway"}</Button>
+          <Button variant="primary" onClick={onInvestigate} disabled={busy} busy={busy} busyLabel="Sending…">Investigate anyway</Button>
           <Button onClick={onDismiss} disabled={busy}>Dismiss</Button>
         </>}
-        {s.status === "dismissed" && <Button onClick={onRestore} disabled={busy}>{busy ? "Restoring…" : "Restore"}</Button>}
+        {s.status === "dismissed" && <Button onClick={onRestore} disabled={busy} busy={busy} busyLabel="Restoring…">Restore</Button>}
         <span className="v2-rd-acts__gap" />
         {s.monitor_hint && <Link className="v2-rd-hint" to={`/monitors/${s.monitor_hint.monitor_id}`}>Also matches the monitor: {s.monitor_hint.name}<span aria-hidden="true"> ▸</span></Link>}
       </div>
@@ -215,29 +220,27 @@ export function RadarSkeleton({ phone }: { phone: boolean }) {
     <div className="v2-rd-sk" role="status" aria-busy="true">
       <span className="v2-sr">Loading Radar</span>
       <div className="v2-rd-sk__stats" aria-hidden="true">
-        {[0, 1, 2, 3].map(i => <span key={i} className="v2-rd-skb" style={{ width: 150, height: 44 }} />)}
+        {[0, 1, 2, 3].map(i => <SkBar key={i} w={150} h={44} />)}
       </div>
-      <div className="v2-rd-body" aria-hidden="true">
-        <div className="v2-rd-col">
-          {[0, 1, 2].map(i => (
+      <div aria-hidden="true">
+        <ListPane
+          list={[0, 1, 2].map(i => (
             <div key={i} className="v2-rd-sk__row">
-              <span className="v2-rd-skb" style={{ width: 8, height: 8, borderRadius: 4 }} />
+              <SkBar w={8} h={8} r={4} />
               <span className="v2-rd-sk__lines">
-                <span className="v2-rd-skb" style={{ width: `${90 - i * 8}%`, height: 16 }} />
-                <span className="v2-rd-skb" style={{ width: `${60 - i * 6}%`, height: 12 }} />
+                <SkBar w={`${90 - i * 8}%`} h={16} />
+                <SkBar w={`${60 - i * 6}%`} h={12} />
               </span>
-              <span className="v2-rd-skb" style={{ width: 52, height: 22, borderRadius: 999 }} />
+              <SkBar w={52} h={22} r={999} />
             </div>
           ))}
-        </div>
-        {!phone && (
-          <div className="v2-panel v2-rd-art v2-rd-art--sk">
-            <span className="v2-rd-skb" style={{ width: 240, height: 22 }} />
-            <span className="v2-rd-skb" style={{ width: "86%", height: 28 }} />
-            <span className="v2-rd-skb" style={{ width: "100%", height: 46, borderRadius: 12 }} />
-            {[0, 1].map(i => <span key={i} className="v2-rd-skb" style={{ width: "100%", height: 40 }} />)}
-          </div>
-        )}
+          pane={!phone && (
+            <div className="v2-panel v2-lp__panel">
+              <SkBar w={240} h={22} />
+              <SkBar w="86%" h={28} />
+              <SkBar w="100%" h={46} r={12} />
+              {[0, 1].map(i => <SkBar key={i} w="100%" h={40} />)}
+            </div>)} />
       </div>
     </div>
   );

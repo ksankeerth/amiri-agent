@@ -19,7 +19,7 @@ export function NotFoundPage({ title }: { title?: string }) {
   return (
     <div className="v2-nf">
       <h1 className="v2-nf__h1">{title ?? "Page not found"}</h1>
-      <p className="v2-nf__lede">{title ? "This page isn't available in this version of Amiri Agent." : "There's nothing at this address. The page may have moved, or the link may be mistyped."}</p>
+      <p className="v2-nf__lede">{title ? "This page isn't available in this version of AMIRI Agent." : "There's nothing at this address. The page may have moved, or the link may be mistyped."}</p>
       <code className="v2-mono v2-nf__path">{pathname}</code>
       <div className="v2-nf__act"><Button as="link" to="/home" variant="primary">Go to the Overview</Button></div>
       {links.length > 0 && (

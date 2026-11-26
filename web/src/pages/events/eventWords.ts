@@ -1,5 +1,5 @@
 // The event page's words and rules for the v2 chain (board 02; states: boards 15 section C and 16 section E): the four
-// progress steps, what each product row says about your data, what Amiri Agent's assessment line reads, and when you'll
+// progress steps, what each product row says about your data, what AMIRI Agent's assessment line reads, and when you'll
 // know. Plain logic, no React, so `npm test` covers it. The check's tests, the set-aside groups and the report's
 // templated lines stay in ./words.ts.
 import { dateRange, cap, count, earliest, onDay, sourceInfo, checkMove, verdictWhy, LEVEL_LABEL, type LevelKey } from "../../plain.ts";
@@ -30,7 +30,7 @@ export interface ProgressInput {
   findings: number;
   effects: number;
   teams: number;
-  /** effects with a result in (anything but "not published yet") */
+  /** effects with a result in (anything but "waiting for your data") */
   checked: number;
   /** is the institution's data connected for checks */
   validation: boolean;
@@ -54,6 +54,62 @@ export function expectedParts(size?: string | null, timing?: string | null): { s
   return { size: size ? size.toLowerCase() : null, when: timing ? TIMING[timing] ?? `within ${timing}` : null };
 }
 
+// ---------------------------------------------------------------- which products come first, and how they are grouped
+/** How many product rows show before "Show N more effects". */
+export const PRODUCTS_SHOWN = 5;
+/** A list this short is shown whole (hiding one row behind a button helps nobody), and is not given group labels. */
+export const PRODUCTS_WHOLE_UP_TO = 6;
+
+export interface RankInput { adverse: boolean | null; verdict?: string | null; size?: string | null }
+const VERDICT_RANK: Record<string, number> = { confirms: 0, contradicts: 1 };
+const SIZE_RANK: Record<string, number> = { large: 0, big: 0, high: 0, medium: 1, moderate: 1, small: 2, low: 2 };
+/** Most important first: bad for you, then not known, then good for you; then what your data says (confirms, then moved the
+ *  other way, then everything else); then the size of the expected move. Equal rows keep the order they came in. */
+export function rankImpacts<T>(items: T[], pick: (x: T) => RankInput): T[] {
+  const key = (x: T) => {
+    const r = pick(x);
+    return [r.adverse === true ? 0 : r.adverse === null ? 1 : 2, VERDICT_RANK[r.verdict ?? ""] ?? 2, SIZE_RANK[(r.size ?? "").toLowerCase()] ?? 3];
+  };
+  return items.map((x, i) => ({ x, i, k: key(x) })).sort((a, b) => a.k[0] - b.k[0] || a.k[1] - b.k[1] || a.k[2] - b.k[2] || a.i - b.i).map(o => o.x);
+}
+
+export interface ImpactGroup<T> { label: string | null; items: T[] }
+const GROUP_LABEL: Record<string, string> = { rise: "Likely to rise", fall: "Likely to fall" };
+/** The rows, with a label above each run that moves the same way ("Likely to rise", "Likely to fall"). Only when there are
+ *  more than six rows and they do not all move the same way; otherwise one unlabelled group. The order inside a group is
+ *  the order given, and the group holding the first row comes first. `whole` is the full list when `items` is only the part
+ *  showing: the labels depend on all of it, so they do not come and go as the list opens and closes. */
+export function groupByDirection<T>(items: T[], directionOf: (x: T) => string, whole: T[] = items): ImpactGroup<T>[] {
+  const dirs = new Set(whole.map(directionOf));
+  if (whole.length <= PRODUCTS_WHOLE_UP_TO || dirs.size < 2) return [{ label: null, items }];
+  const groups: ImpactGroup<T>[] = [];
+  const at = new Map<string, ImpactGroup<T>>();
+  for (const x of items) {
+    const d = directionOf(x);
+    let g = at.get(d);
+    if (!g) { g = { label: GROUP_LABEL[d] ?? "Other moves", items: [] }; at.set(d, g); groups.push(g); }
+    g.items.push(x);
+  }
+  return groups;
+}
+
+/** The one order the list is shown in, collapsed or open: the groups (the one holding the top-ranked row first), then the
+ *  rank inside each group. Not grouped, it is the ranked order as given. Showing the first five of this order, and then all of
+ *  it, never moves a row that is already on screen. */
+export function listOrder<T>(ranked: T[], directionOf: (x: T) => string): T[] {
+  return groupByDirection(ranked, directionOf).flatMap(g => g.items);
+}
+
+/** The rows to show now: the first five of the list's order, or all of them once opened (or when the list is short). */
+export function visibleImpacts<T>(ranked: T[], all: boolean): T[] {
+  return all || ranked.length <= PRODUCTS_WHOLE_UP_TO ? ranked : ranked.slice(0, PRODUCTS_SHOWN);
+}
+/** The label of the button under the rows, or null when every row already shows. */
+export function moreButtonText(total: number, all: boolean): string | null {
+  if (total <= PRODUCTS_WHOLE_UP_TO) return null;
+  return all ? "Show fewer" : `Show ${total - PRODUCTS_SHOWN} more ${total - PRODUCTS_SHOWN === 1 ? "effect" : "effects"}`;
+}
+
 /** The arrow for an expected move, and what it says in words. */
 export function arrowFor(direction: string, adverse: boolean | null): { glyph: string; tone: "bad" | "good" | "neutral"; word: string } {
   const glyph = direction === "rise" ? "↑" : direction === "fall" ? "↓" : "→";
@@ -62,10 +118,10 @@ export function arrowFor(direction: string, adverse: boolean | null): { glyph: s
   return { glyph, tone, word: adverse === null ? move : `${move}; ${adverse ? "bad" : "good"} for you` };
 }
 
-/** "next check 16 Nov", "next check today", or "check due" once the day has passed. */
+/** "next check 16 Nov", "next check today", or "next check soon" once the day has passed (the check runs with the next update). */
 export function nextCheckText(d: string | null | undefined, today: string): string | null {
   if (!d) return null;
-  return d < today ? "check due" : d === today ? "next check today" : `next check ${onDay(d)}`;
+  return d < today ? "next check soon" : d === today ? "next check today" : `next check ${onDay(d)}`;
 }
 
 export interface CheckLike {
@@ -123,8 +179,8 @@ export function retriedText(outcome: { attempts?: number } | null | undefined): 
 /** "+3 later findings joined": the reports that joined after the event began. */
 export const joinedText = (n: number) => `+${count(n, "later finding")} joined`;
 
-// ---------------------------------------------------------------- Amiri Agent's assessment
-/** The assessment line: how many products it traced to, and the first few reasons in Amiri Agent's own words (each
+// ---------------------------------------------------------------- AMIRI Agent's assessment
+/** The assessment line: how many products it traced to, and the first few reasons in AMIRI Agent's own words (each
  *  impact's chain label). Empty when nothing was traced; the page then says why from the report. */
 export function assessmentText(impacts: { chain_label: string }[]): string {
   if (!impacts.length) return "";
@@ -167,7 +223,7 @@ export function whenYoullKnow(k: KnowInput): Know[] {
   const out: Know[] = [];
   const open = k.tasks.filter(t => !t.check?.final);
   const next = earliest(open.map(t => t.next_check_after ?? t.check?.next_check_after));
-  if (next) out.push({ label: "Next check against your data", value: next < k.today ? "Due now" : next === k.today ? "Today" : onDay(next) });
+  if (next) out.push({ label: "Next check against your data", value: next < k.today ? "Soon" : next === k.today ? "Today" : onDay(next) });
   else if (k.tasks.length && !open.length) out.push({ label: "Checks against your data", value: "All final" });
   if (k.status === "open") out.push({ label: "Event closes if nothing new", value: day(k.open_until) });
   else out.push({ label: "Event closed", value: k.closed_at ? day(k.closed_at) : "—" });

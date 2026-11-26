@@ -14,7 +14,9 @@ import { draftFrom, itemsOf } from "../../components/fillJson";
 import { useDemoLock } from "../../components/lock";
 import { useRefusalToast, useToast } from "../../components/ui";
 import { Button } from "../../components/v2/Button";
+import { Checkbox } from "../../components/v2/Choice";
 import { Dialog } from "../../components/v2/Dialog";
+import { FileDrop } from "../../components/v2/FilePicker";
 import { EditConflict } from "../../components/v2/EditConflict";
 import { ago, person } from "../../format";
 import { BODIES, DEFAULTS, InstitutionFields, LABELS, META, same, splitErrors, useHiddenErrors, type Ctx, type Draft, type Errors } from "./forms";
@@ -108,12 +110,12 @@ export function ItemDialog({ section, ctx, editing, initial, onClose, onSaved, o
     } finally { setBusy(false); }
   };
   return (
-    <Dialog wide title={`${editing ? "Edit" : "Add a"} ${L.one}`} onClose={onClose} initialFocus=".v2-in-form input:not([type=file]), .v2-in-form select" footer={<>
-      {editing && onDelete && <Button variant="quiet" className="v2-in-del" locked={locked} onClick={onDelete}>Delete this {L.one}</Button>}
+    <Dialog size="L" title={`${editing ? "Edit" : "Add a"} ${L.one}`} description="Fields marked * are required; the rest is optional." onClose={onClose}
+      initialFocus=".v2-in-form input:not([type=file]), .v2-in-form select" actions={<>
+      {editing && onDelete && <Button variant="quiet" className="v2-dlg__aside is-danger" locked={locked} onClick={onDelete}>Delete this {L.one}</Button>}
       <Button onClick={onClose}>Cancel</Button>
-      <Button variant="primary" locked={locked} disabled={busy} onClick={save}>{editing ? "Save" : "Add"}</Button></>}>
+      <Button variant="primary" locked={locked} disabled={busy} busy={busy} busyLabel="Saving…" onClick={save}>{editing ? "Save" : "Add"}</Button></>}>
       <div className="v2-in-form">
-        <p className="v2-in-reqtop"><span aria-hidden="true">*</span> means required; the rest is optional.</p>
         <Problems general={general.concat(hidden)} conflict={conflict} what={`this ${L.one}`} text={changesText(name, changed())}
           onReload={() => { setConflict(null); onSaved(); }} />
         <div className="grid2" ref={box}>
@@ -153,12 +155,11 @@ export function DetailsDialog({ profile, onClose, onSaved }: { profile: Profile;
     } finally { setBusy(false); }
   };
   return (
-    <Dialog wide title="Institution details" onClose={onClose} initialFocus=".v2-in-form input:not([type=file])" footer={<>
-      <Button variant="quiet" className="v2-in-ask" title="Close this form and tell the Setup agent instead; its changes wait for your Apply" onClick={() => { onClose(); askSetupAgent(); }}>Ask the Setup agent instead</Button>
+    <Dialog size="L" title="Institution details" description="Fields marked * are required; the rest is optional." onClose={onClose} initialFocus=".v2-in-form input:not([type=file])" actions={<>
+      <Button variant="quiet" className="v2-dlg__aside" title="Close this form and tell the Setup agent instead; its changes wait for your Apply" onClick={() => { onClose(); askSetupAgent(); }}>Ask the Setup agent instead</Button>
       <Button onClick={onClose}>Cancel</Button>
-      <Button variant="primary" locked={locked} disabled={busy} onClick={save}>Save</Button></>}>
+      <Button variant="primary" locked={locked} disabled={busy} busy={busy} busyLabel="Saving…" onClick={save}>Save</Button></>}>
       <div className="v2-in-form">
-        <p className="v2-in-reqtop"><span aria-hidden="true">*</span> means required; the rest is optional.</p>
         <Problems general={general.concat(hidden)} conflict={conflict} what="the institution's details" text={changesText(i.name, changed())}
           onReload={() => { setConflict(null); onSaved(); }} />
         <div ref={box}><InstitutionFields d={d} set={(k, v) => setD(x => ({ ...x, [k]: v }))} err={err} creating={false}
@@ -173,8 +174,8 @@ export function SuggestDialog({ section, ctx, onClose, onAdded }: { section: Sec
   const locked = useDemoLock();
   const { data, picked, err, busy, add, groups, open, textOf, tickAll, toggle } = useSuggestionPicker(section, ctx, onAdded);
   return (
-    <Dialog wide title={`Suggested ${LABELS[section].many.toLowerCase()}`} onClose={onClose} footer={<>
-      <span className="v2-in-req" aria-live="polite">{picked.size} ticked</span>
+    <Dialog size="L" title={`Suggested ${LABELS[section].many.toLowerCase()}`} onClose={onClose} actions={<>
+      <span className="v2-dlg__aside" aria-live="polite">{picked.size} ticked</span>
       {open > 0 && <Button variant="quiet" onClick={tickAll}>Tick all</Button>}
       <Button onClick={onClose}>Close</Button>
       <Button variant="primary" locked={locked} disabled={busy || !picked.size} onClick={add}>{picked.size ? `Add the ${picked.size} ticked` : "Add the ticked"}</Button></>}>
@@ -188,11 +189,11 @@ export function SuggestDialog({ section, ctx, onClose, onAdded }: { section: Sec
                 {idx.map(i => {
                   const s = data.items[i], t = textOf(i);
                   return (
-                    <label key={i} className={`v2-in-pick__row${s.added ? " is-added" : ""}`}>
-                      <input type="checkbox" disabled={s.added} checked={s.added || picked.has(i)} onChange={e => toggle(i, e.target.checked)} />
-                      <span><span className="v2-in-pick__t">{t.title}{s.added && <span className="v2-in-pick__a"> · {s.status === "dismissed" ? "dismissed" : "already added"}</span>}</span>
-                        <span className="v2-in-pick__s">{t.sub}</span></span>
-                    </label>);
+                    <div key={i} className={`v2-in-pick__row${s.added ? " is-added" : ""}`}>
+                      <Checkbox disabled={s.added} checked={s.added || picked.has(i)} onChange={e => toggle(i, e.target.checked)}
+                        label={<span className="v2-in-pick__t">{t.title}{s.added && <span className="v2-in-pick__a"> · {s.status === "dismissed" ? "dismissed" : "already added"}</span>}</span>}
+                        hint={t.sub} />
+                    </div>);
                 })}
               </div>))}
           </div>
@@ -211,13 +212,10 @@ export function ImportItems({ section, iid, onAdded, children = "Import" }: { se
   const many = LABELS[section].many.toLowerCase();
   return (
     <>
-      <label className="v2-btn v2-btn--secondary v2-in-file" title={`Import ${many} from a JSON file`}>
-        {children}
-        <input type="file" accept="application/json" className="v2-sr" aria-label={`Import ${many} from a JSON file`}
-          onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) imp.read(f); }} />
-      </label>
+      <FileDrop accept="application/json,.json" noun="a JSON file" size="md" title={`Import ${many} from a JSON file`} aria-label={`Import ${many} from a JSON file`}
+        pickLabel={children} onFile={imp.read} onReject={imp.reject} />
       {ops !== null && (
-        <Dialog title={`Import ${many}`} onClose={imp.close} footer={<>
+        <Dialog size="M" title={`Import ${many}`} onClose={imp.close} actions={<>
           <Button onClick={imp.close}>Cancel</Button>
           <Button variant="primary" locked={locked} disabled={busy || !ops.length || problems.length > 0} onClick={imp.add}>Import {ops.length || ""}</Button></>}>
           {problems.length ? <p className="v2-in-err" role="alert"><span aria-hidden="true">◆ </span>{problems.join(" · ")}</p>

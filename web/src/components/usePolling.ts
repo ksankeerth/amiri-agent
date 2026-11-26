@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { quietly } from "../api/client";
 
 /** A passive refresh for a page: every `ms` (never faster than 30 s, so many viewers at once stay light), only while the
  *  tab is visible, and one catch-up when the tab comes back after being away longer than that. The first load is the
@@ -8,7 +9,7 @@ export function usePolling(load: () => void, ms: number) {
   const last = useRef(Date.now());
   useEffect(() => {
     last.current = Date.now();
-    const run = () => { last.current = Date.now(); load(); };
+    const run = () => { last.current = Date.now(); quietly(load); };  // passive: no progress line
     const t = setInterval(() => { if (!document.hidden) run(); }, every);
     const back = () => { if (!document.hidden && Date.now() - last.current > every) run(); };
     document.addEventListener("visibilitychange", back);

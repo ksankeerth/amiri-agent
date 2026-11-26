@@ -31,7 +31,7 @@ export const radarApi = {
   status: () => api<RadarStatus>(`${B}:status`),
   run: () => api<RadarRun>(`${B}:run`, { method: "POST" }),
   runs: () => api<{ items: RadarRun[] }>(`${B}/runs`).then(r => r.items),
-  getRun: (id: string) => api<RadarRun>(`${B}/runs/${enc(id)}`),
+  getRun: (id: string) => api<RadarRun>(`${B}/runs/${enc(id)}`, { fresh: true }),  // polled every 3 s
   stories: (q: Record<string, string | undefined> = {}) => {
     const p = new URLSearchParams(Object.entries(q).filter(([, v]) => v) as [string, string][]).toString();
     return api<{ items: RadarStory[] }>(`${B}/stories${p ? `?${p}` : ""}`).then(r => r.items);

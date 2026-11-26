@@ -1,9 +1,9 @@
 // The app shell: sidebar (brand, Live pill, menu, user and role switch), top bar (breadcrumbs, Go to, date and time,
 // theme), and the main area. Under 720 px the sidebar becomes a top bar (logo, Live pill, Menu) and the menu opens as
 // a sheet (A8). A skip link comes first (A12).
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode, type Ref } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode, type Ref } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { ME } from "../../api/client";
+import { ME, quietly } from "../../api/client";
 import { alertsApi, type AlertSummary } from "../../api/alerts";
 import { OVERVIEW_EVENT, overviewApi, type Overview } from "../../api/overview";
 import { clockText, TIME_ZONE, zoneName } from "../../format";
@@ -13,9 +13,13 @@ import { Icon } from "../Icon";
 import { DemoLockCtx, LockTip } from "../lock";
 import { LOCK_TIP } from "../demoLock";
 import { isDown, useNow, useRole } from "../ui";
+import { BusyLine } from "./BusyLine";
 import { GoTo } from "./GoTo";
 import { LivePill, liveState } from "./LivePill";
+import { EXIT_MS, prefersReducedMotion } from "./motion";
 import { GROUPS, navFor, pageOf } from "./nav";
+import { foundState, getDrawnPath, subscribeDrawnPath } from "./routeMotion";
+import { usePrefetchOnIntent } from "./usePrefetch";
 import "../../styles/v2/shell.css";
 
 // ---------------------------------------------------------------- breadcrumbs
@@ -29,12 +33,13 @@ export function useCrumbs(crumbs: Crumb[] | null) {
 }
 
 // ---------------------------------------------------------------- small hooks
+/** The path of the page on screen (RouteStage). The crumbs and the tab title follow it, not the address, so they change with the page. */
+const useDrawnPath = () => useSyncExternalStore(subscribeDrawnPath, getDrawnPath, getDrawnPath);
 function useTheme() {
-  const [theme, setTheme] = useState<string | null>(() => { try { return localStorage.getItem("amiri.theme"); } catch { return null; } });
-  useEffect(() => {
-    if (theme) document.documentElement.dataset.theme = theme; else delete document.documentElement.dataset.theme;
-  }, [theme]);
-  const dark = theme ? theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  // dark by default; the theme button stores this browser's choice
+  const [theme, setTheme] = useState<string>(() => { try { return localStorage.getItem("amiri.theme") || "dark"; } catch { return "dark"; } });
+  useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  const dark = theme === "dark";
   const toggle = () => {
     const next = dark ? "light" : "dark";
     setTheme(next);
@@ -57,7 +62,7 @@ export function usePhone() {
 /** Each page's heading becomes the tab title; after a navigation focus moves to the page and a screen reader
  *  hears where it is (a single-page app does neither by itself). */
 function useRouteA11y(): string {
-  const { pathname, hash } = useLocation();
+  const pathname = useDrawnPath();
   const first = useRef(true);
   const [said, setSaid] = useState("");
   useEffect(() => {
@@ -71,13 +76,13 @@ function useRouteA11y(): string {
     const scrollers = () => document.querySelectorAll<HTMLElement>(".tblwrap").forEach(el => {
       if (el.scrollWidth > el.clientWidth) { el.tabIndex = 0; el.setAttribute("role", "region"); el.setAttribute("aria-label", "Table (scrolls sideways)"); }
     });
-    const set = () => { const n = name(); document.title = n ? `${n} · Amiri Agent` : "Amiri Agent"; return n; };
+    const set = () => { const n = name(); document.title = n ? `${n} · AMIRI Agent` : "AMIRI Agent"; return n; };
     const t1 = setTimeout(() => {
       const n = set();
       if (first.current) { first.current = false; return; }
       setSaid(n);
       const m = document.querySelector<HTMLElement>("main");
-      if (m) { if (!hash) m.scrollTop = 0; m.focus({ preventScroll: true }); }  // a #link: the page scrolls to it itself
+      if (m) m.focus({ preventScroll: true });  // where `main` is scrolled is RouteStage's (a new page: the top; Back: where it was; a #link: its place)
     }, 250);
     const t2 = setTimeout(() => { set(); scrollers(); }, 1500);  // headings that wait for data (an event's or a monitor's name)
     const t3 = setTimeout(scrollers, 4000);
@@ -93,7 +98,7 @@ function useOverview() {
   useEffect(() => {
     let last = 0;  // when it last asked, or an answer came in from the Overview page
     const got = (x: Overview) => { last = Date.now(); setOv(x); setDown(false); };
-    const load = () => { last = Date.now(); overviewApi.get().catch(e => setDown(isDown(e))); };  // the answer comes back through the event
+    const load = () => { last = Date.now(); quietly(() => overviewApi.get()).catch(e => setDown(isDown(e))); };  // the answer comes back through the event
     // the Overview page already asks every minute: take its answer rather than ask a second time
     const heard = (e: Event) => got((e as CustomEvent<Overview>).detail);
     window.addEventListener(OVERVIEW_EVENT, heard);
@@ -110,7 +115,7 @@ function useOverview() {
 function useAlertSummary() {
   const [alerts, setAlerts] = useState<AlertSummary | null>(null);
   useEffect(() => {  // the menu badge: alerts to review
-    const load = () => alertsApi.summary().then(setAlerts).catch(() => {});
+    const load = () => quietly(() => alertsApi.summary()).then(setAlerts).catch(() => {});
     load(); const t = setInterval(() => { if (!document.hidden) load(); }, 60_000);  // not while the tab is hidden
     window.addEventListener("amiri:alerts", load);
     return () => { clearInterval(t); window.removeEventListener("amiri:alerts", load); };
@@ -128,11 +133,13 @@ export function Shell({ inst, children }: { inst: Installation; children: ReactN
   const now = useNow(30_000);
   const said = useRouteA11y();
   const { pathname } = useLocation();
+  const drawnPath = useDrawnPath();  // the page on screen: while the next one's data is on its way the address is ahead of it
   const navigate = useNavigate();
   const phone = usePhone();
   const { ov, down } = useOverview();
   const alerts = useAlertSummary();
   const live = liveState(ov, now, down);
+  usePrefetchOnIntent({ admin: role === "platform_admin", institutionId: inst.profile ? inst.institution_id : null });
   const pages = navFor(role);
   const locked = inst.demo_lock === true;
 
@@ -142,7 +149,7 @@ export function Shell({ inst, children }: { inst: Installation; children: ReactN
   // breadcrumbs: what the page set, else its menu name
   const [custom, setCustom] = useState<Crumb[] | null>(null);
   const setCrumbs = useCallback((c: Crumb[] | null) => setCustom(c), []);
-  const page = pageOf(pathname);
+  const page = pageOf(drawnPath);
   const crumbs: Crumb[] = custom ?? [...(role === "platform_admin" && page ? [{ label: "Platform admin" }] : []), { label: page?.[1] ?? "Not found" }];
 
   // the phone's menu sheet
@@ -185,10 +192,14 @@ export function Shell({ inst, children }: { inst: Installation; children: ReactN
     const target = usable ? o : phone ? menuBtn.current : topGo.current;
     setTimeout(() => target?.focus(), 0);
   }, [phone]);
-  const go = useCallback((to: string) => {
+  // a choice: the box fades out first (F3), then the page cross-fades in (F4); an item is found and tinted on the page it lands on
+  const go = useCallback((to: string, found?: string | null) => {
     closeGo(false);
-    navigate(to);
-    setTimeout(() => document.getElementById("main")?.focus({ preventScroll: true }), 0);
+    const arrive = () => {
+      navigate(to, { state: foundState(found) });
+      setTimeout(() => document.getElementById("main")?.focus({ preventScroll: true }), 0);
+    };
+    if (prefersReducedMotion()) arrive(); else setTimeout(arrive, EXIT_MS);
   }, [closeGo, navigate]);
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
@@ -231,7 +242,7 @@ export function Shell({ inst, children }: { inst: Installation; children: ReactN
           <div className="v2-sr" role="status" aria-live="polite">{said}</div>
 
           <header className="v2-mbar" inert={sheet}>
-            <Link className="v2-mbar__logo" to="/home" aria-label="Amiri Agent home"><span className="v2-logo" aria-hidden="true">A</span></Link>
+            <Link className="v2-mbar__logo" to="/home" aria-label="AMIRI Agent home"><span className="v2-logo" aria-hidden="true">A</span></Link>
             <LivePill live={live} compact />
             <button ref={menuBtn} type="button" className="v2-menubtn" aria-expanded={sheet} aria-controls="v2-side" onClick={() => setMenu(m => !m)}>
               <Icon name="menu" />Menu
@@ -247,7 +258,7 @@ export function Shell({ inst, children }: { inst: Installation; children: ReactN
             </div>
             <Link className="v2-brand" to="/home">
               <span className="v2-logo" aria-hidden="true">A</span>
-              <span className="v2-brand__t"><b>Amiri Agent</b><span>{instName}</span></span>
+              <span className="v2-brand__t"><b>AMIRI Agent</b><span>{instName}</span></span>
             </Link>
             <div className="v2-status">
               <LivePill live={live} />
@@ -306,10 +317,11 @@ export function Shell({ inst, children }: { inst: Installation; children: ReactN
               <span className="v2-clock">{clock}</span>
               {themeBtn}
             </header>
+            <BusyLine />
             <main className="v2-main" id="main" tabIndex={-1}>{children}</main>
           </div>
 
-          {goOpen && <GoTo pages={pages} institutionId={inst.profile ? inst.institution_id : null} onClose={closeGo} onGo={go} />}
+          {goOpen && <GoTo pages={pages} institutionId={inst.profile ? inst.institution_id : null} admin={role === "platform_admin"} onClose={closeGo} onGo={go} />}
         </div>
       </CrumbCtx.Provider>
     </DemoLockCtx.Provider>

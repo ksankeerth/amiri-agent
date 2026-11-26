@@ -39,15 +39,9 @@
 .v2-sx-rail { flex: 1 1 230px; max-width: 260px; min-width: 0; display: flex; flex-direction: column; gap: var(--v2-sp-2); }
 .v2-sx-rail__in { display: flex; flex-direction: column; gap: var(--v2-sp-2); }
 .v2-sx-view { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: var(--v2-sp-14); }
-.v2-sx-search {
-  display: flex; align-items: center; gap: var(--v2-sp-8); height: 38px; padding: 0 var(--v2-sp-10); margin-bottom: var(--v2-sp-10);
-  border: 1px solid var(--v2-line-input); border-radius: var(--v2-r-btn); background: var(--v2-surface); color: var(--v2-muted);
-}
-.v2-sx-search:focus-within { outline: 2px solid var(--v2-focus); outline-offset: 2px; }
-.v2-sx-search svg { width: 16px; height: 16px; flex: none; }
-.v2 .v2-sx-search input { flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; color: var(--v2-text); font-size: var(--v2-fs-body); }
-.v2 .v2-sx-search input:focus-visible { outline: none; }
-.v2-sx-search input::placeholder { color: var(--v2-muted); opacity: 1; }
+.v2-sx-search { position: relative; display: block; margin-bottom: var(--v2-sp-10); color: var(--v2-text-2); }
+.v2-sx-search svg { position: absolute; left: var(--v2-sp-12); top: 50%; width: 16px; height: 16px; margin-top: -8px; pointer-events: none; }
+.v2 .v2-sx-search .v2-ctl { padding-left: 36px; }
 .v2-sx-cap { padding: var(--v2-sp-16) var(--v2-sp-12) var(--v2-sp-6); }
 .v2-sx-rail .v2-sx-search + .v2-sx-cap, .v2-sx-rail__in > .v2-sx-cap:first-child { padding-top: var(--v2-sp-6); }
 
@@ -69,6 +63,16 @@
 .v2 .v2-sx-fold:hover { color: var(--v2-text); }
 .v2-sx-more { padding: 0; margin-top: var(--v2-sp-6); color: var(--v2-brand); font-size: var(--v2-fs-meta); letter-spacing: 0; text-transform: none; }
 .v2 .v2-sx-more:hover { color: var(--v2-brand-hover); }
+/* region examples from other markets: closed by default (C6) */
+.v2-sx-other { margin-top: var(--v2-sp-4); font-size: var(--v2-fs-meta); color: var(--v2-muted); }
+.v2-sx-other > summary { cursor: pointer; color: var(--v2-brand); list-style: none; }
+.v2-sx-other > summary::-webkit-details-marker { display: none; }
+.v2-sx-other > summary:hover { color: var(--v2-brand-hover); }
+.v2-sx-other > summary::before { content: "▸ "; }
+.v2-sx-other[open] > summary::before { content: "▾ "; }
+.v2-sx-other p { margin-top: var(--v2-sp-4); }
+/* the variant's label shows on a phone only, where the table's header is hidden (C6) */
+.v2-sx-vlabel { display: none; color: var(--v2-muted); }
 .v2-sx-tri { flex: none; border-left: 6px solid currentColor; border-top: 4.5px solid transparent; border-bottom: 4.5px solid transparent; }
 [aria-expanded="true"] > .v2-sx-tri, [aria-expanded="true"] > span > .v2-sx-tri { transform: rotate(90deg); }
 .v2-sx-browse {
@@ -186,6 +190,7 @@
   .v2-sx-tier { justify-self: end; max-width: 150px; }
   .v2-sx-ptable .v2-row--head { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
   .v2-sx-prow { row-gap: var(--v2-sp-2); }
+  .v2-sx-vlabel { display: inline; }
   .v2-sx-detail { padding: var(--v2-sp-14); }
   .v2-sx-rows > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .v2-sx-hits li { grid-template-columns: minmax(0, 1fr); }
@@ -292,3 +297,12 @@ html:has(.sp-print), body:has(.sp-print) { background:#fff; }
 .sp-print .pr-toc-2 { padding-left:7mm; margin-top:.2mm; }
 .sp-print .pr-toc-dots { flex:1; border-bottom:.6pt dotted #8a8a8a; margin:0 1.5mm; transform:translateY(-1mm); }
 .sp-print .pr-toc-pg { min-width:8mm; text-align:right; font-variant-numeric:tabular-nums; }
+
+/* M1: 44 px to tap on a phone */
+@media (max-width: 719.98px) {
+  .v2-sx-link-btn { display: inline-flex; align-items: center; min-height: var(--v2-hit-phone); }
+  .v2 .v2-sx-mbtn { align-items: center; min-height: var(--v2-hit-phone); }
+  .v2-sx-more { min-height: var(--v2-hit-phone); }
+  .v2-sx-pn a { display: flex; align-items: center; min-height: var(--v2-hit-phone); }
+  .v2-sx-other > summary { display: flex; align-items: center; min-height: var(--v2-hit-phone); }
+}

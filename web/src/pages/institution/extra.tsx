@@ -88,7 +88,7 @@ export function History({ id, pv, onChanged, readOnly, names }: { id: string; pv
         </Table>)}
       {next && <p className="v2-in-sec__more"><Button onClick={more}>Older changes</Button></p>}
       {undo && (
-        <Dialog title="Undo this change?" onClose={() => setUndo(null)} footer={<>
+        <Dialog size="M" title="Undo this change?" onClose={() => setUndo(null)} actions={<>
           <Button onClick={() => setUndo(null)}>Cancel</Button>
           <Button variant="primary" locked={locked} disabled={!undo.valid} onClick={doUndo}>Undo</Button></>}>
           <p className="v2-in-dlgtext">Saved by {byWords(undo.actor, undo.source, person)} on {dayTime(undo.at)}{undo.proposal_id ? ", from a Setup agent proposal" : ""}. Undoing it is a new change, kept in the history.</p>

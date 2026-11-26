@@ -21,7 +21,7 @@ export function everyShort(min: number): string {
   return `every ${min} min`;
 }
 
-/** A live monitor whose last check is older than twice its frequency is overdue (the scheduler isn't keeping up). */
+/** A live monitor whose last check is older than twice its frequency has a check due (the scheduler isn't keeping up): said calmly, never as "overdue". */
 export function isOverdue(m: Pick<MonitorRow, "status" | "check_frequency" | "last_check">, now: Date): boolean {
   if (m.status !== "live" || !m.last_check) return false;
   return now.getTime() - new Date(m.last_check.at).getTime() > 2 * m.check_frequency * 60_000;
@@ -68,6 +68,13 @@ export function pickDefault(g: Groups): MonitorRow | null {
   return g.live[0] ?? GROUP_ORDER.map(k => g[k][0]).find(Boolean) ?? null;
 }
 
+/** The checks under a monitor: the latest two, and "All N checks" for the rest. One more is no saving: three show whole. */
+export const CHECKS_SHOWN = 2;
+export function checksShown(total: number, all: boolean): { shown: number; hidden: number } {
+  const shown = all || total <= CHECKS_SHOWN + 1 ? total : CHECKS_SHOWN;
+  return { shown, hidden: total - shown };
+}
+
 export const LIVE_SHOWN = 5;
 /** The live rows shown: the first few, and the open one wherever it is; "▸ N more live" holds the rest. */
 export function liveShown(live: MonitorRow[], selectedId: string | null, expanded: boolean): { shown: MonitorRow[]; hidden: number } {
@@ -76,10 +83,10 @@ export function liveShown(live: MonitorRow[], selectedId: string | null, expande
   return { shown, hidden: live.length - shown.length };
 }
 
-/** What a row says about the last check: "fired 2 h ago", "quiet", "couldn't check", "overdue", "not checked yet". `agoText` is the age, written. */
+/** What a row says about the last check: "fired 2 h ago", "quiet", "couldn't check", "check due · last checked 4 days ago", "not checked yet". `agoText` is the age, written. */
 export function lastWords(m: Pick<MonitorRow, "status" | "check_frequency" | "last_check">, now: Date, agoText: (iso: string) => string): string {
   if (!m.last_check) return "not checked yet";
-  if (isOverdue(m, now)) return "overdue";
+  if (isOverdue(m, now)) return `check due · last checked ${agoText(m.last_check.at)}`;
   const c = m.last_check;
   if (c.status === "fired") return `fired ${agoText(c.at)}`;
   if (c.status === "error") return `couldn't check ${agoText(c.at)}`;

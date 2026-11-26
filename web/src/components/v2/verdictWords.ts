@@ -13,7 +13,7 @@ export const VERDICTS: Record<VerdictKey, VerdictLook> = {
   no_effect: { key: "no_effect", label: "No effect", tone: "good" },
   insufficient_data: { key: "insufficient_data", label: "Not enough data", tone: "neutral" },
   masked: { key: "masked", label: "Hidden by relief", tone: "neutral" },
-  not_yet: { key: "not_yet", label: "Not published yet", tone: "neutral" },
+  not_yet: { key: "not_yet", label: "Waiting for your data", tone: "neutral" },
   error: { key: "error", label: "Couldn't check", tone: "bad" },
 };
 export const VERDICT_ORDER = Object.keys(VERDICTS) as VerdictKey[];
@@ -25,14 +25,15 @@ const capital = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 export function verdictLook(verdict: string | null | undefined, verdictText?: string | null): VerdictLook {
   const known = verdict ? VERDICTS[verdict as VerdictKey] : undefined;
   const words = verdictText?.trim();
+  if (known?.key === "not_yet") return known;  // the server says "not published yet"; the page says what is true for the reader: it is waiting for their data
   if (known) return words ? { ...known, label: capital(words) } : known;
   return { key: "unknown", label: capital(words || (verdict ?? "").replace(/_/g, " ")) || "Not checked", tone: "neutral" };
 }
 
-/** The small print under a verdict: "First look; may change as more data comes in · was: Not published yet". */
+/** The small print under a verdict: "First look; may change as more data comes in · was: Waiting for your data". */
 export function verdictNotes(c: { final?: boolean; verdict?: string | null; supersedes?: { verdict: string } | null }): string[] {
   const out: string[] = [];
-  // an error or a "not published yet" has nothing to change: only a result with data in it is a first look
+  // an error or a "waiting for your data" has nothing to change: only a result with data in it is a first look
   if (c.final === false && c.verdict !== "error" && c.verdict !== "not_yet") out.push("First look; may change as more data comes in");
   if (c.supersedes) out.push(`was: ${verdictLook(c.supersedes.verdict).label}`);
   return out;

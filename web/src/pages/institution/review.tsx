@@ -43,10 +43,10 @@ export function ReviewChecks({ readiness, onFix, onEdit }: { readiness: Readines
 export function GoLiveDialog({ name, readiness, busy, onClose, onConfirm }: { name: string; readiness: Readiness; busy: boolean; onClose: () => void; onConfirm: () => void }) {
   const locked = useDemoLock();
   return (
-    <Dialog title={`Go live with ${name}?`} onClose={onClose} footer={<>
+    <Dialog size="S" title={`Go live with ${name}?`} onClose={onClose} actions={<>
       <Button onClick={onClose}>Not yet</Button>
-      <Button variant="primary" locked={locked} disabled={busy} onClick={onConfirm}>{busy ? "Going live…" : "Go live"}</Button></>}>
-      <p className="v2-in-dlgtext">Amiri Agent starts using this profile to decide what matters to you. You can keep changing it afterwards, and each change is kept in the history.</p>
+      <Button variant="primary" locked={locked} disabled={busy} busy={busy} busyLabel="Going live…" onClick={onConfirm}>Go live</Button></>}>
+      <p className="v2-in-dlgtext">AMIRI Agent starts using this profile to decide what matters to you. You can keep changing it afterwards, and each change is kept in the history.</p>
       <p className="v2-in-dlgtext">{goLiveNote(readiness)}</p>
     </Dialog>
   );

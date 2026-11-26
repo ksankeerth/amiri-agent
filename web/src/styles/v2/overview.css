@@ -65,7 +65,7 @@ a.v2-ov-need:hover { color: var(--v2-text); text-decoration: none; background: v
 .v2-ov-need__dot.is-crit { background: var(--v2-bad); }
 .v2-ov-need__t { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: var(--v2-sp-2); }
 .v2-ov-need__title { font-size: var(--v2-fs-body); font-weight: var(--v2-fw-semibold); overflow-wrap: anywhere; }
-.v2-ov-need__detail { font-size: var(--v2-fs-cap); color: var(--v2-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.v2-ov-need__detail { font-size: var(--v2-fs-cap); color: var(--v2-muted); overflow-wrap: anywhere; }
 .v2 a.v2-ov-need:hover .v2-ov-need__detail { color: var(--v2-text-2); }  /* A1 */
 .v2-ov-need__go { flex: none; font-size: var(--v2-fs-meta); font-weight: var(--v2-fw-semibold); color: var(--v2-brand); }
 .v2-ov-needmore { padding-top: var(--v2-sp-8); border-top: 1px solid var(--v2-line); }
@@ -80,13 +80,10 @@ a.v2-ov-need:hover { color: var(--v2-text); text-decoration: none; background: v
 .v2-ov-price .v2-cell:last-child.is-right { align-self: center; }
 .v2-ov-price__name { display: block; font-size: var(--v2-fs-body); font-weight: var(--v2-fw-medium); }
 .v2-ov-price__px { display: block; }
+.v2-ov-why { display: block; margin-top: var(--v2-sp-2); }
 .v2-ov-price__late { display: block; margin-top: var(--v2-sp-2); }
 .v2-ov-price__chg b { font-size: var(--v2-fs-body); }
 .v2-ov-pricesfoot { padding-top: var(--v2-sp-10); border-top: 1px solid var(--v2-line); }
-
-/* ---------- loading */
-.v2-ov-sk { display: block; border-radius: var(--v2-r-xs); background: var(--v2-count-bg); animation: v2-pulse 1.6s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .v2-ov-sk { animation: none; } }
 
 /* ---------- phone (board 17): rows wrap, places and sparklines hide, the map scales down, tiles go two by two */
 @media (max-width: 719.98px) {

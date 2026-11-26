@@ -1,5 +1,5 @@
 // One category (board 12): its name and your products in it, the tabs (All, Starter set, Required), and its metrics as a
-// table. A metric opens in place to show what it counts and how Amiri Agent judges it. A metric replaced by another is
+// table. A metric opens in place to show what it counts and how AMIRI Agent judges it. A metric replaced by another is
 // dimmed and says what replaced it (board 16 section I).
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -10,8 +10,9 @@ import { Cell, Row, Table } from "../../components/v2/Table";
 import { TabPanel, Tabs } from "../../components/v2/Tabs";
 import {
   adverseLine, alsoLines, barLines, currencyLine, deprecationWord, historyLine, inTab, kindLine, lagLine, methodLine, metricAnchors, nameLookup,
-  settlesLine, shownRows, tabCounts, tierWord, ucFirst, unitAndGrain, words, type Tab,
+  settlesLine, shownRows, showIslamicVariant, tabCounts, tierWord, ucFirst, unitAndGrain, words, productWord, type Tab,
 } from "./words";
+import { Examples } from "./Examples";
 
 const to = (hash: string) => ({ pathname: "/spec", hash });
 
@@ -49,7 +50,7 @@ function MetricDetail({ m, nameOf, id }: { m: SpecMetric; nameOf: (k: string) =>
         ["Applies to", Array.isArray(m.applies_to) ? m.applies_to.map(words).join(", ") : "Every product type"],
         ["Notes", d.notes]]} />
       {v && <>
-        <h4 className="v2-sx-subh">How Amiri Agent judges it</h4>
+        <h4 className="v2-sx-subh">How AMIRI Agent judges it</h4>
         <Rows items={[
           ["Compared with", methodLine(v.method)],
           ["An effect needs", bars.length ? <>{bars.map(b => <div key={b.text}>{b.text} <span className="v2-sx-fine">(in the spec: {b.spec})</span></div>)}</> : null],
@@ -70,8 +71,11 @@ export interface CategoryViewProps {
   yours: string[];
   /** the anchor of a metric to open (from #metric-key) */
   open?: string;
+  /** the institution's Islamic flag (null: no institution) and home country, for the product table (C6) */
+  islamic: boolean | null; home: string | null;
 }
-export function CategoryView({ s, c, yours, open: openId }: CategoryViewProps) {
+export function CategoryView({ s, c, yours, open: openId, islamic, home }: CategoryViewProps) {
+  const variants = showIslamicVariant(islamic);
   const ids = useMemo(() => metricAnchors(s.categories), [s]);
   const nameOf = useMemo(() => nameLookup(s.categories), [s]);
   const all = c.metrics ?? [];  // the spec's own order
@@ -94,7 +98,7 @@ export function CategoryView({ s, c, yours, open: openId }: CategoryViewProps) {
         <h2 id="sx-title" className="v2-sx-h2">{c.name}</h2>
         <span className="v2-sx-yours">{yours.length
           ? <>· <span className="v2-sr">Your products: </span>{yours.join(", ")}</>
-          : <>· Covers {c.product_types.map(p => words(p.id)).join(", ")}</>}</span>
+          : <>· Covers {c.product_types.map(p => productWord(p.id)).join(", ")}</>}</span>
       </div>
       {c.supervisory_note && <p className="v2-sx-note">{c.supervisory_note}</p>}
       <Tabs tabs={tabs} value={tab} onChange={t => { setTab(t as Tab); setMore(false); }} label="Which metrics to show">
@@ -134,13 +138,16 @@ export function CategoryView({ s, c, yours, open: openId }: CategoryViewProps) {
         {derived.map(x => `${words(x.key)} = ${words(x.formula)}${x.note ? ` (${x.note})` : ""}`).join("; ")}</p>}
       <section className="v2-sx-products" aria-labelledby="sx-products">
         <SectionHead title="Products it covers" level={3} size="sm" id="sx-products" />
-        <Table label={`Products ${c.name} covers`} cols="minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1.2fr)" colsPhone="minmax(0, 1fr)" className="v2-sx-ptable"
-          columns={[{ label: "Product type" }, { label: "Typical products" }, { label: "Islamic or takaful variant" }]}>
+        <Table label={`Products ${c.name} covers`} cols={variants ? "minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1.2fr)" : "minmax(0, 1fr) minmax(0, 2fr)"} colsPhone="minmax(0, 1fr)" className="v2-sx-ptable"
+          columns={variants ? [{ label: "Product type" }, { label: "Typical products" }, { label: "Islamic or takaful variant" }] : [{ label: "Product type" }, { label: "Typical products" }]}>
           {c.product_types.map(p => (
             <Row key={p.id} className="v2-sx-prow">
-              <Cell className="v2-sx-ptype">{ucFirst(words(p.id))}</Cell>
-              <Cell>{p.typical_products ? ucFirst(p.typical_products) : <span className="v2-muted">—</span>}</Cell>
-              <Cell>{p.islamic_variant ? ucFirst(p.islamic_variant) : <span className="v2-muted">—</span>}</Cell>
+              <Cell className="v2-sx-ptype">{ucFirst(productWord(p.id))}</Cell>
+              <Cell>{p.typical_products ? <Examples text={p.typical_products} home={home} cap /> : <span className="v2-muted">—</span>}</Cell>
+              {variants && <Cell className="v2-sx-variant">
+                {/* on a phone the table's header is hidden, so the variant line carries its own label */}
+                {p.islamic_variant ? <><span className="v2-sx-vlabel">Islamic variant: </span>{ucFirst(p.islamic_variant)}</> : <span className="v2-muted">—</span>}
+              </Cell>}
             </Row>))}
         </Table>
         <p className="v2-sx-fine">Category id <code className="v2-mono">{c.id}</code>. A metric that lists product types is shared only for those.</p>

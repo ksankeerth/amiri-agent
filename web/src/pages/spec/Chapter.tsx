@@ -4,7 +4,8 @@
 import { Link } from "react-router-dom";
 import type { Spec, SpecCategory, SpecDimension } from "../../api/spec";
 import { Markdown, ScrollTable } from "../../components/markdown";
-import { chapterHead, chaptersOf, proseRuns, specDate, words } from "./words";
+import { chapterHead, chaptersOf, proseRuns, showIslamicVariant, specDate, words } from "./words";
+import { Examples } from "./Examples";
 
 const to = (hash: string) => ({ pathname: "/spec", hash });
 
@@ -14,21 +15,22 @@ function dimValues(d: SpecDimension): string {
   return Object.entries(d.values).map(([k, vs]) => `${words(k)}: ${vs.join(", ")}`).join(" · ");
 }
 
-function TaxonomyTable({ cats, label }: { cats: SpecCategory[]; label: string }) {
+function TaxonomyTable({ cats, label, islamic, home }: { cats: SpecCategory[]; label: string; islamic: boolean | null; home: string | null }) {
+  const variants = showIslamicVariant(islamic);
   return (
     <ScrollTable label={label}><table className="v2-sx-tbl">
-      <thead><tr><th scope="col">Category</th><th scope="col">Product types and typical products</th><th scope="col">Islamic or takaful variants</th></tr></thead>
+      <thead><tr><th scope="col">Category</th><th scope="col">Product types and typical products</th>{variants && <th scope="col">Islamic or takaful variants</th>}</tr></thead>
       <tbody>{cats.map(c => (
         <tr key={c.id}>
           <td className="is-key"><Link to={to(`#cat-${c.id}`)}>{c.name}</Link><div className="v2-mono v2-muted">{c.id}</div></td>
-          <td>{c.product_types.map(p => <div key={p.id}><code className="v2-mono">{p.id}</code>{p.typical_products ? `: ${p.typical_products}` : ""}</div>)}</td>
-          <td>{c.product_types.filter(p => p.islamic_variant).map(p => <div key={p.id}>{p.islamic_variant}</div>)}</td>
+          <td>{c.product_types.map(p => <div key={p.id}><code className="v2-mono">{p.id}</code>{p.typical_products ? <>: <Examples text={p.typical_products} home={home} /></> : ""}</div>)}</td>
+          {variants && <td>{c.product_types.filter(p => p.islamic_variant).map(p => <div key={p.id}>{p.islamic_variant}</div>)}</td>}
         </tr>))}</tbody>
     </table></ScrollTable>
   );
 }
 
-function ChapterBody({ s, id, target }: { s: Spec; id: string; target?: string }) {
+function ChapterBody({ s, id, target, islamic, home }: { s: Spec; id: string; target?: string; islamic: boolean | null; home: string | null }) {
   const md = (t: string | undefined, k?: string) => t ? <Markdown key={k} text={t} under={2} /> : null;
   const hit = (anchor: string) => (anchor === target ? { "data-target": "" } : {});
   if (id === "intro") return md(s.guide.intro?.md);
@@ -47,8 +49,8 @@ function ChapterBody({ s, id, target }: { s: Spec; id: string; target?: string }
     const banks = s.categories.filter(c => c.institution === "bank"), insurers = s.categories.filter(c => c.institution === "insurer");
     return <>
       {md(runs[0]?.replace(/\*\*Banks\*\*\s*$/, ""), "a")}
-      <h3 className="md-h">Banks</h3><TaxonomyTable cats={banks} label="Bank product taxonomy" />
-      <h3 className="md-h">Insurers</h3><TaxonomyTable cats={insurers} label="Insurer product taxonomy" />
+      <h3 className="md-h">Banks</h3><TaxonomyTable cats={banks} label="Bank product taxonomy" islamic={islamic} home={home} />
+      <h3 className="md-h">Insurers</h3><TaxonomyTable cats={insurers} label="Insurer product taxonomy" islamic={islamic} home={home} />
       {runs.slice(2).map((r, i) => md(r, `r${i}`))}
     </>;
   }
@@ -93,14 +95,14 @@ function ChapterBody({ s, id, target }: { s: Spec; id: string; target?: string }
   return md(s.guide[n]?.md ?? s.drawn[n]?.md);
 }
 
-export function ChapterView({ s, id, target }: { s: Spec; id: string; target?: string }) {
+export function ChapterView({ s, id, target, islamic, home }: { s: Spec; id: string; target?: string; islamic: boolean | null; home: string | null }) {
   const chapters = chaptersOf(s), i = chapters.findIndex(c => c.id === id), ch = chapters[i];
   if (!ch) return <><h2 id="sx-title" className="v2-sx-h2">Chapter not found</h2><p className="v2-sx-note">That chapter is not in this version of the spec.</p></>;
   const prev = chapters[i - 1], next = chapters[i + 1];
   return (
     <>
       <h2 id="sx-title" className="v2-sx-h2">{chapterHead(ch)}</h2>
-      <div className="v2-sx-read"><ChapterBody s={s} id={id} target={target} /></div>
+      <div className="v2-sx-read"><ChapterBody s={s} id={id} target={target} islamic={islamic} home={home} /></div>
       <nav className="v2-sx-pn" aria-label="Other chapters">
         {prev ? <Link to={to(`#${prev.id}`)}><span aria-hidden="true">← </span>{chapterHead(prev)}</Link> : <span />}
         {next ? <Link to={to(`#${next.id}`)}>{chapterHead(next)}<span aria-hidden="true"> →</span></Link> : <span />}

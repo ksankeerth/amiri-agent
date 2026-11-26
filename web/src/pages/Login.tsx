@@ -25,14 +25,14 @@ const dark = () => document.documentElement.dataset.theme === "dark"
 /** The wordmark, centred above the one thing this screen says. Shared by the three screens. */
 function Frame({ title, lede, children, fine }: { title: string; lede: ReactNode; children?: ReactNode; fine?: ReactNode }) {
   // the shell sets the theme the visitor chose; these screens come before it, so they do the same (before the box draws itself)
-  useLayoutEffect(() => { const t = storedTheme(); if (t) document.documentElement.dataset.theme = t; }, []);
+  useLayoutEffect(() => { document.documentElement.dataset.theme = storedTheme() || "dark"; }, []);
   return (
     <div className="v2 v2-lg">
       <main className="v2-lg__main" id="main" tabIndex={-1}>
         <div className="v2-lg__col">
           <div className="v2-lg__brand">
             <span className="v2-logo v2-lg__logo" aria-hidden="true">A</span>
-            <b>Amiri Agent</b>
+            <b>AMIRI Agent</b>
             <span className="v2-lg__tag">{TAGLINE}</span>
           </div>
           <h1 className="v2-lg__h1">{title}</h1>
@@ -49,7 +49,7 @@ function Frame({ title, lede, children, fine }: { title: string; lede: ReactNode
 /** The database is stopped to save costs (server: app/sleep.py); the bot check and this page still work. */
 export function PausedPage() {
   const [step, setStep] = useState<PausedStep>("idle");
-  useEffect(() => { document.title = "Paused · Amiri Agent"; }, []);
+  useEffect(() => { document.title = "Paused · AMIRI Agent"; }, []);
   const check = async () => {
     if (step === "checking") return;  // aria-disabled, not disabled: focus stays on the button while it looks
     setStep("checking");
@@ -58,7 +58,7 @@ export function PausedPage() {
   };
   const checking = step === "checking";
   return (
-    <Frame title="Amiri Agent is paused"
+    <Frame title="AMIRI Agent is paused"
       lede="To save costs, its database stops while nobody is using it, and nothing is lost. Ask whoever runs this prototype to wake it. It takes a few minutes to start; then press the button and the app opens.">
       <div className="v2-lg__act">
         <Button variant="primary" size="lg" aria-disabled={checking || undefined} aria-busy={checking} onClick={check}>{pausedButton(step)}</Button>
@@ -75,7 +75,7 @@ function JudgeLogin() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const btn = useRef<HTMLButtonElement>(null);
-  useEffect(() => { document.title = "Amiri Agent"; btn.current?.focus(); }, []);
+  useEffect(() => { document.title = "AMIRI Agent"; btn.current?.focus(); }, []);
   const enter = async () => {
     if (busy) return;  // aria-disabled, not disabled: focus stays on the button, so a refused try can be pressed again
     setBusy(true); setErr(null);
@@ -85,11 +85,11 @@ function JudgeLogin() {
     } catch (e) { setErr(entryProblem(e, "judge")); setBusy(false); }
   };
   return (
-    <Frame title="Open Amiri Agent" lede={JUDGE_LEDE}>
+    <Frame title="Open AMIRI Agent" lede={JUDGE_LEDE}>
       <div className="v2-lg__act">
-        <Button ref={btn} variant="primary" size="lg" aria-disabled={busy || undefined} aria-busy={busy} onClick={enter}>{busy ? "Opening…" : "Judge login"}</Button>
+        <Button ref={btn} variant="primary" size="lg" aria-disabled={busy || undefined} busy={busy} onClick={enter}>Judge login</Button>
       </div>
-      <p className="v2-lg__status" role={err ? "alert" : "status"}>{busy ? "Opening Amiri Agent…" : err ? <><span aria-hidden="true">◆ </span>{err}</> : ""}</p>
+      <p className="v2-lg__status" role={err ? "alert" : "status"}>{busy ? "Opening AMIRI Agent…" : err ? <><span aria-hidden="true">◆ </span>{err}</> : ""}</p>
     </Frame>
   );
 }
@@ -134,12 +134,12 @@ function BoxCheck({ cfg }: { cfg: AuthConfig }) {
     catch (e) { setErr(entryProblem(e, "box")); setResetKey(k => k + 1); setBusy(false); }
   }, []);
   const blocked = useCallback(() => setProblem("blocked"), []);
-  useEffect(() => { document.title = "Amiri Agent"; }, []);
+  useEffect(() => { document.title = "AMIRI Agent"; }, []);
   const why = problem ? boxProblem(problem) : null;
   return (
-    <Frame title="Open Amiri Agent" lede={BOX_LEDE} fine={<>
+    <Frame title="Open AMIRI Agent" lede={BOX_LEDE} fine={<>
       <p className="v2-lg__fine"><b>Why this check?</b> It keeps automated bots out, so the demo stays quick and its sample data stays as it is. We don't ask who you are.</p>
-      <p className="v2-lg__fine">Protected by reCAPTCHA: Google's <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer">Terms</a> apply. Amiri Agent asks search engines and AI crawlers to stay away.</p></>}>
+      <p className="v2-lg__fine">Protected by reCAPTCHA: Google's <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer">Terms</a> apply. AMIRI Agent asks search engines and AI crawlers to stay away.</p></>}>
       <div className="v2-lg__check">
         {cfg.recaptcha_site_key && !problem && <Captcha siteKey={cfg.recaptcha_site_key} onToken={passed} onBlocked={blocked} resetKey={resetKey} />}
         {why && <div className="v2-lg__problem" role="alert">
@@ -148,7 +148,7 @@ function BoxCheck({ cfg }: { cfg: AuthConfig }) {
           {problem === "blocked" && <Button variant="secondary" onClick={() => window.location.reload()}>Load this page again</Button>}
         </div>}
       </div>
-      <p className="v2-lg__status" role={err ? "alert" : "status"}>{busy ? "Opening Amiri Agent…" : err ? <><span aria-hidden="true">◆ </span>{err}</> : ""}</p>
+      <p className="v2-lg__status" role={err ? "alert" : "status"}>{busy ? "Opening AMIRI Agent…" : err ? <><span aria-hidden="true">◆ </span>{err}</> : ""}</p>
     </Frame>
   );
 }

@@ -1,7 +1,7 @@
 // The Event page's parts (board 02): the title and four steps, the chain (what happened → the event → your products),
 // the assessment, alerts raised and when you'll know, plus the states under it (boards 15 section C, 16 section E).
 // Page logic is in ./EventDetail.tsx; the words and rules are in ./eventWords.ts and ./words.ts.
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { AlertItem } from "../../api/alerts";
 import type { EventDetail, Hypothesis } from "../../api/investigation";
@@ -20,8 +20,9 @@ import { day, dayTime, placeName } from "../../format";
 import { anchorLabel, cap, count, dateRange, impactText, listText, onDay, sizeTiming, splitCheckText, themeLabel, type VerdictKey } from "../../plain";
 import {
   alertLook, alertStatus, arrowFor, asideTypes, assessmentText, checksUntil, dataSays, expectedParts, findingSource, joinedText, parseBand, parseNum,
-  periodLayout, progressSteps, retriedText, runState, scaleLayout, whenYoullKnow, type ToneKey,
+  groupByDirection, listOrder, moreButtonText, periodLayout, progressSteps, rankImpacts, retriedText, runState, scaleLayout, visibleImpacts, whenYoullKnow, type ToneKey,
 } from "./eventWords";
+import { mergeEffects, type Merged } from "./mergeEffects";
 import { againstOf, asideMeaning, groupAside, otherEventsInReport, plannedTests, STRICTER, testWords, today, untracedWhy, type Threshold } from "./words";
 
 // the task carries more than the shared type names; these are the parts this page reads
@@ -84,7 +85,7 @@ export function RunBanner({ status, busy, onAgain }: { status: string; busy: boo
     return (
       <div className="v2-ev-run" role="status">
         <span className="v2-ev-run__dots" aria-hidden="true"><i /><i /><i /></span>
-        <b>Amiri Agent is still investigating this.</b>
+        <b>AMIRI Agent is still investigating this.</b>
         <span className="v2-meta">What it finds appears here as it goes; the page updates itself.</span>
       </div>
     );
@@ -93,7 +94,7 @@ export function RunBanner({ status, busy, onAgain }: { status: string; busy: boo
     <div className="v2-ev-stop" role="status">
       <Pill tone="bad">{s === "stopped" ? "Stopped early" : "Failed"}</Pill>
       <span className="v2-ev-stop__t">{s === "stopped" ? "The investigation stopped before tracing every product, so this event may be incomplete." : "The investigation failed, so this event may be incomplete."}</span>
-      <Button size="sm" onClick={onAgain} disabled={busy}>{busy ? "Starting…" : "Investigate again"}</Button>
+      <Button size="sm" onClick={onAgain} disabled={busy} busy={busy} busyLabel="Starting…">Investigate again</Button>
     </div>
   );
 }
@@ -108,8 +109,10 @@ export interface ChainProps {
 export function Chain({ m, open, onToggle, onSeeWhy }: ChainProps) {
   const { e } = m;
   const n = e.hypotheses.length;
+  const ref = useRef<HTMLElement>(null);
+  useStickyColumns(ref);
   return (
-    <section aria-label="From the news to your products" className="v2-panel v2-ev-chain">
+    <section ref={ref} aria-label="From the news to your products" className="v2-panel v2-ev-chain">
       <Findings m={m} />
       <span className="v2-ev-arrow" aria-hidden="true" />
       <EventCard m={m} />
@@ -117,6 +120,43 @@ export function Chain({ m, open, onToggle, onSeeWhy }: ChainProps) {
       {n ? <Products m={m} open={open} onToggle={onToggle} /> : <NoneExposed m={m} onSeeWhy={onSeeWhy} />}
     </section>
   );
+}
+
+/** The findings column and the event card travel beside a long product list (position: sticky, event.css) only when that
+ *  helps: the chain is taller than the column, and the column fits the scrolling area (a taller one would have its
+ *  bottom out of reach). Marks the chain `data-stick="found event"` (either, both or none); the CSS does the rest. */
+function useStickyColumns(chain: React.RefObject<HTMLElement | null>) {
+  useLayoutEffect(() => {
+    const el = chain.current;
+    if (!el) return;
+    const main = el.closest<HTMLElement>(".v2-main");
+    const cols = [["found", ".v2-ev-col--found"], ["event", ".v2-ev-event"]] as const;
+    let raf = 0;
+    const measure = () => {
+      raf = 0;
+      // a sticky box sits inside the scroll area's padding (top 0 in event.css leaves the page's own top gap), so that is the room
+      const cs = main ? getComputedStyle(main) : null;
+      const room = main ? main.clientHeight - parseFloat(cs!.paddingTop) - parseFloat(cs!.paddingBottom) : window.innerHeight;
+      const ce = getComputedStyle(el);
+      const rowH = el.clientHeight - parseFloat(ce.paddingTop) - parseFloat(ce.paddingBottom);  // the tallest column: the row's height
+      const stacked = window.matchMedia("(max-width: 979.98px)").matches;  // the phone and tablet layout never sticks
+      const on = stacked ? [] : cols.filter(([, sel]) => {
+        const c = el.querySelector<HTMLElement>(sel);
+        return c && rowH > c.offsetHeight + 1 && c.offsetHeight <= room;
+      }).map(([k]) => k);
+      const v = on.join(" ");
+      if ((el.dataset.stick ?? "") !== v) { if (v) el.dataset.stick = v; else delete el.dataset.stick; }
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(measure); };
+    const ro = new ResizeObserver(schedule);
+    ro.observe(el);
+    if (main) ro.observe(main);
+    for (const [, sel] of cols) { const c = el.querySelector(sel); if (c) ro.observe(c); }
+    const mo = new MutationObserver(schedule);  // rows opening, the joined list unfolding
+    mo.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden"] });
+    measure();
+    return () => { ro.disconnect(); mo.disconnect(); if (raf) cancelAnimationFrame(raf); };
+  }, [chain]);
 }
 
 function Findings({ m }: { m: EventModel }) {
@@ -154,7 +194,7 @@ function Findings({ m }: { m: EventModel }) {
 
 const when = (f: Finding) => f.evidence?.headlines?.[0]?.published_at ?? f.created_at;
 
-/** A report that started the event: its headline (linked), where it came from and when, and Amiri Agent's line. */
+/** A report that started the event: its headline (linked), where it came from and when, and AMIRI Agent's line. */
 function FindingRow({ f }: { f: Finding }) {
   const h = f.evidence?.headlines?.[0], ref = f.source_ref ?? {};
   const to = ref.monitor_id ? `/monitors/${ref.monitor_id}` : ref.series_id ? `/series/${ref.series_id}` : undefined;
@@ -199,7 +239,7 @@ function NoneExposed({ m, onSeeWhy }: { m: EventModel; onSeeWhy: () => void }) {
     <div className="v2-ev-col v2-ev-none">
       <h2 className="v2-ev-none__t">None of your products is exposed</h2>
       <p className="v2-ev-none__m">
-        {types > 0 ? `Amiri Agent looked at ${count(types, "product type")} and set ${types === 1 ? "it" : "them"} aside.` : "Amiri Agent found no product of yours that this could reach."}
+        {types > 0 ? `AMIRI Agent looked at ${count(types, "product type")} and set ${types === 1 ? "it" : "them"} aside.` : "AMIRI Agent found no product of yours that this could reach."}
         {" "}
         {e.set_aside.length > 0
           ? <button type="button" className="v2-ev-link" onClick={onSeeWhy}>See why<span aria-hidden="true"> ▸</span></button>
@@ -210,13 +250,72 @@ function NoneExposed({ m, onSeeWhy }: { m: EventModel; onSeeWhy: () => void }) {
 }
 
 // ---------------------------------------------------------------- your products: the rows
+/** One row per product, metric and direction (mergeEffects). The first of a group is the most important (rankImpacts), so it
+ *  stands for the row: its verdict and its detail. */
+type Impact = Merged<Hypothesis & { metric: string; direction: string; size: string; timing: string }>;
+
 function Products({ m, open, onToggle }: { m: EventModel; open: string | null; onToggle: (id: string) => void }) {
   const { e } = m;
   const t0 = today();
+  const [all, setAll] = useState(false);
+  const listId = useId();
+  // most important first; five show, the rest behind a button
+  const ranked = useMemo(() => rankImpacts(e.hypotheses, h => ({
+    adverse: m.adverseOf(h), verdict: m.tasks.get(h.hypothesis_id)?.check?.verdict, size: h.expected.size,
+  })), [e.hypotheses, m]);
+  const rows = useMemo<Impact[]>(() => mergeEffects(ranked.map(h => ({
+    ...h, metric: h.expected.metric, direction: h.expected.direction, size: h.expected.size, timing: h.expected.timing,
+  }))), [ranked]);
+  const dirOf = (r: Impact) => r.direction;
+  const order = listOrder(rows, dirOf);  // one order, open or closed: opening only adds rows below
+  const shown = visibleImpacts(order, all);
+  const groups = groupByDirection(shown, dirOf, order);  // a group with no row showing has no label yet
+  // a row is open when the link (or a click) names any of its merged effects
+  const holds = (r: Impact, id: string | null) => !!id && r.members.some(x => x.hypothesis_id === id);
+  // a link to an effect that is not among the first five opens the list
+  useEffect(() => {  // only when the open effect changes: closing the list again afterwards stays closed
+    if (open && !visibleImpacts(order, false).some(r => holds(r, open))) setAll(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+  const more = moreButtonText(order.length, all);
+  const row = (r: Impact) => {
+    const t = m.tasks.get(r.hypothesis_id), c = t?.check;
+    const adverse = m.adverseOf(r);
+    const arrow = arrowFor(r.direction, adverse);
+    const x = expectedParts(r.size, r.timing);
+    const says = dataSays(t, t0);
+    const isOpen = holds(r, open);
+    const name = r.product_name ?? r.product_id;
+    const panel = `impact-${isOpen && open ? open : r.hypothesis_id}-open`;
+    return (
+      <div key={r.hypothesis_id} id={`impact-${r.hypothesis_id}`} className="v2-ev-prodgroup">
+        <div role="row" className={`v2-ev-prod${isOpen ? " is-open" : ""}`}>
+          <span role="cell" className={`v2-ev-prod__arrow is-${arrow.tone}`}><b aria-hidden="true">{arrow.glyph}</b><span className="v2-sr">{arrow.word}</span></span>
+          <span role="cell" className="v2-ev-prod__name">
+            <button type="button" className="v2-ev-open" aria-expanded={isOpen} aria-controls={panel} onClick={() => onToggle(isOpen && open ? open : r.hypothesis_id)}>
+              <span>{name}</span>
+            </button>
+            <span className="v2-ev-prod__metric">{m.metricName(r)}</span>
+            {r.reasons.length > 1 && <ul className="v2-ev-prod__why">{r.reasons.map(why => <li key={why}>{why}</li>)}</ul>}
+          </span>
+          <span role="cell" className="v2-ev-prod__exp v2-num">
+            {x.size ? <><b>{x.size}</b>{x.when ? ` ${x.when}` : ""}</> : x.when ?? "—"}
+          </span>
+          <span role="cell" className="v2-ev-prod__says">
+            {c ? (says.pill ? <Pill>{says.pill}</Pill> : <Verdict verdict={c.verdict} text={c.verdict_text} />)
+              : t ? <Pill>{says.pill ?? "Not checked yet"}</Pill>
+              : e.run.validation ? <Pill>No check</Pill> : <ChecksOff />}
+            {says.line && <span className="v2-ev-prod__line">{says.line}</span>}
+          </span>
+          <span role="cell" className="v2-ev-prod__chev" aria-hidden="true"><Icon name="chevron" /></span>
+        </div>
+      </div>
+    );
+  };
   return (
     <div className="v2-ev-col v2-ev-col--prod">
       <h2 className="v2-sr">Your products and what your data says</h2>
-      <div role="table" aria-label="Your products: what is expected and what your data says" className="v2-ev-prods">
+      <div role="table" id={listId} aria-label="Your products: what is expected and what your data says" className="v2-ev-prods">
         <div role="row" className="v2-ev-prod v2-ev-prod--head">
           <span role="columnheader"><span className="v2-sr">Direction</span></span>
           <span role="columnheader" className="v2-cap">Your product · metric</span>
@@ -224,48 +323,24 @@ function Products({ m, open, onToggle }: { m: EventModel; open: string | null; o
           <span role="columnheader" className="v2-cap">Your data says</span>
           <span role="columnheader"><span className="v2-sr">Details</span></span>
         </div>
-        <div role="rowgroup">
-          {e.hypotheses.map(h => {
-            const t = m.tasks.get(h.hypothesis_id), c = t?.check;
-            const adverse = m.adverseOf(h);
-            const arrow = arrowFor(h.expected.direction, adverse);
-            const x = expectedParts(h.expected.size, h.expected.timing);
-            const says = dataSays(t, t0);
-            const isOpen = open === h.hypothesis_id;
-            const name = h.product_name ?? h.product_id;
-            const panel = `impact-${h.hypothesis_id}-open`;
-            return (
-              <div key={h.hypothesis_id} id={`impact-${h.hypothesis_id}`} className="v2-ev-prodgroup">
-                <div role="row" className={`v2-ev-prod${isOpen ? " is-open" : ""}`}>
-                  <span role="cell" className={`v2-ev-prod__arrow is-${arrow.tone}`}><b aria-hidden="true">{arrow.glyph}</b><span className="v2-sr">{arrow.word}</span></span>
-                  <span role="cell" className="v2-ev-prod__name">
-                    <button type="button" className="v2-ev-open" aria-expanded={isOpen} aria-controls={panel} onClick={() => onToggle(h.hypothesis_id)}>
-                      <span>{name}</span>
-                    </button>
-                    <span className="v2-ev-prod__metric">{m.metricName(h)}</span>
-                  </span>
-                  <span role="cell" className="v2-ev-prod__exp v2-num">
-                    {x.size ? <><b>{x.size}</b>{x.when ? ` ${x.when}` : ""}</> : x.when ?? "—"}
-                  </span>
-                  <span role="cell" className="v2-ev-prod__says">
-                    {c ? (says.pill ? <Pill>{says.pill}</Pill> : <Verdict verdict={c.verdict} text={c.verdict_text} />)
-                      : t ? <Pill>{says.pill ?? "Not checked yet"}</Pill>
-                      : e.run.validation ? <Pill>No check</Pill> : <ChecksOff />}
-                    {says.line && <span className="v2-ev-prod__line">{says.line}</span>}
-                  </span>
-                  <span role="cell" className="v2-ev-prod__chev" aria-hidden="true"><Icon name="chevron" /></span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {groups.map((g, i) => (
+          <div role="rowgroup" key={g.label ?? i}>
+            {g.label && <div role="row" className="v2-ev-grp"><span role="rowheader" aria-colspan={5} className="v2-cap">{g.label}</span></div>}
+            {g.items.map(row)}
+          </div>
+        ))}
       </div>
+      {more && (
+        <button type="button" className="v2-ev-more" aria-expanded={all} aria-controls={listId} onClick={() => setAll(v => !v)}>
+          {more}<span aria-hidden="true"> {all ? "▴" : "▾"}</span>
+        </button>
+      )}
     </div>
   );
 }
 
 // ---------------------------------------------------------------- one impact opened: expected against your data
-/** Expected (Amiri Agent's assessment, AI) against your data so far (counted by code): the figure, the result, a scale,
+/** Expected (AMIRI Agent's assessment, AI) against your data so far (counted by code): the figure, the result, a scale,
  *  the tests that decided it, then one quiet line and the technical details. */
 export function ImpactDetail({ h, t, metric, adverse, team, onClose }: { h: Hypothesis; t: Task | undefined; metric: string; adverse: boolean | null; team?: string; onClose: () => void }) {
   const c = t?.check;
@@ -291,7 +366,7 @@ export function ImpactDetail({ h, t, metric, adverse, team, onClose }: { h: Hypo
     : c.final ? `final${c.as_of ? `, checked ${onDay(c.as_of)}` : ""}`
     : v === "error" ? (c.as_of ? `tried ${onDay(c.as_of)}` : null)
     : `a first look, may change as more data comes in${c.as_of ? `; checked ${onDay(c.as_of)}` : ""}`;
-  const nextText = c?.final ? null : next ? (next < t0 ? "check due" : next === t0 ? "next check today" : `next check ${onDay(next)}`) : null;
+  const nextText = c?.final ? null : next ? (next < t0 ? "next check soon" : next === t0 ? "next check today" : `next check ${onDay(next)}`) : null;
   const quiet = [sure, nextText, watch ? `watched ${dateRange(watch.from, watch.until)}` : null].filter(Boolean) as string[];
   const name = h.product_name ?? h.product_id;
 
@@ -305,7 +380,7 @@ export function ImpactDetail({ h, t, metric, adverse, team, onClose }: { h: Hypo
 
       <div className="v2-ev-vs">
         <div>
-          <p className="v2-cap v2-ev-vs__l">Expected · Amiri Agent's assessment (AI)</p>
+          <p className="v2-cap v2-ev-vs__l">Expected · AMIRI Agent's assessment (AI)</p>
           <p className="v2-ev-vs__big">{impactText(metric, h.expected.direction)}</p>
           <p className="v2-ev-vs__s">{sizeTiming(h.expected.size, h.expected.timing)}{adverse !== null && <> · <b className={adverse ? "v2-ev-bad" : "v2-ev-good"}>{adverse ? "Bad for you" : "Good for you"}</b></>}</p>
           <p className="v2-ev-vs__why">Because {lower(h.chain_label)}.</p>
@@ -437,7 +512,7 @@ export function Assessment({ m, reportOpen, onReport, asideOpen, onAside }: Asse
   return (
     <section aria-labelledby="ev-as" className="v2-ev-assess">
       <div className="v2-ev-assess__h">
-        <h2 id="ev-as" className="v2-title-lg">Amiri Agent's assessment</h2>
+        <h2 id="ev-as" className="v2-title-lg">AMIRI Agent's assessment</h2>
         <Pill>Written by AI</Pill>
       </div>
       <div className="v2-ev-ai">
@@ -454,14 +529,14 @@ export function Assessment({ m, reportOpen, onReport, asideOpen, onAside }: Asse
         </div>
       </div>
       <div id={reportId} hidden={!reportOpen} className="v2-ev-report">
-        <p className="v2-meta">Written by Amiri Agent (AI) · covers the whole investigation{others ? `, which also covers ${count(others, "other event")}` : ", not only this event"}</p>
+        <p className="v2-meta">Written by AMIRI Agent (AI) · covers the whole investigation{others ? `, which also covers ${count(others, "other event")}` : ", not only this event"}</p>
         {reportOpen && e.run.report && <div className="v2-ev-report__md"><Markdown text={e.run.report} under={2} /></div>}
       </div>
 
       {groups.length > 0 && (
         <details id="set-aside" className="v2-ev-aside" open={asideOpen} onToggle={ev => onAside((ev.currentTarget as HTMLDetailsElement).open)}>
           <summary>Considered, no impact · {e.set_aside.length}</summary>
-          <p className="v2-meta v2-ev-aside__lede">Looked at and not sent to a team · Amiri Agent's judgement (AI)</p>
+          <p className="v2-meta v2-ev-aside__lede">Looked at and not sent to a team · AMIRI Agent's judgement (AI)</p>
           <ul className="v2-ev-aside__list">{groups.map((g, i) => (
             <li key={i}>
               <b>{g.links.length > 1 ? `${g.links.length} links set aside for the same reason` : g.links[0]}</b>
@@ -489,7 +564,7 @@ export function SideColumn({ m }: { m: EventModel }) {
             const look = alertLook(a.level);
             return (
               <li key={a.alert_id}>
-                <Link to="/alerts" className="v2-ev-alert">
+                <Link to="/alerts" className="v2-rowlink v2-ev-alert">
                   <Pill tone={look.tone}>{look.label}</Pill>
                   <span className="v2-ev-alert__t"><span>{a.owner}</span><span className="v2-meta">{cap(alertStatus(a))}</span></span>
                   <span className="v2-ev-alert__n v2-meta">{count(a.effects.length, "effect")}<span aria-hidden="true"> ›</span></span>

@@ -1,4 +1,4 @@
-/* Amiri Agent UI v2: fonts, the .v2 root, type scale, focus ring, reduced motion, skip link.
+/* AMIRI Agent UI v2: fonts, the .v2 root, type scale, focus ring, reduced motion, skip link.
    Outside .v2 it only sets the page itself (height, body margin and colour). The App shell puts class "v2" on its root. */
 
 /* D6: Geist and Geist Mono, self-hosted (OFL: /fonts/OFL.txt). Variable fonts, so one file per
@@ -71,6 +71,8 @@ body { margin: 0; background: var(--v2-page); color: var(--v2-text); font-family
 
 /* Focus ring (A4): the brand twin for the theme, 2 px, offset 2 px. Mouse clicks don't show it. */
 .v2 :focus-visible { outline: 2px solid var(--v2-focus); outline-offset: 2px; }
+/* A heading focused by script (so a screen reader starts reading there) is a landing point, not a control: no ring. */
+.v2 :is(h1, h2, h3)[tabindex="-1"]:focus, .v2 :is(h1, h2, h3)[tabindex="-1"]:focus-visible { outline: none; }
 
 /* Type scale. Floor is 12 px (A5): captions, pills and mono; meta 13; body and tables 14. */
 .v2-cap {
@@ -118,5 +120,9 @@ body { margin: 0; background: var(--v2-page); color: var(--v2-text); font-family
     transition-duration: .01ms !important;
     transition-delay: 0s !important;
     scroll-behavior: auto !important;
+  }
+  /* the fold's content box is a pseudo-element `*` doesn't reach (F3); a separate rule, so a browser without it drops only this one */
+  @supports selector(::details-content) {
+    details::details-content { transition: none !important; }
   }
 }

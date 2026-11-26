@@ -6,11 +6,11 @@ export let ZONE_LABEL = "UTC";
 const dt = (opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("en-GB", { timeZone: TIME_ZONE, ...opts });
 let fDayTime: Intl.DateTimeFormat, fTime: Intl.DateTimeFormat, fDay: Intl.DateTimeFormat, dayKey: Intl.DateTimeFormat;
 
-/** "Asia/Ho_Chi_Minh" → "Ho Chi Minh". */
+/** The institution's zone as every page says it (see zoneName): "America/Chicago" → "Central", "Asia/Ho_Chi_Minh" → "Ho Chi Minh". */
 export function setZone(zone: string) {
   try { new Intl.DateTimeFormat("en-GB", { timeZone: zone }); } catch { zone = "UTC"; }
   TIME_ZONE = zone;
-  ZONE_LABEL = zone === "UTC" ? "UTC" : zone.split("/").pop()!.replace(/_/g, " ");
+  ZONE_LABEL = zoneName(zone);  // the same word as the top bar: "Central", never "Chicago" on one page and "Central" on another
   fDayTime = dt({ day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
   fTime = dt({ hour: "2-digit", minute: "2-digit", hour12: false });
   fDay = dt({ day: "numeric", month: "short" });
@@ -25,9 +25,9 @@ export const isToday = (iso: string, now = new Date()) => dayKey.format(new Date
 /** "14:05" today, otherwise "11 Oct 14:05". */
 export const when = (iso: string | null | undefined, now = new Date()) =>
   !iso ? "—" : isToday(iso, now) ? fTime.format(new Date(iso)) : noComma(fDayTime.format(new Date(iso)));
-/** When something is due: its time, or a plain "overdue" when the time has passed (the scheduler isn't running). */
+/** When something is due: its time, or "soon" when the time has passed (the schedule is behind; it isn't broken). */
 export const due = (iso: string | null | undefined, now = new Date()) =>
-  !iso ? "—" : new Date(iso) <= now ? "overdue: waiting for the scheduler" : when(iso, now);
+  !iso ? "—" : new Date(iso) <= now ? "soon" : when(iso, now);
 export const dayTime = (iso: string) => noComma(fDayTime.format(new Date(iso)));
 export const day = (iso: string) => fDay.format(new Date(iso));
 

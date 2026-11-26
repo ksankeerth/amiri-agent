@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { RadarRun, RadarStatus, RadarStory } from "../../api/radar";
 import {
-  cantCheck, emptyCopy, followUpOf, funnelOf, funnelRun, investigatedText, LIST_FIRST, ledeText, listFor, moreWord, neighbour, orderStories, parseTab, pickStory,
+  cantCheck, emptyCopy, followUpOf, funnelOf, funnelRun, investigatedText, LIST_FIRST, ledeText, listFor, moreWord, neighbour, orderStories, parseTab, pickStory, storyStatus,
   placeList, placesOf, refusalTitle, runDoneText, shownRows, tabCounts, toWatch, whereWent, type CheckState, type Where,
 } from "./storyWords.ts";
 
@@ -84,7 +84,10 @@ test("where a sent story went: its event, being investigated, waiting, no impact
   assert.equal(whereWent(sent({ finding_status: "new" }), none).kind, "waiting");
   assert.equal(whereWent(sent({ finding_status: "new" }), { ...none, watching: new Set(["f-a"]) }).kind, "investigating");
   const aside = sent({ finding_status: "set_aside" });
-  assert.equal(whereWent(aside, { ...none, reasons: { "f-a": "investigation_failed" } }).kind, "failed");
+  const failed = whereWent(aside, { ...none, reasons: { "f-a": "investigation_failed" } });
+  assert.equal(failed.kind, "failed");
+  assert.equal(failed.reason, "the investigation agent didn't answer");  // no raw code, whatever the note says
+  assert.equal(whereWent(aside, { ...none, reasons: { "f-a": "investigation_failed" }, notes: { "f-a": "the agent refused or couldn't take the run: HTTP 422: {\"detail\":[]}" } }).reason, "the investigation agent couldn't take the run");
   const no = whereWent(aside, { ...none, reasons: { "f-a": "no_theme" } });
   assert.equal(no.kind, "noimpact");
   assert.match(no.detail ?? "", /no economic link to your products/);
@@ -131,13 +134,19 @@ const status = (more: Partial<RadarStatus> = {}): RadarStatus => ({
 const at = (iso: string) => `at ${iso.slice(11, 16)}`;
 
 test("the lede says how often, when it last read and when it reads next", () => {
-  assert.equal(ledeText(status(), "once a day at 06:00", at), "Reads the world's news once a day at 06:00 · last read at 06:15 · next at 06:00");
-  assert.equal(ledeText(status({ last_run: null }), "every hour", at), "Reads the world's news every hour · no read yet · next at 06:00");
+  assert.equal(ledeText(status(), "once a day at 06:00", at), "Reads the world's news once a day at 06:00 · last read at 06:15 · next read: at 06:00");
+  assert.equal(ledeText(status({ last_run: null }), "every hour", at), "Reads the world's news every hour · no read yet · next read: at 06:00");
   assert.match(ledeText(status({ last_run: run({ status: "running" }) }), "every hour", at), /reading now/);
   assert.match(ledeText(status({ last_run: run({ status: "failed" }) }), "every hour", at), /last read failed at 06:15/);
   assert.equal(ledeText(status({ connected: false }), "every hour", at), "Radar isn't connected, so it isn't reading the news now · last read at 06:15");
   assert.equal(ledeText(status({ connected: false, last_run: null }), "every hour", at), "Radar isn't reading the news yet.");
-  assert.match(ledeText(status(), "every hour", at, () => "due now"), /next due now$/);
+  assert.match(ledeText(status(), "every hour", at, () => "due now"), /next read: due now$/);
+  // the schedule has stopped (the last read is days old and the next one is "now"): no time that has already gone by
+  const now = new Date("2026-11-25T14:17:00Z");
+  const late = status({ every_minutes: 1440, next_run_at: "2026-11-25T14:17:00Z", last_run: run({ finished_at: "2026-11-21T12:15:00Z" }) });
+  assert.match(ledeText(late, "once a day at 06:00", at, at, now), /next read: when updates resume$/);
+  const justLate = status({ every_minutes: 1440, next_run_at: "2026-11-25T06:00:00Z", last_run: run({ finished_at: "2026-11-24T06:15:00Z" }) });
+  assert.match(ledeText(justLate, "once a day at 06:00", at, () => "due now", now), /next read: due now$/);
 });
 
 const can: CheckState = { connected: true, budgetSpent: false, running: false, left: 5, limit: 5, budgetBack: "tomorrow 05:30", runAt: "06:00" };
@@ -205,4 +214,13 @@ test("an empty list says why, and how to get something back", () => {
   assert.equal(p.title, "No stories about California");
   assert.equal(p.clear, "place");
   assert.equal(emptyCopy("below", "", "", o).clear, undefined);
+});
+
+test("one status per story: a sent story that couldn't be investigated says so in the same label", () => {
+  const sent = story("a", "sent", { finding_status: "set_aside" });
+  const failed = whereWent(sent, { ...none, reasons: { "f-a": "investigation_failed" } });
+  assert.equal(storyStatus(sent, failed).label, "Sent · couldn't be investigated");
+  assert.equal(storyStatus(sent, whereWent(sent, none)).label, "Sent");
+  assert.equal(storyStatus(story("b", "below"), { kind: "none", text: "" }).label, "Held back");
+  assert.equal(storyStatus(story("c", "dismissed"), { kind: "none", text: "" }).dashed, true);
 });

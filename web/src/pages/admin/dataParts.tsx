@@ -1,11 +1,12 @@
 // The left side of the Data connection page: the five-step strip, the source cards, the sample's conditions, and the
 // file import (choose, look at it, confirm). The check's result is in ResultPanel.tsx.
-import { useId, useRef, useState, type DragEvent, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { ApiError } from "../../api/client";
 import { connectApi, type Connection } from "../../api/connect";
-import { lockAttrs } from "../../components/demoLock";
 import { useRefusalToast, useToast } from "../../components/ui";
 import { Button } from "../../components/v2/Button";
+import { RadioGroup, Switch } from "../../components/v2/Choice";
+import { FileDrop } from "../../components/v2/FilePicker";
 import { Pill } from "../../components/v2/Pill";
 import { plural } from "../../format";
 import { CONDITIONS_SHOWN, conditionsFor, moreConditions, moreLine, sampleOff, scenarioParam, SOURCES, startWords, type Kind, type SourceId, type StripStep } from "./dataWords";
@@ -26,38 +27,14 @@ export function Steps({ steps }: { steps: StripStep[] }) {
   );
 }
 
-// ---------------------------------------------------------------- a switch
-/** A real switch (a checkbox with the switch role), so Space works and a screen reader says on or off. Locked by the demo
- *  lock: still there and focusable, says why, changes nothing. */
-export function Switch({ on, locked = false, disabled, large, onChange, ...aria }: {
-  on: boolean; locked?: boolean; disabled?: boolean; large?: boolean; onChange: (on: boolean) => void;
-  "aria-label"?: string; "aria-labelledby"?: string; "aria-describedby"?: string;
-}) {
-  return <input type="checkbox" role="switch" className={`v2-ad-sw${large ? " is-lg" : ""}`} checked={on} disabled={disabled} {...aria} {...lockAttrs(locked)}
-    onClick={locked ? e => e.preventDefault() : undefined} onChange={e => { if (!locked) onChange(e.target.checked); }} />;
-}
-
 // ---------------------------------------------------------------- step 1: the source cards
 export function SourceCards({ choice, kind, onPick }: { choice: SourceId | null; kind: Kind; onPick: (s: SourceId) => void }) {
-  const name = useId();
   const head = useId();
   return (
     <section>
       <h2 id={head} className="v2-ad-h2">1 · Source</h2>
-      <div role="radiogroup" aria-labelledby={head} className="v2-ad-cards">
-        {SOURCES.map(s => {
-          const off = sampleOff(s.id, kind), why = `${name}-${s.id}-why`;
-          return (
-            <label key={s.id} className={`v2-ad-card${choice === s.id ? " is-on" : ""}${off ? " is-off" : ""}`}>
-              <input type="radio" name={name} value={s.id} checked={choice === s.id} disabled={!!off} aria-describedby={off ? why : undefined} onChange={() => onPick(s.id)} />
-              <span className="v2-ad-card__txt">
-                <b className="v2-ad-card__t">{s.title}</b>
-                <span className="v2-ad-card__l">{s.line}</span>
-                {off && <span id={why} className="v2-ad-card__why">{off}</span>}
-              </span>
-            </label>);
-        })}
-      </div>
+      <RadioGroup variant="cards" legend="Source" legendHidden value={choice} onChange={onPick}
+        options={SOURCES.map(s => ({ value: s.id, label: s.title, description: s.line, disabled: !!sampleOff(s.id, kind), why: sampleOff(s.id, kind) ?? undefined }))} />
     </section>
   );
 }
@@ -66,14 +43,14 @@ export function SourceCards({ choice, kind, onPick }: { choice: SourceId | null;
 function CondRow({ label, note, startDaysAgo, on, onChange }: { label: string; note: string; startDaysAgo: number; on: boolean; onChange: (on: boolean) => void }) {
   const t = useId();
   return (
-    <label className="v2-ad-cond">
-      <Switch on={on} onChange={onChange} aria-labelledby={`${t}-t`} aria-describedby={`${t}-n`} />
-      <span className="v2-ad-cond__main">
-        <span id={`${t}-t`} className="v2-ad-cond__t">{label}</span>
-        <span id={`${t}-n`} className="v2-ad-cond__n">{note} {startWords(startDaysAgo)}.</span>
-      </span>
+    <div className="v2-ad-cond">
+      <Switch checked={on} onChange={e => onChange(e.target.checked)} aria-labelledby={`${t}-t`} aria-describedby={`${t}-n`}
+        label={<span className="v2-ad-cond__main">
+          <span id={`${t}-t`} className="v2-ad-cond__t">{label}</span>
+          <span id={`${t}-n`} className="v2-ad-cond__n">{note} {startWords(startDaysAgo)}.</span>
+        </span>} />
       <Pill>Data effect</Pill>
-    </label>
+    </div>
   );
 }
 
@@ -118,7 +95,7 @@ export function UseSample({ kind, on, conn, locked, onImported }: { kind: Kind; 
   return (
     <div className="v2-ad-use">
       <div className="v2-ad-use__row">
-        <Button variant="primary" locked={locked} disabled={!!busy} aria-describedby="ad-use-note" onClick={go}>{busy ? "Working…" : `Use ${what}`}</Button>
+        <Button variant="primary" locked={locked} disabled={!!busy} busy={!!busy} aria-describedby="ad-use-note" onClick={go}>{`Use ${what}`}</Button>
         <a className="v2-ad-link" href={connectApi.exampleHref(scenario)} download>Download as JSON</a>
       </div>
       <p id="ad-use-note" className="v2-ad-fine" role={busy ? "status" : undefined}>
@@ -146,32 +123,21 @@ interface Picked { file: File; peek: Peek }
  *  where (line for a syntax error, field for a value) and nothing is stored. */
 export function FileImport({ conn, locked, onImported }: { conn: Connection; locked: boolean; onImported: (c: Connection) => void }) {
   const toast = useToast(), refuse = useRefusalToast();
-  const picker = useRef<HTMLInputElement>(null);
   const [picked, setPicked] = useState<Picked | null>(null);
   const [problem, setProblem] = useState<UploadProblem | null>(null);
   const [reading, setReading] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-  const [over, setOver] = useState(false);
-  const errId = useId(), dropId = useId();
+  const errId = useId();
 
-  const reset = () => { if (picker.current) picker.current.value = ""; };
+  const refuse1 = (why: string) => { setPicked(null); setProblem({ headline: "Nothing was imported.", items: [why], more: 0 }); };
   const take = async (file: File) => {
     setProblem(null); setPicked(null);
-    const why = fileProblem(file, conn.max_import_mb);
-    if (why) { setProblem({ headline: "Nothing was imported.", items: [why], more: 0 }); reset(); return; }
     setReading(file.name);
     try {
       const r = peekImport(await file.text());
       if (r.ok) setPicked({ file, peek: r.peek }); else setProblem(r.problem);
     } catch { setProblem({ headline: "The file couldn't be read.", items: [], more: 0 }); }
-    finally { setReading(null); reset(); }
-  };
-  const choose = () => { if (!locked && !sending && !reading) picker.current?.click(); };
-  const drop = (e: DragEvent) => {
-    e.preventDefault(); setOver(false);
-    if (locked || sending || reading) return;
-    const f = e.dataTransfer.files?.[0];
-    if (f) take(f);
+    finally { setReading(null); }
   };
   const send = async () => {
     if (!picked) return;
@@ -189,17 +155,14 @@ export function FileImport({ conn, locked, onImported }: { conn: Connection; loc
   const p = picked?.peek;
   return (
     <div className="v2-ad-file">
-      <input ref={picker} type="file" accept="application/json,.json" hidden tabIndex={-1} onChange={e => { const f = e.target.files?.[0]; if (f) take(f); }} />
       {!picked && (
-        <div className={`v2-ad-drop${over ? " is-over" : ""}`} role="group" aria-labelledby={dropId}
-          onDragOver={e => { e.preventDefault(); if (!locked) setOver(true); }} onDragLeave={() => setOver(false)} onDrop={drop}>
-          <span id={dropId} className="v2-ad-drop__t">{reading ? `Reading ${reading}…` : sending ? "Sending…" : "Drop a JSON file here"}</span>
-          <span className="v2-ad-fine">One file in the Metrics Spec format, up to {conn.max_import_mb} MB.</span>
-          <div className="v2-ad-drop__row">
-            <Button locked={locked} disabled={!!reading || sending} aria-describedby={problem ? errId : undefined} aria-invalid={problem ? true : undefined} onClick={choose}>Choose a file</Button>
-            <a className="v2-ad-link" href={connectApi.exampleUrl} download>Download an example file</a>
-          </div>
-        </div>)}
+        <FileDrop variant="zone" accept="application/json,.json" validate={f => fileProblem(f, conn.max_import_mb)} onFile={take} onReject={refuse1}
+          label={reading ? `Reading ${reading}…` : sending ? "Sending…" : "Drop a JSON file here"}
+          hint={`One file in the Metrics Spec format, up to ${conn.max_import_mb} MB.`}
+          pickLabel="Choose a file" size="md" locked={locked} disabled={!!reading || sending}
+          aria-describedby={problem ? errId : undefined} aria-invalid={problem ? true : undefined}>
+          <a className="v2-ad-link" href={connectApi.exampleUrl} download>Download an example file</a>
+        </FileDrop>)}
       {problem && <UploadError id={errId} problem={problem} />}
       {picked && p && (
         <div className="v2-ad-peek" role="group" aria-label="What will be imported">
@@ -213,7 +176,7 @@ export function FileImport({ conn, locked, onImported }: { conn: Connection; loc
           </dl>
           <p className="v2-ad-fine">The server checks every row when you import. {conn.configured ? "This replaces the data now loaded; you check and approve again." : "Nothing is saved unless all of it is valid."}</p>
           <div className="v2-ad-drop__row">
-            <Button variant="primary" locked={locked} disabled={sending} onClick={send}>{sending ? "Importing…" : "Import this file"}</Button>
+            <Button variant="primary" locked={locked} disabled={sending} busy={sending} busyLabel="Importing…" onClick={send}>Import this file</Button>
             <Button variant="quiet" disabled={sending} onClick={() => { setPicked(null); setProblem(null); }}>Choose another file</Button>
           </div>
         </div>)}

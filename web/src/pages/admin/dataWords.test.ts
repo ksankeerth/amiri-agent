@@ -34,8 +34,8 @@ test("the sample's conditions: what a kind has, what is on, and the scenario sen
 
 test("where the data came from", () => {
   assert.equal(sourceOf(null), null);
-  assert.equal(sourceOf({ about: "Synthetic data from Amiri Agent's sample bank, shaped by Austin Tech Bank (your profile). Planted: x." }), "bank");
-  assert.equal(sourceOf({ about: "Synthetic data from Amiri Agent's sample insurer, shaped by X." }), "insurer");
+  assert.equal(sourceOf({ about: "Synthetic data from AMIRI Agent's sample bank, shaped by Austin Tech Bank (your profile). Planted: x." }), "bank");
+  assert.equal(sourceOf({ about: "Synthetic data from AMIRI Agent's sample insurer, shaped by X." }), "insurer");
   assert.equal(sourceOf({ about: "From our core system" }), "file");
   assert.equal(sourceOf({ about: null }), "file");
 });
@@ -100,10 +100,10 @@ test("why Approve and the checks switch can't be used yet", () => {
 });
 
 test("the conditions a sample was made with, read from its about line", () => {
-  const about = "Synthetic data from Amiri Agent's sample bank, shaped by Austin Tech Bank (your profile). Planted: Remittances fall (from 2026-11-04, 6); A late revision (from 2026-11-15, 0.6).";
+  const about = "Synthetic data from AMIRI Agent's sample bank, shaped by Austin Tech Bank (your profile). Planted: Remittances fall (from 2026-11-04, 6); A late revision (from 2026-11-15, 0.6).";
   assert.deepEqual(plantedIds(about, "bank"), ["remittances_fall", "late_revision"]);
-  assert.deepEqual(plantedIds("Synthetic data from Amiri Agent's sample insurer, shaped by X (the bundled demo profile). Nothing planted.", "insurer"), []);
-  assert.deepEqual(plantedIds("Synthetic data from Amiri Agent's sample insurer, shaped by X. Planted: Remittances fall (from 2026-11-04, 6).", "insurer"), []);  // not an insurer's
+  assert.deepEqual(plantedIds("Synthetic data from AMIRI Agent's sample insurer, shaped by X (the bundled demo profile). Nothing planted.", "insurer"), []);
+  assert.deepEqual(plantedIds("Synthetic data from AMIRI Agent's sample insurer, shaped by X. Planted: Remittances fall (from 2026-11-04, 6).", "insurer"), []);  // not an insurer's
   assert.equal(plantedIds("From our core system", "bank"), null);
   assert.equal(plantedIds(null, "bank"), null);
 });

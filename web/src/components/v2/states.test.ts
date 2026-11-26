@@ -22,7 +22,7 @@ test("a server that didn't answer is told apart from one that said no", () => {
 test("a failed load says what failed, and what is safe", () => {
   const down = loadErrorCopy({ code: "network", status: 0 }, "the alerts", "Your alerts are safe; this page just couldn't reach them.");
   assert.equal(down.title, "Couldn't load the alerts");
-  assert.equal(down.message, "Amiri Agent didn't answer. Your alerts are safe; this page just couldn't reach them.");
+  assert.equal(down.message, "AMIRI Agent didn't answer. Your alerts are safe; this page just couldn't reach them.");
   assert.equal(loadErrorCopy({ code: "x", status: 404, detail: "No such alert." }, "the alert").message, "No such alert.");
   assert.match(loadErrorCopy(undefined).message, /Try again/);
 });

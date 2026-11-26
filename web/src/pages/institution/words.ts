@@ -85,7 +85,7 @@ export function emptyNote(counts: Record<SectionName, number>, checks: Readiness
   const say = (xs: SectionName[]) => { const t = list(xs.map(k => EMPTY_NAME[k]!)); return `${cap(t)} ${xs.length === 1 && !t.endsWith("s") ? "is" : "are"} empty.`; };
   const parts: string[] = [];
   if (req.length) parts.push(`${say(req)} Required before this profile can go live.`);
-  if (rec.length) parts.push(`${say(rec)} Recommended, not required: they sharpen what Amiri Agent watches.`);
+  if (rec.length) parts.push(`${say(rec)} Recommended, not required: they sharpen what AMIRI Agent watches.`);
   return parts.length ? { text: parts.join(" "), required: req.length > 0 } : null;
 }
 
@@ -101,9 +101,9 @@ export const subLine = (i: Institution, home: string, zone: string): string =>
 
 /** The profile's state as a pill: the word, and its tone (the word carries the meaning). */
 export function statusLook(status: string): { word: string; tone: "good" | "neutral"; hint: string } {
-  if (status === "active") return { word: "Active", tone: "good", hint: "Amiri Agent uses this profile" };
-  if (status === "archived") return { word: "Archived", tone: "neutral", hint: "Amiri Agent does not use this profile, and it can't be changed until it is restored" };
-  return { word: "Setting up", tone: "neutral", hint: "Amiri Agent does not use it until it is activated" };
+  if (status === "active") return { word: "Active", tone: "good", hint: "AMIRI Agent uses this profile" };
+  if (status === "archived") return { word: "Archived", tone: "neutral", hint: "AMIRI Agent does not use this profile, and it can't be changed until it is restored" };
+  return { word: "Setting up", tone: "neutral", hint: "AMIRI Agent does not use it until it is activated" };
 }
 
 /** The number on the Guided setup button: what is still to do (required first, then recommended). 0: no number. */

@@ -3,7 +3,7 @@ import type { Role } from "../ui";
 
 export type NavItem = [icon: string, label: string, to: string];
 
-// The Risk Manager's menu follows the day: what needs me, what Amiri Agent found, what it watches, who I am, and the what-if tool.
+// The Risk Manager's menu follows the day: what needs me, what AMIRI Agent found, what it watches, who I am, and the what-if tool.
 export const GROUPS: [string, string[]][] = [
   ["Today", ["/home", "/alerts"]],
   ["What it found", ["/events", "/findings"]],

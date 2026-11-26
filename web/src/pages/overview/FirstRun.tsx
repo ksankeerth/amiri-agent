@@ -39,10 +39,10 @@ function DemoLoad() {
         <div className="v2-fr-demo__btns">
           {DEMOS.map((d, n) => (
             <Button key={d.kind} variant={n === 0 ? "primary" : "secondary"} className="v2-fr-demo__btn" locked={locked}
-              disabled={!!busy} aria-busy={busy === d.kind} onClick={() => load(d.kind)}>
+              disabled={!!busy} busy={busy === d.kind} busyLabel="Loading…" onClick={() => load(d.kind)}>
               <Icon name={ICON[d.kind] ?? "bank"} />
               <span className="v2-fr-demo__txt">
-                <b>{busy === d.kind ? "Loading…" : `Load the ${d.label.toLowerCase()}`}</b>
+                <b>{`Load the ${d.label.toLowerCase()}`}</b>
                 <span>{demoLine(d)}</span>
               </span>
             </Button>))}
@@ -81,9 +81,9 @@ export function FirstRun({ o }: { o: Overview }) {
     <div className="v2-fr">
       <header className="v2-fr-head">
         <p className="v2-cap">Welcome</p>
-        {i ? <h1 className="v2-hero v2-fr-h1">Welcome to Amiri Agent</h1>
-          : <h1 className="v2-hero v2-fr-h1">See Amiri Agent work<br />in one click</h1>}
-        <p className="v2-fr-lede">{i ? <>Three steps, and Amiri Agent starts watching the world for <b>{i.name}</b>.</>
+        {i ? <h1 className="v2-hero v2-fr-h1">Welcome to AMIRI Agent</h1>
+          : <h1 className="v2-hero v2-fr-h1">See AMIRI Agent work<br />in one click</h1>}
+        <p className="v2-fr-lede">{i ? <>Three steps, and AMIRI Agent starts watching the world for <b>{i.name}</b>.</>
           : "Load an invented institution with its whole profile, monitors and prices. No real customer data."}</p>
       </header>
       {!i && <DemoLoad />}
@@ -95,7 +95,7 @@ export function FirstRun({ o }: { o: Overview }) {
         <section className="v2-fr-studio" aria-labelledby="fr-studio">
           <div>
             <h2 id="fr-studio" className="v2-fr-h2">See it work first</h2>
-            <p>Run a sharp currency fall on your institution in the Scenario Studio: headlines arrive, prices move, and Amiri Agent's monitors and investigation respond. Nothing touches live data.</p>
+            <p>Run a sharp currency fall on your institution in the Scenario Studio: headlines arrive, prices move, and AMIRI Agent's monitors and investigation respond. Nothing touches live data.</p>
           </div>
           <Button as="link" to="/studio" variant="secondary">Open the Scenario Studio</Button>
         </section>

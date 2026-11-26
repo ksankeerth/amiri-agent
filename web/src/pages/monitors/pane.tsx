@@ -1,12 +1,13 @@
 // The open monitor's parts (board 06; states: board 16 section G): the top line, the pending version's panel, the question,
 // what it could reach and the examples, the versions, and the recent checks with what each found. The page's state and calls
 // are in MonitorPage.tsx; the words and rules are in words.ts.
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { CheckRow, Monitor, MonitorFinding, MonitorSpec, MonitorsStatus } from "../../api/monitors";
 import { useDemoLock } from "../../components/lock";
 import { ArrowLink } from "../../components/v2/ArrowLink";
 import { Button } from "../../components/v2/Button";
+import { PaneFold } from "../../components/v2/ListPane";
 import { Pill } from "../../components/v2/Pill";
 import { WorldMark } from "../../components/v2/WorldMark";
 import { ago, dayTime, person, placeName, plainError } from "../../format";
@@ -14,7 +15,7 @@ import { setAsideReason } from "../../plain";
 import { kindOf } from "../findings/words";
 import { dayWord } from "../radar/words";
 import {
-  changesLine, checkLook, dateWords, coverageText, diffParts, everyWords, findingsIn30, isOverdue, lineMatches, needsSlot, shownLines, slotsWords, statusLook, TELL_SHOWN,
+  changesLine, checkLook, checksShown, dateWords, coverageText, diffParts, everyWords, findingsIn30, isOverdue, lineMatches, needsSlot, shownLines, slotsWords, statusLook, TELL_SHOWN,
   type Part,
 } from "./words";
 
@@ -41,7 +42,7 @@ export function PaneTop({ m, now, actions }: { m: Monitor; now: Date; actions: R
         <ul className="v2-mn-flags" aria-label="Needs a look">
           {m.review_due && <li><Pill tone="unusual" mark="◆">Review due{review ? ` ${dateWords(review)}` : ""}</Pill></li>}
           {failed && m.last_check && <li><Pill tone="bad" mark="▲">Last check failed · {dayWord(m.last_check.at, now)}</Pill></li>}
-          {late && m.last_check && !failed && <li><Pill tone="unusual" mark="◆">Overdue: last checked {ago(m.last_check.at, now)}</Pill></li>}
+          {late && m.last_check && !failed && <li><Pill>Check due · last checked {ago(m.last_check.at, now)}</Pill></li>}
         </ul>)}
     </>
   );
@@ -178,14 +179,7 @@ export function Question({ m, findings }: { m: Monitor; findings: MonitorFinding
 }
 
 // ---------------------------------------------------------------- folds
-function Fold({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
-  return (
-    <details className="v2-mn-fold">
-      <summary><span className="v2-mn-fold__t">{title}</span>{note && <span className="v2-mn-fold__n"> · {note}</span>}</summary>
-      <div className="v2-mn-fold__b">{children}</div>
-    </details>
-  );
-}
+const Fold = PaneFold;
 
 /** "How it reaches us · only your institution sees this": the exposure, by what the profile calls each item. */
 export function Reaches({ m, labels }: { m: Monitor; labels: Record<string, string> }) {
@@ -281,20 +275,21 @@ export interface ChecksProps {
 }
 export function Checks({ m, runs, byCheck, events, now, checking }: ChecksProps) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
-  const head = useId();
+  const [all, setAll] = useState(false);
+  const [fold, setFold] = useState(false);
+  const listId = useId();
+  useEffect(() => { if (checking) setFold(true); }, [checking]);  // a check this viewer started shows its result here: open
+  const { shown, hidden } = checksShown(runs.length, all);
   const test = m.status !== "live" && m.status !== "retired";   // a draft, a waiting or a paused monitor is only ever tested
   return (
-    <section className="v2-mn-checks" aria-labelledby={head}>
-      <div className="v2-mn-checks__h">
-        <h3 id={head} className="v2-mn-checks__t">{test ? "Recent tests" : "Recent checks"}</h3>
-        <span className="v2-mn-checks__gap" />
-        {m.status !== "draft" && <ArrowLink to="/findings">{findingsIn30(m.findings_30d)}</ArrowLink>}
-      </div>
+    <PaneFold title={test ? "Recent tests" : "Recent checks"} open={fold} onToggle={setFold}
+      note={runs.length ? `${cap(dayWord(runs[0].created_at, now))} · ${checkLook(runs[0]).word}${checkLook(runs[0]).count ? `, ${checkLook(runs[0]).count}` : ""}` : "none yet"}>
+      {m.status !== "draft" && <div className="v2-mn-checks__h"><ArrowLink to="/findings">{findingsIn30(m.findings_30d)}</ArrowLink></div>}
       {!runs.length
         ? <p className="v2-mn-none">{test ? "No tests yet. A test shows what the monitor would find; its findings are kept apart from your real ones." : `No checks yet.${m.status === "live" && m.next_check_at ? ` The first is due ${dayWord(m.next_check_at, now)}.` : ""}`}</p>
         : (
-          <ul className="v2-mn-ck">
-            {runs.map((r, i) => {
+          <ul className="v2-mn-ck" id={listId}>
+            {runs.slice(0, shown).map((r, i) => {
               const look = checkLook(r);
               const same = r.status === "failed" && i > 0 && runs[i - 1].status === "failed" && runs[i - 1].error === r.error;
               const detail = r.error ? (same ? "Same problem as the check below." : `${plainError(r.error)} It tries again within the hour.`) : r.summary;
@@ -324,6 +319,9 @@ export function Checks({ m, runs, byCheck, events, now, checking }: ChecksProps)
                 </li>);
             })}
           </ul>)}
-    </section>
+      {(hidden > 0 || all) && (
+        <Button variant="quiet" size="sm" className="v2-mn-ck__all" aria-expanded={all} aria-controls={listId} onClick={() => setAll(v => !v)}>
+          {all ? "Show the latest only" : `All ${runs.length} ${test ? "tests" : "checks"}`}</Button>)}
+    </PaneFold>
   );
 }

@@ -1,6 +1,7 @@
 // The profile on a map: footprint, customer groups, flows, sea routes, regulators,
 // rivals, places to watch and risk zones. Drawn from the profile and reference data
 // (coordinates from the gazetteer, or a country's centre from its shape).
+import { Checkbox, Segmented } from "../../components/v2/Choice";
 import { geoCentroid, geoCircle, geoNaturalEarth1, geoPath } from "d3-geo";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -10,6 +11,7 @@ import { ref, type Hazard, type Route } from "../../api/reference";
 import { usdText, useLoad } from "./fields";
 import { mirrorAround } from "../../components/chartMath";
 import { FLOW_WORDS, moneyGoesOut } from "../../components/setupFlow";
+import { around, placeLabels, type Box, type LabelIn } from "./mapLabels";
 
 type World = FeatureCollection<Geometry, { name: string }>;
 const MIN_SPAN = 30;  // degrees: the smallest area the map zooms to (about Borneo with its neighbours)
@@ -203,6 +205,34 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
   // growing as you zoom in, up to the full size
   const m0 = markScale ?? (compact ? 0.55 : 0.7);
   const ms = Math.min(1, Math.max(m0, m0 * Math.sqrt(zoom.k)));
+  // The regulators' labels: beside their point, clear of each other, of the pins, of the event names and of the zoom buttons.
+  const regLabels = useMemo(() => {
+    if (!on.has("regulators")) return [];
+    const avoid: Box[] = [];
+    const mark = (code: string | null | undefined) => { const p = xy(at(code)); if (p) avoid.push(around(p, 11)); };
+    if (on.has("footprint")) S.footprint.filter(f => f.code.includes("-")).forEach(f => mark(f.code));
+    if (on.has("watch")) S["watch-places"].filter(x => x.code).forEach(x => mark(x.code));
+    if (on.has("segments")) S.segments.forEach(s => s.places.forEach(mark));
+    if (on.has("rivals")) S.rivals.forEach(r => r.places.forEach(mark));
+    events.forEach(e => e.places.forEach(c => { const p = xy(at(c)); if (p) avoid.push(around(p, 15)); }));
+    if (labelTones) for (const e of events.filter(x => labelTones.includes(x.tone))) {
+      const p = e.places.map(c => xy(at(c))).find(Boolean);
+      if (!p) continue;
+      const tw = e.title.length * 8.6, left = p[0] > w - 200;
+      avoid.push({ x: left ? p[0] - 14 - tw : p[0] + 14, y: p[1] - 28, w: tw, h: 24 });
+    }
+    // the zoom buttons: top right on the full map, bottom right on the compact one
+    avoid.push(compact ? { x: w - 190, y: height - 62, w: 190, h: 62 } : { x: w - 190, y: 0, w: 190, h: 62 });
+    const items: LabelIn[] = [];
+    S.regulators.forEach((r, i) => {
+      const p = xy(at(r.country));
+      if (!p) return;
+      const short = (r.short ?? "").trim();
+      items.push({ id: String(r.id), text: short && short.length <= 14 ? short : null, full: `${r.name} · ${r.relation}`, at: p, rank: (r.relation === "home" ? 0 : 100) + i });
+    });
+    return placeLabels(items, { width: w, height, avoid, perPoint: w < 520 ? 2 : 3 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [on, S.regulators, S.footprint, S.segments, S.rivals, S["watch-places"], events, labelTones, zoomed, w, height, compact, P, world]);
   const toggle = (l: Layer) => setOn(s => { const n = new Set(s); if (n.has(l)) n.delete(l); else n.add(l); return n; });
 
   return (
@@ -210,12 +240,11 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
       {!compact && <div className="pmap-bar">
         {title && <h2 className="pmap-title">{title}</h2>}
         <span className="spacer" />
-        <span className="seg"><button type="button" aria-pressed={view === "home"} onClick={() => setView("home")}>Your footprint</button>
-          <button type="button" aria-pressed={view === "world"} onClick={() => setView("world")}>Everything</button></span>
+        <Segmented label="Map view" value={view} onChange={setView} options={[{ value: "home", label: "Your footprint" }, { value: "world", label: "Everything" }]} />
         <details className="menu pmap-layers">
           <summary className="btn btn--sm">Layers · {on.size} of {LAYERS.length}<span aria-hidden="true" className="caret">▾</span></summary>
           <div className="menu-pop" role="group" aria-label="Map layers">
-            {LAYERS.map(([k, label]) => <label key={k} className="check"><input type="checkbox" checked={on.has(k)} onChange={() => toggle(k)} />{label}</label>)}
+            {LAYERS.map(([k, label]) => <Checkbox key={k} checked={on.has(k)} onChange={() => toggle(k)} label={label} />)}
           </div>
         </details>
       </div>}
@@ -282,14 +311,11 @@ export function ProfileMap({ profile, height = 440, events = [], extraPlaces = {
         {on.has("watch") && S["watch-places"].filter(x => x.code).map(x => pin(`w${x.id}`, x.code, "var(--info)", `Watch: ${x.name}${x.reason ? ` · ${x.reason}` : ""}`, 4.5, true))}
         {on.has("segments") && S.segments.flatMap(s => s.places.map((c: string) => pin(`s${s.id}${c}`, c, "var(--accent)", `${s.label} · ${P[c]?.name ?? c}`, 5)))}
         {on.has("rivals") && S.rivals.flatMap(r => r.places.map((c: string) => pin(`r${r.id}${c}`, c, "var(--high)", `Rival: ${r.name} (${r.overlap} overlap) · ${P[c]?.name ?? c}`, 4.5, false, true)))}
-        {on.has("regulators") && S.regulators.filter(r => r.country).map(r => {
-          const p = xy(at(r.country));
-          const n = S.regulators.filter(x => x.country === r.country).findIndex(x => x.id === r.id);  // stack labels per country
-          const t = (r.short ?? r.name).slice(0, 7), hw = 8 + t.length * 4.6;  // a 14 px label (the floor), kept inside the map
-          return p && <g key={`g${r.id}`} transform={`translate(${Math.min(p[0] + 30, w - hw - 4)},${p[1] - 12 - n * 26})`} onMouseMove={e => show(e, `${r.name} · ${r.relation}`)} onMouseLeave={() => setTip(null)}>
-            <rect x={-hw} y={-12} width={hw * 2} height={23} rx={6} fill="var(--surface)" stroke="var(--line-strong)" />
-            <text textAnchor="middle" y={4.5} fontSize={14} fontWeight={700} fill="var(--ink-2)">{t}</text></g>;
-        })}
+        {regLabels.map(l => (
+          <g key={`g${l.id}`} onMouseMove={e => show(e, l.more ? `Also here: ${l.full}` : l.full)} onMouseLeave={() => setTip(null)}>
+            <circle cx={l.at[0]} cy={l.at[1]} r={3.5} fill="var(--surface)" stroke="var(--ink-3)" strokeWidth={1.5} />
+            <rect x={l.box.x} y={l.box.y} width={l.box.w} height={l.box.h} rx={6} fill="var(--surface)" stroke="var(--line-strong)" />
+            <text x={l.box.x + l.box.w / 2} y={l.box.y + 16.5} textAnchor="middle" fontSize={14} fontWeight={700} fill="var(--ink-2)">{l.text}</text></g>))}
         {events.flatMap(e => e.places.map(c => {
           const p = xy(at(c));
           if (!p) return null;

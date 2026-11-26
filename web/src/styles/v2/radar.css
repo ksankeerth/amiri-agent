@@ -31,6 +31,7 @@
 
 /* ---------- the funnel */
 .v2-rd-funnel { display: flex; flex-direction: column; gap: var(--v2-sp-14); }
+.v2-rd-funnel__h { margin: 0 0 calc(-1 * var(--v2-sp-4)); }
 .v2-rd-bar { display: flex; align-items: center; gap: var(--v2-sp-4); }
 .v2-rd-bar span { height: 6px; border-radius: 3px; }
 .v2-rd-bar span:nth-child(1) { flex: 52; background: var(--v2-line-ctl); }
@@ -49,19 +50,9 @@
 /* ---------- tabs and the place filter */
 .v2-rd-tabs .v2-tabs__bar { margin-bottom: var(--v2-sp-20); }
 .v2-rd-sel { display: flex; align-items: center; gap: var(--v2-sp-8); padding-bottom: var(--v2-sp-8); font-size: var(--v2-fs-meta); color: var(--v2-muted); }
-.v2-rd-select {
-  min-height: 32px; padding: 0 var(--v2-sp-8); border: 1px solid var(--v2-line-input); border-radius: var(--v2-r-nav); background: var(--v2-surface);
-  color: var(--v2-text); font: var(--v2-fw-medium) var(--v2-fs-meta)/1.2 var(--v2-font);
-}
 .v2-rd-empty { max-width: 640px; }
 
 /* ---------- the two columns */
-.v2-rd-body { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--v2-sp-28); min-width: 0; }
-.v2-rd-col { flex: 1 1 340px; max-width: 440px; min-width: 0; display: flex; flex-direction: column; gap: var(--v2-sp-6); }
-.v2-rd-pane { flex: 999 1 460px; min-width: 0; }
-@media (min-width: 1000px) {
-  .v2-rd-col { position: sticky; top: 0; max-height: calc(100dvh - 150px); overflow-y: auto; padding: 2px 4px 2px 0; }
-}
 .v2-rd-limit { padding: var(--v2-sp-12) var(--v2-sp-16); }
 
 .v2-rd-list { display: flex; flex-direction: column; gap: var(--v2-sp-4); }
@@ -82,6 +73,7 @@
 .v2-rd-row__went.is-noimpact { color: var(--v2-text-2); }
 .v2-rd-row__went.is-failed { color: var(--v2-warn-ink); }
 .v2-rd-row__pill { padding-top: 1px; }
+.v2-rd-row__state { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-4) var(--v2-sp-8); margin-top: var(--v2-sp-2); }
 /* A1: no muted text on a hover fill */
 .v2 .v2-rd-row:hover .v2-rd-row__m { color: var(--v2-text-2); }
 .v2 .v2-rd-more {
@@ -91,7 +83,6 @@
 .v2 .v2-rd-more:hover { color: var(--v2-brand-hover); text-decoration: underline; }
 
 /* ---------- the reading pane */
-.v2-rd-art { padding: 28px 32px; display: flex; flex-direction: column; gap: var(--v2-sp-18); min-width: 0; }
 .v2-rd-art__top { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-10); }
 .v2-rd-art__when { font-size: var(--v2-fs-meta); color: var(--v2-muted); }
 .v2-rd-art__h { margin-top: -6px; font-size: 26px; line-height: 1.2; letter-spacing: -0.02em; font-weight: var(--v2-fw-semibold); overflow-wrap: anywhere; }
@@ -121,11 +112,8 @@ span.v2-rd-heads__t { color: var(--v2-text); }
 /* ---------- loading: the stats, the list's rows and the pane's shape */
 .v2-rd-sk { display: flex; flex-direction: column; gap: var(--v2-sp-28); }
 .v2-rd-sk__stats { display: flex; flex-wrap: wrap; gap: var(--v2-sp-24); }
-.v2-rd-skb { display: block; border-radius: var(--v2-r-xs); background: var(--v2-count-bg); animation: v2-pulse 1.6s ease-in-out infinite; }
 .v2-rd-sk__row { display: flex; align-items: flex-start; gap: var(--v2-sp-12); padding: 14px 16px; }
 .v2-rd-sk__lines { flex: 1; display: flex; flex-direction: column; gap: var(--v2-sp-8); }
-.v2-rd-art--sk { flex: 999 1 460px; gap: var(--v2-sp-18); }
-@media (prefers-reduced-motion: reduce) { .v2-rd-skb { animation: none; } }
 
 /* ---------- the foot: earlier reads, what it watches, the budget, how it works */
 .v2-rd-foot { display: flex; flex-direction: column; border-top: 1px solid var(--v2-line); padding-top: var(--v2-sp-8); }
@@ -143,8 +131,6 @@ span.v2-rd-heads__t { color: var(--v2-text); }
 .v2-rd-fold__p:first-child { margin-top: 0; }
 
 /* ---------- phone: the list, or one story */
-.v2-rd-read { display: flex; flex-direction: column; gap: var(--v2-sp-14); min-width: 0; }
-.v2 .v2-rd-back { align-self: flex-start; display: inline-flex; align-items: center; gap: var(--v2-sp-6); min-height: var(--v2-hit-phone); padding: 0 var(--v2-sp-4); color: var(--v2-brand); font-weight: var(--v2-fw-semibold); }
 @media (max-width: 719.98px) {
   .v2-rd { gap: var(--v2-sp-24); }
   .v2-rd-h1 { font-size: 32px; }
@@ -155,19 +141,22 @@ span.v2-rd-heads__t { color: var(--v2-text); }
   .v2-rd-stat { flex-basis: 45%; padding: var(--v2-sp-10) var(--v2-sp-16); }
   .v2-rd-stat:nth-child(odd) { padding-left: 0; border-left: 0; }
   .v2-rd-stat:nth-child(n+3) { border-top: 1px solid var(--v2-line); }
-  .v2-rd-col { flex-basis: 100%; max-width: none; }
   .v2-rd-list { gap: 0; }
   .v2 .v2-rd-row, .v2 .v2-rd-row.is-on { padding: var(--v2-sp-16) 0; border: 0; border-top: 1px solid var(--v2-line); border-radius: 0; background: none; }
   .v2 .v2-rd-row:hover { background: none; }
   .v2-rd-list li:last-child .v2-rd-row { border-bottom: 1px solid var(--v2-line); }
   .v2-rd-limit { padding-left: 0; padding-right: 0; }
   .v2 .v2-rd-more { padding-left: 0; min-height: var(--v2-hit-phone); }
-  .v2-rd-art { padding: var(--v2-sp-20) var(--v2-sp-16); gap: var(--v2-sp-16); }
   .v2-rd-art__h { font-size: 22px; }
   .v2-rd-acts .v2-btn { flex: 1 1 0; }
   .v2-rd-acts__gap { display: none; }
   .v2 .v2-rd-hint { flex: 1 1 100%; display: block; padding: var(--v2-sp-12) 0; }
   .v2-rd-heads__o { width: auto; flex: 1 1 100%; }
-  .v2-rd-select { min-height: var(--v2-hit-phone); }
   .v2-rd-fold__b { padding-left: 0; }
+}
+
+/* M1: 44 px to tap on a phone */
+@media (max-width: 719.98px) {
+  .v2-rd-fold summary { min-height: var(--v2-hit-phone); }
+  a.v2-rd-heads__t { display: inline-flex; align-items: center; min-height: var(--v2-hit-phone); }
 }

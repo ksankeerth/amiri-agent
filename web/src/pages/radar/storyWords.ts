@@ -3,12 +3,12 @@
 // are worth asking about. No React and no imports of app code beyond plain.ts and format.ts, so `npm test` runs it.
 import type { RadarRun, RadarStatus, RadarStory } from "../../api/radar";
 import { plainError, plural } from "../../format.ts";
-import { investigationFailed, setAsideReason } from "../../plain.ts";
+import { investigationFailed, NOT_INVESTIGATED, notInvestigatedWhy, setAsideReason } from "../../plain.ts";
 
 // ---------------------------------------------------------------- tabs and the list
 export type Tab = "all" | "sent" | "below" | "dismissed";
 export const TABS: { id: Tab; label: string; countLabel: string }[] = [
-  { id: "all", label: "All", countLabel: "stories" },
+  { id: "all", label: "All stories", countLabel: "stories" },
   { id: "sent", label: "Sent", countLabel: "sent to investigate" },
   { id: "below", label: "Held back", countLabel: "held back" },
   { id: "dismissed", label: "Dismissed", countLabel: "dismissed" },
@@ -69,13 +69,15 @@ export const RELEVANCE: Record<RadarStory["relevance"], { word: string; pill: "i
 export interface Where {
   /** finding_id → why a set-aside finding was set aside. */
   reasons: Record<string, string | null>;
+  /** finding_id → the investigation's own note on a finding that couldn't be investigated (turned into one plain phrase, never shown raw). */
+  notes?: Record<string, string | null>;
   /** event_id → the event's name as the rest of the app shows it. */
   titles: Record<string, string>;
   /** finding ids being asked about now (this viewer pressed a button). */
   watching: ReadonlySet<string>;
 }
 export type WentKind = "event" | "waiting" | "investigating" | "noimpact" | "failed" | "none";
-export interface Went { kind: WentKind; text: string; eventId?: string; /** one more sentence for the open story */ detail?: string }
+export interface Went { kind: WentKind; text: string; eventId?: string; /** one more sentence for the open story */ detail?: string; /** why it couldn't be investigated, in a few words */ reason?: string }
 
 /** Where a sent story stands: in an event, being investigated, waiting, no impact found, or couldn't be investigated. Not sent: nothing. */
 export function whereWent(s: RadarStory, w: Where): Went {
@@ -83,7 +85,10 @@ export function whereWent(s: RadarStory, w: Where): Went {
   const reason = s.finding_id ? w.reasons[s.finding_id] : undefined;
   if (s.event_id) return { kind: "event", text: w.titles[s.event_id] ?? s.event_title ?? "the event", eventId: s.event_id };
   if (s.finding_status === "grouped" || (s.finding_id && w.watching.has(s.finding_id) && s.finding_status !== "set_aside")) return { kind: "investigating", text: "Being investigated" };
-  if (investigationFailed(s.finding_status, reason)) return { kind: "failed", text: "Couldn't be investigated", detail: "Radar sent it, but the investigation couldn't run on it." };
+  if (investigationFailed(s.finding_status, reason)) {
+    const why = notInvestigatedWhy(s.finding_id ? w.notes?.[s.finding_id] : null);
+    return { kind: "failed", text: NOT_INVESTIGATED, reason: why, detail: `Radar sent it, but it couldn't be investigated: ${why}.` };
+  }
   if (s.finding_status === "set_aside") {
     return reason ? { kind: "noimpact", text: "No impact found", detail: `No impact found: ${setAsideReason(reason)}.` } : { kind: "noimpact", text: "Not in an event" };
   }
@@ -95,6 +100,12 @@ export function followUpOf(s: RadarStory, all: RadarStory[]): string | null {
   if (!s.development_of) return null;
   const was = all.find(x => x.fingerprint === s.development_of);
   return was ? `Follow-up to “${was.title}”` : "Follow-up to an earlier story";
+}
+
+/** The one status a story shows: "Sent", or "Sent · couldn't be investigated" when it was sent and then couldn't be looked into (two labels would argue). */
+export function storyStatus(s: Pick<RadarStory, "status">, went: Went): { tone: "good" | "unusual" | "neutral"; label: string; dashed: boolean } {
+  if (s.status === "sent") return went.kind === "failed" ? { tone: "unusual", label: "Sent · couldn't be investigated", dashed: false } : { tone: "good", label: "Sent", dashed: false };
+  return s.status === "below" ? { tone: "neutral", label: "Held back", dashed: false } : { tone: "neutral", label: "Dismissed", dashed: true };
 }
 
 export const publishers = (n: number) => `${n} publisher${n === 1 ? "" : "s"}`;
@@ -114,7 +125,7 @@ export function funnelOf(run: RadarRun | null | undefined): FunnelStat[] | null 
   return [
     { n: run.considered, label: "articles considered" },
     { n: run.shortlisted ?? 0, label: "about your places and names" },
-    { n: run.stories ?? 0, label: "stories" },
+    { n: run.stories ?? 0, label: "stories in this read" },
     { n: run.sent ?? 0, label: "sent to investigate", big: true },
   ];
 }
@@ -126,14 +137,17 @@ export function funnelRun(last: RadarRun | null | undefined, runs: RadarRun[] | 
 }
 
 // ---------------------------------------------------------------- the words of the header
-/** "Reads the world's news once a day at 06:00 · last read today 06:15 · next tomorrow 06:00". `at` writes a moment as "today 06:15"; `next` writes the
- *  next read's time (it says "due now" when the time has passed). */
-export function ledeText(st: RadarStatus, schedule: string, at: (iso: string) => string, next: (iso: string) => string = at): string {
+/** "Reads the world's news once a day at 06:00 · last read today 06:15 · next read: tomorrow 06:00". `at` writes a moment as "today 06:15"; `next`
+ *  writes the next read's time (it says "due now" when the time has passed). A read more than two periods old means the schedule isn't
+ *  running (the server's next time is simply "now"): "next read: when updates resume", not a time that has gone by. */
+export function ledeText(st: RadarStatus, schedule: string, at: (iso: string) => string, next: (iso: string) => string = at, now: Date = new Date()): string {
   const last = st.last_run;
   if (!st.connected) return last && last.status !== "running" ? `Radar isn't connected, so it isn't reading the news now · last read ${at(last.finished_at ?? last.created_at)}` : "Radar isn't reading the news yet.";
   const lastPart = !last ? "no read yet" : last.status === "running" ? "reading now"
     : last.status === "failed" ? `last read failed ${at(last.finished_at ?? last.created_at)}` : `last read ${at(last.finished_at ?? last.created_at)}`;
-  return `Reads the world's news ${schedule} · ${lastPart} · next ${next(st.next_run_at)}`;
+  const lastAt = last && last.status !== "running" ? new Date(last.finished_at ?? last.created_at).getTime() : null;
+  const stalled = lastAt !== null && new Date(st.next_run_at).getTime() <= now.getTime() + 90_000 && now.getTime() - lastAt > 2 * st.every_minutes * 60_000;
+  return `Reads the world's news ${schedule} · ${lastPart} · ${stalled ? "next read: when updates resume" : `next read: ${next(st.next_run_at)}`}`;
 }
 
 /** The "Check now" button's second part: "· 5 left today". */

@@ -9,7 +9,7 @@ export function outcomeText(name: string, f: FetchOutcome): string {
 }
 
 // ---------------------------------------------------------------- theme presets
-// Theme ids are the Metrics Spec's; directions are Amiri Agent's (GET /api/v1/reference/themes).
+// Theme ids are the Metrics Spec's; directions are AMIRI Agent's (GET /api/v1/reference/themes).
 // An fx theme names the currency that moved, so its presets come from the symbol's two sides.
 type Preset = { id: string; label: string; theme: Theme | null };
 const FIXED: Preset[] = [

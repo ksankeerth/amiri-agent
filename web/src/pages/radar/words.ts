@@ -1,10 +1,9 @@
 // Radar's page-only helpers: times and wording.
-import { TIME_ZONE, isToday } from "../../format";
+import { TIME_ZONE, isToday, zoneName as zoneWord } from "../../format";
 
 
-/** The zone as a person says it: "Asia/Colombo" → "Colombo". */
-export const zoneName = (zone: string | null | undefined) =>
-  !zone || zone === "UTC" ? "UTC" : zone.split("/").pop()!.replace(/_/g, " ");
+/** The zone as the top bar says it: "America/Chicago" → "Central", "Asia/Colombo" → "Colombo". */
+export const zoneName = (zone: string | null | undefined) => (!zone ? "UTC" : zoneWord(zone));
 
 /** "06:15" in the institution's time zone. */
 export function clock(iso: string): string {
@@ -13,7 +12,7 @@ export function clock(iso: string): string {
 
 /** "06:00 today", "06:00 tomorrow", otherwise "25 Nov 06:00" (the zone is said once, at the top of the page). */
 export function nextAt(iso: string, now: Date): string {
-  if (new Date(iso) <= now) return "due now";
+  if (new Date(iso).getTime() <= now.getTime() + 90_000) return "soon";
   if (isToday(iso, now)) return `${clock(iso)} today`;
   if (isToday(iso, new Date(now.getTime() + 864e5))) return `${clock(iso)} tomorrow`;
   return `${new Intl.DateTimeFormat("en-GB", { timeZone: TIME_ZONE, day: "numeric", month: "short" }).format(new Date(iso))} ${clock(iso)}`;
@@ -33,6 +32,6 @@ export function dayWord(iso: string, now: Date): string {
   return `${new Intl.DateTimeFormat("en-GB", { timeZone: TIME_ZONE, day: "numeric", month: "short" }).format(t)} ${clock(iso)}`;
 }
 /** The same for a moment already past, or due: a time that has gone by says "due now" (the scheduler is late). */
-export const nextWord = (iso: string, now: Date): string => (new Date(iso) <= now ? "due now" : dayWord(iso, now));
+export const nextWord = (iso: string, now: Date): string => (new Date(iso).getTime() <= now.getTime() + 90_000 ? "due now" : dayWord(iso, now));
 
 export const plainCount = (n: number | null | undefined) => (n ?? 0).toLocaleString("en-GB");

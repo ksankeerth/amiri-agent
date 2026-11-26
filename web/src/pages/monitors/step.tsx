@@ -58,8 +58,8 @@ export function MonitorsStep({ institutionId }: { institutionId: string }) {
               <div key={s} className="v2-sw-draft">
                 <h3 className="v2-cap">{w}</h3>
                 <ul className="v2-sw-draft__l">{xs.map(i => (
-                  <li key={i.item_id}><Button size="sm" locked={locked} disabled={!!busy && busy !== i.item_id} onClick={() => draft(i)}>
-                    {busy === i.item_id ? "Drafting…" : <><span aria-hidden="true">+ </span>{i.label}</>}</Button></li>))}</ul>
+                  <li key={i.item_id}><Button size="sm" locked={locked} disabled={!!busy && busy !== i.item_id} busy={busy === i.item_id} busyLabel="Drafting…" onClick={() => draft(i)}>
+                    <span aria-hidden="true">+ </span>{i.label}</Button></li>))}</ul>
               </div>) : null;
           })}
       </section>

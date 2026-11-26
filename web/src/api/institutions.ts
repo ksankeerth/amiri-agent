@@ -50,7 +50,6 @@ export const inst = {
   get: (id: string) => api<Institution>(`${B}/${enc(id)}`),
   patch: (id: string, version: number, body: Record<string, any>) =>
     api<Institution>(`${B}/${enc(id)}`, { method: "PATCH", json: body, headers: { ...who, "If-Match": `"${version}"` } }),
-  remove: (id: string) => api<void>(`${B}/${enc(id)}`, { method: "DELETE" }),
   status: (id: string, action: "activate" | "archive" | "restore") => api<Institution>(`${B}/${enc(id)}:${action}`, { method: "POST" }),
   profile: (id: string) => api<Profile>(`${B}/${enc(id)}/profile`),
   readiness: (id: string) => api<Readiness>(`${B}/${enc(id)}/readiness`),

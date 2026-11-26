@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  actMeta, ageText, arrowOf, findingPill, foundMeta, greetingText, headlineKind, headlineText, lateSince, mapMarks, moreLine,
+  actMeta, ageText, arrowOf, findingPill, footprintView, foundMeta, greetingText, headlineKind, headlineText, lateSince, mapMarks, markLabel, moreLine, mostSpecific,
   needAction, needLevelWord, othersText, placesText, plainNote, priceRows, storyPill, tracedMeta, watchingMeta,
 } from "./words.ts";
 
@@ -46,7 +46,7 @@ test("the tiles' meta lines", () => {
   assert.equal(watchingMeta(7, 22, true), "7 monitors · 22 prices · Radar");
   assert.equal(watchingMeta(1, 1, false), "1 monitor · 1 price");
   assert.equal(foundMeta({ monitor: 9, timeseries: 3, radar: 6 }), "9 monitors · 3 prices · 6 Radar");
-  assert.equal(foundMeta({ monitor: 0, timeseries: 0, radar: 0 }), "nothing new");
+  assert.equal(foundMeta({ monitor: 0, timeseries: 0, radar: 0 }), "quiet in the last 24 h");
   assert.equal(tracedMeta(4, 14), "open events · 14 effects to watch");
   assert.equal(tracedMeta(1, 1), "open event · 1 effect to watch");
   assert.equal(actMeta(3, 2), "alerts for 2 teams");
@@ -87,12 +87,86 @@ test("the map: the worst tone wins at a place, neutral events add no mark, the f
   assert.deepEqual(mapMarks([{ tone: "neutral", places: ["GB"] }]), []);
 });
 
+const P = (code: string, kind: string, parent: string | null, country: string | null, lat: number, lon: number, name: string, numeric: string | null = null) =>
+  [code, { code, name, kind, parent, country, lat, lon, numeric }] as const;
+const US_PLACES = Object.fromEntries([
+  P("US", "country", null, "US", 37.09, -95.71, "United States", "840"), P("US-TX", "state", "US", "US", 31, -99.9, "Texas"),
+  P("US-CA", "state", "US", "US", 36.78, -119.42, "California"), P("city:austin", "city", "US-TX", "US", 30.27, -97.74, "Austin"),
+  P("AE", "country", null, "AE", 23.4, 53.8, "United Arab Emirates", "784"), P("chk:hormuz", "chokepoint", null, null, 26.57, 56.25, "Strait of Hormuz"),
+  P("LK", "country", null, "LK", 7.87, 80.77, "Sri Lanka", "144"),
+]);
+
+test("an event is marked on the most specific place it has: a city over its state over its country", () => {
+  assert.deepEqual(mostSpecific(["US", "US-TX"], US_PLACES), ["US-TX"]);
+  assert.deepEqual(mostSpecific(["US", "US-TX", "city:austin"], US_PLACES), ["city:austin"]);
+  assert.deepEqual(mostSpecific(["US-TX", "US-CA", "US"], US_PLACES), ["US-TX", "US-CA"]);
+  assert.deepEqual(mostSpecific(["AE", "chk:hormuz"], US_PLACES), ["AE", "chk:hormuz"]);
+  assert.deepEqual(mostSpecific(["US", "AE"], US_PLACES), ["US", "AE"]);
+});
+
+test("an event tagged only with the home country is marked on the home anchor as nationwide", () => {
+  const ctx = { places: US_PLACES, home: "US", anchor: "US-TX" };
+  const marks = mapMarks([
+    { title: "Rates rose", tone: "bad", places: ["US"] },
+    { title: "Prices down", tone: "mixed", places: ["US"] },
+    { title: "Oil stress", tone: "bad", places: ["AE", "chk:hormuz"] },
+  ], ctx);
+  assert.deepEqual(marks.map(m => [m.code, m.tone, m.nationwide, m.specific]), [["US-TX", "bad", 2, false], ["AE", "bad", 0, true], ["chk:hormuz", "bad", 0, true]]);
+  assert.equal(marks[0].first, true);
+  // never the country's middle
+  assert.ok(!marks.some(m => m.code === "US"));
+  // an event with a state of its own marks that state, not "nationwide"
+  const own = mapMarks([{ title: "Texas grid", tone: "bad", places: ["US", "US-CA"] }], ctx);
+  assert.deepEqual(own.map(m => [m.code, m.nationwide]), [["US-CA", 0]]);
+  // without an anchor the home country's own spot is used, still as nationwide (a Sri Lankan bank)
+  const lk = mapMarks([{ title: "Rates rose", tone: "bad", places: ["LK"] }], { places: US_PLACES, home: "LK", anchor: null });
+  assert.deepEqual(lk.map(m => [m.code, m.nationwide]), [["LK", 1]]);
+  // a foreign country is just that country
+  const ae = mapMarks([{ title: "x", tone: "bad", places: ["AE"] }], { places: US_PLACES, home: "LK", anchor: null });
+  assert.deepEqual(ae.map(m => [m.code, m.nationwide]), [["AE", 0]]);
+});
+
+test("nationwide and specific events at one place share one mark; a place with no position uses its parent's", () => {
+  const ctx = { places: { ...US_PLACES, "city:nowhere": { code: "city:nowhere", name: "Nowhere", kind: "city", parent: "US-TX", country: "US", lat: null, lon: null, numeric: null } }, home: "US", anchor: "US-TX" };
+  const m = mapMarks([{ title: "a", tone: "mixed", places: ["US"] }, { title: "b", tone: "bad", places: ["US-TX"] }, { title: "c", tone: "good", places: ["city:nowhere"] }], ctx);
+  assert.deepEqual(m.map(x => [x.code, x.tone, x.nationwide, x.specific]), [["US-TX", "bad", 1, true]]);
+});
+
+test("a mark's name: the place, or the country-wide event in whole words, never cut", () => {
+  assert.equal(markLabel({ nationwide: 0, titles: [], specific: true }, "Texas"), "Texas");
+  assert.equal(markLabel({ nationwide: 1, titles: ["Rates rose"], specific: false }, "Texas"), "Rates rose · nationwide");
+  assert.equal(markLabel({ nationwide: 1, titles: ["Rates rose (0.25%)"], specific: false }, "Texas"), "Rates rose · nationwide");
+  assert.equal(markLabel({ nationwide: 1, titles: ["The economic outlook worsened"], specific: false }, "Texas"), "1 event · nationwide");
+  assert.equal(markLabel({ nationwide: 3, titles: ["a", "b", "c"], specific: false }, "Texas"), "3 events · nationwide");
+  assert.equal(markLabel({ nationwide: 1, titles: ["Rates rose"], specific: true }, "Texas"), "Texas · nationwide");
+});
+
+test("the footprint: a country is shaded, states get halos and the busiest home state is the anchor", () => {
+  const us = footprintView("US", [{ code: "US", role: "home" }, { code: "US-TX", role: "branches", branch_count: 22 }, { code: "US-CA", role: "branches", branch_count: 2 }], US_PLACES);
+  assert.deepEqual(us.countries, []);  // the US has states listed: halos, not the whole country
+  assert.deepEqual(us.halos.map(h => [h.code, h.r]), [["US-TX", 4.5], ["US-CA", 4.5]]);
+  assert.equal(us.anchor?.code, "US-TX");
+  assert.deepEqual(us.names, ["Texas", "California"]);
+  const lk = footprintView("LK", [{ code: "LK", role: "home" }], US_PLACES);
+  assert.deepEqual(lk.countries, ["144"]);
+  assert.deepEqual(lk.halos, []);
+  assert.equal(lk.anchor?.code, "LK");
+  assert.deepEqual(lk.names, ["Sri Lanka"]);
+  const two = footprintView("AE", [{ code: "AE", role: "home" }, { code: "LK", role: "branches" }], US_PLACES);
+  assert.deepEqual(two.countries, ["784", "144"]);
+  assert.equal(two.anchor?.code, "AE");
+  const city = footprintView("US", [{ code: "city:austin", role: "home" }], US_PLACES);
+  assert.deepEqual(city.halos.map(h => h.r), [1.2]);
+  assert.equal(city.anchor?.code, "city:austin");
+  assert.deepEqual(footprintView("ZZ", [], {}), { countries: [], halos: [], anchor: null, names: [] });
+});
+
 test("a finding's status as a pill", () => {
   assert.deepEqual(findingPill({ status: "linked", event_id: "e1", reason: null }), { word: "In an event", tone: "good" });
   assert.deepEqual(findingPill({ status: "grouped", event_id: null, reason: null }), { word: "Being investigated", tone: "neutral" });
   assert.deepEqual(findingPill({ status: "new", event_id: null, reason: null }), { word: "Waiting", tone: "neutral" });
   assert.deepEqual(findingPill({ status: "set_aside", event_id: null, reason: "no_impact" }), { word: "No impact found", tone: "neutral" });
-  assert.deepEqual(findingPill({ status: "set_aside", event_id: null, reason: "investigation_failed" }), { word: "Couldn't investigate", tone: "unusual" });
+  assert.deepEqual(findingPill({ status: "set_aside", event_id: null, reason: "investigation_failed" }), { word: "Couldn't be investigated", tone: "unusual", why: "the investigation agent didn't answer" });
 });
 
 test("a Radar story's status as a pill", () => {
@@ -132,7 +206,7 @@ test("a Needs-you row: the button word, and the level read aloud", () => {
 });
 
 test("a server note about late prices in plain words", () => {
-  assert.equal(plainNote("USD/LKR: No new bar since 10 Nov 12:30 (252 market hours; stale after 6)."), "USD/LKR: prices haven't updated since 10 Nov 12:30");
+  assert.equal(plainNote("USD/LKR: No new bar since 10 Nov 12:30 (252 market hours; stale after 6)."), "USD/LKR: no new price since 10 Nov 12:30");
   assert.equal(plainNote("2 recommendations for the profile"), "2 recommendations for the profile");
 });
 

@@ -11,8 +11,11 @@ export interface Mine {
   /** products per category id */ counts: Map<string, number>;
   /** the products' names per category id */ names: Map<string, string[]>;
   kind: "bank" | "insurer" | null;
+  /** the institution's Islamic flag; null when there is no institution (or its profile can't be read) */
+  islamic: boolean | null;
+  /** the home country code, e.g. "US" */ home: string | null;
 }
-const NONE: Mine = { counts: new Map(), names: new Map(), kind: null };
+const NONE: Mine = { counts: new Map(), names: new Map(), kind: null, islamic: null, home: null };
 
 /** The institution's own products, from its profile. Undefined while loading; an empty answer when there is no
  *  institution or the profile can't be read (the page then lists every category, which is still right). */
@@ -28,7 +31,8 @@ export function useMine(): Mine | undefined {
       const products = p.sections.products ?? [];
       const names = new Map<string, string[]>();
       for (const x of products) names.set(x.category, [...(names.get(x.category) ?? []), x.name]);
-      setMine({ counts: productCounts(products.map(x => ({ category: String(x.category) }))), names, kind: p.institution.institution_type });
+      setMine({ counts: productCounts(products.map(x => ({ category: String(x.category) }))), names, kind: p.institution.institution_type,
+        islamic: p.institution.islamic === true, home: p.institution.home_country ?? null });
     }).catch(() => { if (live) setMine(NONE); });
     return () => { live = false; };
   }, [id]);

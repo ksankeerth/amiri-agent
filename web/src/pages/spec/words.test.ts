@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   adverseLine, barLines, chaptersOf, connectionLine, countLine, defaultCategory, deprecationWord, inTab, methodLine, metricAnchors, nameLookup,
-  productCounts, proseRuns, searchMetrics, shownRows, specDate, splitChapters, tabCounts, unitAndGrain, viewOf, yourCategories,
+  productCounts, proseRuns, searchMetrics, shownRows, showIslamicVariant, specDate, splitChapters, splitExamples, tabCounts, unitAndGrain,
+  viewOf, yourCategories,
 } from "./words.ts";
 
 const metric = (key: string, tier = "required") => ({ key, tier }) as never;
@@ -121,10 +122,35 @@ test("the banner says whether the institution serves the figures and whether che
   const on = connectionLine(base);
   assert.equal(on.tone, "good");
   assert.equal(on.pill, "Connected · checks on");
-  assert.equal(on.text, "Austin Tech Bank serves these figures (sample bank, 11 of 12 products), so Amiri Agent checks its expectations against them.");
+  assert.equal(on.text, "Austin Tech Bank serves these figures (sample bank, 11 of 12 products), so AMIRI Agent checks its expectations against them.");
   const off = connectionLine({ ...base, validationOn: false, approved: false });
   assert.equal(off.pill, "Connected · checks off");
   assert.match(off.text, /approve a ready connection first/);
   assert.equal(connectionLine({ ...base, configured: false }).pill, "Not connected");
   assert.match(connectionLine({ ...base, name: null, source: null, coverage: null }).text, /^The institution serves these figures, so/);
+});
+
+test("the Islamic or takaful variant shows unless the institution is known not to be Islamic", () => {
+  assert.equal(showIslamicVariant(true), true);   // an Islamic bank or takaful operator
+  assert.equal(showIslamicVariant(false), false); // a profile that says it is not Islamic hides it
+  assert.equal(showIslamicVariant(null), true);   // no institution, or its profile can't be read: show the whole spec
+});
+
+test("region examples split by market: the home country's stay, the others fold away", () => {
+  const fc = "resident and non-resident foreign-currency accounts (e.g. NRFC and PFCA in Sri Lanka, FCNR(B) in India, domiciliary accounts in Nigeria and Ghana, USD accounts in Latin America)";
+  assert.deepEqual(splitExamples(fc, "LK"), {
+    main: "resident and non-resident foreign-currency accounts (e.g. NRFC and PFCA in Sri Lanka)",
+    other: "FCNR(B) in India, domiciliary accounts in Nigeria and Ghana, USD accounts in Latin America",
+  });
+  assert.deepEqual(splitExamples(fc, "US"), { main: "resident and non-resident foreign-currency accounts", other: fc.slice(fc.indexOf("NRFC"), -1) });
+  // an example that names the home country by its name, not its code
+  assert.deepEqual(splitExamples("cards (e.g. debit in United States, credit in India)", "US"),
+    { main: "cards (e.g. debit in United States)", other: "credit in India" });
+});
+
+test("text without examples, or with examples that can't be split, stays readable", () => {
+  assert.deepEqual(splitExamples("current and checking accounts", "US"), { main: "current and checking accounts", other: null });
+  assert.deepEqual(splitExamples("accounts (e.g. youth, senior)", "US"), { main: "accounts", other: "youth, senior" });
+  assert.deepEqual(splitExamples("accounts (e.g. NRFC in Sri Lanka)", null), { main: "accounts", other: "NRFC in Sri Lanka" });
+  assert.deepEqual(splitExamples("accounts (e.g. NRFC in Sri Lanka)", "LK"), { main: "accounts (e.g. NRFC in Sri Lanka)", other: null });
 });

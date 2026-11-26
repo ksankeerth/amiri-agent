@@ -55,7 +55,7 @@ export const monitorsApi = {
   act: (id: string, action: "submit" | "approve" | "pause" | "resume" | "retire") => api<Monitor>(`${B}/monitors/${enc(id)}:${action}`, { method: "POST" }),
   requestChanges: (id: string, note: string) => api<Monitor>(`${B}/monitors/${enc(id)}:request-changes`, { method: "POST", json: { note } }),
   runNow: (id: string) => api<CheckRow>(`${B}/monitors/${enc(id)}:run`, { method: "POST" }),
-  check: (run_id: string) => api<CheckRow>(`${B}/monitor-checks/${enc(run_id)}`),
+  check: (run_id: string) => api<CheckRow>(`${B}/monitor-checks/${enc(run_id)}`, { fresh: true }),  // polled every 3 s
   runs: (id: string) => api<{ items: CheckRow[] }>(`${B}/monitors/${enc(id)}/runs`).then(r => r.items),
   findings: (id: string) => api<{ items: MonitorFinding[] }>(`${B}/monitors/${enc(id)}/findings`).then(r => r.items),
   draftable: (institution_id?: string) => api<{ items: Draftable[] }>(`${B}/monitors:draftable${institution_id ? `?institution_id=${enc(institution_id)}` : ""}`).then(r => r.items),

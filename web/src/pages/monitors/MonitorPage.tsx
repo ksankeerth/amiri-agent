@@ -10,9 +10,10 @@
 // Editing: monitors have no If-Match on the server, so before a save the page asks for the monitor again and compares it with
 // what the form was opened on (words.ts changedSince); a 412 from the server would show the same way. The person's text is put
 // on the clipboard at once.
+import { Field, Textarea } from "../../components/v2/Field";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ApiError } from "../../api/client";
+import { ApiError, peek, quietly } from "../../api/client";
 import type { Profile } from "../../api/institutions";
 import { monitorsApi, type CheckRow, type Monitor, type MonitorFinding, type MonitorSpec, type MonitorsStatus } from "../../api/monitors";
 import { investigationApi } from "../../api/investigation";
@@ -21,6 +22,7 @@ import { useNow, useRefusalToast, useToast } from "../../components/ui";
 import { Button } from "../../components/v2/Button";
 import { Dialog } from "../../components/v2/Dialog";
 import { EditConflict } from "../../components/v2/EditConflict";
+import { PaneFolds } from "../../components/v2/ListPane";
 import { LoadError } from "../../components/v2/LoadError";
 import { MoreMenu } from "../../components/v2/MoreMenu";
 import { Skeleton } from "../../components/v2/Skeleton";
@@ -60,9 +62,10 @@ export function MonitorPane({ id, status, profile, eventTitles, askEventTitles, 
   const toast = useToast(), refuse = useRefusalToast();
   const locked = useDemoLock();
   const now = useNow(30_000);
-  const [m, setM] = useState<Monitor | null>(null);
-  const [runs, setRuns] = useState<CheckRow[]>([]);
-  const [findings, setFindings] = useState<MonitorFinding[]>([]);
+  // seen before: the last answers show at once and are refreshed below (F4)
+  const [m, setM] = useState<Monitor | null>(() => (isNew ? null : peek(() => monitorsApi.get(id)) ?? null));
+  const [runs, setRuns] = useState<CheckRow[]>(() => (isNew ? [] : peek(() => monitorsApi.runs(id)) ?? []));
+  const [findings, setFindings] = useState<MonitorFinding[]>(() => (isNew ? [] : peek(() => monitorsApi.findings(id)) ?? []));
   const [err, setErr] = useState<unknown>(null);
   const [loadedAt, setLoadedAt] = useState<number | null>(null);
   const [editing, setEditing] = useState<boolean | null>(null);   // null: the default for its state
@@ -97,8 +100,8 @@ export function MonitorPane({ id, status, profile, eventTitles, askEventTitles, 
   useEffect(() => {
     if (isNew) return;
     load();
-    const t = setInterval(() => { if (!document.hidden) load(); }, REFRESH_MS);
-    const vis = () => { if (!document.hidden && Date.now() - loaded.current > 30_000) load(); };   // back on the tab: catch up, but not in a burst
+    const t = setInterval(() => { if (!document.hidden) quietly(load); }, REFRESH_MS);
+    const vis = () => { if (!document.hidden && Date.now() - loaded.current > 30_000) quietly(load); };   // back on the tab: catch up, but not in a burst
     document.addEventListener("visibilitychange", vis);
     return () => { clearInterval(t); document.removeEventListener("visibilitychange", vis); };
   }, [load, isNew]);
@@ -229,7 +232,7 @@ export function MonitorPane({ id, status, profile, eventTitles, askEventTitles, 
   const byCheck = useMemo(() => findingsByCheck(findings), [findings]);
   if (isNew) {
     return (
-      <article className="v2-panel v2-mn-pane" aria-labelledby="mn-title">
+      <article className="v2-panel v2-lp__panel v2-mn-pane" aria-labelledby="mn-title">
         <div className="v2-mn-new">
           <h2 id="mn-title" tabIndex={-1} className="v2-mn-h2">New monitor</h2>
           <Button locked={locked} onClick={onDraft}>Draft from your profile</Button>
@@ -242,7 +245,7 @@ export function MonitorPane({ id, status, profile, eventTitles, askEventTitles, 
   if (!m) {
     return err != null
       ? <LoadError error={err} onRetry={load} what="this monitor" className="v2-mn-error" />
-      : <div className="v2-panel v2-mn-pane"><Skeleton rows={6} label="Loading the monitor" /></div>;
+      : <div className="v2-panel v2-lp__panel v2-mn-pane"><Skeleton rows={6} label="Loading the monitor" /></div>;
   }
 
   // a check from the schedule or another viewer, started in the last half hour (an older one that never ended is the tick's to collect): not asked about here
@@ -260,9 +263,9 @@ export function MonitorPane({ id, status, profile, eventTitles, askEventTitles, 
 
   const actions = retired ? null : editMode ? null : (
     <>
-      <Button locked={locked} disabled={running || !connected} aria-describedby={!connected ? "mn-offline" : undefined} onClick={checkNow}
+      <Button locked={locked} disabled={running || !connected} busy={running} aria-describedby={!connected ? "mn-offline" : undefined} onClick={checkNow}
         title={test ? "Test it now; what it finds is kept apart from your real findings" : undefined}>
-        {running ? "Checking…" : test ? "Run a test" : "Run a check now"}</Button>
+        {test ? "Run a test" : "Run a check now"}</Button>
       {m.status === "paused" && <Button locked={locked} disabled={busy || !!full} onClick={() => act("resume")}>Resume</Button>}
       <Button locked={locked} onClick={openEdit}>Edit</Button>
       <MoreMenu label={m.status === "live" ? "More: pause or retire" : "More: retire"} items={[
@@ -272,7 +275,7 @@ export function MonitorPane({ id, status, profile, eventTitles, askEventTitles, 
     </>);
 
   return (
-    <article className="v2-panel v2-mn-pane" aria-labelledby="mn-title" aria-busy={running || undefined}>
+    <article className="v2-panel v2-lp__panel v2-mn-pane" aria-labelledby="mn-title" aria-busy={running || undefined}>
       {stale && <StaleBanner loadedAt={loadedAt!} now={now.getTime()} onRetry={load} className="v2-mn-stale" />}
       {conflict && (
         <EditConflict what="this monitor" who={who ? person(who.created_by) || "A colleague" : "A colleague"} name={m.name} when={ago(conflict.fresh?.updated_at ?? m.updated_at, now)}
@@ -295,27 +298,25 @@ export function MonitorPane({ id, status, profile, eventTitles, askEventTitles, 
           {approving && !retired && (
             <Approval m={m} status={status} busy={busy} onApprove={() => act("approve")} onSubmit={() => act("submit")} onAskChanges={() => setAsking(true)} onEdit={openEdit} />)}
           <Question m={m} findings={findings} />
-          <div className="v2-mn-folds">
+          <PaneFolds>
             <Reaches m={m} labels={labels} />
             <Examples m={m} />
             <Details m={m} names={profile?.place_names ?? {}} />
             <Versions m={m} />
-          </div>
-          <Checks m={m} runs={runs} byCheck={byCheck} events={eventTitles} now={now} checking={runWait} />
+            <Checks m={m} runs={runs} byCheck={byCheck} events={eventTitles} now={now} checking={runWait} />
+          </PaneFolds>
         </>
       )}
 
       {asking && (
-        <Dialog title="What should change?" onClose={() => { setAsking(false); setNote(""); }} initialFocus="textarea"
-          footer={<><Button variant="quiet" onClick={() => { setAsking(false); setNote(""); }}>Cancel</Button>
+        <Dialog size="M" title="What should change?" description="The version goes back to its writer as a draft, with your note on top." onClose={() => { setAsking(false); setNote(""); }} initialFocus="textarea"
+          actions={<><Button onClick={() => { setAsking(false); setNote(""); }}>Cancel</Button>
             <Button variant="primary" locked={locked} disabled={busy || note.trim().length < 3} onClick={sendBack}>Send back</Button></>}>
-          <p className="v2-mn-dlg__p">The version goes back to its writer as a draft, with your note on top.</p>
-          <label className="v2-mn-dlg__l" htmlFor="mn-note">Your note</label>
-          <textarea id="mn-note" className="v2-mn-input" rows={4} maxLength={500} value={note} onChange={e => setNote(e.target.value)} placeholder="Add Qatar to the places, and drop the second line" />
+          <Field req label="Your note"><Textarea rows={4} maxLength={500} value={note} onChange={e => setNote(e.target.value)} placeholder="Add Qatar to the places, and drop the second line" /></Field>
         </Dialog>)}
       {retiring && (
-        <Dialog title={`Retire ${m.name}?`} onClose={() => setRetiring(false)}
-          footer={<><Button variant="quiet" onClick={() => setRetiring(false)}>Cancel</Button>
+        <Dialog tone="danger" title={`Retire ${m.name}?`} onClose={() => setRetiring(false)}
+          actions={<><Button onClick={() => setRetiring(false)}>Cancel</Button>
             <Button variant="primary" locked={locked} disabled={busy} onClick={async () => { setRetiring(false); await act("retire"); }}>Retire</Button></>}>
           <p className="v2-mn-dlg__p">It stops being checked and moves to Retired on the list. Its findings stay where they are. This can't be undone.</p>
         </Dialog>)}

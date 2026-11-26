@@ -35,7 +35,7 @@ test("an upload's errors in words: the first few, and how many more", () => {
   const big = uploadWords({ code: "too_large", detail: "The file is 30.0 MB; the most this server takes is 25 MB (DATA_IMPORT_MAX_MB)." });
   assert.equal(big.headline, "The file is too large, so nothing was imported.");
   assert.equal(big.items.length, 1);
-  assert.equal(uploadWords({ code: "network", detail: "Amiri Agent didn't answer." }).headline, "Amiri Agent didn't answer.");
+  assert.equal(uploadWords({ code: "network", detail: "AMIRI Agent didn't answer." }).headline, "AMIRI Agent didn't answer.");
 });
 
 test("finds the first JSON syntax error without leaning on the engine's wording", () => {

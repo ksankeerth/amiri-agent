@@ -7,7 +7,7 @@ import { VERDICT_ORDER, verdictLook, verdictNotes, VERDICTS } from "./verdictWor
 test("the seven server verdicts each have the board's words and a tone", () => {
   assert.deepEqual(VERDICT_ORDER, ["confirms", "contradicts", "no_effect", "insufficient_data", "masked", "not_yet", "error"]);
   assert.deepEqual(VERDICT_ORDER.map(k => VERDICTS[k].label),
-    ["Confirms", "Moved the other way", "No effect", "Not enough data", "Hidden by relief", "Not published yet", "Couldn't check"]);
+    ["Confirms", "Moved the other way", "No effect", "Not enough data", "Hidden by relief", "Waiting for your data", "Couldn't check"]);
   assert.deepEqual(VERDICT_ORDER.map(k => VERDICTS[k].tone), ["ink", "unusual", "good", "neutral", "neutral", "neutral", "bad"]);
 });
 
@@ -23,7 +23,7 @@ test("the server's own words win, with a capital letter; an unknown verdict is n
 
 test("the small print: a first look, and what it replaces", () => {
   assert.deepEqual(verdictNotes({ final: false, verdict: "confirms", supersedes: { verdict: "not_yet" } }),
-    ["First look; may change as more data comes in", "was: Not published yet"]);
+    ["First look; may change as more data comes in", "was: Waiting for your data"]);
   assert.deepEqual(verdictNotes({ final: true, verdict: "confirms" }), []);
   assert.deepEqual(verdictNotes({ final: false, verdict: "error" }), []);
   assert.deepEqual(verdictNotes({ final: false, verdict: "not_yet" }), []);

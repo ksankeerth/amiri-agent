@@ -16,7 +16,7 @@ function Row({ m, group, on, now }: RowProps) {
   const late = m.review_due;
   return (
     <li>
-      <Link id={`mn-row-${m.monitor_id}`} to={`/monitors/${m.monitor_id}`} className={`v2-mn-row${on ? " is-on" : ""}`} aria-current={on ? "true" : undefined}>
+      <Link id={`mn-row-${m.monitor_id}`} to={`/monitors/${m.monitor_id}`} className={`v2-rowlink v2-mn-row${on ? " is-on" : ""}`} aria-current={on ? "true" : undefined}>
         <span className="v2-mn-row__top">
           <span className="v2-mn-row__name">{m.name}</span>
           {pill && <Pill tone={pill.tone} dashed={pill.dashed}>{pill.label}</Pill>}

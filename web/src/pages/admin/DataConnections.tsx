@@ -1,4 +1,4 @@
-// Platform Admin: Data connection (board 11, states: board 16 section I, board 13 sections 2, 3 and 5). Where Amiri Agent reads
+// Platform Admin: Data connection (board 11, states: board 16 section I, board 13 sections 2, 3 and 5). Where AMIRI Agent reads
 // the institution's own figures: a sample (the bank, or the insurer for an insurer) or one JSON file in the Metrics Spec
 // format (decision D1: there is no API address). Five steps: Source, Conditions, Check, Approve, Use it.
 //
@@ -98,7 +98,7 @@ export function DataConnectionsPage() {
   const imported = (c: Connection) => { setConn(c); shownId.current = null; load(); };
 
   const Head = <header className="v2-ad-head"><h1 className="v2-ad-h1">Data connection</h1>
-    {conn ? <p className="v2-ad-sub">{installation?.name ? `${installation.name}'s own figures` : "The institution's own figures"}, so Amiri Agent can check its expectations · Metrics Spec {SPEC}</p> : null}</header>;
+    {conn ? <p className="v2-ad-sub">{installation?.name ? `${installation.name}'s own figures` : "The institution's own figures"}, so AMIRI Agent can check its expectations · Metrics Spec {SPEC}</p> : null}</header>;
   if (error != null && !conn) {
     return <div className="v2-ad"><header className="v2-ad-head"><h1 className="v2-ad-h1">Data connection</h1></header>
       <LoadError error={error} onRetry={load} what="the data connection" safe="Your data is safe; this page just couldn't reach it." /></div>;

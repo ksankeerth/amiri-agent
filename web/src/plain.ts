@@ -53,17 +53,22 @@ export function themeLabel(t: ThemeTag): string {
   }
 }
 
-/** An event's title a person can read at a glance. The investigation names some events with a generic phrase ("Oil rose",
+/** An event's title a person can read at a glance, in one style: the size goes at the end with no brackets ("Share prices
+ *  down 4.71%", "The economic outlook worsened 4.42%"). The investigation names some events with a generic phrase ("Oil rose",
  *  "remittance (up) (5.6%)"): those become the first theme in words plus the size ("Oil prices up 9%", "Remittances up 5.6%").
- *  A real headline-like title stays as it is. */
+ *  A real headline-like title keeps its words. */
 export function eventTitle(e: { title: string; themes?: ThemeTag[] | null; size?: { value: number; unit: string } | null }): string {
-  const m = e.title.trim().match(/^(.*?)\s*\((\d+(?:\.\d+)?)\s*(%|bp)\)$/);  // the size the server put at the end
+  const m = e.title.trim().match(/^(.*?)\s*\((\d+(?:\.\d+)?)\s*(%|bp)\)$/);  // the size the server put at the end, in brackets
   const base = m ? m[1] : e.title.trim();
+  const size = m ? `${m[2]}${m[3] === "%" ? "%" : " bp"}` : null;
   const raw = /^[a-z_]+ \([\w ]+\)$/.test(base) || base.split(/\s+/).length <= 2;
   const t = e.themes?.[0];
-  if (!raw || !t) return e.title;
-  const size = m ? `${m[2]}${m[3] === "%" ? "%" : " bp"}` : moveSize(e.size);
-  return size ? `${themeLabel(t)} ${size}` : themeLabel(t);
+  if (raw && t) {
+    const s = size ?? moveSize(e.size);
+    return s ? `${themeLabel(t)} ${s}` : themeLabel(t);
+  }
+  if (size) return `${base} ${size}`;
+  return e.title;
 }
 
 // ---------------------------------------------------------------- products
@@ -152,7 +157,7 @@ export function verdictWhy(why: string | null | undefined): string {
 
 // ---------------------------------------------------------------- alerts
 export type LevelKey = "warning" | "developing" | "adverse";
-/** What an event's anchor time is, in words: it's when the world moved, not when Amiri Agent noticed. */
+/** What an event's anchor time is, in words: it's when the world moved, not when AMIRI Agent noticed. */
 export function anchorLabel(basis?: string | null): string {
   return ({ published_at: "News broke", news_time: "News broke", move_start: "Prices moved", effective_from: "Takes effect",
     period_start: "Period began" } as Record<string, string>)[basis ?? ""] ?? "Happened";
@@ -194,6 +199,17 @@ export function findingOutcome(status: string, reason?: string | null): [string,
   if (investigationFailed(status, reason)) return ["Couldn't be investigated", "amber"];
   return FINDING_STATUS[status] ?? [words(status), "grey"];
 }
+/** The one status for a finding whose investigation didn't run. */
+export const NOT_INVESTIGATED = "Couldn't be investigated";
+/** Why it didn't run, in one short plain phrase. The finding's own note carries the server's words ("the agent refused or couldn't take the run:
+ *  HTTP 422: {...}"); raw codes never reach the screen. Without a note: the agent didn't answer. */
+export function notInvestigatedWhy(note?: string | null): string {
+  const n = note ?? "";
+  if (/refus|couldn.t take|HTTP\s*4\d\d|invalid|422/i.test(n) && !/time.?d? ?out|didn.t answer|unreach|HTTP\s*5\d\d/i.test(n)) return "the investigation agent couldn't take the run";
+  return "the investigation agent didn't answer";
+}
+/** "Couldn't be investigated · the investigation agent didn't answer": the status with its reason, for a place with room for both. */
+export const notInvestigatedText = (note?: string | null): string => `${NOT_INVESTIGATED} · ${notInvestigatedWhy(note)}`;
 // why the investigation set a finding aside, in a few words
 export const SET_ASIDE_REASON: Record<string, string> = {
   not_home_country: "not about a place where you operate",
@@ -201,7 +217,7 @@ export const SET_ASIDE_REASON: Record<string, string> = {
   below_min_size: "the move is too small to matter",
   after_as_of: "came after the cut-off",
   merged_into_event: "joined another event",
-  investigation_failed: "the investigation didn't finish",
+  investigation_failed: "the investigation agent didn't answer",
 };
 /** How strong a source's signal was, in words. The score is a whole number from 0 to 100 (the findings table checks
  *  it), so 1 is a weak 1 %, not "1.0 = 100 %". */

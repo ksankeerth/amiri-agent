@@ -2,6 +2,8 @@
 // Nothing is saved by this. A file with several items offers a pick list.
 import { useId, useState } from "react";
 import { Icon } from "./Icon";
+import { FileDrop } from "./v2/FilePicker";
+import { Select } from "./v2/Field";
 import { parseJson, type Candidate } from "./fillJson";
 
 export function FillFromJson({ what, read, onFill, example }: {
@@ -33,16 +35,15 @@ export function FillFromJson({ what, read, onFill, example }: {
   return (
     <div className="fillfile" style={{ gridColumn: "1 / -1" }}>
       <div className="row wrap" style={{ gap: 8, alignItems: "center" }}>
-        <label className="btn btn--sm btn--ghost" title={`Load ${what} from a JSON file into this form; nothing is saved until you do`}>
-          <Icon name="plus" />Fill from a JSON file
-          <input type="file" accept="application/json,.json" className="sr" aria-describedby={`${id}-msg`}
-            onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) load(f); }} /></label>
+        <FileDrop accept="application/json,.json" noun="a JSON file" variant="button" size="sm" aria-describedby={`${id}-msg`}
+          title={`Load ${what} from a JSON file into this form; nothing is saved until you do`}
+          pickLabel={<><Icon name="plus" />Fill from a JSON file</>} onFile={load} onReject={setMsg} />
         {file && cands.length > 1 && (
-          <label className="row" style={{ gap: 6, alignItems: "center" }}><span className="small muted">Which one</span>
-            <select className="input" style={{ width: "auto", maxWidth: 320 }} value={at} disabled={busy}
+          <span className="row" style={{ gap: 6, alignItems: "center" }}><span className="small muted" id={`${id}-which`}>Which one</span>
+            <Select inline aria-labelledby={`${id}-which`} value={at} disabled={busy}
               onChange={e => { const n = Number(e.target.value); setAt(n); fill(cands[n]); }}>
-              {cands.map((c, i) => <option key={i} value={i}>{c.label}</option>)}</select></label>)}
-        <span id={`${id}-msg`} className={`small ${msg ? "errtext" : "muted"}`} role="status">
+              {cands.map((c, i) => <option key={i} value={i}>{c.label}</option>)}</Select></span>)}
+        <span id={`${id}-msg`} className={`small ${msg ? "v2-field__err" : "muted"}`} role="status">
           {msg ?? (file ? `Filled from ${file}${cands.length > 1 ? ` (${cands.length} in the file)` : ""}: check it, then save.` : "")}</span>
       </div>
     </div>

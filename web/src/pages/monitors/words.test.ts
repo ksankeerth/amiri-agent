@@ -4,7 +4,7 @@ import { test } from "node:test";
 import type { MonitorFinding, MonitorRow, MonitorSpec } from "../../api/monitors";
 import {
   dateWords, awaitingApproval, changedSince, changesLine, changesText, checkDoneText, checkLook, checkSpec, coverageText, diffParts, everyShort, everyWords,
-  findingsByCheck, groupMonitors, investigatedText, refusalTitle, isOverdue, lastWords, liveShown, lineMatches, linesOf, needsSlot, pickDefault, rowLine, rowPill, shownLines, slotsWords,
+  checksShown, findingsByCheck, groupMonitors, investigatedText, refusalTitle, isOverdue, lastWords, liveShown, lineMatches, linesOf, needsSlot, pickDefault, rowLine, rowPill, shownLines, slotsWords,
   statusLook, waitingOn,
 } from "./words.ts";
 
@@ -74,7 +74,7 @@ test("a row says who, how often, the last check and the 30-day count", () => {
   assert.equal(rowLine(row({ status: "retired", updated_at: "2026-11-11T06:00:00Z" }), NOW, ago).lead, "Commercial banking · every 6 h · retired 6 h ago");
   assert.match(rowLine(row({ pending: { version: 4, status: "submitted", note: null } }), NOW, ago).lead, /version 4 waiting/);
   assert.equal(lastWords({ status: "live", check_frequency: 60, last_check: null }, NOW, ago), "not checked yet");
-  assert.equal(lastWords({ status: "live", check_frequency: 60, last_check: { at: "2026-11-11T06:00:00Z", status: "quiet", findings: 0 } }, NOW, ago), "overdue");
+  assert.equal(lastWords({ status: "live", check_frequency: 60, last_check: { at: "2026-11-11T06:00:00Z", status: "quiet", findings: 0 } }, NOW, ago), "check due · last checked 6 h ago");
 });
 
 test("status words and the row pill", () => {
@@ -193,4 +193,11 @@ test("a calendar date is read as written, not moved by a time zone", () => {
   assert.equal(dateWords("2027-03-01"), "1 Mar");
   assert.equal(dateWords("2026-12-31"), "31 Dec");
   assert.equal(dateWords("soon"), "soon");
+});
+
+test("a monitor's checks: the latest two, the rest behind a button", () => {
+  assert.deepEqual(checksShown(0, false), { shown: 0, hidden: 0 });
+  assert.deepEqual(checksShown(3, false), { shown: 3, hidden: 0 });   // one more is no saving
+  assert.deepEqual(checksShown(8, false), { shown: 2, hidden: 6 });
+  assert.deepEqual(checksShown(8, true), { shown: 8, hidden: 0 });
 });

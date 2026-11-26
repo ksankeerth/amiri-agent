@@ -64,3 +64,5 @@
 
 /* a button that is looking or opening keeps focus (aria-disabled, not disabled), so it says so by looking quiet */
 .v2-lg .v2-btn[aria-busy="true"] { opacity: .7; cursor: progress; }
+
+@media (max-width: 719.98px) { .v2 .v2-nf .v2-nf__links a:not(.btn) { justify-content: center; min-width: var(--v2-hit-phone); min-height: var(--v2-hit-phone); } }  /* M1 */

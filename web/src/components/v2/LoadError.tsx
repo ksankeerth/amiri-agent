@@ -28,7 +28,7 @@ export function LoadError({ error, what, safe, title, children, onRetry, classNa
     <div className={`v2-panel v2-loaderr${className ? ` ${className}` : ""}`} role="alert">
       <b className="v2-title">{title ?? copy.title}</b>
       <span className="v2-loaderr__msg">{children ?? copy.message}</span>
-      <Button variant="primary" onClick={retry} disabled={busy}>{busy ? "Trying…" : "Try again"}</Button>
+      <Button variant="primary" onClick={retry} disabled={busy} busy={busy} busyLabel="Trying again…">Try again</Button>
     </div>
   );
 }

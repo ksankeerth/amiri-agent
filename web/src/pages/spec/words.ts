@@ -39,6 +39,11 @@ export function adverseLine(adverse: string[] | null): string {
 }
 
 export const ucFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+/** Product ids whose words read wrong as a plain phrase ("fc deposit" is a foreign-currency deposit). Lower case, so a
+ *  sentence and a capitalised label both work (ucFirst). */
+const PRODUCT_WORDS: Record<string, string> = { fc_deposit: "foreign-currency deposit" };
+/** A product id as words: "fc_deposit" → "foreign-currency deposit". */
+export const productWord = (id: string) => PRODUCT_WORDS[id] ?? words(id);
 
 export const metricCount = (c: SpecCategory) => c.metrics?.length ?? 0;
 export const requiredCount = (c: SpecCategory) => (c.metrics ?? []).filter(m => m.tier === "required").length;
@@ -216,11 +221,42 @@ export interface ConnectionFacts {
 export interface ConnectionLine { tone: "good" | "neutral"; pill: string; text: string }
 export function connectionLine(f: ConnectionFacts): ConnectionLine {
   const who = f.name ?? "The institution";
-  if (!f.configured) return { tone: "neutral", pill: "Not connected", text: `${who} hasn't shared its own figures yet, so Amiri Agent has nothing of its own to check its expectations against.` };
+  if (!f.configured) return { tone: "neutral", pill: "Not connected", text: `${who} hasn't shared its own figures yet, so AMIRI Agent has nothing of its own to check its expectations against.` };
   const from = f.source === "bank" ? "sample bank" : f.source === "insurer" ? "sample insurer" : f.source === "file" ? "a file" : null;
   const cover = f.coverage ? `${f.coverage.some} of ${f.coverage.total} product${f.coverage.total === 1 ? "" : "s"}` : null;
   const bits = [from, cover].filter(Boolean).join(", ");
   const serves = `${who} serves these figures${bits ? ` (${bits})` : ""}`;
-  if (f.validationOn) return { tone: "good", pill: "Connected · checks on", text: `${serves}, so Amiri Agent checks its expectations against them.` };
+  if (f.validationOn) return { tone: "good", pill: "Connected · checks on", text: `${serves}, so AMIRI Agent checks its expectations against them.` };
   return { tone: "neutral", pill: "Connected · checks off", text: `${serves}, but checks against them are off${f.approved ? "" : ": approve a ready connection first"}.` };
+}
+
+// ---- for this institution: the Islamic or takaful variants, and region examples
+/** Show the Islamic or takaful variant column and text? Not for an institution whose profile says it is not Islamic.
+ *  No institution (null), or a profile that can't be read, shows them: the spec is then the whole reference. */
+export const showIslamicVariant = (islamic: boolean | null): boolean => islamic !== false;
+
+const COUNTRY_NAMES: Record<string, string[]> = {
+  US: ["United States", "USA", "U.S."], LK: ["Sri Lanka"], IN: ["India"], NG: ["Nigeria"], GH: ["Ghana"], ID: ["Indonesia"],
+};
+/** Does a place in an example ("Nigeria and Ghana", "Sri Lanka") name the home country? Matched by code or name. */
+function placeIsHome(place: string, home: string): boolean {
+  const names = [home, ...(COUNTRY_NAMES[home.toUpperCase()] ?? [])].map(n => n.toLowerCase());
+  return place.split(/,| and /).map(p => p.trim().toLowerCase()).some(p => names.includes(p));
+}
+
+/** `other` is the examples as written, without the "e.g." */
+export interface Examples { main: string; other: string | null }
+/** A product's typical products can end with region examples, "(e.g. NRFC and PFCA in Sri Lanka, FCNR(B) in India, ...)".
+ *  Each example that names the home country stays in the text; the rest go to `other`, to show behind a fold. When the
+ *  examples can't be told apart by market, the whole parenthesis goes to `other`. Text without examples is unchanged. */
+export function splitExamples(text: string, home: string | null): Examples {
+  const m = /^(.*?)\s*\(e\.g\.\s+(.*)\)$/.exec(text);
+  if (!m) return { main: text, other: null };
+  const [, head, inner] = m;
+  const clauses = inner.split(", ").map(c => ({ c, place: /\bin ([^,]+)$/.exec(c)?.[1] ?? null }));
+  if (!home || clauses.some(x => x.place == null)) return { main: head, other: inner };
+  const mine = clauses.filter(x => placeIsHome(x.place!, home)).map(x => x.c);
+  const others = clauses.filter(x => !placeIsHome(x.place!, home)).map(x => x.c);
+  if (!others.length) return { main: text, other: null };
+  return { main: mine.length ? `${head} (e.g. ${mine.join(", ")})` : head, other: others.join(", ") };
 }

@@ -2,8 +2,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  byTime, changesText, fillFromFile, goingText, headlineError, headlineOk, lastRan, liveMode, onCount, priceMoveError, priceMoveOk, recordingNote,
-  replayable, rowMeta, runHint, runLine, sameMove, subtitle, tagsText, unavailableText,
+  byTime, changesText, fillFromFile, firstAvailable, goingText, headlineError, headlineOk, lastRan, liveMode, onCount, pickDefaultScenario, priceMoveError, priceMoveOk, recordingNote,
+  replayable, rowMeta, runHint, runLine, sameMove, subtitle, tagsText, unavailableText, usedWords,
 } from "./editorWords.ts";
 
 const d = (iso: string) => iso.slice(0, 10);
@@ -27,7 +27,7 @@ test("the recording, in words", () => {
   assert.equal(replayable({ scenario_version: 2, complete: true, recorded_at: "", current: true }), true);
   assert.equal(replayable({ scenario_version: 2, complete: true, recorded_at: "", current: false }), false);
   assert.equal(replayable(null), false);
-  assert.match(subtitle("8 Feb 2027", 21, true, null, ""), /^Starts 8 Feb 2027 · 21 days, one step a day · your own scenario · not recorded yet$/);
+  assert.match(subtitle("8 Feb 2027", 21, true, null, ""), /^Simulated clock: starts 8 Feb 2027 · 21 days, one step a day · your own scenario · not recorded yet$/);
 });
 
 test("headline counts and the small print beside the run buttons", () => {
@@ -85,4 +85,31 @@ test("what a conflict leaves on the clipboard", () => {
   assert.equal(changesText({ title: "Storm" }), "Name: Storm");
   assert.equal(changesText({ custom: { headlines: [{ id: "a", title: "Grid fails", day: 2, time: "07:30" }] } }), "Day 2 07:30: Grid fails");
   assert.equal(changesText({ intensity: "high", switched_off: ["h1"] }), "How hard it hits: High\nSwitched off: h1");
+});
+
+test("which scenario opens when the address names none", () => {
+  const r = (scenario_id: string, last_run: string | null, created_at: string) => ({ scenario_id, last_run, created_at });
+  assert.equal(pickDefaultScenario([]), null);
+  assert.equal(pickDefaultScenario([r("a", null, "2026-11-25T10:00:00Z")]), "a");
+  // the latest run wins over a newer scenario
+  assert.equal(pickDefaultScenario([r("a", "2026-11-20T10:00:00Z", "2026-11-01T00:00:00Z"), r("b", "2026-11-22T10:00:00Z", "2026-11-02T00:00:00Z"), r("c", null, "2026-11-25T00:00:00Z")]), "b");
+  // nothing has run: the newest created
+  assert.equal(pickDefaultScenario([r("a", null, "2026-11-01T00:00:00Z"), r("b", null, "2026-11-03T00:00:00Z"), r("c", null, "2026-11-02T00:00:00Z")]), "b");
+  // the same last run: the newest created; and a bad date counts as none
+  assert.equal(pickDefaultScenario([r("a", "2026-11-22T10:00:00Z", "2026-11-01T00:00:00Z"), r("b", "2026-11-22T10:00:00Z", "2026-11-03T00:00:00Z")]), "b");
+  assert.equal(pickDefaultScenario([r("a", "not a date", "2026-11-01T00:00:00Z"), r("b", null, "2026-11-02T00:00:00Z")]), "b");
+});
+
+test("which template is previewed when nothing is saved", () => {
+  const t = (template_id: string, unavailable: string | null) => ({ template_id, title: template_id, summary: "", tags: [] as string[], unavailable });
+  assert.equal(firstAvailable([]), null);
+  assert.equal(firstAvailable([t("fx", "base currency is USD"), t("storm", null), t("blank", null)])?.template_id, "storm");
+  assert.equal(firstAvailable([t("fx", "no")]), null);
+});
+
+test("a template already used says so", () => {
+  const rows = [{ template_id: "us-texas-winter-storm" }, { template_id: "blank" }, { template_id: "us-texas-winter-storm" }];
+  assert.equal(usedWords(rows, "blank"), "Used in 1 scenario");
+  assert.equal(usedWords(rows, "us-texas-winter-storm"), "Used in 2 scenarios");
+  assert.equal(usedWords(rows, "other"), null);
 });

@@ -63,7 +63,7 @@ test("countTone: an empty section the profile needs, by how much", () => {
 });
 
 test("emptyNote: board 08's line, and the required one", () => {
-  assert.equal(emptyNote(COUNTS, CHECKS)?.text, "Flows, rivals and risks are empty. Recommended, not required: they sharpen what Amiri Agent watches.");
+  assert.equal(emptyNote(COUNTS, CHECKS)?.text, "Flows, rivals and risks are empty. Recommended, not required: they sharpen what AMIRI Agent watches.");
   assert.equal(emptyNote(COUNTS, CHECKS)?.required, false);
   assert.equal(emptyNote(COUNTS, [])?.text, undefined);
   const req = emptyNote({ ...COUNTS, products: 0, segments: 0 }, [check("products", "required", false), check("segments", "required", false, "segments")]);
@@ -229,4 +229,43 @@ test("changesText: the person's unsaved edits, for the clipboard", () => {
   assert.equal(changesText("Capital-Call Lines", { owner: "Fund banking", islamic: true }).split("\n").length, 3);
   assert.match(changesText("Capital-Call Lines", { islamic: true }), /^My changes to Capital-Call Lines:\nIslamic: Yes$/);
   assert.equal(changesText("", {}), "My changes to this:\n(none)");
+});
+
+// ---------------------------------------------------------------- the map's regulator labels (mapLabels.ts)
+
+import { around, labelWidth, LABEL_H, placeLabels, type Box, type LabelIn } from "./mapLabels.ts";
+
+const overlap = (a: Box, b: Box) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+const reg = (id: string, text: string | null, at: [number, number], rank = 0): LabelIn => ({ id, text, full: `${text ?? id} (full name)`, at, rank });
+
+test("map labels: five regulators at one point: a few beside it, the rest one +N chip, none overlapping, none under the zoom buttons", () => {
+  const zoom: Box = { x: 410, y: 0, w: 190, h: 62 };
+  const items = [reg("fed", "Fed", [300, 200], 0), reg("fdic", "FDIC", [300, 200], 1), reg("dob", "Texas DOB", [300, 200], 2), reg("cfpb", "CFPB", [300, 200], 3), reg("fincen", "FinCEN", [300, 200], 4)];
+  const out = placeLabels(items, { width: 600, height: 400, avoid: [zoom] });
+  assert.equal(out.filter(l => !l.more).length, 3);
+  const chip = out.find(l => l.more);
+  assert.equal(chip?.text, "+2 more");
+  assert.deepEqual(chip?.more, ["CFPB (full name)", "FinCEN (full name)"]);
+  for (let i = 0; i < out.length; i++) {
+    assert.ok(!overlap(out[i].box, zoom), out[i].text);
+    assert.ok(!overlap(out[i].box, around([300, 200], 4)), `${out[i].text} sits on its point`);
+    for (let j = i + 1; j < out.length; j++) assert.ok(!overlap(out[i].box, out[j].box), `${out[i].text} / ${out[j].text}`);
+  }
+  assert.deepEqual(out.filter(l => !l.more).map(l => l.text), ["Fed", "FDIC", "Texas DOB"]);  // the most important first
+});
+
+test("map labels: a name is whole or absent; a label with no short name only shows in the chip; the labels stay inside the map", () => {
+  const out = placeLabels([reg("a", "Texas DOB", [596, 30]), reg("b", null, [596, 30], 1)], { width: 600, height: 300, avoid: [] });
+  const a = out.find(l => l.text === "Texas DOB")!;
+  assert.ok(a.box.x >= 0 && a.box.x + a.box.w <= 600 && a.box.y >= 0 && a.box.y + a.box.h <= 300);
+  assert.ok(a.box.w >= labelWidth("Texas DOB") && a.box.h === LABEL_H);
+  assert.equal(out.find(l => l.more)?.text, "+1 more");
+  assert.ok(out.every(l => !/^Texas D$/.test(l.text)));
+});
+
+test("map labels: marks and event names are kept clear; with no room at all nothing is drawn rather than overlapped", () => {
+  const out = placeLabels([reg("a", "FDIC", [50, 50])], { width: 120, height: 120, avoid: [{ x: 0, y: 0, w: 120, h: 120 }] });
+  assert.deepEqual(out, []);
+  const near = placeLabels([reg("a", "FDIC", [200, 200])], { width: 600, height: 400, avoid: [around([230, 200], 20)] });
+  assert.ok(near.every(l => !overlap(l.box, around([230, 200], 20))));
 });

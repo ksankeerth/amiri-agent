@@ -1,5 +1,6 @@
 // The left rail (board 12): find a metric, the categories for the institution's own products (all of them under "All N
 // categories"), and the guide's chapters. Every row is a link: the page's view comes from the URL hash.
+import { Input } from "../../components/v2/Field";
 import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Spec, SpecCategory } from "../../api/spec";
@@ -31,7 +32,7 @@ export function RailSearch({ query, onQuery }: { query: string; onQuery: (q: str
   return (
     <label className="v2-sx-search">
       <Icon name="search" />
-      <input type="search" aria-label="Find a metric" placeholder="Find a metric" autoComplete="off" value={query}
+      <Input type="search" aria-label="Find a metric" placeholder="Find a metric" autoComplete="off" value={query}
         onChange={e => onQuery(e.target.value)} onKeyDown={e => { if (e.key === "Escape" && query) { e.stopPropagation(); onQuery(""); } }} />
     </label>
   );

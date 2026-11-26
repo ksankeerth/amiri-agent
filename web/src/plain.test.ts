@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { placeName, placeOrder } from "./format.ts";
-import { alertChangeText, alertOrder, anchorLabel, checkMove, findingOutcome, investigationFailed, dateRange, eventTitle, signalStrength, impactText, listText, productAngle, relDay, sizeTiming, splitCheckText, themeLabel, verdictTone } from "./plain.ts";
+import { notInvestigatedText, notInvestigatedWhy, alertChangeText, alertOrder, anchorLabel, checkMove, findingOutcome, investigationFailed, dateRange, eventTitle, signalStrength, impactText, listText, productAngle, relDay, sizeTiming, splitCheckText, themeLabel, verdictTone } from "./plain.ts";
 
 test("themes read as short phrases, not machine text", () => {
   assert.equal(themeLabel({ theme: "commodities", direction: "up", item: "oil" }), "Oil prices up");
@@ -71,6 +71,13 @@ test("generic event titles become the theme in words plus the size; real titles 
   assert.equal(eventTitle({ title: "Oil rose", themes: [] }), "Oil rose");
 });
 
+test("event titles carry the size without brackets, one style", () => {
+  assert.equal(eventTitle({ title: "The economic outlook worsened (4.42%)", themes: [{ theme: "macro", direction: "worse" }] }), "The economic outlook worsened 4.42%");
+  assert.equal(eventTitle({ title: "Share prices down 4.71%", themes: [{ theme: "markets", direction: "equity_down" }] }), "Share prices down 4.71%");
+  assert.equal(eventTitle({ title: "Interest rates rose (25 bp)", themes: [] }), "Interest rates rose 25 bp");
+  assert.equal(eventTitle({ title: "Rates rose (25 bp)", themes: [{ theme: "rates", direction: "up" }] }), "Interest rates up 25 bp");
+});
+
 test("an alert queue: open first, then the most serious, then the latest", () => {
   const xs = [
     { id: "w-new", level: "warning", status: "new", at: "2026-11-16T10:00:00Z" },
@@ -98,7 +105,7 @@ test("an alert's history says Updated when only the evidence grew, and Level rai
   assert.equal(alertChangeText({ change: "checked", text: "" }), "Checked against your data");
 });
 
-test("an event's anchor says what happened then, not that Amiri Agent noticed it", () => {
+test("an event's anchor says what happened then, not that AMIRI Agent noticed it", () => {
   assert.equal(anchorLabel("published_at"), "News broke");
   assert.equal(anchorLabel("news_time"), "News broke");
   assert.equal(anchorLabel("move_start"), "Prices moved");
@@ -112,4 +119,11 @@ test("a finding the investigation couldn't take is not shown as 'no impact found
   assert.deepEqual(findingOutcome("linked", null), ["In an event", "green"]);
   assert.equal(investigationFailed("set_aside", "investigation_failed"), true);
   assert.equal(investigationFailed("linked", "investigation_failed"), false);
+});
+
+test("a finding that couldn't be investigated says why in one plain phrase, never a raw code", () => {
+  assert.equal(notInvestigatedWhy(), "the investigation agent didn't answer");
+  assert.equal(notInvestigatedWhy("the agent refused or couldn't take the run: HTTP 422: {\"detail\":[{\"type\":\"literal_error\"}]}"), "the investigation agent couldn't take the run");
+  assert.equal(notInvestigatedWhy("the agent timed out: HTTP 504"), "the investigation agent didn't answer");
+  assert.equal(notInvestigatedText(null), "Couldn't be investigated · the investigation agent didn't answer");
 });

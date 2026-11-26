@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { FindingRow } from "../../api/investigation";
 import {
-  bySource, groupMeta, hiddenIn, investigationDidntRun, kindOf, landed, makeGroups, moreWords, noImpactWhy, onItsWay, retryWord, rowLink, shownIn,
+  bySource, groupMeta, hiddenIn, investigationDidntRun, kindOf, landed, makeGroups, moreWords, noImpactWhy, notInvestigatedLine, onItsWay, retryWord, rowLink, shownIn,
   signalOf, sourceLink, sourceWords, tabCounts, triesOf, whenColumn,
 } from "./words.ts";
 
@@ -67,7 +67,7 @@ test("folding: an event shows its newest three, no impact one, and the rest are 
   assert.equal(moreWords(3, true), "Show fewer");
   assert.equal(groupMeta(n, { waitMinutes: 10, shown: 1 }), "showing 1");
   const w = makeGroups([f("w", "new")], "all")[0];
-  assert.equal(groupMeta(w, { waitMinutes: 30, shown: 1 }), "Amiri Agent investigates every 30 minutes");
+  assert.equal(groupMeta(w, { waitMinutes: 30, shown: 1 }), "AMIRI Agent investigates every 30 minutes");
   assert.equal(groupMeta(w, { waitMinutes: null, shown: 1 }), "");
 });
 
@@ -126,4 +126,9 @@ test("polling: only findings on their way, one per run, at most three; done when
   assert.deepEqual(onItsWay([...sameRun, f("x", "grouped", { run_id: "run-2", created_at: "2026-11-24T09:00:00Z" })]), ["r4", "x"]);
   assert.ok(!ids.includes("n") && !ids.includes("e"));
   assert.deepEqual(["new", "grouped", "linked", "set_aside"].map(landed), [false, false, true, true]);
+});
+
+test("a finding that couldn't be investigated gives its reason as a sentence", () => {
+  assert.equal(notInvestigatedLine({ outcome: { reason: "investigation_failed", note: "the agent refused or couldn't take the run: HTTP 422: {}" } }), "The investigation agent couldn't take the run");
+  assert.equal(notInvestigatedLine({ outcome: null }), "The investigation agent didn't answer");
 });

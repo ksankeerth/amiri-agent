@@ -17,6 +17,7 @@ import { ago, day, dayTime, plural } from "../../format";
 import { eventTitle, longWhen } from "../../plain";
 import { ageText, placesText } from "../overview/words";
 import { alertsText, effectsFigure, lastNews, productNames, productsText, RUNS_LIMIT, runKind, runWords, whenText } from "./listWords";
+import { SkBar } from "../../components/v2/Skeleton";
 
 // ---------------------------------------------------------------- the table
 const COLS = "16px minmax(0, 1.4fr) 110px minmax(0, 1.6fr) 92px 90px";
@@ -65,7 +66,7 @@ function EventRowView({ e, d, waiting, alerts, placeName, now }: { e: EventRow; 
       </Cell>
       <Cell className="v2-evs-pill"><DirectionPill tone={e.tone} />{closed && <span className="v2-sr"> (closed)</span>}</Cell>
       <Cell phoneHide className="v2-evs-prods">
-        {names === null ? (waiting ? <span className="v2-evs-sk" aria-hidden="true" /> : <span className="v2-muted">—</span>)
+        {names === null ? (waiting ? <SkBar w={80} h={13} /> : <span className="v2-muted">—</span>)
           : names.length ? productsText(names) : <span className="v2-muted">{e.hypotheses ? "—" : "No products traced yet"}</span>}
       </Cell>
       <Cell className="v2-evs-fx">{fx ? <><b className="v2-num">{fx[0]}</b> {fx[1]}</> : <span className="v2-muted">No effects yet</span>}</Cell>
@@ -81,12 +82,12 @@ export function EventsSkeleton() {
       <span className="v2-sr">Loading the events</span>
       {[0, 1, 2, 3].map(i => (
         <div key={i} className="v2-evs-skel__row" aria-hidden="true">
-          <span className="v2-evs-sk v2-evs-sk--dot" />
-          <span className="v2-evs-skel__ev"><span className="v2-evs-sk" style={{ width: `${62 - i * 7}%`, height: 16 }} /><span className="v2-evs-sk" style={{ width: "44%", height: 12 }} /></span>
-          <span className="v2-evs-sk v2-evs-sk--pill" />
-          <span className="v2-evs-sk v2-hs" style={{ width: "70%", height: 13 }} />
-          <span className="v2-evs-sk v2-evs-sk--n" />
-          <span className="v2-evs-sk v2-evs-sk--n v2-evs-sk--al" />
+          <SkBar w={13} h={13} />
+          <span className="v2-evs-skel__ev"><SkBar w={`${62 - i * 7}%`} h={16} /><SkBar w="44%" h={12} /></span>
+          <SkBar w={84} h={22} r={999} />
+          <SkBar w="70%" h={13} className="v2-hs" />
+          <SkBar w={60} h={13} />
+          <SkBar w={60} h={13} />
         </div>
       ))}
     </div>

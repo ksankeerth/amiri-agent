@@ -1,0 +1,169 @@
+/* AMIRI Agent UI v2: form parts (components/v2/Field.tsx, Choice.tsx, FileDrop.tsx). Imported once, from main.tsx, after components.css.
+   One height (--v2-hit-ctl: 40 px, 44 px under 720 px), one border (--v2-line-input, 3:1 on the page and on a surface: A3), one focus ring
+   (--v2-focus, from base.css, kept at 2 px and moved in by 1 px on a box), one error look (--v2-bad border and a message), one disabled look
+   and one demo-locked look (greyed to .45 by base.css, still focusable, the reason as a tooltip). Hover and focus ease in 120 ms; the switch knob
+   moves in 160 ms; all of it is switched off under reduced motion (base.css). Only --v2- tokens. Gallery: /dev/v2. */
+
+@media (max-width: 719.98px) { :root { --v2-hit-ctl: 44px; } }
+
+/* ---------- field: label, control, hint, error */
+.v2-field { display: flex; flex-direction: column; gap: var(--v2-sp-6); min-width: 0; margin: 0; }
+.v2-field.is-full { grid-column: 1 / -1; }
+.v2-field__label { font-size: var(--v2-fs-meta); font-weight: var(--v2-fw-semibold); line-height: 1.35; color: var(--v2-text-2); }
+.v2-field__req { color: var(--v2-bad); }
+.v2-field__opt { font-weight: var(--v2-fw-regular); color: var(--v2-muted); }
+.v2-field__hint { font-size: var(--v2-fs-meta); line-height: 1.4; color: var(--v2-muted); overflow-wrap: anywhere; }
+.v2-field__err { display: block; font-size: var(--v2-fs-meta); line-height: 1.4; color: var(--v2-bad); overflow-wrap: anywhere; }
+.v2-field__err > [aria-hidden] { font-size: .8em; }
+
+/* ---------- text controls: input, textarea, select */
+.v2-ctl {
+  display: block; width: 100%; height: var(--v2-hit-ctl); min-width: 0; padding: 0 var(--v2-sp-12);
+  border: 1px solid var(--v2-line-input); border-radius: var(--v2-r-ctl); background: var(--v2-surface); color: var(--v2-text);
+  font: var(--v2-fw-regular) var(--v2-fs-body)/1.4 var(--v2-font);
+  transition: border-color var(--v2-dur-fast) var(--v2-ease), background-color var(--v2-dur-fast) var(--v2-ease), color var(--v2-dur-fast) var(--v2-ease);
+}
+.v2-ctl.is-inline { width: auto; }
+.v2-ctl.is-mono { font-family: var(--v2-mono); font-size: var(--v2-fs-meta); }
+.v2-ctl::placeholder { color: var(--v2-muted); opacity: 1; }
+/* hover: the border steps up (not while disabled, locked, in error or focused) */
+.v2-ctl:where(:hover:not(:disabled):not([aria-disabled="true"]):not([aria-invalid="true"]):not(:focus-visible)) { border-color: var(--v2-text-2); }
+.v2 .v2-ctl:focus-visible { outline: 2px solid var(--v2-focus); outline-offset: 1px; border-color: var(--v2-text); }
+.v2 .v2-ctl[aria-invalid="true"] { border-color: var(--v2-bad); }
+.v2 .v2-ctl[aria-invalid="true"]:focus-visible { border-color: var(--v2-bad); }
+.v2 .v2-ctl:disabled { background: var(--v2-hover); color: var(--v2-text-2); opacity: .7; cursor: not-allowed; }
+.v2 .v2-ctl[data-lock] { background: var(--v2-hover); }   /* base.css greys it to .45 and sets the cursor */
+.v2-ctl[type="number"] { font-variant-numeric: tabular-nums; }
+.v2-ctl[type="search"] { -webkit-appearance: none; appearance: none; }
+.v2-ctl[type="search"]::-webkit-search-cancel-button { cursor: pointer; }
+
+.v2-textarea { height: auto; min-height: 84px; padding: var(--v2-sp-10) var(--v2-sp-12); line-height: 1.5; resize: vertical; }
+.v2-textarea.is-grow { resize: none; overflow-y: auto; }
+
+/* select: the browser's own list, drawn with the shared border and a chevron */
+.v2-sel { position: relative; display: block; min-width: 0; }
+.v2-sel.is-inline { display: inline-block; vertical-align: middle; }
+.v2-sel.is-inline .v2-ctl { width: auto; max-width: min(320px, 100%); }
+.v2 .v2-select { -webkit-appearance: none; appearance: none; padding-right: 38px; cursor: pointer; text-overflow: ellipsis; }
+.v2 .v2-select:disabled, .v2 .v2-select[data-lock] { cursor: not-allowed; }
+.v2-sel__chev { position: absolute; right: var(--v2-sp-12); top: 50%; width: 16px; height: 16px; margin-top: -8px; color: var(--v2-text-2); pointer-events: none; }
+.v2-sel:has(.v2-select:disabled) .v2-sel__chev { opacity: .6; }
+.v2-sel:has(.v2-select[data-lock]) .v2-sel__chev { opacity: .45; }
+/* chips and the "+ currency" picker: the picker keeps its own width, beside the chips */
+.v2-cur { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-6); min-width: 0; }
+.v2-cur > .v2-sel { flex: 0 0 auto; display: block; width: min(240px, 100%); }
+.v2-cur > .v2-sel .v2-ctl { width: 100%; }
+.v2-select option { background: var(--v2-surface); color: var(--v2-text); }
+
+/* the slider (Monitors: how serious): the thumb and fill take the ink colour */
+.v2-range { width: 100%; height: var(--v2-hit-ctl); margin: 0; accent-color: var(--v2-ink-btn); cursor: pointer; }
+.v2-range:disabled, .v2-range[data-lock] { cursor: not-allowed; }
+
+/* ---------- checkbox */
+.v2-check {
+  position: relative; display: inline-flex; align-items: flex-start; gap: var(--v2-sp-10); max-width: 100%;
+  padding-block: calc((var(--v2-hit-ctl) - 20px) / 2); font-size: var(--v2-fs-body); line-height: 20px; color: var(--v2-text); cursor: pointer;
+}
+.v2-check__in, .v2-switch__in, .v2-radio__in, .v2-seg__in { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.v2-check__box {
+  flex: none; display: grid; place-items: center; width: 20px; height: 20px; border: 1.5px solid var(--v2-line-input); border-radius: 5px;
+  background: var(--v2-surface); color: var(--v2-ink-btn-text);
+  transition: background-color var(--v2-dur-fast) var(--v2-ease), border-color var(--v2-dur-fast) var(--v2-ease);
+}
+.v2-check__box svg { width: 14px; height: 14px; opacity: 0; transform: scale(.7); transition: opacity var(--v2-dur-fast) var(--v2-ease), transform var(--v2-dur-fast) var(--v2-ease); }
+.v2-check:hover .v2-check__in:not(:checked):not(:disabled) + .v2-check__box { border-color: var(--v2-text-2); }
+.v2-check__in:checked + .v2-check__box { background: var(--v2-ink-btn); border-color: var(--v2-ink-btn); }
+.v2-check__in:checked + .v2-check__box svg { opacity: 1; transform: none; }
+.v2 .v2-check__in:focus-visible + .v2-check__box { outline: 2px solid var(--v2-focus); outline-offset: 2px; }
+.v2-check__in:disabled, .v2-check__in:disabled ~ * { cursor: not-allowed; }
+.v2-check:has(.v2-check__in:disabled) { opacity: .6; cursor: not-allowed; }
+.v2-check:has(.v2-check__in[data-lock]) { cursor: not-allowed; }
+.v2-check__text { display: flex; flex-direction: column; gap: var(--v2-sp-2); min-width: 0; overflow-wrap: anywhere; }
+.v2-check__hint { font-size: var(--v2-fs-meta); line-height: 1.4; color: var(--v2-muted); }
+
+/* ---------- switch: a track and a knob */
+.v2-switch { position: relative; display: inline-flex; align-items: center; gap: var(--v2-sp-10); min-height: var(--v2-hit); max-width: 100%; font-size: var(--v2-fs-body); line-height: 1.4; color: var(--v2-text); cursor: pointer; }
+.v2-switch__track {
+  flex: none; position: relative; width: 40px; height: 24px; border-radius: 12px; background: var(--v2-line-input);
+  transition: background-color var(--v2-dur-fast) var(--v2-ease);
+}
+.v2-switch__knob {
+  position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--v2-surface);
+  transition: transform var(--v2-dur) var(--v2-ease), background-color var(--v2-dur-fast) var(--v2-ease);
+}
+.v2-switch:hover .v2-switch__in:not(:checked):not(:disabled) + .v2-switch__track { background: var(--v2-text-2); }
+.v2-switch__in:checked + .v2-switch__track { background: var(--v2-ink-btn); }
+.v2-switch__in:checked + .v2-switch__track .v2-switch__knob { transform: translateX(16px); background: var(--v2-ink-btn-text); }
+.v2-switch.is-lg .v2-switch__in:checked + .v2-switch__track { background: var(--v2-good); }
+.v2 .v2-switch__in:focus-visible + .v2-switch__track { outline: 2px solid var(--v2-focus); outline-offset: 2px; }
+.v2-switch__in:disabled, .v2-switch__in:disabled ~ * { cursor: not-allowed; }
+.v2-switch:has(.v2-switch__in:disabled) { opacity: .5; cursor: not-allowed; }
+.v2-switch:has(.v2-switch__in[data-lock]) { cursor: not-allowed; }
+.v2-switch__text { min-width: 0; overflow-wrap: anywhere; }
+
+/* ---------- radio group: a list of rings, or cards */
+.v2-radios { display: flex; flex-direction: column; gap: var(--v2-sp-4); min-width: 0; margin: 0; padding: 0; border: 0; }
+.v2-radios__legend { padding: 0 0 var(--v2-sp-6); font-size: var(--v2-fs-meta); font-weight: var(--v2-fw-semibold); color: var(--v2-text-2); }
+.v2-radio { position: relative; display: flex; align-items: flex-start; gap: var(--v2-sp-12); padding-block: calc((var(--v2-hit-ctl) - 20px) / 2); cursor: pointer; }
+.v2-radio__ring {
+  flex: none; width: 20px; height: 20px; border: 1.5px solid var(--v2-line-input); border-radius: 50%; background: var(--v2-surface);
+  transition: background-color var(--v2-dur-fast) var(--v2-ease), border-color var(--v2-dur-fast) var(--v2-ease), box-shadow var(--v2-dur-fast) var(--v2-ease);
+}
+.v2-radio:hover .v2-radio__in:not(:checked):not(:disabled) + .v2-radio__ring { border-color: var(--v2-text-2); }
+.v2-radio__in:checked + .v2-radio__ring { border-color: var(--v2-ink-btn); background: var(--v2-ink-btn); box-shadow: inset 0 0 0 4px var(--v2-surface); }
+.v2 .v2-radio__in:focus-visible + .v2-radio__ring { outline: 2px solid var(--v2-focus); outline-offset: 2px; }
+.v2-radio__text { display: flex; flex-direction: column; gap: var(--v2-sp-2); min-width: 0; font-size: var(--v2-fs-body); line-height: 20px; color: var(--v2-text); }
+.v2-radio__t { font-weight: var(--v2-fw-semibold); overflow-wrap: anywhere; }
+.v2-radio__d { font-size: var(--v2-fs-meta); line-height: 1.4; color: var(--v2-muted); overflow-wrap: anywhere; }
+.v2-radio__why { font-size: var(--v2-fs-meta); line-height: 1.4; color: var(--v2-text-2); }
+.v2-radio.is-off { opacity: .6; cursor: not-allowed; }
+.v2-radio.is-off .v2-radio__in { cursor: not-allowed; }
+.v2-radio[data-lock] { cursor: not-allowed; }
+.v2-radios.is-cards { gap: var(--v2-sp-8); }
+.v2-radios.is-cards .v2-radio {
+  padding: var(--v2-sp-12) var(--v2-sp-14); border: 1px solid var(--v2-line-ctl); border-radius: var(--v2-r-ctl); background: var(--v2-surface);
+  transition: border-color var(--v2-dur-fast) var(--v2-ease), background-color var(--v2-dur-fast) var(--v2-ease), box-shadow var(--v2-dur-fast) var(--v2-ease);
+}
+.v2-radios.is-cards .v2-radio:not(.is-off):hover { border-color: var(--v2-line-ctl-hover); background: var(--v2-hover); }
+.v2-radios.is-cards .v2-radio.is-on { border-color: var(--v2-text); box-shadow: 0 0 0 1px var(--v2-text); background: var(--v2-surface); }
+.v2-radios.is-cards .v2-radio:has(.v2-radio__in:focus-visible) { outline: 2px solid var(--v2-focus); outline-offset: 2px; }
+.v2-radios.is-cards .v2-radio__in:focus-visible + .v2-radio__ring { outline: none; }
+.v2-radios.is-cards .v2-radio__d { color: var(--v2-muted); }
+.v2-radios.is-cards .v2-radio:hover:not(.is-off) .v2-radio__d { color: var(--v2-text-2); }  /* A1: no muted text on a hover fill */
+
+/* ---------- segmented control */
+.v2-seg-wrap { display: flex; flex-direction: column; gap: var(--v2-sp-6); min-width: 0; }
+.v2-seg { display: inline-flex; gap: var(--v2-sp-2); width: max-content; max-width: 100%; height: var(--v2-hit-ctl); padding: 3px; border: 1px solid var(--v2-line-input); border-radius: var(--v2-r-ctl); background: var(--v2-surface); }
+.v2-seg__o { position: relative; display: inline-flex; }
+.v2-seg__t {
+  display: inline-flex; align-items: center; padding: 0 var(--v2-sp-14); border-radius: var(--v2-r-nav); color: var(--v2-text-2);
+  font: var(--v2-fw-semibold) var(--v2-fs-meta)/1.2 var(--v2-font); white-space: nowrap;
+  transition: background-color var(--v2-dur-fast) var(--v2-ease), color var(--v2-dur-fast) var(--v2-ease);
+}
+.v2-seg__o:hover .v2-seg__in:not(:checked):not(:disabled) + .v2-seg__t { background: var(--v2-hover); color: var(--v2-text); }
+.v2-seg__in:checked + .v2-seg__t { background: var(--v2-ink-btn); color: var(--v2-ink-btn-text); }
+.v2 .v2-seg__in:focus-visible + .v2-seg__t { outline: 2px solid var(--v2-focus); outline-offset: 2px; }
+.v2-seg__in:disabled, .v2-seg__in:disabled + .v2-seg__t { cursor: not-allowed; opacity: .6; }
+.v2-seg__o[data-lock] { cursor: not-allowed; }
+
+/* ---------- file drop: a button that also takes a dropped file, or a dashed zone with the button inside */
+.v2-drop { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-8); min-width: 0; }
+.v2-drop.is-zone {
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--v2-sp-6); padding: var(--v2-sp-20); border: 1.5px dashed var(--v2-line-input); border-radius: var(--v2-r-lg);
+  background: var(--v2-surface); transition: border-color var(--v2-dur-fast) var(--v2-ease), background-color var(--v2-dur-fast) var(--v2-ease);
+}
+.v2-drop.is-zone.is-over { border-color: var(--v2-brand); background: var(--v2-brand-tint); }
+.v2-drop__t { font-size: var(--v2-fs-body); font-weight: var(--v2-fw-semibold); }
+.v2-drop__hint { font-size: var(--v2-fs-meta); color: var(--v2-muted); }
+.v2-drop.is-over .v2-drop__hint { color: var(--v2-text-2); }
+.v2-drop__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-10) var(--v2-sp-16); margin-top: var(--v2-sp-4); }
+.v2-drop__pick { cursor: pointer; }
+.v2 .v2-drop__pick:has(.v2-drop__in:focus-visible) { outline: 2px solid var(--v2-focus); outline-offset: 2px; }
+.v2-drop__pick:has(.v2-drop__in:disabled) { opacity: .5; cursor: not-allowed; }
+@media (max-width: 719.98px) { .v2-drop.is-zone { padding: var(--v2-sp-16); } }
+
+/* a disabled fieldset (a locked form) greys the whole group once; its controls are not greyed a second time */
+.v2 fieldset:disabled .v2-ctl:disabled { opacity: 1; }
+.v2 fieldset:disabled .v2-check:has(.v2-check__in:disabled), .v2 fieldset:disabled .v2-switch:has(.v2-switch__in:disabled), .v2 fieldset:disabled .v2-radio.is-off { opacity: 1; }
+/* a locked choice greys its label (base.css [data-lock]); the real input inside stays invisible */
+.v2 :is(.v2-check__in, .v2-switch__in, .v2-radio__in, .v2-seg__in)[data-lock] { opacity: 0; }

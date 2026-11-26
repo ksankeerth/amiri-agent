@@ -8,7 +8,7 @@ export interface WizardStep { key: string; /** In the step list. */ label: strin
 
 /** The ten steps, in order. The Setup agent's tracks name the same keys as their `setup_step`. */
 export const STEPS: readonly WizardStep[] = [
-  { key: "institution", label: "Institution", title: "Who you are", lede: "Check the basics Amiri Agent starts from. Change them any time with Edit details." },
+  { key: "institution", label: "Institution", title: "Who you are", lede: "Check the basics AMIRI Agent starts from. Change them any time with Edit details." },
   { key: "where", label: "Where", title: "Where you operate", lede: "Add the countries, states or provinces where you operate. The first one should be your home country." },
   { key: "customers", label: "Customers", title: "Who your customers are", lede: "Pick the customer groups you serve, then say where each is concentrated and how your data identifies it." },
   { key: "products", label: "Products", title: "What you sell, and to whom", lede: "Pick what you sell, then say which customer groups each product is for." },

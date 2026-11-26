@@ -27,7 +27,7 @@ export type PausedStep = "idle" | "checking" | "still" | "unreachable";
 export const pausedStatus = (s: PausedStep): string =>
   s === "checking" ? "Checking whether it's awake…"
     : s === "still" ? "Still paused. Try again in a minute."
-      : s === "unreachable" ? "Couldn't reach Amiri Agent. Try again in a minute."
+      : s === "unreachable" ? "Couldn't reach AMIRI Agent. Try again in a minute."
         : "";
 
 /** Only after a check that found it awake: the button's own words while it looks. */

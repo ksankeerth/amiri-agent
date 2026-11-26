@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import "./styles/v2/tokens.css";
 import "./styles/v2/base.css";
 import "./styles/v2/components.css";
+import "./styles/v2/forms.css";
 import { App } from "./App";
 import { RoleProvider, ToastProvider } from "./components/ui";
 

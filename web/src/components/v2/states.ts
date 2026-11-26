@@ -23,7 +23,7 @@ export function isDownError(e: unknown): boolean {
 /** The words of a failed load: "Couldn't load the alerts" and one plain sentence. `safe` says what is not lost. */
 export function loadErrorCopy(error: unknown, what = "this page", safe?: string): { title: string; message: string } {
   const title = `Couldn't load ${what}`;
-  if (isDownError(error)) return { title, message: `Amiri Agent didn't answer. ${safe ?? "Nothing you saved is lost; this page just couldn't reach it."}` };
+  if (isDownError(error)) return { title, message: `AMIRI Agent didn't answer. ${safe ?? "Nothing you saved is lost; this page just couldn't reach it."}` };
   const p = asProblem(error);
   const detail = typeof p?.detail === "string" && p.detail ? p.detail : typeof p?.message === "string" && p.message ? p.message : "";
   return { title, message: detail || "Something went wrong on our side. Try again in a moment." };

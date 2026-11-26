@@ -3,6 +3,7 @@
 // no institution yet. Creating, and importing a whole profile, are the two writes here; the demo lock greys both.
 //
 // Asking, and how often: the list of institutions once (to see whether there is one already: one institution per platform). Nothing polls.
+import { FileDrop } from "../../components/v2/FilePicker";
 import { Fragment, useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { ApiError } from "../../api/client";
@@ -81,11 +82,10 @@ export function NewInstitutionForm({ onCreated }: { onCreated: (id: string) => v
       </div>
       {problems.length > 0 && <p className="v2-in-err v2-sw-sum" role="alert"><span aria-hidden="true">◆ </span>{problems.join(" · ")}</p>}
       <div className="v2-sw-formfoot">
-        <Button type="submit" variant="primary" size="lg" locked={locked} disabled={busy}>{busy ? "Creating…" : "Create and continue"}</Button>
+        <Button type="submit" variant="primary" size="lg" locked={locked} disabled={busy} busy={busy} busyLabel="Creating…">Create and continue</Button>
         {locked ? <Button locked>Import a whole profile</Button>
-          : <label className="v2-btn v2-btn--secondary v2-in-file">Import a whole profile
-            <input type="file" accept="application/json" className="v2-sr" aria-label="Import a whole profile from a JSON file"
-              onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) importFile(f); }} /></label>}
+          : <FileDrop accept="application/json,.json" noun="a JSON file" size="md" pickLabel="Import a whole profile" aria-label="Import a whole profile from a JSON file"
+              onFile={importFile} onReject={why => { setErr({}); setGeneral([why]); }} />}
       </div>
       <p className="v2-meta v2-sw-demos">Already have a profile file? Import it to create everything at once. To try one, download a demo's profile: {DEMOS.map((x, n) => (
         <Fragment key={x.kind}>{n ? ", " : ""}<a href={`/api/v1/reference/demo-profile?kind=${x.kind}`} download>{x.label.toLowerCase()}</a></Fragment>))}.</p>
@@ -108,7 +108,7 @@ export function NewInstitutionPage() {
     <header className="v2-in-head">
       <div className="v2-in-head__t">
         <h1 className="v2-in-h1">New institution</h1>
-        <p className="v2-in-sub1">Everything Amiri Agent watches and checks starts from this profile. Start with the basics; the guided setup then asks about where you operate, your customers, products, flows, rules, rivals and risks.</p>
+        <p className="v2-in-sub1">Everything AMIRI Agent watches and checks starts from this profile. Start with the basics; the guided setup then asks about where you operate, your customers, products, flows, rules, rivals and risks.</p>
       </div>
       {btn && !panel.open && <div className="v2-in-head__btns"><Button onClick={() => panel.setOpen(true)} aria-haspopup={panel.sheet ? "dialog" : undefined}>Setup agent</Button></div>}
     </header>);

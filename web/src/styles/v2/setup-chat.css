@@ -1,18 +1,22 @@
 /* The Setup agent's panel (board 08; states: board 15 section C, board 13 section 6). Tokens only. On a desktop it sits beside the page and
    stays in view; under 720 px it is a full-screen sheet (drawn into <body>, so .v2-sa-sheet carries its own .v2 scope). */
 .v2-sa {
-  flex: 1 1 340px; max-width: 400px; min-width: 0; display: flex; flex-direction: column;
+  flex: 0 0 360px; min-width: 0; display: flex; flex-direction: column;
   background: var(--v2-surface); border: 1px solid var(--v2-line); border-radius: var(--v2-r-panel); overflow: hidden;
   position: sticky; top: 0; height: calc(100dvh - 150px); min-height: 520px; max-height: 860px;
 }
 .v2-sa :where(h2, p) { margin: 0; }
+/* beside the page only where there is room for both (1280 px and wider); narrower, it is a drawer over the page's right edge, not a box
+   that wraps under the content */
+@media (max-width: 1279.98px) {
+  .v2-sa:not(.is-sheet) { position: fixed; top: 76px; right: var(--v2-sp-16); bottom: var(--v2-sp-16); z-index: 40; width: min(400px, calc(100vw - 32px)); height: auto; min-height: 0; max-height: none; box-shadow: var(--v2-shadow-pop); }
+}
+.v2-sa__open { gap: var(--v2-sp-8); }
 .v2-sa__head { display: flex; align-items: center; gap: var(--v2-sp-8); padding: 14px 16px; border-bottom: 1px solid var(--v2-line); flex: none; }
 .v2-sa__spark { flex: none; stroke: var(--v2-brand); }
 .v2-sa__t { flex: 1 1 0; min-width: 44px; line-height: 1.25; font-size: var(--v2-fs-lead); font-weight: var(--v2-fw-semibold); letter-spacing: 0; }
-.v2-sa__topic {
-  flex: 0 0 190px; min-width: 0; height: 32px; padding: 0 var(--v2-sp-6); border: 1px solid var(--v2-line-input); border-radius: var(--v2-r-btn); background: var(--v2-surface);
-  color: var(--v2-text); font: var(--v2-fw-semibold) var(--v2-fs-cap)/1.2 var(--v2-font); cursor: pointer; text-overflow: ellipsis;
-}
+.v2-sa__topic { flex: 0 0 190px; min-width: 0; }
+.v2-sa__topic .v2-ctl { font-size: var(--v2-fs-meta); font-weight: var(--v2-fw-semibold); }
 .v2-sa__x { flex: none; width: var(--v2-hit); height: var(--v2-hit); display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: var(--v2-r-btn); background: none; color: var(--v2-text-2); cursor: pointer; font-size: var(--v2-fs-lead); }
 .v2 .v2-sa__x:hover { background: var(--v2-hover); color: var(--v2-text); }
 .v2-sa__state { margin: var(--v2-sp-12) var(--v2-sp-16) 0; flex: none; }
@@ -25,6 +29,8 @@
 .v2 .v2-sa__link:hover { color: var(--v2-brand-hover); }
 .v2-sa__div { align-self: stretch; display: flex; align-items: center; gap: var(--v2-sp-10); font-size: var(--v2-fs-cap); font-weight: var(--v2-fw-semibold); letter-spacing: var(--v2-ls-caps); text-transform: uppercase; color: var(--v2-muted); }
 .v2-sa__div::before, .v2-sa__div::after { content: ""; flex: 1; height: 1px; background: var(--v2-line); }
+/* what the agent can do here: a quiet line at the top of an empty topic, not a message in the conversation */
+.v2-sa__intro { font-size: var(--v2-fs-meta); line-height: 1.5; color: var(--v2-muted); }
 .v2-sa__me, .v2-sa__ai { max-width: 88%; padding: 10px 14px; overflow-wrap: anywhere; white-space: pre-wrap; }
 .v2-sa__me { align-self: flex-end; border-radius: 14px 14px 4px 14px; background: var(--v2-ink-btn); color: var(--v2-ink-btn-text); }
 .v2-sa__ai { align-self: flex-start; max-width: 92%; border-radius: 14px 14px 14px 4px; background: var(--v2-selected); color: var(--v2-text); }
@@ -87,12 +93,7 @@
 .v2-sa__starters { display: flex; flex-wrap: wrap; gap: var(--v2-sp-6); }
 .v2-sa__count { font-size: var(--v2-fs-cap); color: var(--v2-text-2); }
 .v2-sa__comp { display: flex; gap: var(--v2-sp-8); align-items: flex-end; }
-.v2-sa__input {
-  flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid var(--v2-line-input); border-radius: var(--v2-r-ctl); background: var(--v2-surface); color: var(--v2-text);
-  font: var(--v2-fw-regular) var(--v2-fs-body)/1.4 var(--v2-font); resize: none; max-height: 200px;
-}
-.v2 .v2-sa__input:focus-visible { outline-offset: 1px; border-color: var(--v2-text); }
-.v2-sa__input::placeholder { color: var(--v2-muted); opacity: 1; }
+.v2-sa__input { flex: 1; min-width: 0; min-height: 56px; resize: none; max-height: 200px; }
 .v2-sa__comp .v2-btn { min-height: 44px; }
 .v2 .v2-btn.is-idle { opacity: .45; cursor: not-allowed; }
 
@@ -103,6 +104,6 @@
 .v2-sa.is-sheet .v2-sa__foot { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
 .v2-sa.is-sheet .v2-sa__me, .v2-sa.is-sheet .v2-sa__ai { max-width: 94%; }
 .v2-sa.is-sheet .v2-sa__input { font-size: 16px; }   /* a phone zooms into a smaller one */
-.v2-sa.is-sheet .v2-sa__topic { flex-basis: 150px; min-height: var(--v2-hit-phone); }
+.v2-sa.is-sheet .v2-sa__topic { flex-basis: 150px; }
 .v2-sa.is-sheet .v2-sa__chip, .v2-sa.is-sheet .v2-sa__start { min-height: 40px; }
 @media (max-width: 719.98px) { .v2-sa__chg-w { width: 84px; } }

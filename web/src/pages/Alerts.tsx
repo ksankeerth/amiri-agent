@@ -1,20 +1,23 @@
-// Alerts (board 01; states: board 16 section D): what Amiri Agent found for each team's products, as a list and a reading
+// Alerts (board 01; states: board 16 section D): what AMIRI Agent found for each team's products, as a list and a reading
 // pane. New / Acknowledged / Resolved tabs, a team and a level filter, one Acknowledge button for every alert to review.
 // The tab, filters and open alert live in the address (?tab=&team=&level=&alert=), so a link opens the right alert. On a
 // phone the list is the page and an alert opens as its own view with a back link. Reloads every minute.
+import { Select } from "../components/v2/Field";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { alertsApi, type AlertItem, type AlertSummary } from "../api/alerts";
+import { peek } from "../api/client";
 import { investigationApi, type EventDetail } from "../api/investigation";
 import { useNow, useRefusalToast, useToast } from "../components/ui";
+import { ListPane, MoreRows, PaneBack, PaneView, usePaged } from "../components/v2/ListPane";
 import { LoadError } from "../components/v2/LoadError";
 import { useCrumbs } from "../components/v2/Shell";
 import { StaleBanner } from "../components/v2/StaleBanner";
 import { TabPanel, Tabs } from "../components/v2/Tabs";
 import { alertOrder, eventTitle } from "../plain";
-import { AlertList, AlertsSkeleton, Article, changedAt, EmptyList, LevelsHelp, ManyStrip } from "./alerts/parts";
+import { AlertList, AlertsSkeleton, Article, changedAt, EmptyList, FilterFold, LevelsHelp, ManyStrip } from "./alerts/parts";
 import {
-  countAt, LEVELS, LIST_LIMIT, ledeText, limitNote, MANY, neighbour, parseLevel, parseTab, pickAlert, TABS, type LevelKey, type Tab,
+  countAt, filterState, LEVELS, LIST_LIMIT, ledeText, limitNote, MANY, neighbour, parseLevel, parseTab, pickAlert, TABS, type LevelKey, type Tab,
 } from "./alerts/words";
 import { usePolling } from "../components/usePolling";
 import "../styles/v2/alerts.css";
@@ -35,7 +38,7 @@ function usePhone(): boolean {
 
 /** The event behind the open alert: its tasks know the next check and the figure, and its findings have the article links. */
 function useEvent(eventId: string | undefined, stamp: string | undefined): EventDetail | null {
-  const [ev, setEv] = useState<EventDetail | null>(null);
+  const [ev, setEv] = useState<EventDetail | null>(() => (eventId ? peek(() => investigationApi.event(eventId)) ?? null : null));
   useEffect(() => {
     if (!eventId) { setEv(null); return; }
     let live = true;
@@ -47,7 +50,7 @@ function useEvent(eventId: string | undefined, stamp: string | undefined): Event
 
 /** Event names as the Events pages show them: the alert carries only the stored title, the list has the themes. */
 function useEventTitles(): (a: AlertItem) => string {
-  const [names, setNames] = useState<Map<string, string>>(new Map());
+  const [names, setNames] = useState<Map<string, string>>(() => new Map((peek(() => investigationApi.events(200)) ?? []).map(r => [r.event_id, eventTitle(r)])));
   useEffect(() => {
     let live = true;
     investigationApi.events(200).then(rows => { if (live) setNames(new Map(rows.map(r => [r.event_id, eventTitle(r)]))); })
@@ -56,6 +59,8 @@ function useEventTitles(): (a: AlertItem) => string {
   }, []);
   return useCallback((a: AlertItem) => names.get(a.event_id) ?? a.event_title, [names]);
 }
+
+const listFor = (status: string, owner: string, level: string) => alertsApi.list({ status, owner: owner || undefined, level: level || undefined, limit: LIST_LIMIT });
 
 export function AlertsPage() {
   useCrumbs(CRUMBS);
@@ -66,10 +71,12 @@ export function AlertsPage() {
   const now = useNow(60_000);
   const toast = useToast(), refuse = useRefusalToast();
   const teamId = useId(), levelId = useId();
+  const [filtersOpen, setFiltersOpen] = useState(false);       // phone: the filters fold behind one button
 
   const tab = parseTab(sp.get("tab")), team = sp.get("team") ?? "", level = parseLevel(sp.get("level")), alertId = sp.get("alert");
-  const [items, setItems] = useState<AlertItem[] | null>(null);
-  const [sum, setSum] = useState<AlertSummary | null>(null);
+  // seen before: the last list and counts show at once and are refreshed below (F4)
+  const [items, setItems] = useState<AlertItem[] | null>(() => peek(() => listFor(tab, team, level)) ?? null);
+  const [sum, setSum] = useState<AlertSummary | null>(() => peek(() => alertsApi.summary()) ?? null);
   const [err, setErr] = useState<unknown>(null);
   const [loadedAt, setLoadedAt] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -92,18 +99,19 @@ export function AlertsPage() {
     const mine = ++seq.current;
     try {
       // one status at a time (the newest 200); the tab counts come from the summary, which counts them all
-      const [s, xs] = await Promise.all([alertsApi.summary(), alertsApi.list({ status: tab, owner: team || undefined, level: level || undefined, limit: LIST_LIMIT })]);
+      const [s, xs] = await Promise.all([alertsApi.summary(), listFor(tab, team, level)]);
       if (mine !== seq.current) return;
       setSum(s); setItems(xs); setErr(null); setLoadedAt(Date.now());
     } catch (e) { if (mine === seq.current) setErr(e); }
   }, [tab, team, level]);
-  useEffect(() => { setItems(null); }, [tab, team, level]);  // another filter: wait for its list rather than show the old one
+  useEffect(() => { setItems(peek(() => listFor(tab, team, level)) ?? null); }, [tab, team, level]);  // another filter: its own last list if seen, else wait for it rather than show the old one
   useEffect(() => { load(); }, [load]);
   usePolling(load, REFRESH_MS);  // every minute, not while the tab is hidden
 
   // the list as shown: an alert acted on leaves a tab it no longer belongs to at once, before the next load; most serious first
   const queue = useMemo(() => (items ?? []).filter(a => a.status === tab).sort((x, y) => alertOrder({ ...x, at: changedAt(x) }, { ...y, at: changedAt(y) })), [items, tab]);
   const selected = pickAlert(queue, alertId, phone);
+  const paged = usePaged<AlertItem, HTMLUListElement>(queue, `${tab}|${team}|${level}`, selected ? queue.findIndex(a => a.alert_id === selected.alert_id) : -1, "li");
   const ev = useEvent(selected?.event_id, selected?.updated_at);
   const titleOf = useEventTitles();
   useEffect(() => { setNote(""); }, [selected?.alert_id]);
@@ -185,33 +193,38 @@ export function AlertsPage() {
   const reading = phone && !!selected;
   const stale = err != null && items !== null && loadedAt != null;
 
+  const fstate = filterState(team, level);
   const filters = (
     <>
       {sum && sum.all_teams.length > 1 && (
         <span className="v2-al-sel">
           <label htmlFor={teamId}>Team</label>
-          <select id={teamId} className="v2-al-select" value={team} onChange={e => setFilter({ team: e.target.value || null })}>
+          <Select inline id={teamId} value={team} onChange={e => setFilter({ team: e.target.value || null })}>
             <option value="">All teams ({countAt(byTeamStatus, tab) ?? 0})</option>
             {teamRows.map(t => <option key={t.owner} value={t.owner}>{t.owner} ({t.n})</option>)}
-          </select>
+          </Select>
         </span>
       )}
       <span className="v2-al-sel">
         <label htmlFor={levelId}>Level</label>
-        <select id={levelId} className="v2-al-select" value={level} onChange={e => setFilter({ level: e.target.value || null })}>
+        <Select inline id={levelId} value={level} onChange={e => setFilter({ level: e.target.value || null })}>
           {LEVELS.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
-        </select>
+        </Select>
       </span>
     </>
   );
 
   const list = (
-    <div className="v2-al-col">
+    <>
       <h2 id="al-list-h" tabIndex={-1} className="v2-sr">{TABS.find(t => t.id === tab)!.label} alerts, most serious first</h2>
-      <AlertList titleOf={titleOf} rows={queue} selectedId={selected?.alert_id ?? null} now={now} hrefFor={hrefFor} onOpen={open} />
+      <AlertList titleOf={titleOf} rows={paged.shown} selectedId={selected?.alert_id ?? null} now={now} hrefFor={hrefFor} onOpen={open} listRef={paged.listRef} />
+      <MoreRows left={paged.left} onMore={paged.more} />
       {limitNote(tabTotal, queue.length) && <p className="v2-meta v2-al-limit">{limitNote(tabTotal, queue.length)}</p>}
       <LevelsHelp />
-    </div>
+    </>
+  );
+  const article = selected && (
+    <Article titleOf={titleOf} a={selected} ev={ev} now={now} busy={busy} note={note} onNote={setNote} onAct={action => act(selected, action)} />
   );
 
   return (
@@ -226,26 +239,17 @@ export function AlertsPage() {
       {items === null && err != null && <LoadError error={err} onRetry={load} what="the alerts" safe="Your alerts are safe; this page just couldn't reach them." />}
 
       {reading && selected ? (
-        <div className="v2-al-read">
-          <Link to="?" className="v2-al-back" onClick={e => { e.preventDefault(); back(); }}><span aria-hidden="true">←</span>All alerts</Link>
-          <Article titleOf={titleOf} a={selected} ev={ev} now={now} busy={busy} note={note} onNote={setNote} onAct={action => act(selected, action)} />
-        </div>
+        <PaneView back={<PaneBack to="?" onClick={e => { e.preventDefault(); back(); }}>All alerts</PaneBack>}>{article}</PaneView>
       ) : (items !== null || err == null) && (
-        <Tabs label="Which alerts" tabs={tabs} value={tab} onChange={id => setFilter({ tab: id === "new" ? null : id })} className="v2-al-tabs" trailing={<div className="v2-al-filters">{filters}</div>}>
+        <Tabs label="Which alerts" tabs={tabs} value={tab} onChange={id => setFilter({ tab: id === "new" ? null : id })} className="v2-al-tabs" trailing={phone ? undefined : <div className="v2-al-filters">{filters}</div>}>
+          {phone && <FilterFold label={fstate.label} summary={fstate.summary} open={filtersOpen} onToggle={() => setFiltersOpen(o => !o)}>{filters}</FilterFold>}
           <TabPanel id={tab}>
             {items === null ? <AlertsSkeleton phone={phone} /> : <>
-              {many && <ManyStrip total={tabTotal!} tab={tab} teams={teamRows.filter(t => t.n > 0).sort((a, b) => b.n - a.n).slice(0, 4)} onTeam={t => setFilter({ team: t })} />}
+              {many && !phone && <ManyStrip total={tabTotal!} tab={tab} teams={teamRows.filter(t => t.n > 0).sort((a, b) => b.n - a.n).slice(0, 4)} onTeam={t => setFilter({ team: t })} />}
               {!queue.length
                 ? <EmptyList tab={tab} team={team} level={level as "" | LevelKey}
                     onClear={what => setFilter({ ...(what !== "level" ? { team: null } : {}), ...(what !== "team" ? { level: null } : {}) })} />
-                : <div className="v2-al-body">
-                  {list}
-                  {!phone && selected && (
-                    <div className="v2-al-pane">
-                      <Article titleOf={titleOf} a={selected} ev={ev} now={now} busy={busy} note={note} onNote={setNote} onAct={action => act(selected, action)} />
-                    </div>
-                  )}
-                </div>}
+                : <ListPane list={list} pane={!phone && article} itemKey={selected?.alert_id} />}
             </>}
           </TabPanel>
         </Tabs>

@@ -14,12 +14,13 @@ import { ago, placeOrder, when } from "../../format";
 import { eventTitle, longWhen } from "../../plain";
 import { InvestigateNowButton } from "../events/investigate";
 import { placesText } from "../overview/words";
+import { SkBar } from "../../components/v2/Skeleton";
 import {
-  GROUP_TITLE, groupMeta, hiddenIn, moreWords, noImpactWhy, retryWord, rowLink, shownIn, signalOf, sourceIcon, sourceWords, triesOf, whenColumn,
+  GROUP_TITLE, groupMeta, hiddenIn, moreWords, noImpactWhy, notInvestigatedLine, retryWord, rowLink, shownIn, signalOf, sourceIcon, sourceWords, triesOf, whenColumn,
   type Group, type Kind,
 } from "./words";
 
-const COLS = "52px 168px minmax(0, 1fr) 118px 24px";
+const COLS = "52px fit-content(220px) minmax(0, 1fr) 118px 24px";
 
 /** What the page knows about each finding that the finding itself doesn't say. */
 export interface RowContext {
@@ -69,14 +70,15 @@ function FindingRowView({ f, kind, c }: { f: FindingRow; kind: Kind; c: RowConte
           {tries !== null && <Pill tone="unusual">{retryWord(tries)}</Pill>}
         </span>
         {kind === "noimpact" && <span className="v2-fd-sub">{noImpactWhy(f)}</span>}
+        {kind === "failed" && <span className="v2-fd-sub">{notInvestigatedLine(f)}</span>}
         {kind === "waiting" && tries !== null && <span className="v2-fd-sub">The last try didn't finish. It goes again with the next batch.</span>}
         {kind === "investigating" && (
           <span className="v2-fd-sub">
             {f.run_started_at ? `Started ${ago(f.run_started_at, c.now)}` : "Being investigated"}
             {f.run_status === "running" && f.run_id && <>
               {" · "}
-              <Button size="sm" variant="quiet" className="v2-row__act v2-fd-check" disabled={c.checking === f.finding_id} onClick={() => c.onCheck(f)}
-                label={`Check now: ${f.title}`}>{c.checking === f.finding_id ? "Checking…" : "Check now"}</Button>
+              <Button size="sm" variant="quiet" className="v2-row__act v2-fd-check" disabled={c.checking === f.finding_id} busy={c.checking === f.finding_id} busyLabel="Checking…" onClick={() => c.onCheck(f)}
+                label={`Check now: ${f.title}`}>Check now</Button>
             </>}
           </span>)}
       </Cell>
@@ -142,11 +144,11 @@ export function FindingsSkeleton() {
       <span className="v2-sr">Loading the findings</span>
       {[0, 1, 2, 3, 4].map(i => (
         <div key={i} className="v2-fd-skel__row" aria-hidden="true">
-          <span className="v2-fd-sk" style={{ width: 36, height: 13 }} />
-          <span className="v2-fd-sk v2-fd-skel__src" style={{ height: 13 }} />
-          <span className="v2-fd-sk" style={{ width: `${78 - i * 9}%`, height: 15 }} />
-          <span className="v2-fd-sk v2-hs" style={{ width: 60, height: 13 }} />
-          <span className="v2-fd-sk v2-hs" style={{ width: 14, height: 12 }} />
+          <SkBar w={36} h={13} />
+          <SkBar h={13} className="v2-fd-skel__src" />
+          <SkBar w={`${78 - i * 9}%`} h={15} />
+          <SkBar w={60} h={13} className="v2-hs" />
+          <SkBar w={14} h={12} className="v2-hs" />
         </div>
       ))}
     </div>

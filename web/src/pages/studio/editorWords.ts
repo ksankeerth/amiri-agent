@@ -1,5 +1,5 @@
 // The Scenario Studio list and editor, in words (board 09, states on board 15 B). Pure functions, so `npm test` covers them.
-import type { HeadlineIn, Mode, PriceMove, Scenario, ScenarioRow, Simulation } from "../../api/studio.ts";
+import type { HeadlineIn, Mode, PriceMove, Scenario, ScenarioRow, Simulation, Template } from "../../api/studio.ts";
 
 export const DAYS = 21;
 export const MAX_HEADLINES = 30;
@@ -30,9 +30,10 @@ export function rowMeta(s: Pick<ScenarioRow, "template_id" | "intensity" | "reco
   return parts.join(" · ");
 }
 
-/** The line under the scenario's name: "Starts 8 Feb 2027 · 21 days, one step a day · recording saved for this version". */
+/** The line under the scenario's name: "Simulated clock: starts 8 Feb 2027 · 21 days, one step a day · recording saved for this version".
+ *  The date is the scenario's pretend "today", not the real one. */
 export function subtitle(startLabel: string, steps: number, own: boolean, rec: Scenario["recording"], recordedLabel: string): string {
-  const parts = [`Starts ${startLabel}`, `${steps} days, one step a day`];
+  const parts = [`Simulated clock: starts ${startLabel}`, `${steps} days, one step a day`];
   if (own) parts.push("your own scenario");
   parts.push(recordingNote(rec, recordedLabel));
   return parts.join(" · ");
@@ -70,6 +71,12 @@ export function runHint(opts: { running: boolean; empty: boolean; rec: Scenario[
 /** The mode a live button starts, given the "Record this run" box. */
 export const liveMode = (record: boolean): Mode => (record ? "record" : "live");
 
+/** "Used in 1 scenario" under a template that one of your scenarios already came from; null when none did. */
+export function usedWords(rows: Pick<ScenarioRow, "template_id">[], templateId: string): string | null {
+  const n = rows.filter(r => r.template_id === templateId).length;
+  return n === 0 ? null : `Used in ${n} ${n === 1 ? "scenario" : "scenarios"}`;
+}
+
 /** The scenario whose run a new start would clear: the one with the latest last run (null when nothing has run). */
 export function lastRan(rows: Pick<ScenarioRow, "title" | "last_run">[]): string | null {
   let best: { t: number; title: string } | null = null;
@@ -80,6 +87,24 @@ export function lastRan(rows: Pick<ScenarioRow, "title" | "last_run">[]): string
   }
   return best?.title ?? null;
 }
+
+/**
+ * The scenario the pane opens when the address names none (the pane is never empty): the one with the latest last run, else the
+ * newest created. null when there is none. Ties keep the list's own order, so the choice is stable.
+ */
+export function pickDefaultScenario(rows: Pick<ScenarioRow, "scenario_id" | "last_run" | "created_at">[]): string | null {
+  const t = (iso: string | null | undefined): number => { const n = iso ? new Date(iso).getTime() : NaN; return Number.isNaN(n) ? -Infinity : n; };
+  let best: (typeof rows)[number] | null = null;
+  for (const r of rows) {
+    if (!best) { best = r; continue; }
+    const [a, b] = [t(r.last_run), t(best.last_run)];
+    if (a > b || (a === b && t(r.created_at) > t(best.created_at))) best = r;
+  }
+  return best?.scenario_id ?? null;
+}
+
+/** The template the pane previews when nothing is saved: the first one the server lists that can run here (null when none can). */
+export const firstAvailable = (ts: Template[]): Template | null => ts.find(t => !t.unavailable) ?? null;
 
 /** "Another run is going: Data-center land rush, day 3 of 21." */
 export const goingText = (sim: Pick<Simulation, "title" | "step" | "steps">): string => `${sim.title}, day ${sim.step} of ${sim.steps}`;

@@ -6,6 +6,7 @@
 //
 // Asking, and how often: the list, the profile and its checks once, and again after something saved or a proposal was applied in the
 // Setup agent's panel. Nothing polls (the panel looks at its own thread, SetupAgent.tsx).
+import { Select } from "../../components/v2/Field";
 import { useState, type ReactNode } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { inst } from "../../api/institutions";
@@ -16,7 +17,7 @@ import { Button } from "../../components/v2/Button";
 import { LoadError } from "../../components/v2/LoadError";
 import { Pill } from "../../components/v2/Pill";
 import { SectionHead } from "../../components/v2/SectionHead";
-import { useCrumbs, usePhone } from "../../components/v2/Shell";
+import { useCrumbs } from "../../components/v2/Shell";
 import { Skeleton } from "../../components/v2/Skeleton";
 import { StaleBanner } from "../../components/v2/StaleBanner";
 import { placeName } from "../../format";
@@ -28,7 +29,7 @@ import { NewInstitutionForm } from "./NewInstitution";
 import { MAP_KEY } from "./overview";
 import { ProfileMap } from "./ProfileMap";
 import { GoLiveDialog, ReviewChecks } from "./review";
-import { SetupAgent, useAgentPanel } from "./SetupAgent";
+import { SetupAgent, SetupAgentButton, useAgentPanel } from "./SetupAgent";
 import { LinkGrid, SectionBlock } from "./tables";
 import { useInstitution } from "./useInstitution";
 import { liveWords, statusLook, typeWords } from "./words";
@@ -68,9 +69,8 @@ export function SetupWizard() {
   const nav = useNavigate();
   const toast = useToast(), refuse = useRefusalToast();
   const locked = useDemoLock();
-  const phone = usePhone();
   const now = useNow(30_000);
-  const panel = useAgentPanel();
+  const panel = useAgentPanel("setup");
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [going, setGoing] = useState(false);
@@ -89,7 +89,7 @@ export function SetupWizard() {
   const id = profile?.institution.institution_id ?? null;
   const agent = <SetupAgent key={id ?? "new"} panel={panel} institutionId={id} onTrack={follow} onApplied={applied}
     at={{ step: cur.key, label: cur.label }} profileVersion={profile?.institution.profile_version ?? null} names={profile?.place_names ?? {}} />;
-  const agentBtn = !panel.open && <Button onClick={() => panel.setOpen(true)} aria-haspopup={phone ? "dialog" : undefined}>Setup agent</Button>;
+  const agentBtn = <SetupAgentButton panel={panel} />;
   const shell = (body: ReactNode, withAgent = false) => <div className="v2-in-wrap"><div className="v2-in v2-sw">{body}</div>{withAgent && agent}</div>;
   const plainHead = (sub?: string, btns?: ReactNode) => (
     <header className="v2-in-head"><div className="v2-in-head__t"><h1 className="v2-in-h1">Set up your institution</h1>{sub && <p className="v2-in-sub1">{sub}</p>}</div>
@@ -101,7 +101,7 @@ export function SetupWizard() {
   if (list === null || (list.length > 0 && (!profile || !readiness))) return shell(<>{plainHead()}<Skeleton rows={7} label="Loading the guided setup" /></>);
   if (!list.length || !profile || !readiness) {
     return shell(<>
-      {plainHead("Step 1 of 10: who you are. Tell Amiri Agent what kind of institution you are, then the steps add where you operate, your customers, products, flows, rules, rivals and risks.",
+      {plainHead("Step 1 of 10: who you are. Tell AMIRI Agent what kind of institution you are, then the steps add where you operate, your customers, products, flows, rules, rivals and risks.",
         <><Button as="link" to="/institution">Leave setup</Button>{agentBtn}</>)}
       <NewInstitutionForm onCreated={newId => { S.select(newId); S.reloadList(); nav("/institution/setup/where"); }} />
     </>, true);
@@ -132,7 +132,7 @@ export function SetupWizard() {
     setGoing(true);
     try {
       await inst.status(i.institution_id, "activate");
-      toast("Active: Amiri Agent now uses this profile.");
+      toast("Active: AMIRI Agent now uses this profile.");
       window.dispatchEvent(new Event("amiri:installation"));
       nav("/institution");
     } catch (e) { refuse(e, "Couldn't go live"); setConfirm(false); }
@@ -165,8 +165,8 @@ export function SetupWizard() {
           <SectionHead title="Add where you operate" id="sw-add" />
           <LockFields><div className="v2-in-form"><div className="grid2">
             <Field label="Place" hint="Countries, states, provinces or districts. Picking one adds it."><PlacePicker scope="iso" onPick={p => addFootprint(p.code)} placeholder="e.g. a state, a province or a country" /></Field>
-            <Field label="As"><select className="input" value={role} onChange={e => setRole(e.target.value)}>
-              {ROLES.map(x => <option key={x} value={x}>{x === "home" ? "Home country" : cap(words(x))}</option>)}</select></Field>
+            <Field label="As"><Select value={role} onChange={e => setRole(e.target.value)}>
+              {ROLES.map(x => <option key={x} value={x}>{x === "home" ? "Home country" : cap(words(x))}</option>)}</Select></Field>
           </div></div></LockFields>
         </section>
         {map(320)}

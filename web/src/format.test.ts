@@ -1,7 +1,8 @@
 // Run with `npm test` (Node runs the TypeScript directly).
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { clockText, moveSize, person, placeName, zoneName, zx } from "./format.ts";
+import * as fmt from "./format.ts";
+import { clockText, moveSize, person, placeName, setZone, zoneName, zx } from "./format.ts";
 
 test("a move vs typical is rounded down, so one under the threshold never reads as it", () => {
   assert.equal(zx(-2.998), "2.9×");
@@ -40,7 +41,7 @@ test("an actor reads as a name, never an email address", () => {
   assert.equal(person("dilan@serendib.lk"), "Dilan");
   assert.equal(person("nadeesha.perera@serendib.lk"), "Nadeesha");
   assert.equal(person("assistant for dilan@serendib.lk"), "assistant for Dilan");
-  assert.equal(person("Amiri Agent"), "Amiri Agent");
+  assert.equal(person("AMIRI Agent"), "AMIRI Agent");
   assert.equal(person(null), "");
   assert.doesNotMatch(person("x.y@bank.example.com and a@b.io"), /@/);
 });
@@ -54,4 +55,13 @@ test("the top bar names a North American zone by its short name and any other by
   assert.equal(zoneName("Europe/Berlin", winter), "Berlin");
   assert.equal(zoneName("UTC", winter), "UTC");
   assert.equal(zoneName("Not/AZone", winter), "AZone");
+});
+
+test("every page names the zone the way the top bar does", () => {
+  setZone("America/Chicago");
+  assert.equal(fmt.ZONE_LABEL, "Central");  // the Events footnote said "Chicago" beside a top bar that said "Central"
+  setZone("Asia/Colombo");
+  assert.equal(fmt.ZONE_LABEL, "Colombo");
+  setZone("UTC");
+  assert.equal(fmt.ZONE_LABEL, "UTC");
 });

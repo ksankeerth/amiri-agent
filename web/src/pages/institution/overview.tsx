@@ -93,7 +93,7 @@ export function Overview({ profile, readiness, setup, mapTitle, onEdit, onActiva
             <Link to={viewPath("counterparties")}>{plural(c.counterparties, "firm")} you depend on</Link></dd>
           <dt>Version</dt><dd>{i.profile_version} · changed {dayTime(i.updated_at)} ({ZONE_LABEL} time)</dd>
         </dl>
-        <p className="v2-meta">Amiri Agent reads this profile to decide what matters to you: where you operate, your customers and products, your flows, rules, rivals and risks.</p>
+        <p className="v2-meta">AMIRI Agent reads this profile to decide what matters to you: where you operate, your customers and products, your flows, rules, rivals and risks.</p>
       </section>
     </div>
   );

@@ -1,5 +1,7 @@
 // The right side of the Data connection page (board 11): what was imported, the check's result, and the approval.
 // Steps 3, 4 and 5 of the strip live here: Check, Approve, Use it.
+import { Switch } from "../../components/v2/Choice";
+import { Select } from "../../components/v2/Field";
 import { useId, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { connectApi, type Connection, type Report } from "../../api/connect";
@@ -10,7 +12,6 @@ import { Pill } from "../../components/v2/Pill";
 import { Skeleton } from "../../components/v2/Skeleton";
 import { Cell, Row, Table } from "../../components/v2/Table";
 import { ago, dayTime, isToday, person, plural, when } from "../../format";
-import { Switch } from "./dataParts";
 import {
   approveWhy, CHECK_WORDS, checkPill, conformanceLine, coverageCounts, coverageHeadline, productDetail, sourceName, sourceOf, statusTone, validationWhy,
 } from "./dataWords";
@@ -76,14 +77,14 @@ export function ResultPanel(p: ResultPanelProps) {
     return (
       <article className="v2-panel v2-ad-panel" aria-labelledby={head}>
         <h2 id={head} className="v2-ad-ph">Nothing to check yet</h2>
-        <Empty plain title="No data connected">Choose a source on the left and bring its figures in. Amiri Agent then checks each possible impact against them.</Empty>
+        <Empty plain title="No data connected">Choose a source on the left and bring its figures in. AMIRI Agent then checks each possible impact against them.</Empty>
       </article>);
   }
 
   const latest = conn.latest_check;
   const coverage = report?.coverage?.products ?? [];
   const counts = coverageCounts(coverage);
-  const title = !report ? "Check the data to see what Amiri Agent can use" : coverage.length ? coverageHeadline(coverage) : report.headline;
+  const title = !report ? "Check the data to see what AMIRI Agent can use" : coverage.length ? coverageHeadline(coverage) : report.headline;
   const shown = all ? coverage : coverage.slice(0, SHOWN);
   const failedSteps = report?.steps.filter(s => s.status !== "pass") ?? [];
   const fails = report?.checks.filter(c => c.status === "fail") ?? [];
@@ -106,9 +107,9 @@ export function ResultPanel(p: ResultPanelProps) {
           : `Imported ${ago(conn.imported?.at)} by ${person(conn.imported?.by)}`}</span>
         <span className="v2-ad-gap" />
         {history.length > 1 && report && <label className="v2-ad-pick"><span className="v2-sr">Earlier checks</span>
-          <select className="v2-ad-select" value={report.check_id} onChange={e => p.onPick(e.target.value)}>
-            {history.map(h => <option key={h.check_id} value={h.check_id}>{dayTime(h.started_at)} · {CHECK_WORDS[h.status].toLowerCase()}</option>)}</select></label>}
-        <Button variant={report ? "secondary" : "primary"} disabled={checking} onClick={p.onCheck}>{checking ? "Checking…" : report ? "Check again" : "Check"}</Button>
+          <Select inline value={report.check_id} onChange={e => p.onPick(e.target.value)}>
+            {history.map(h => <option key={h.check_id} value={h.check_id}>{dayTime(h.started_at)} · {CHECK_WORDS[h.status].toLowerCase()}</option>)}</Select></label>}
+        <Button variant={report ? "secondary" : "primary"} disabled={checking} busy={checking} onClick={p.onCheck}>{report ? "Check again" : "Check"}</Button>
       </div>
 
       <h2 id={head} className="v2-ad-ph">{title}</h2>
@@ -186,9 +187,9 @@ export function ResultPanel(p: ResultPanelProps) {
               : "Switch checks on to use these figures for events and alerts."}</span>
           </div>
           <div className="v2-ad-appr__sw">
-            <Switch large on={conn.validation_enabled} locked={locked} disabled={!conn.validation_allowed && !conn.validation_enabled} onChange={p.onValidation}
-              aria-labelledby={`${switchId}-l`} aria-describedby={vWhy ? `${switchId}-w` : undefined} />
-            <label id={`${switchId}-l`}>{conn.validation_enabled ? "On" : "Off"}<span className="v2-sr"> · Checks against your data</span></label>
+            <Switch large checked={conn.validation_enabled} locked={locked} disabled={!conn.validation_allowed && !conn.validation_enabled} onChange={e => p.onValidation(e.target.checked)}
+              aria-describedby={vWhy ? `${switchId}-w` : undefined}
+              label={<>{conn.validation_enabled ? "On" : "Off"}<span className="v2-sr"> · Checks against your data</span></>} />
           </div>
           {vWhy && !conn.validation_enabled && <span id={`${switchId}-w`} className="v2-ad-fine v2-ad-appr__w">{vWhy}</span>}
         </div>

@@ -18,7 +18,7 @@ export function chartSummary(points: Point[], marks: Mark[], fmtY: (v: number) =
   return `Price chart from ${fmtTip(first.t)} to ${fmtTip(last.t)}: started at ${fmtY(first.v)}, ended at ${fmtY(last.v)}, lowest ${fmtY(lo)}, highest ${fmtY(hi)}.${flags ? ` ${flags} unusual ${flags === 1 ? "move" : "moves"} flagged.` : ""}`;
 }
 
-export function PriceChart({ points, marks = [], height = 210, fmtX, fmtY, fmtTip }: {
+export function PriceChart({ points, marks = [], height = 160, fmtX, fmtY, fmtTip }: {
   points: Point[]; marks?: Mark[]; height?: number;
   fmtX: (t: string) => string; fmtY: (v: number) => string; fmtTip: (t: string) => string;
 }) {
@@ -51,7 +51,18 @@ export function PriceChart({ points, marks = [], height = 210, fmtX, fmtY, fmtTi
     for (let k = 0; k < n / 8; k++) for (const j of [i - k, i + k]) if (j > 0 && j < n - 1 && fmtX(points[j].t) !== fmtX(points[j - 1].t)) return j;
     return i;
   };
-  const xt = Array.from(new Set([0, snap(Math.round(n * 0.25)), snap(Math.round(n * 0.5)), snap(Math.round(n * 0.75)), n - 1])).filter(i => i >= 0 && i < n);
+  // the date labels: one per distinct date, and none that would run into the one before it. The last point's label wins a
+  // clash over a middle one (it's the end of the range), and the first point's label always stays.
+  const xt: { i: number; s: string }[] = [];
+  for (const i of Array.from(new Set([0, snap(Math.round(n * 0.25)), snap(Math.round(n * 0.5)), snap(Math.round(n * 0.75)), n - 1]))) {
+    if (i < 0 || i >= n) continue;
+    const s = fmtX(points[i].t), prev = xt[xt.length - 1];
+    if (prev && prev.s === s) continue;
+    if (prev && X(i) - X(prev.i) < (prev.s.length + s.length) * 3.6 + 12) {
+      if (i === n - 1 && prev.i !== 0) xt.pop(); else continue;
+    }
+    xt.push({ i, s });
+  }
   const idxOf = (t: string) => {
     const ms = new Date(t).getTime();
     let best = -1;
@@ -81,8 +92,8 @@ export function PriceChart({ points, marks = [], height = 210, fmtX, fmtY, fmtTi
           <g key={i}><line className="v2-sr-chart__grid" x1={L} x2={w - R} y1={Y(v)} y2={Y(v)} />
             <text className="v2-sr-chart__ax" x={L - 8} y={Y(v) + 4} textAnchor="end">{fmtTick(v)}</text></g>
         ))}
-        {xt.map(i => (
-          <text key={i} className="v2-sr-chart__ax" x={X(i)} y={h - 8} textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"}>{fmtX(points[i].t)}</text>
+        {xt.map(({ i, s }) => (
+          <text key={i} className="v2-sr-chart__ax" x={X(i)} y={h - 8} textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"}>{s}</text>
         ))}
         <path className="v2-sr-chart__line" d={d} fill="none" />
         {marks.map((m, k) => {

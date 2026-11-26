@@ -59,13 +59,13 @@ export const moreLine = (m: { count: number; on: number }) => `${m.count} more c
 /** The sample's own "about" line starts like this (server: mockinst/export.py); anything else is somebody's file. */
 export function sourceOf(imp: { about: string | null } | null | undefined): SourceId | null {
   if (!imp) return null;
-  const m = /^Synthetic data from Amiri Agent's sample (bank|insurer)/.exec(imp.about ?? "");
+  const m = /^Synthetic data from AMIRI Agent's sample (bank|insurer)/.exec(imp.about ?? "");
   return m ? (m[1] as Kind) : "file";
 }
 /** The conditions a sample was made with, read back from its "about" line ("Planted: Remittances fall (from 2026-11-04, 6); ….").
  *  null when the line doesn't say (a file of your own). */
 export function plantedIds(about: string | null | undefined, kind: Kind): string[] | null {
-  if (!about || !/^Synthetic data from Amiri Agent's sample/.test(about)) return null;
+  if (!about || !/^Synthetic data from AMIRI Agent's sample/.test(about)) return null;
   if (/Nothing planted\.$/.test(about)) return [];
   const at = about.indexOf("Planted: ");
   if (at < 0) return null;

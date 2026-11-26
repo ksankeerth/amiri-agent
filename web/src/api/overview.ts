@@ -1,5 +1,5 @@
 // The Overview page's one call (server: app/overview.py).
-import { api } from "./client";
+import { api, isPeeking } from "./client";
 import type { PlaceInfo } from "./institutions";
 import type { Theme } from "./investigation";
 import type { Tone } from "./studio";
@@ -30,10 +30,10 @@ export interface Overview {
   map: { places: Record<string, PlaceInfo> };
 }
 
-// A Platform Admin also gets Amiri Agent's own plumbing notes; a Risk Manager gets what they can act on.
+// A Platform Admin also gets AMIRI Agent's own plumbing notes; a Risk Manager gets what they can act on.
 /** Fired with every Overview answer, so the top bar's Live pill can use the Overview page's answer instead of asking again. */
 export const OVERVIEW_EVENT = "amiri:overview";
 export const overviewApi = {
   get: (all = false) => api<Overview>(`/api/v1/overview${all ? "?audience=all" : ""}`)
-    .then(x => { window.dispatchEvent(new CustomEvent(OVERVIEW_EVENT, { detail: x })); return x; }),
+    .then(x => { if (!isPeeking()) window.dispatchEvent(new CustomEvent(OVERVIEW_EVENT, { detail: x })); return x; }),
 };

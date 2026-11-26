@@ -22,15 +22,11 @@
 .v2-evs-dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--v2-text); animation: v2-pulse 1.2s ease-in-out infinite; }
 .v2-evs-dots i:nth-child(2) { background: var(--v2-dot-idle); animation-delay: .2s; }
 .v2-evs-dots i:nth-child(3) { background: var(--v2-dot-sep); animation-delay: .4s; }
-.v2-evs-warnword { color: var(--v2-unusual); }
+.v2-evs-warnword { color: var(--v2-text-2); }
 
 /* ---------- tabs, sort, the list */
 .v2-evs-tabs .v2-tabs__bar { margin-bottom: var(--v2-sp-20); }
 .v2-evs-sort { display: flex; align-items: center; gap: var(--v2-sp-8); padding-bottom: var(--v2-sp-8); font-size: var(--v2-fs-meta); color: var(--v2-muted); }
-.v2-evs-select {
-  min-height: 32px; padding: 0 var(--v2-sp-8); border: 1px solid var(--v2-line-input); border-radius: var(--v2-r-nav); background: var(--v2-surface);
-  color: var(--v2-text); font: var(--v2-fw-medium) var(--v2-fs-meta)/1.2 var(--v2-font);
-}
 .v2-evs-sim { display: flex; align-items: center; gap: var(--v2-sp-8); margin-bottom: var(--v2-sp-14); font-size: var(--v2-fs-meta); color: var(--v2-text-2); }
 .v2-evs-sim input { width: 16px; height: 16px; accent-color: var(--v2-brand); }
 
@@ -52,14 +48,9 @@
 .v2-evs-findings { font-size: var(--v2-fs-body); color: var(--v2-text-2); }
 
 /* ---------- loading: the table's shape */
-.v2-evs-sk { display: block; border-radius: var(--v2-r-xs); background: var(--v2-count-bg); animation: v2-pulse 1.6s ease-in-out infinite; }
-.v2-evs-sk--dot { width: 13px; height: 13px; }
-.v2-evs-sk--pill { width: 84px; height: 22px; border-radius: var(--v2-r-pill); }
-.v2-evs-sk--n { width: 60px; height: 13px; }
 .v2-evs-skel__row { display: grid; grid-template-columns: 16px minmax(0, 1.4fr) 110px minmax(0, 1.6fr) 92px 90px; gap: var(--v2-sp-14); align-items: center; padding: var(--v2-sp-16) 0; border-top: 1px solid var(--v2-line); }
 .v2-evs-skel__ev { display: flex; flex-direction: column; gap: var(--v2-sp-6); }
 .v2-evs-skel { border-bottom: 1px solid var(--v2-line); }
-@media (prefers-reduced-motion: reduce) { .v2-evs-sk, .v2-evs-dots i { animation: none; } }
 
 /* ---------- investigation runs (Platform Admin) */
 .v2-evs-runs { padding-top: var(--v2-sp-20); border-top: 1px solid var(--v2-line); }
@@ -84,6 +75,5 @@
   .v2-evs-al { grid-column: 3; justify-self: end; }
   .v2-evs-skel__row { grid-template-columns: 16px minmax(0, 1fr) auto; }
   .v2-evs-sort { padding-bottom: var(--v2-sp-10); }
-  .v2-evs-select { min-height: var(--v2-hit-phone); }
   .v2-evs-head__act { width: 100%; }
 }

@@ -27,8 +27,8 @@ const NOT_CONFIGURED = "Twelve Data isn't configured. Set TWELVEDATA_API_KEY in 
 export function listNotice(o: { total: number; stale: number; oldestDay: string | null; configured: boolean; admin: boolean }): string | null {
   const { total, stale, oldestDay, configured, admin } = o;
   const base = stale === 0 ? null
-    : stale === total ? `Prices haven't updated since ${oldestDay}.`
-    : `${stale} of ${total} prices haven't updated; the oldest since ${oldestDay}.`;
+    : stale === total ? `No new prices since ${oldestDay}.`
+    : `${stale} of ${total} prices have no new price; the oldest since ${oldestDay}.`;
   if (admin) return [base, configured ? null : NOT_CONFIGURED].filter(Boolean).join(" ") || null;
   if (base) return `${base} Your Platform Admin has been told.`;
   return configured ? null : "Prices can't be updated right now. Your Platform Admin has been told.";
@@ -71,7 +71,7 @@ export interface RowIn {
 
 export type TabId = "all" | "moved" | "stale" | "warming" | "normal" | "paused";
 export const TABS: { id: TabId; label: string }[] = [
-  { id: "all", label: "All" }, { id: "moved", label: "Unusual" }, { id: "stale", label: "Late" },
+  { id: "all", label: "All" }, { id: "moved", label: "Unusual" }, { id: "stale", label: "Waiting for prices" },
   { id: "warming", label: "Warming up" }, { id: "normal", label: "Normal" }, { id: "paused", label: "Paused" },
 ];
 /** The tab a state sits under. A series still waiting for its first prices counts as warming up. */
@@ -86,7 +86,7 @@ export function tabCounts(items: { state: string }[]): Record<TabId, number> {
 }
 
 const RANK: Record<string, number> = { moved: 0, stale: 1, warming_up: 2, pending: 2, normal: 3, paused: 4 };
-/** "Unusual first": unusual (biggest move first), late, warming up, normal (biggest move first), paused; then by name. */
+/** "Unusual first": unusual (biggest move first), waiting for prices, warming up, normal (biggest move first), paused; then by name. */
 export function sortSeries<T extends RowIn>(items: T[]): T[] {
   const z = (s: T) => Math.abs(oneDayZ(s.latest) ?? 0);
   return [...items].sort((a, b) => (RANK[a.state] ?? 3) - (RANK[b.state] ?? 3) || z(b) - z(a) || a.name.localeCompare(b.name));
@@ -120,13 +120,13 @@ export function barFill(z: number | null | undefined, threshold: number): number
 export const isFlagged = (z: number | null | undefined, threshold: number) => z !== null && z !== undefined && Math.abs(z) >= threshold;
 
 export type RowTone = "unusual" | "neutral" | "bad";
-export interface RowState { label: string; tone: RowTone | null; mark?: string }
+export interface RowState { label: string; tone: RowTone | null; mark?: string; /** the fact behind the label ("No new price since 20 Nov 15:30"), for the row's second line */ detail?: string }
 /** The state column of a row. `since` is the late-since time ("09:00") when the server's note has one. A normal row is
  *  plain text (tone null) unless its last update failed. */
 export function rowState(s: RowIn, since: string | null): RowState {
   switch (s.state) {
     case "moved": return { label: "Unusual", tone: "unusual", mark: "◆" };
-    case "stale": return { label: !since ? "Late" : /^\d{1,2}:\d{2}$/.test(since) ? `Late · since ${since}` : `Late · ${since.replace(/ \d{1,2}:\d{2}$/, "")}`, tone: "neutral" };
+    case "stale": return { label: "Waiting for prices", tone: "neutral", detail: since ? `No new price since ${since}` : "No new price lately" };
     case "warming_up": return { label: "Warming up", tone: "neutral" };
     case "pending": return { label: "Pending", tone: "neutral" };
     case "paused": return { label: "Paused", tone: "neutral" };
@@ -134,13 +134,13 @@ export function rowState(s: RowIn, since: string | null): RowState {
   }
 }
 
-/** The line under the page's heading: "3 unusual · 1 late · 22 of 30 series · checked every hour, last 11:00 · a move over 3× …". */
+/** The line under the page's heading: "3 unusual · 1 waiting for prices · 22 of 30 series · checked every hour, last 11:00 · a move over 3× …". */
 export function ledeParts(o: { unusual: number; late: number; total: number; max: number | null; everyMinutes: number | null; lastRun: string | null; threshold: number }): { strong: string | null; rest: string } {
   const { unusual, late, total, max, everyMinutes, lastRun, threshold } = o;
   const every = everyMinutes === null ? null : everyMinutes === 60 ? "every hour" : everyMinutes % 60 === 0 ? `every ${everyMinutes / 60} hours` : `every ${everyMinutes} minutes`;
   const bits = [
-    late > 0 ? `${late} late` : null,
-    total === 0 ? "no series yet" : max ? `${total} of ${max} series` : `${total} series`,
+    late > 0 ? `${late} waiting for prices` : null,
+    total === 0 ? "no series yet" : max ? `${total} of ${max} slots used` : `${total} series`,
     every ? `checked ${every}${lastRun ? `, last ${lastRun}` : ""}` : null,
     `a move over ${threshold}× a usual day becomes a finding`,
   ].filter(Boolean);
@@ -182,7 +182,7 @@ export function seriesNotes(o: {
 }): Note[] {
   const { state, reason, since, failed, retryAt, admin } = o;
   const out: Note[] = [];
-  if (state === "stale") out.push({ tone: "unusual", text: `No new price since ${since ?? "it was added"}.` });
+  if (state === "stale") out.push({ tone: "neutral", text: `No new price since ${since ?? "it was added"}.` });
   if (failed) {
     const what = failed.http ? `HTTP ${failed.http}` : failed.code;
     out.push({ tone: "bad", text: admin
@@ -207,6 +207,21 @@ export function takeaway(name: string, vs: number[], range: string, typical: num
 /** The places a series' moves matter for, short: "Texas, Louisiana +3". */
 export function placesLine(names: string[], max = 3): string {
   return names.length <= max ? names.join(", ") : `${names.slice(0, max).join(", ")} +${names.length - max}`;
+}
+
+/** A series' name as people read it. Some names are the provider's own ("SHY (iShares 1-3 Year Treasury Bond ETF)"): the
+ *  symbol stays in mono beside it, so the brackets become "1-3 Year Treasury fund" without the brand and "ETF" noise.
+ *  Any other name is shown as it is. */
+/** Every provider-style series name inside a sentence, made friendly ("SHY (iShares 1-3 Year Treasury Bond ETF)" → "1-3 Year Treasury fund"). */
+export function friendlySeriesText(text: string): string {
+  return text.replace(/\b[A-Z][A-Z0-9.^=/-]{0,11} \([^()]*\)/g, m => seriesName(m));
+}
+
+export function seriesName(name: string): string {
+  const m = name.match(/^[A-Z][A-Z0-9.^=/-]{0,11} \((.*)\)$/);
+  if (!m || !/\bETFs?\b|iShares/i.test(m[1])) return name;
+  const core = m[1].replace(/\b(iShares|ETFs?|Bond|Trust|Fund)\b/gi, " ").replace(/\s+/g, " ").trim();
+  return core ? `${core} fund` : name;
 }
 
 /** "1 day", "3 days": a window's length in trading days. */

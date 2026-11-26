@@ -3,13 +3,16 @@
 // a minute. The footer says so.
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Icon } from "../Icon";
+import { useExitGhost } from "./useMotion";
+import { INTENT_MS, prefetchRoute } from "./usePrefetch";
 import { investigationApi } from "../../api/investigation";
 import { inst as instApi } from "../../api/institutions";
 import { monitorsApi } from "../../api/monitors";
 import { seriesApi } from "../../api/series";
 import type { NavItem } from "./nav";
 
-interface Entry { key: string; label: string; to: string; extra?: string; mark?: { glyph: string; word: string } }
+/** `found`: a selector for the item on the page it leads to (a row, the event's heading), scrolled to and tinted when the page opens. */
+interface Entry { key: string; label: string; to: string; extra?: string; mark?: { glyph: string; word: string }; found?: string }
 interface Lists { events: Entry[]; monitors: Entry[]; series: Entry[]; products: Entry[]; failed: string[] }
 const EMPTY: Lists = { events: [], monitors: [], series: [], products: [], failed: [] };
 
@@ -33,10 +36,10 @@ async function load(institutionId: string | null): Promise<Lists> {
   const events = got(ev, "events"), monitors = got(mo, "monitors"), series = got(se, "market series"), profile = got(pr, "products");
   const lists: Lists = {
     events: (events ?? []).filter(e => e.world === "live" && e.status === "open")
-      .map(e => ({ key: `e-${e.event_id}`, label: e.title, to: `/events/${encodeURIComponent(e.event_id)}`, mark: TONE_MARK[e.tone] })),
-    monitors: (monitors ?? []).filter(m => m.status !== "retired").map(m => ({ key: `m-${m.monitor_id}`, label: m.name, to: `/monitors/${encodeURIComponent(m.monitor_id)}` })),
-    series: (series ?? []).map(s => ({ key: `s-${s.series_id}`, label: s.name, extra: s.symbol, to: `/series/${encodeURIComponent(s.series_id)}` })),
-    products: (profile?.sections.products ?? []).filter(p => typeof p.name === "string" && p.name).map(p => ({ key: `p-${p.id}`, label: p.name as string, to: "/institution/customers" })),
+      .map(e => ({ key: `e-${e.event_id}`, label: e.title, to: `/events/${encodeURIComponent(e.event_id)}`, mark: TONE_MARK[e.tone], found: "h1.v2-ev-h1" })),
+    monitors: (monitors ?? []).filter(m => m.status !== "retired").map(m => ({ key: `m-${m.monitor_id}`, label: m.name, to: `/monitors/${encodeURIComponent(m.monitor_id)}`, found: `[id="mn-row-${m.monitor_id}"]` })),
+    series: (series ?? []).map(s => ({ key: `s-${s.series_id}`, label: s.name, extra: s.symbol, to: `/series/${encodeURIComponent(s.series_id)}`, found: `[id="sr-row-${s.series_id}"]` })),
+    products: (profile?.sections.products ?? []).filter(p => typeof p.name === "string" && p.name).map(p => ({ key: `p-${p.id}`, label: p.name as string, to: "/institution/products", found: `[id="in-row-${p.id}"]` })),
     failed,
   };
   if (!failed.length) cache = { at: Date.now(), key, lists };
@@ -60,11 +63,12 @@ function pick(list: Entry[], q: string, max: number): Entry[] {
 export interface GoToProps {
   pages: NavItem[];  // the menu's pages for this role
   institutionId: string | null;
+  admin: boolean;  // the Platform Admin's Overview asks for more (for prefetch)
   onClose: (restoreFocus: boolean) => void;
-  onGo: (to: string) => void;
+  onGo: (to: string, found?: string | null) => void;
 }
 
-export function GoTo({ pages, institutionId, onClose, onGo }: GoToProps) {
+export function GoTo({ pages, institutionId, admin, onClose, onGo }: GoToProps) {
   const uid = useId();
   const listId = `${uid}-list`, titleId = `${uid}-title`;
   const [q, setQ] = useState("");
@@ -72,6 +76,8 @@ export function GoTo({ pages, institutionId, onClose, onGo }: GoToProps) {
   const [loading, setLoading] = useState(!cache);
   const [active, setActive] = useState(0);
   const input = useRef<HTMLInputElement>(null);
+  const scrim = useRef<HTMLDivElement>(null);
+  useExitGhost(scrim);   // F3: on close the box fades out for 120 ms (a copy of it; the page is usable at once)
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { input.current?.focus(); }, []);
@@ -98,19 +104,26 @@ export function GoTo({ pages, institutionId, onClose, onGo }: GoToProps) {
   }, [lists, needle, pages]);
   const flat = useMemo(() => groups.flatMap(g => g.items), [groups]);
   useEffect(() => setActive(0), [needle]);
+  // the highlighted result's page starts loading while it is highlighted (after a short rest, so arrowing past it asks for nothing)
+  const target = flat[active]?.to;
+  useEffect(() => {
+    if (!target) return;
+    const t = setTimeout(() => prefetchRoute(target, { admin, institutionId }), INTENT_MS);
+    return () => clearTimeout(t);
+  }, [target, admin, institutionId]);
   useEffect(() => { listRef.current?.querySelector(`#${CSS.escape(`${uid}-o${active}`)}`)?.scrollIntoView({ block: "nearest" }); }, [active, uid]);
 
   const key = (e: KeyboardEvent) => {
     if (e.key === "Escape") { e.preventDefault(); onClose(true); }
     else if (e.key === "ArrowDown") { e.preventDefault(); if (flat.length) setActive(a => (a + 1) % flat.length); }
     else if (e.key === "ArrowUp") { e.preventDefault(); if (flat.length) setActive(a => (a - 1 + flat.length) % flat.length); }
-    else if (e.key === "Enter") { e.preventDefault(); const t = flat[active]; if (t) onGo(t.to); }
+    else if (e.key === "Enter") { e.preventDefault(); const t = flat[active]; if (t) onGo(t.to, t.found); }
     else if (e.key === "Tab") e.preventDefault();  // the input is the only stop in the box; Esc leaves it
   };
 
   let n = -1;
   return (
-    <div className="v2-goto-scrim" onMouseDown={e => { if (e.target === e.currentTarget) onClose(true); }}>
+    <div className="v2-goto-scrim" ref={scrim} onMouseDown={e => { if (e.target === e.currentTarget) onClose(true); }}>
       <div className="v2-goto" role="dialog" aria-modal="true" aria-labelledby={titleId} onKeyDown={key}>
         <h2 id={titleId} className="v2-sr">Go to</h2>
         <div className="v2-goto__bar">
@@ -129,7 +142,7 @@ export function GoTo({ pages, institutionId, onClose, onGo }: GoToProps) {
                 const i = ++n;
                 return (
                   <div key={it.key} id={`${uid}-o${i}`} role="option" aria-selected={i === active} className={`v2-goto__opt${i === active ? " is-active" : ""}`}
-                    onMouseMove={() => active !== i && setActive(i)} onMouseDown={e => e.preventDefault()} onClick={() => onGo(it.to)}>
+                    onMouseMove={() => active !== i && setActive(i)} onMouseDown={e => e.preventDefault()} onClick={() => onGo(it.to, it.found)}>
                     {g.id === "events" && <span aria-hidden="true" className="v2-goto__mark">{it.mark?.glyph}</span>}
                     {it.mark && <span className="v2-sr">{it.mark.word}: </span>}
                     <span className="v2-goto__label"><Hit text={it.label} q={needle} /></span>

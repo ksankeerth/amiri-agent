@@ -16,6 +16,7 @@ import { useRefusalToast, useToast } from "../../components/ui";
 import { AgentState } from "../../components/v2/AgentState";
 import { Button } from "../../components/v2/Button";
 import { Dialog } from "../../components/v2/Dialog";
+import { Select, Textarea } from "../../components/v2/Field";
 import { usePhone } from "../../components/v2/Shell";
 import { dayTime, plural } from "../../format";
 import { cantApplyWhy, changeRows, expiredWhy, proposalLook, removesText } from "./words";
@@ -23,13 +24,19 @@ import "../../styles/v2/setup-chat.css";
 
 // ---------------------------------------------------------------- open and closed
 
-const OPEN_KEY = "amiri.setupChat";   // "closed" once hidden (desktop); the guided setup reads the same key
+// The panel's choice is kept per viewer, one key for the profile page (closed until asked for) and one for the guided setup (open: it is
+// where you talk to the agent).
+const KEYS = { page: "amiri.setupChat.page", setup: "amiri.setupChat" } as const;
 export interface AgentPanel { open: boolean; setOpen: (v: boolean) => void; askKey: number; sheet: boolean }
 
-/** Whether the panel is showing. On a desktop it stays as you left it; on a phone it is a sheet, closed until asked for. */
-export function useAgentPanel(): AgentPanel {
+/** Whether the panel is showing. On a desktop it stays as you left it (closed at first on the profile page, open at first in the guided
+ *  setup); on a phone it is a sheet, closed until asked for. */
+export function useAgentPanel(where: keyof typeof KEYS = "page"): AgentPanel {
   const sheet = usePhone();
-  const [desk, setDesk] = useState(() => { try { return localStorage.getItem(OPEN_KEY) !== "closed"; } catch { return true; } });
+  const OPEN_KEY = KEYS[where];
+  const [desk, setDesk] = useState(() => {
+    try { const v = localStorage.getItem(OPEN_KEY); return v === "open" ? true : v === "closed" ? false : where === "setup"; } catch { return where === "setup"; }
+  });
   const [sheetOpen, setSheetOpen] = useState(false);
   const [askKey, setAskKey] = useState(0);
   const open = sheet ? sheetOpen : desk;
@@ -37,7 +44,7 @@ export function useAgentPanel(): AgentPanel {
     if (sheet) { setSheetOpen(v); return; }
     setDesk(v);
     try { localStorage.setItem(OPEN_KEY, v ? "open" : "closed"); } catch { /* private mode */ }
-  }, [sheet]);
+  }, [sheet, OPEN_KEY]);
   const openRef = useRef(open);
   openRef.current = open;
   useEffect(() => {
@@ -58,6 +65,12 @@ export function useAgentPanel(): AgentPanel {
 }
 
 const SPARK = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" strokeWidth="2" aria-hidden="true" focusable="false" className="v2-sa__spark"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" /></svg>;
+
+/** The "Setup agent" button in a page's header: shown while the panel is closed, opens it. */
+export function SetupAgentButton({ panel }: { panel: AgentPanel }) {
+  if (panel.open) return null;
+  return <Button className="v2-sa__open" onClick={() => panel.setOpen(true)} aria-haspopup={panel.sheet ? "dialog" : undefined}>{SPARK}Setup agent</Button>;
+}
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export interface SetupAgentProps {
@@ -132,10 +145,10 @@ function Agent({ panel, institutionId, onTrack, onApplied, at, profileVersion, n
         {SPARK}
         <h2 className="v2-sa__t">Setup agent</h2>
         <label className="v2-sr" htmlFor={topicId}>Helping with</label>
-        <select id={topicId} className="v2-sa__topic" value={here ?? ""} onChange={e => { const t = tracks.find(x => x.track === e.target.value); if (t) pick(t); }}>
+        <Select id={topicId} className="v2-sa__topic" value={here ?? ""} onChange={e => { const t = tracks.find(x => x.track === e.target.value); if (t) pick(t); }}>
           {!here && <option value="">{hereLabel ?? "Anything about your profile"}</option>}
           {shownTracks.map(t => <option key={t.track} value={t.track}>{t.label}{t.track !== here && t.status === "concluded" ? " (done)" : t.track !== here && t.status === "in_progress" ? " (in progress)" : ""}</option>)}
-        </select>
+        </Select>
         <button ref={closeBtn} type="button" className="v2-sa__x" aria-label={panel.sheet ? "Back to the profile" : "Hide the setup agent"} onClick={close}><span aria-hidden="true">✕</span></button>
       </div>
 
@@ -147,12 +160,12 @@ function Agent({ panel, institutionId, onTrack, onApplied, at, profileVersion, n
       {status?.connected && status.backend === "stub" && role === "platform_admin" && <p className="v2-sa__fine">Stub agent: canned replies and keyword routing, for building the UI.</p>}
 
       <div ref={log} className="v2-sa__log" role="log" aria-label="Conversation with the setup agent" aria-live="polite" aria-relevant="additions" tabIndex={0}>
+        {empty && <p className="v2-sa__intro">{institutionId
+          ? `Tell me about ${hereLabel ? hereLabel.replace(/^Step \d+ · /, "").toLowerCase() : "any part of your profile"} in plain words, or ask me to check it. I draft each change as a card; nothing changes until you apply it.`
+          : "I can set up your institution with you: what kind it is, where you operate, your customers and products, flows, rules, rivals and risks. Tell me in plain words; nothing is saved until you apply it. The forms work too."}</p>}
         {folded.length > 0 && (
           <div className="v2-sa__earlier">Earlier: {foldedTopics.join(", ")} · <button type="button" className="v2-sa__link" onClick={() => c.setShowAll(true)}>show {folded.length}<span className="v2-sr"> earlier {folded.length === 1 ? "message" : "messages"}</span></button></div>)}
         {rows}
-        {empty && <div className="v2-sa__ai">{institutionId
-          ? `Tell me about ${hereLabel ? hereLabel.replace(/^Step \d+ · /, "").toLowerCase() : "any part of your profile"} in plain words, or ask me to check it. I draft each change as a card; nothing changes until you apply it.`
-          : "I can set up your institution with you: what kind it is, where you operate, your customers and products, flows, rules, rivals and risks. Tell me in plain words; nothing is saved until you apply it. The forms work too."}</div>}
         {retryable && !working && <div className="v2-sa__retry"><Button size="sm" onClick={retry}>Try again</Button></div>}
         {live && <div className="v2-sa__ai">{live}<span className="v2-sa__caret" aria-hidden="true" /></div>}
         {working && (
@@ -171,7 +184,7 @@ function Agent({ panel, institutionId, onTrack, onApplied, at, profileVersion, n
           </div>)}
         {left && <p className="v2-sa__count" role="status">{draft.length}/{MAX_CHARS}{draft.length >= MAX_CHARS ? " · That's the limit: keep to one topic, and send the rest after the reply." : ""}</p>}
         <div className="v2-sa__comp">
-          <textarea ref={box} className="v2-sa__input" rows={2} aria-label="Message the setup agent" value={draft} maxLength={MAX_CHARS}
+          <Textarea ref={box} className="v2-sa__input" rows={2} aria-label="Message the setup agent" value={draft} maxLength={MAX_CHARS}
             placeholder={picked || here ? `About ${(picked ? def(picked)?.label : hereLabel)?.toLowerCase() ?? "your profile"}…` : institutionId ? "Ask or tell me about your institution…" : "e.g. We're a commercial bank with branches in two regions"}
             onChange={e => setDraft(e.target.value)} onKeyDown={onKey} />
           <Button variant="primary" aria-disabled={working || !draft.trim() ? true : undefined} onClick={submit} className={working || !draft.trim() ? "is-idle" : undefined}>Send</Button>
@@ -300,9 +313,9 @@ function ProposalCard({ p, flash, onDecided, profileVersion, names, askAgain }: 
         </div>)}
 
       {sure && (
-        <Dialog title={`This change deletes ${p.deletes} items`} onClose={() => setSure(false)} footer={<>
+        <Dialog tone="danger" title={`This change deletes ${p.deletes} items`} onClose={() => setSure(false)} actions={<>
           <Button onClick={() => setSure(false)}>Cancel</Button>
-          <Button className="v2-btn--danger" locked={locked} onClick={() => decide("confirm", p.deletes)}>Delete {p.deletes} and apply</Button></>}>
+          <Button variant="primary" locked={locked} onClick={() => decide("confirm", p.deletes)}>Delete {p.deletes} and apply</Button></>}>
           <p className="v2-in-dlgtext">{removesText(p.changes) || `${p.deletes} items`}. History keeps them, and you can undo the whole change.</p>
         </Dialog>)}
     </section>

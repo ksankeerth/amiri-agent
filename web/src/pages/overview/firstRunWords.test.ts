@@ -31,7 +31,7 @@ test("a ready, active profile leaves only the monitors", () => {
   assert.deepEqual(s.map(x => x.state), ["done", "done", "open"]);
   assert.equal(s[2].next, true);
   assert.equal(firstSteps(inst({ status: "active", readiness: { ready: true, missing_required: 0 } }), 2).every(x => x.state === "done"), true);
-  assert.equal(firstSteps(inst({ readiness: { ready: true, missing_required: 0 } }), 0)[1].body, "Everything required is there. Activate the profile so Amiri Agent starts using it.");
+  assert.equal(firstSteps(inst({ readiness: { ready: true, missing_required: 0 } }), 0)[1].body, "Everything required is there. Activate the profile so AMIRI Agent starts using it.");
 });
 
 test("the demo line and the reset note", () => {

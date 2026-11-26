@@ -1,7 +1,7 @@
 // Run with `node --test src/pages/admin/settingsWords.test.ts` (Node runs the TypeScript directly).
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { confirmed, demoMode, institutionLine, resetChoices, resetProblem, resetState } from "./settingsWords.ts";
+import { confirmed, demoMode, institutionLine, resetState } from "./settingsWords.ts";
 
 test("the reset is unknown until the installation loads, allowed unless the server says false", () => {
   assert.equal(resetState(null), "unknown");
@@ -22,20 +22,9 @@ test("the institution row", () => {
   assert.equal(institutionLine({ name: null, profile: true }), "Not named");
 });
 
-test("the reset offers each demo, then empty", () => {
-  const c = resetChoices([{ kind: "bank", label: "Demo bank", name: "Serendib", what: "A bank" }, { kind: "insurer", label: "Demo insurer", name: "Samudra", what: "An insurer" }]);
-  assert.deepEqual(c.map(x => x.id), ["demo-bank", "demo-insurer", "empty"]);
-  assert.equal(c[0].title, "Demo bank: Serendib");
-});
-
 test("RESET must be typed, in any case", () => {
   assert.equal(confirmed(""), false);
   assert.equal(confirmed("rese"), false);
   assert.equal(confirmed(" reset "), true);
   assert.equal(confirmed("RESET"), true);
-});
-
-test("a failed reset says the server's sentence, or a plain one", () => {
-  assert.equal(resetProblem({ problem: { detail: "Reset is switched off on this server (PROTOTYPE_RESET)." } }), "Reset is switched off on this server (PROTOTYPE_RESET).");
-  assert.match(resetProblem(new Error("x")), /Nothing was changed/);
 });

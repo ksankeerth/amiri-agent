@@ -92,9 +92,20 @@
   .v2-sw-steps li.is-partial .v2-sw-dot, .v2-sw-steps li.is-required .v2-sw-dot { font-size: var(--v2-fs-body); }
   .v2-sw-steps li.is-cur .v2-sw-dot { box-shadow: 0 0 0 2px var(--v2-page), 0 0 0 4px var(--v2-text); }
   .v2-sw-steps > li:not(:last-child)::before { top: 16px; left: calc(50% + 14px); right: calc(-50% + 14px); }
-  .v2 .v2-sw-steps a { padding-left: 0; padding-right: 0; }
-  .v2-sw-foot__in > .v2-btn { flex: 1 1 0; }
-  .v2-sw-foot__s { flex-basis: 100%; order: -1; text-align: center; margin: 0; }
+  .v2 .v2-sw-steps a { justify-content: center; min-height: var(--v2-hit-phone); padding-left: 0; padding-right: 0; }  /* M1: 44 tall; ten steps share 358 px, so each is 36 wide */
+  /* M1: the foot is one row (about 56 px) on a solid surface with a top border, flush with the bottom of the screen. A sticky box is held
+     the page's bottom padding (48 px) above the edge, which let the content show under it, so it is pulled down by that much; the step
+     count is in the dots above, so here it is for screen readers only. Nothing hides under it: the body ends with its own space. */
+  .v2-sw-body { padding-bottom: var(--v2-sp-16); }
+  .v2-sw-foot {
+    bottom: calc(-1 * var(--v2-sp-48)); margin: var(--v2-sp-8) calc(-1 * var(--v2-sp-16)) calc(-1 * var(--v2-sp-48));
+    padding: var(--v2-sp-6) var(--v2-sp-16) calc(var(--v2-sp-6) + env(safe-area-inset-bottom)); background: var(--v2-surface); border-top: 1px solid var(--v2-line);
+  }
+  .v2-sw-foot__in { gap: var(--v2-sp-8); }
+  .v2-sw-foot__in > .v2-btn { flex: 1 1 0; min-width: 0; padding-inline: var(--v2-sp-10); }
+  .v2-sw-foot__in > .v2-btn:first-child:not(:last-child) { flex: 0 0 auto; }
+  .v2-sw-foot__s { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0; }
+  .v2-sw-foot__in > .v2-sw-why { flex: 1 1 100%; order: -1; }
   .v2-sw-formfoot > .v2-btn { flex: 1 1 100%; }
   .v2-sw-form .v2-in-file { justify-content: center; }
 }

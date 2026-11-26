@@ -58,13 +58,13 @@ const B = "/api/v1";
 export const investigationApi = {
   status: () => api<InvestigationStatus>(`${B}/investigation:status`),
   findings: (q = "") => api<{ items: FindingRow[] }>(`${B}/findings${q}`).then(r => r.items),
-  finding: (id: string) => api<FindingRow>(`${B}/findings/${encodeURIComponent(id)}`),
+  finding: (id: string) => api<FindingRow>(`${B}/findings/${encodeURIComponent(id)}`, { fresh: true }),  // asked every 3 s while it lands: never from the cache
   investigateNow: (finding_ids?: string[]) =>
     api<Started>(`${B}/investigations`, { method: "POST", json: finding_ids ? { finding_ids } : {} }),
   clearSandbox: () => api<{ findings: number; investigations: number }>(`${B}/sandbox`, { method: "DELETE" }),
   runs: (limit = 20) => api<{ items: Run[] }>(`${B}/investigations?limit=${limit}`).then(r => r.items),
   collect: (run_id: string) => api<Run>(`${B}/investigations/${encodeURIComponent(run_id)}:collect`, { method: "POST" }),
-  run: (run_id: string) => api<Run>(`${B}/investigations/${encodeURIComponent(run_id)}`),
+  run: (run_id: string) => api<Run>(`${B}/investigations/${encodeURIComponent(run_id)}`, { fresh: true }),  // polled every 3 s
   events: (limit?: number) => api<{ items: EventRow[] }>(`${B}/events${limit ? `?limit=${limit}` : ""}`).then(r => r.items),
   event: (id: string) => api<EventDetail>(`${B}/events/${encodeURIComponent(id)}`),
 };

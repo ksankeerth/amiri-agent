@@ -22,10 +22,6 @@
 .v2-fd-tabs .v2-tabs__bar { margin-bottom: var(--v2-sp-8); }
 .v2-fd-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-4) var(--v2-sp-12); padding-bottom: var(--v2-sp-8); }
 .v2-fd-source { display: flex; align-items: center; gap: var(--v2-sp-8); font-size: var(--v2-fs-meta); color: var(--v2-muted); }
-.v2-fd-select {
-  min-height: 32px; padding: 0 var(--v2-sp-8); border: 1px solid var(--v2-line-input); border-radius: var(--v2-r-nav); background: var(--v2-surface);
-  color: var(--v2-text); font: var(--v2-fw-medium) var(--v2-fs-meta)/1.2 var(--v2-font);
-}
 .v2-fd-sim { display: flex; flex-wrap: wrap; align-items: center; gap: var(--v2-sp-8) var(--v2-sp-16); margin: var(--v2-sp-10) 0 var(--v2-sp-4); font-size: var(--v2-fs-meta); color: var(--v2-text-2); }
 .v2-fd-sim label { display: flex; align-items: center; gap: var(--v2-sp-8); }
 .v2-fd-sim input { width: 16px; height: 16px; accent-color: var(--v2-brand); }
@@ -64,11 +60,9 @@
 .v2 .v2-fd-row.is-action:hover .v2-fd-where, .v2 .v2-fd-row.is-action:focus-within .v2-fd-where { color: var(--v2-text-2); }  /* A1: no muted text on a hover fill */
 
 /* ---------- loading: the table's shape */
-.v2-fd-sk { display: block; border-radius: var(--v2-r-xs); background: var(--v2-count-bg); animation: v2-pulse 1.6s ease-in-out infinite; }
 .v2-fd-skel { border-bottom: 1px solid var(--v2-line); margin-top: var(--v2-sp-18); }
 .v2-fd-skel__row { display: grid; grid-template-columns: 52px 168px minmax(0, 1fr) 118px 24px; gap: var(--v2-sp-14); align-items: center; padding: var(--v2-sp-14) 0; border-top: 1px solid var(--v2-line); }
 .v2-fd-skel__src { width: 80%; }
-@media (prefers-reduced-motion: reduce) { .v2-fd-sk { animation: none; } }
 
 /* ---------- phone: time and source on the first line, the finding under them; the place and the signal hide */
 @media (max-width: 719.98px) {
@@ -79,7 +73,6 @@
   .v2-fd-wait { width: 100%; }
   .v2-fd-tools { padding-bottom: var(--v2-sp-10); }
   .v2-fd-gmeta::before { content: none; }
-  .v2-fd-select { min-height: var(--v2-hit-phone); }
   .v2-fd-row { grid-template-columns: 52px minmax(0, 1fr); grid-template-areas: "time src" "what what"; row-gap: var(--v2-sp-4); }
   .v2-fd-time { grid-area: time; }
   .v2-fd-src { grid-area: src; }

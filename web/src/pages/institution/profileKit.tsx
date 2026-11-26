@@ -43,7 +43,7 @@ export function useImportItems(section: SectionName, iid: string, onAdded: () =>
     catch (e) { setProblems(e instanceof ApiError ? [e.full] : [String(e)]); }
     finally { setBusy(false); }
   };
-  return { ops, problems, busy, read, add, close: () => setOps(null) };
+  return { ops, problems, busy, read, add, close: () => setOps(null), reject: (why: string) => { setOps([]); setProblems([why]); } };
 }
 
 /** What a row says in words where it used to carry a pill: "◆ No data value yet" is a warning, the rest is plain. */

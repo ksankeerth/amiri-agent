@@ -15,7 +15,6 @@
 .gal-more { padding-top: var(--v2-sp-12); }
 .gal-pad { padding: var(--v2-sp-12) 0; }
 .gal-sel { display: flex; align-items: center; gap: var(--v2-sp-8); font-size: var(--v2-fs-meta); color: var(--v2-muted); padding-bottom: var(--v2-sp-8); }
-.gal-sel select { height: 32px; border: 1px solid var(--v2-line-input); border-radius: var(--v2-r-nav); padding: 0 var(--v2-sp-8); background: var(--v2-surface); font-weight: var(--v2-fw-medium); font-size: var(--v2-fs-meta); }
 .gal-name { display: block; font-weight: var(--v2-fw-semibold); }
 .gal .gal-price { --v2-row-py: 10px; }
 .gal .gal-tight { --v2-row-py: 9px; --v2-row-px: 12px; }
@@ -28,3 +27,4 @@
 .gal-sample__row { display: flex; align-items: center; gap: var(--v2-sp-12); padding: var(--v2-sp-12) 0; border-bottom: 1px solid var(--v2-line); }
 .gal-sample__row b { flex: 1; }
 .gal-sample .gal-row { padding-top: var(--v2-sp-12); }
+.gal-forms { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--v2-sp-18) var(--v2-sp-20); }

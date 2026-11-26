@@ -2,8 +2,11 @@
 // serious first. One table: the direction for you, the products it could move, how many effects, how many alerts wait.
 // Tabs Open / Closed / All, a sort, simulated events on request, "show more" past 25. Reloads every 30 s (every 8 s while an
 // investigation runs); Refresh reloads now. For the Platform Admin the investigation runs are folded under the list.
+import { Checkbox } from "../../components/v2/Choice";
+import { Select } from "../../components/v2/Field";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { alertsApi } from "../../api/alerts";
+import { peek } from "../../api/client";
 import { investigationApi, type EventDetail, type EventRow, type Run } from "../../api/investigation";
 import { Icon } from "../../components/Icon";
 import { usePlaceNames } from "../../components/blocks";
@@ -16,7 +19,7 @@ import { useCrumbs } from "../../components/v2/Shell";
 import { StaleBanner } from "../../components/v2/StaleBanner";
 import { TabPanel, Tabs } from "../../components/v2/Tabs";
 import { ago, plural, until, ZONE_LABEL } from "../../format";
-import { count } from "../../plain";
+import { count, notInvestigatedWhy } from "../../plain";
 import { DAYS, useRecentFindings } from "../findings/recent";
 import { investigationDidntRun } from "../findings/words";
 import { InvestigateNowButton, useInvestigationStatus } from "./investigate";
@@ -36,6 +39,8 @@ const missed = new Set<string>();
 export function useEventDetails(ids: string[], version: number): { byId: Record<string, EventDetail>; waiting: (id: string) => boolean } {
   const [tick, bump] = useState(0);
   const key = ids.join(",");
+  // an event seen before (its own page, an earlier visit) fills its row at once; it counts as old, so it is asked for again below (F4)
+  const hydrate = (id: string) => { if (!details.has(id)) { const e = peek(() => investigationApi.event(id)); if (e) details.set(id, { at: 0, e }); } };
   useEffect(() => {
     const t = Date.now();
     const todo = ids.filter(id => !missed.has(id) && (!details.has(id) || t - details.get(id)!.at > DETAIL_FRESH_MS)).slice(0, DETAIL_BATCH);
@@ -45,7 +50,7 @@ export function useEventDetails(ids: string[], version: number): { byId: Record<
       .then(() => { if (live) bump(n => n + 1); });
     return () => { live = false; };
   }, [key, version, tick]);  // eslint-disable-line react-hooks/exhaustive-deps
-  const byId = useMemo(() => Object.fromEntries(ids.filter(id => details.has(id)).map(id => [id, details.get(id)!.e])),  // eslint-disable-line react-hooks/exhaustive-deps
+  const byId = useMemo(() => { ids.forEach(hydrate); return Object.fromEntries(ids.filter(id => details.has(id)).map(id => [id, details.get(id)!.e])); },  // eslint-disable-line react-hooks/exhaustive-deps
     [key, version, tick]);
   return { byId, waiting: id => !details.has(id) && !missed.has(id) };
 }
@@ -65,13 +70,13 @@ export function EventsPage() {
   const sortId = useId();
   const now = useNow(30_000);
   const { status, reload: reloadStatus } = useInvestigationStatus();
-  const [events, setEvents] = useState<EventRow[] | null>(null);
+  const [events, setEvents] = useState<EventRow[] | null>(() => peek(() => investigationApi.events(EVENTS_LIMIT)) ?? null);  // seen before: shown at once (F4)
   const [runs, setRuns] = useState<Run[]>([]);
   const [err, setErr] = useState<unknown>(null);
   const [loadedAt, setLoadedAt] = useState<number | null>(null);
   const recent = useRecentFindings();
-  const [toReview, setToReview] = useState(0);
-  const [alerts, setAlerts] = useState<Map<string, number>>(new Map());
+  const [toReview, setToReview] = useState(() => peek(() => alertsApi.summary())?.to_review ?? 0);
+  const [alerts, setAlerts] = useState<Map<string, number>>(() => alertsByEvent(peek(() => alertsApi.list({ status: "new" })) ?? []));
 
   const load = useCallback(async () => {
     try {
@@ -155,11 +160,11 @@ export function EventsPage() {
       {(events !== null || err == null) && (
         <Tabs label="Which events" tabs={tabs} value={show} onChange={id => setShow(id as Show)} className="v2-evs-tabs"
           trailing={<label className="v2-evs-sort" htmlFor={sortId}>Sort
-            <select id={sortId} className="v2-evs-select" value={sort} onChange={e => setSort(e.target.value as Sort)}>
+            <Select inline id={sortId} value={sort} onChange={e => setSort(e.target.value as Sort)}>
               {SORTS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-            </select></label>}>
+            </Select></label>}>
           <TabPanel id={show}>
-            {nSim > 0 && <label className="v2-evs-sim"><input type="checkbox" checked={sim} onChange={e => setSim(e.target.checked)} /> Also show {plural(nSim, "simulated event")} (from tests; not real)</label>}
+            {nSim > 0 && <Checkbox className="v2-evs-sim" checked={sim} onChange={e => setSim(e.target.checked)} label={`Also show ${plural(nSim, "simulated event")} (from tests; not real)`} />}
             {events === null ? <EventsSkeleton />
               : !rows.length ? <EmptyList show={show} closed={counted.filter(e => e.status === "closed").length} />
               : <>
@@ -177,7 +182,7 @@ export function EventsPage() {
       {events !== null && (recent.items?.length ?? 0) > 0 && (noEvent.length > 0 || inProgress > 0) && (
         <p className="v2-evs-findings">
           {noEvent.length > 0 && <>This week, {noEvent.length === 1 ? "1 finding didn't" : `${noEvent.length} findings didn't`} make an event:{" "}
-            {noImpact} no impact found{notInvestigated > 0 && <>, <b className="v2-evs-warnword">{notInvestigated} couldn't be investigated</b></>}.{" "}</>}
+            {noImpact} no impact found{notInvestigated > 0 && <>, <b className="v2-evs-warnword">{notInvestigated} couldn't be investigated</b> ({notInvestigatedWhy(noEvent.find(investigationDidntRun)?.outcome?.note)})</>}.{" "}</>}
           {inProgress > 0 && <>{inProgress} {inProgress === 1 ? "is" : "are"} being investigated now.{" "}</>}
           <ArrowLink to="/findings">See {noEvent.length > 0 ? "them" : "it"} in Findings</ArrowLink>
           <span className="v2-sr"> (the last {DAYS} days)</span>
@@ -194,7 +199,7 @@ function EmptyList({ show, closed }: { show: Show; closed: number }) {
   return (
     <Empty title={show === "open" ? "Nothing open right now" : "No events yet"}
       action={<Button as="link" to="/studio">Try a what-if in the Scenario Studio</Button>}>
-      When Amiri Agent traces news or a price move to your products, the event appears here.
+      When AMIRI Agent traces news or a price move to your products, the event appears here.
       {show === "open" && closed > 0 && <> {plural(closed, "closed event")} can be found under Closed.</>}
     </Empty>
   );

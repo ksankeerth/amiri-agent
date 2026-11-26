@@ -102,7 +102,7 @@ export function asideMeaning(g: AsideGroup): string {
   if (/offers a metric that could show this effect/.test(g.reason))
     return `None of your products has a figure that would show ${g.links.length > 1 ? "these effects" : "this effect"}, so there was nothing to check ${g.links.length > 1 ? "them" : "it"} against and no team was told.`;
   if (g.decision === "cut_by_cap") return "It kept the more likely impacts above and left this one out, so no team was told.";
-  return "Amiri Agent judged the link too weak to send to a team.";
+  return "AMIRI Agent judged the link too weak to send to a team.";
 }
 
 /** The investigation report's section for this event: the one whose "From:" line names its findings. */

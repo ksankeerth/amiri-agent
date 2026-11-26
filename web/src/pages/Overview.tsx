@@ -3,7 +3,8 @@
 // One call (GET /overview), refreshed every minute; the answer also goes to the top bar's Live pill (overviewApi).
 import { useCallback, useEffect, useState } from "react";
 import { alertsApi } from "../api/alerts";
-import { ME } from "../api/client";
+import { ME, peek } from "../api/client";
+import { inst, type Profile } from "../api/institutions";
 import { overviewApi, type Overview } from "../api/overview";
 import { useRole, useNow } from "../components/ui";
 import { LoadError } from "../components/v2/LoadError";
@@ -25,10 +26,10 @@ export function OverviewPage() {
   const now = useNow(30_000);
   const { role } = useRole();
   const admin = role === "platform_admin";
-  const [o, setO] = useState<Overview | null>(null);
+  const [o, setO] = useState<Overview | null>(() => peek(() => overviewApi.get(admin)) ?? null);  // seen before: shown at once, refreshed below
   const [err, setErr] = useState<unknown>(null);
   const [loadedAt, setLoadedAt] = useState<number | null>(null);
-  const [teams, setTeams] = useState<number | null>(null);  // how many teams the alerts are for (the fourth tile)
+  const [teams, setTeams] = useState<number | null>(() => { const s = peek(() => alertsApi.summary()); return s ? s.teams.filter(t => t.to_review > 0).length : null; });  // how many teams the alerts are for (the fourth tile)
 
   const load = useCallback(async () => {
     try {
@@ -38,7 +39,16 @@ export function OverviewPage() {
     } catch (e) { setErr(e); }
   }, [admin]);
   useEffect(() => { load(); }, [load]);
-  usePolling(load, REFRESH_MS);  // every minute, not while the tab is hidden
+  usePolling(load, REFRESH_MS);
+  // the institution's footprint, for the map (cached; one read, not polled). `undefined` while it loads, null when it can't be read
+  const instId = o?.institution?.institution_id;
+  const [profile, setProfile] = useState<Profile | null | undefined>(() => (instId ? peek(() => inst.profile(instId)) : undefined));
+  useEffect(() => {
+    if (!instId) return;
+    let live = true;
+    inst.profile(instId).then(p => { if (live) setProfile(p); }).catch(() => { if (live) setProfile(null); });
+    return () => { live = false; };
+  }, [instId]);  // every minute, not while the tab is hidden
 
   if (!o) {
     return err
@@ -52,7 +62,7 @@ export function OverviewPage() {
   return (
     <div className="v2-ov">
       {err != null && loadedAt != null && <StaleBanner loadedAt={loadedAt} now={now.getTime()} onRetry={load} />}
-      <Hero o={o} events={events} now={now} name={NAME} timeZone={o.institution?.time_zone || TIME_ZONE} />
+      <Hero o={o} events={events} now={now} name={NAME} timeZone={o.institution?.time_zone || TIME_ZONE} profile={profile?.institution.institution_id === instId ? profile : profile === null ? null : undefined} />
       <Tiles o={o} events={events} teams={teams} />
       {o.studio && <ScenarioRow studio={o.studio} />}
       <div className="v2-ov-cols">

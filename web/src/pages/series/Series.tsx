@@ -1,17 +1,20 @@
-// Market series (board 07; states: board 16 section H): the prices Amiri Agent watches, as a list with the open one beside it.
+// Market series (board 07; states: board 16 section H): the prices AMIRI Agent watches, as a list with the open one beside it.
 // /series opens the first one (unusual first); /series/:id opens that one. On a phone the list is the page and a series opens as
 // its own view with a back link.
 //
 // Asking, and how often (nothing is asked about unless this viewer pressed a button; see pane.tsx for the buttons):
 //   passive: the list and the service's status every 60 s, and not while the tab is hidden.
+import { Input, Select } from "../../components/v2/Field";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { peek, quietly } from "../../api/client";
 import { investigationApi } from "../../api/investigation";
 import { seriesApi, type Series, type SeriesStatus } from "../../api/series";
 import { useDemoLock } from "../../components/lock";
 import { useNow, useRole } from "../../components/ui";
 import { Button } from "../../components/v2/Button";
 import { Empty } from "../../components/v2/Empty";
+import { ListPane, MoreRows, PaneBack, PaneView, usePaged } from "../../components/v2/ListPane";
 import { LoadError } from "../../components/v2/LoadError";
 import { useCrumbs, usePhone } from "../../components/v2/Shell";
 import { Skeleton } from "../../components/v2/Skeleton";
@@ -22,7 +25,7 @@ import { eventTitle } from "../../plain";
 import { AddSeriesDialog } from "./dialogs";
 import { SeriesRows } from "./list";
 import { SeriesPane } from "./pane";
-import { ledeParts, listNotice, matchesQuery, sortSeries, tabCounts, tabOf, TABS, typeOptions, seriesType, type TabId } from "./words";
+import { ledeParts, listNotice, matchesQuery, seriesName, sortSeries, tabCounts, tabOf, TABS, typeOptions, seriesType, type TabId } from "./words";
 import "../../styles/v2/series.css";
 
 const REFRESH_MS = 60_000;   // passive: no faster than every 30 s
@@ -37,11 +40,12 @@ export function SeriesPage() {
   const admin = role === "platform_admin";
   const locked = useDemoLock();
 
-  const [items, setItems] = useState<Series[] | null>(null);
-  const [status, setStatus] = useState<SeriesStatus | null>(null);
+  // seen before: the last answers show at once and are refreshed below (F4)
+  const [items, setItems] = useState<Series[] | null>(() => peek(() => seriesApi.list()) ?? null);
+  const [status, setStatus] = useState<SeriesStatus | null>(() => peek(() => seriesApi.status()) ?? null);
   const [err, setErr] = useState<unknown>(null);
   const [loadedAt, setLoadedAt] = useState<number | null>(null);
-  const [titles, setTitles] = useState<Record<string, string>>({});
+  const [titles, setTitles] = useState<Record<string, string>>(() => Object.fromEntries((peek(() => investigationApi.events(200)) ?? []).map(e => [e.event_id, eventTitle(e)])));
   const [adding, setAdding] = useState(false);
   const [tab, setTab] = useState<TabId>("all");
   const [q, setQ] = useState("");
@@ -64,8 +68,8 @@ export function SeriesPage() {
   }, []);
   useEffect(() => {
     load();
-    const t = setInterval(() => { if (!document.hidden) load(); }, REFRESH_MS);
-    const vis = () => { if (!document.hidden && Date.now() - loaded.current > 30_000) load(); };   // back on the tab: catch up, but not in a burst
+    const t = setInterval(() => { if (!document.hidden) quietly(load); }, REFRESH_MS);
+    const vis = () => { if (!document.hidden && Date.now() - loaded.current > 30_000) quietly(load); };   // back on the tab: catch up, but not in a burst
     document.addEventListener("visibilitychange", vis);
     return () => { clearInterval(t); document.removeEventListener("visibilitychange", vis); };
   }, [load]);
@@ -90,10 +94,11 @@ export function SeriesPage() {
   const openId = id ?? fallbackId;
   const open = openId ? items?.find(x => x.series_id === openId) ?? null : null;
   const missing = items !== null && !!id && !open;
+  const paged = usePaged<Series, HTMLDivElement>(shown, `${tab}|${q}|${type}`, openId ? shown.findIndex(s => s.series_id === openId) : -1, ".v2-row:not(.v2-row--head)");
   const reading = phone && !!id;
   const stale = err != null && items !== null && loadedAt != null;
 
-  useCrumbs(id ? [...NEXT, { label: "Market series", to: "/series" }, { label: open?.name ?? "Series" }] : [...NEXT, { label: "Market series" }]);
+  useCrumbs(id ? [...NEXT, { label: "Market series", to: "/series" }, { label: open ? seriesName(open.name) : "Series" }] : [...NEXT, { label: "Market series" }]);
 
   // a choice moves focus to the series' heading (the shell's own move to the page comes first, at 250 ms)
   const first = useRef(true);
@@ -134,14 +139,14 @@ export function SeriesPage() {
     <SeriesPane key={open.series_id} s={open} status={status} admin={admin} eventTitles={titles} askEventTitles={askTitles}
       onUpdated={replace} onRemoved={s => { setItems(xs => (xs ?? []).filter(o => o.series_id !== s.series_id)); setPinned(null); nav("/series", { replace: true }); load(); }} />
   );
-  const back = <Link to="/series" className="v2-sr-back"><span aria-hidden="true">←</span>All series</Link>;
+  const back = <PaneBack to="/series">All series</PaneBack>;
   const trailing = (
     <div className="v2-sr-filters">
-      <input type="search" className="v2-sr-find" aria-label="Find a series or symbol" placeholder="Find a series or symbol" value={q} onChange={e => setQ(e.target.value)} />
+      <Input type="search" className="v2-sr-find" aria-label="Find a series or symbol" placeholder="Find a series or symbol" value={q} onChange={e => setQ(e.target.value)} />
       {types.length > 1 && (
         <label className="v2-sr-type"><span className="v2-meta">Type</span>
-          <select className="v2-sr-select" value={type} onChange={e => setType(e.target.value)}>
-            <option value="">All types</option>{types.map(t => <option key={t}>{t}</option>)}</select></label>)}
+          <Select inline value={type} onChange={e => setType(e.target.value)}>
+            <option value="">All types</option>{types.map(t => <option key={t}>{t}</option>)}</Select></label>)}
     </div>
   );
 
@@ -156,36 +161,37 @@ export function SeriesPage() {
       {items === null && err != null && <LoadError error={err} onRetry={load} what="the market series" safe="Your series are safe; this page just couldn't reach them." />}
       {items === null && err == null && (
         <div className="v2-sr-body">
-          {!phone && <div className="v2-sr-col"><Skeleton rows={8} label="Loading the market series" /></div>}
-          <div className="v2-sr-pane-wrap"><div className="v2-panel v2-sr-pane"><Skeleton rows={5} label="Loading the series" /></div></div>
+          <ListPane wide list={!phone && <Skeleton rows={8} label="Loading the market series" />}
+            pane={<div className="v2-panel v2-lp__panel"><Skeleton rows={5} label="Loading the series" /></div>} />
         </div>)}
 
       {empty && (
         <Empty title="No series yet" className="v2-sr-empty" action={admin ? <Button variant="primary" locked={locked} onClick={() => setAdding(true)}>Add a series</Button> : undefined}>
-          {admin ? "Add the exchange rates and prices that matter to your institution. Amiri Agent watches them every hour and flags a move far bigger than usual."
-            : "A Platform Admin adds the prices Amiri Agent watches."}
+          {admin ? "Add the exchange rates and prices that matter to your institution. AMIRI Agent watches them every hour and flags a move far bigger than usual."
+            : "A Platform Admin adds the prices AMIRI Agent watches."}
         </Empty>)}
 
       {items !== null && !empty && missing && (
-        <div className="v2-sr-read">{back}<Empty title="This series isn't watched" action={<Button as="link" to="/series" variant="primary">See market series</Button>}>It may have been deleted.</Empty></div>)}
+        <PaneView back={back}><Empty title="This series isn't watched" action={<Button as="link" to="/series" variant="primary">See market series</Button>}>It may have been deleted.</Empty></PaneView>)}
 
       {items !== null && !empty && !missing && (reading ? (
-        <div className="v2-sr-read">{back}{pane}</div>
+        <PaneView back={back}>{pane}</PaneView>
       ) : (
         <Tabs label="State" value={tab} onChange={v => setTab(v as TabId)} trailing={trailing}
           tabs={TABS.map(t => ({ id: t.id, label: t.label, count: counts[t.id], countTone: t.id === "moved" && counts.moved > 0 ? "unusual" : "neutral", countLabel: t.id === "all" ? "series" : t.label.toLowerCase() }))}>
           <TabPanel id={tab}>
             <div className="v2-sr-body">
-              <section className="v2-sr-col" aria-label="Series">
-                {shown.length ? (
-                  <div className="v2-sr-scroll"><SeriesRows items={shown} openId={phone ? null : openId} threshold={status?.detector_defaults.z_threshold ?? 3} /></div>
-                ) : (
-                  <Empty title="No series match" plain>
-                    <Button variant="quiet" onClick={() => { setTab("all"); setQ(""); setType(""); }}>Show all series</Button>
-                  </Empty>)}
-                <p className="v2-meta v2-sr-count" role="status">{shown.length === items.length ? `${items.length} series` : `${shown.length} of ${items.length} series`}</p>
-              </section>
-              {!phone && pane && <div className="v2-sr-pane-wrap">{pane}</div>}
+              <ListPane wide pane={!phone && pane} itemKey={openId} list={
+                <section aria-label="Series">
+                  {shown.length ? (
+                    <div className="v2-sr-scroll" ref={paged.listRef}><SeriesRows items={paged.shown} openId={phone ? null : openId} threshold={status?.detector_defaults.z_threshold ?? 3} /></div>
+                  ) : (
+                    <Empty title="No series match" plain>
+                      <Button variant="quiet" onClick={() => { setTab("all"); setQ(""); setType(""); }}>Show all series</Button>
+                    </Empty>)}
+                  <MoreRows left={paged.left} onMore={paged.more} />
+                  <p className="v2-meta v2-sr-count" role="status">{shown.length === items.length ? `${items.length} series` : `${shown.length} of ${items.length} series`}</p>
+                </section>} />
             </div>
           </TabPanel>
         </Tabs>

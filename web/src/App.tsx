@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Skeleton } from "./components/v2/Skeleton";
 import { api } from "./api/client";
 import { setZone } from "./format";
+import { RouteStage } from "./components/v2/RouteStage";
 import { Shell } from "./components/v2/Shell";
 import { BUILT, NAV } from "./components/v2/nav";
 import { InstitutionPage } from "./pages/institution/Institution";
@@ -99,7 +100,8 @@ function Frame({ inst }: { inst: Installation }) {
   return (
     <Shell inst={inst}>
       {inst.notes.map(n => <div key={n} className="v2-stale v2-notebar" role="status"><span aria-hidden="true">⚠</span><span>{n}</span></div>)}
-      <Routes>
+      <RouteStage institutionId={inst.profile ? inst.institution_id : null}>{loc => (
+      <Routes location={loc}>
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<OverviewPage />} />
         <Route path="/radar" element={<NeedsInstitution title="Radar" what="What Radar watches"><RadarPage /></NeedsInstitution>} />
@@ -125,6 +127,7 @@ function Frame({ inst }: { inst: Installation }) {
         ))}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      )}</RouteStage>
     </Shell>
   );
 }

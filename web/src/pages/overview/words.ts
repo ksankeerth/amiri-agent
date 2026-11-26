@@ -1,6 +1,8 @@
 // Plain logic for the Overview (board 00 and board 15 section A): the greeting, which of the headlines to show, short
 // times, the prices worth a row, a finding's status word. No React and no imports of app code, so `node --test` runs it.
 
+import { NOT_INVESTIGATED, notInvestigatedWhy } from "../../plain.ts";
+
 const plural = (n: number, one: string, many?: string) => `${n} ${n === 1 ? one : many ?? one + "s"}`;
 
 // ---------------------------------------------------------------- greeting
@@ -62,9 +64,9 @@ export function ageText(iso: string | null | undefined, now: Date): string {
 export function watchingMeta(monitors: number, prices: number, radar: boolean): string {
   return [plural(monitors, "monitor"), plural(prices, "price"), ...(radar ? ["Radar"] : [])].join(" · ");
 }
-/** "9 monitors · 3 prices · 6 Radar": where the last day's findings came from (nothing found: "nothing new"). */
+/** "9 monitors · 3 prices · 6 Radar": where the last day's findings came from (nothing found: "quiet in the last 24 h"). */
 export function foundMeta(f: { monitor: number; timeseries: number; radar: number }): string {
-  if (f.monitor + f.timeseries + f.radar === 0) return "nothing new";
+  if (f.monitor + f.timeseries + f.radar === 0) return "quiet in the last 24 h";
   return [plural(f.monitor, "monitor"), plural(f.timeseries, "price"), `${f.radar} Radar`].join(" · ");
 }
 /** "open events · 14 effects to watch" (the number is the tile's big figure). */
@@ -102,21 +104,110 @@ export function placesText(names: string[], max = 1): string {
 
 // ---------------------------------------------------------------- the map
 const RANK: Record<string, number> = { bad: 0, mixed: 1, good: 2 };
-export interface MapEvent { tone: string; places: string[] }
-/** One mark per place: the worst tone of the events that touch it. Neutral events have no ▲◆▼, so they add none. */
-export function mapMarks(events: MapEvent[]): { code: string; tone: "bad" | "mixed" | "good"; first: boolean }[] {
-  const worst = new Map<string, "bad" | "mixed" | "good">();
+/** A place as the server describes it (the overview's `map.places` and the profile's `places`). */
+export interface PlaceLite { code: string; name: string | null; kind: string; parent: string | null; country: string | null; lat: number | null; lon: number | null; numeric: string | null }
+type Places = Record<string, PlaceLite | undefined>;
+export interface MapEvent { title?: string; tone: string; places: string[] }
+/** What the map needs to know about the institution: its home country, and the place a country-wide event is marked on. */
+export interface MapContext { places: Places; home: string; anchor: string | null }
+export interface MapMark {
+  /** The place the mark sits on: the most specific place an event has, or the home anchor for a country-wide event. */
+  code: string;
+  tone: "bad" | "mixed" | "good";
+  first: boolean;
+  /** How many of the events here are country-wide (tagged only with the home country). */
+  nationwide: number;
+  /** Those events' titles. */
+  titles: string[];
+  /** Whether an event is tagged with this very place too. */
+  specific: boolean;
+}
+
+const isCountry = (code: string, places: Places) => (places[code] ? places[code]!.kind === "country" : /^[A-Z]{2}$/.test(code));
+/** Whether `inner` lies inside `outer`: by its parents (city → state → country), or by its country when the outer one is a country. */
+function lies(inner: string, outer: string, places: Places): boolean {
+  if (inner === outer) return false;
+  let c = places[inner]?.parent ?? null;
+  for (let i = 0; c && i < 5; i++) { if (c === outer) return true; c = places[c]?.parent ?? null; }
+  const p = places[inner];
+  return isCountry(outer, places) && !!p && p.kind !== "country" && p.country === outer && !!p.parent;
+}
+/** An event's places without the ones a more specific place of its own already covers: [US, US-TX] → [US-TX]. */
+export function mostSpecific(codes: string[], places: Places): string[] {
+  const uniq = [...new Set(codes)];
+  return uniq.filter(c => !uniq.some(o => lies(o, c, places)));
+}
+/** The place to put a mark on: the place itself, or its nearest parent that has a position. */
+function located(code: string, places: Places): string {
+  let c: string | null = code;
+  for (let i = 0; c && i < 5; i++) { const p: PlaceLite | undefined = places[c]; if (p && p.lat != null && p.lon != null) return c; c = p?.parent ?? null; }
+  return code;
+}
+
+/** One mark per place: the worst tone of the events that touch it. Neutral events have no ▲◆▼, so they add none. With the
+ *  institution's places (`ctx`) an event is marked on the most specific place it has (city → state → country), and an event
+ *  tagged only with the home country is marked on the home anchor (its main state), counted as "nationwide". */
+export function mapMarks(events: MapEvent[], ctx?: MapContext): MapMark[] {
+  const marks = new Map<string, MapMark>();
   let firstCode: string | null = null;
   for (const e of events) {
     if (!(e.tone in RANK)) continue;
-    for (const code of e.places) {
-      const t = e.tone as "bad" | "mixed" | "good";
-      const cur = worst.get(code);
-      if (!cur || RANK[t] < RANK[cur]) worst.set(code, t);
+    const t = e.tone as MapMark["tone"];
+    for (const raw of ctx ? mostSpecific(e.places, ctx.places) : e.places) {
+      const wide = !!ctx && raw === ctx.home && isCountry(raw, ctx.places);
+      const code = !ctx ? raw : wide && ctx.anchor ? ctx.anchor : located(raw, ctx.places);
+      const cur = marks.get(code) ?? { code, tone: t, first: false, nationwide: 0, titles: [], specific: false };
+      if (RANK[t] < RANK[cur.tone]) cur.tone = t;
+      if (wide) { cur.nationwide++; if (e.title) cur.titles.push(e.title); } else cur.specific = true;
+      marks.set(code, cur);
       if (firstCode === null) firstCode = code;
     }
   }
-  return [...worst].map(([code, tone]) => ({ code, tone, first: code === firstCode }));
+  return [...marks.values()].map(m => ({ ...m, first: m.code === firstCode }));
+}
+
+/** An event title short enough for a map label: no trailing "(4.42%)". */
+const shortTitle = (t: string) => t.replace(/\s*\([^)]*\)\s*$/, "").trim();
+const LABEL_TITLE_MAX = 22;
+/** The name shown by a mark: the place; for country-wide events "<event> · nationwide" (or "3 events · nationwide" when there
+ *  are several or the title is long), and "Texas · nationwide" when the place has events of its own too. Whole words only. */
+export function markLabel(m: Pick<MapMark, "nationwide" | "titles" | "specific">, name: string): string {
+  if (m.nationwide === 0) return name;
+  if (m.specific) return `${name} · nationwide`;
+  const only = m.titles.length === 1 ? shortTitle(m.titles[0]) : "";
+  return only && only.length <= LABEL_TITLE_MAX ? `${only} · nationwide` : `${plural(m.nationwide, "event")} · nationwide`;
+}
+
+// ---------------------------------------------------------------- the home footprint on the map
+/** Radius of the soft halo round a state or a city on the map, in degrees (the map has country shapes only, no state borders). */
+export const HALO_DEGREES = { state: 4.5, city: 1.2 };
+export interface FootprintItem { code: string; role?: string; branch_count?: number | null }
+export interface FootprintView {
+  /** ISO numeric ids of the countries to shade whole (a footprint that is the country itself). */
+  countries: string[];
+  /** Soft halos round the states and cities of the footprint. */
+  halos: { code: string; lat: number; lon: number; r: number; /** the numeric id of the state's country: the halo only tints that country's land */ within: string | null }[];
+  /** Where country-wide events go: the home state with the most branches (or the home footprint's first place), else the home country. */
+  anchor: PlaceLite | null;
+  /** The footprint's place names, for the picture's words. */
+  names: string[];
+}
+/** What of the profile's footprint the map shows: a country footprint is shaded as a country; a state or city footprint gets a
+ *  soft halo (a country that has states of its own listed is not shaded whole). */
+export function footprintView(home: string, items: FootprintItem[], places: Places): FootprintView {
+  const known = items.map(i => ({ i, p: places[i.code] })).filter((x): x is { i: FootprintItem; p: PlaceLite } => !!x.p);
+  const sub = known.filter(x => x.p.kind !== "country" && x.p.lat != null && x.p.lon != null);
+  const countries = known.filter(x => x.p.kind === "country" && x.p.numeric && !sub.some(s => s.p.country === x.p.code || s.p.code.startsWith(`${x.p.code}-`)));
+  const ranked = sub.map((x, n) => ({ x, n })).sort((a, b) => Number(b.x.i.role === "home") - Number(a.x.i.role === "home")
+    || (b.x.i.branch_count ?? 0) - (a.x.i.branch_count ?? 0) || a.n - b.n).map(r => r.x);
+  const homeP = places[home];
+  const anchor = ranked[0]?.p ?? (homeP && homeP.lat != null && homeP.lon != null ? homeP : null);
+  return {
+    countries: countries.map(c => c.p.numeric!),
+    halos: sub.map(s => ({ code: s.p.code, lat: s.p.lat!, lon: s.p.lon!, r: s.p.kind === "city" ? HALO_DEGREES.city : HALO_DEGREES.state, within: (s.p.country && places[s.p.country]?.numeric) || null })),
+    anchor,
+    names: [...countries, ...sub].map(x => x.p.name ?? x.p.code),
+  };
 }
 
 // ---------------------------------------------------------------- findings and radar rows
@@ -124,9 +215,9 @@ export type PillKind = "good" | "unusual" | "neutral";
 const SOURCE: Record<string, string> = { monitor: "Monitor", timeseries: "Price", radar: "Radar" };
 export const sourceWord = (s: string): string => SOURCE[s] ?? s;
 /** A finding's status as a short pill: "In an event" (good), "Being investigated", "No impact found". */
-export function findingPill(f: { status: string; event_id: string | null; reason: string | null }): { word: string; tone: PillKind } {
+export function findingPill(f: { status: string; event_id: string | null; reason: string | null }): { word: string; tone: PillKind; /** why it couldn't be investigated, when that is the word */ why?: string } {
   if (f.event_id || f.status === "linked") return { word: "In an event", tone: "good" };
-  if (f.status === "set_aside") return f.reason === "investigation_failed" ? { word: "Couldn't investigate", tone: "unusual" } : { word: "No impact found", tone: "neutral" };
+  if (f.status === "set_aside") return f.reason === "investigation_failed" ? { word: NOT_INVESTIGATED, tone: "unusual", why: notInvestigatedWhy() } : { word: "No impact found", tone: "neutral" };
   if (f.status === "grouped") return { word: "Being investigated", tone: "neutral" };
   if (f.status === "new") return { word: "Waiting", tone: "neutral" };
   return { word: f.status, tone: "neutral" };
@@ -170,7 +261,7 @@ export function needLevelWord(level: string): string {
   return level === "crit" ? "Urgent: " : level === "warn" ? "Needs attention: " : "";
 }
 /** A server note in plain words where it uses series wording ("No new bar since …"). */
-export const plainNote = (t: string): string => t.replace(/^(.+?): No new bar since (.+?) \(.*\)\.?$/, "$1: prices haven't updated since $2");
+export const plainNote = (t: string): string => t.replace(/^(.+?): No new bar since (.+?) \(.*\)\.?$/, "$1: no new price since $2");
 
 /** The line under the prices: "18 others normal", "1 other normal", "3 more" (when some odd ones didn't fit), then all series. */
 export function othersText(others: number, normal: boolean): string {

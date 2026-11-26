@@ -57,7 +57,7 @@ export const connectApi = {
   example: async (scenario?: string): Promise<{ blob: Blob; name: string }> => {
     let r: Response;
     try { r = await fetch(connectApi.exampleHref(scenario), { headers: { "X-Amiri-Actor": ME } }); }
-    catch { throw new ApiError({ status: 0, code: "network", detail: "Amiri Agent didn't answer. It may be starting up after a quiet spell: try again in a few seconds." }); }
+    catch { throw new ApiError({ status: 0, code: "network", detail: "AMIRI Agent didn't answer. It may be starting up after a quiet spell: try again in a few seconds." }); }
     if (!r.ok) {
       const text = await r.text();
       let p: Problem | undefined;

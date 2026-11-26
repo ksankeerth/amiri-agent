@@ -1,4 +1,4 @@
-/* Amiri Agent UI v2: shared components (components/v2/*.tsx). Specs are from boards 00, 01, 04, 07 and 13 (docs/ux/v2).
+/* AMIRI Agent UI v2: shared components (components/v2/*.tsx). Specs are from boards 00, 01, 04, 07 and 13 (docs/ux/v2).
    Only --v2- tokens, no raw colours. Imported once, from main.tsx, after tokens.css and base.css. Gallery: /dev/v2 (dev server only). */
 
 /* ---------- panel (the white box of boards 13, 15) */
@@ -8,14 +8,30 @@
 
 /* ---------- buttons */
 .v2-btn {
+  position: relative; --v2-spin: var(--v2-text);
   display: inline-flex; align-items: center; justify-content: center; gap: var(--v2-sp-6); min-height: 36px; padding: 0 var(--v2-sp-14);
   border: 1px solid var(--v2-line-ctl); border-radius: var(--v2-r-btn); background: var(--v2-surface); color: var(--v2-text);
   font: var(--v2-fw-semibold) var(--v2-fs-meta)/1.2 var(--v2-font); text-decoration: none; white-space: nowrap; cursor: pointer;
+  /* F3: hover eases (120 ms), a press dips to 98% (transform only, 160 ms); the focus ring is untouched */
+  transition: background-color var(--v2-dur-fast) var(--v2-ease), border-color var(--v2-dur-fast) var(--v2-ease), color var(--v2-dur-fast) var(--v2-ease),
+    filter var(--v2-dur-fast) var(--v2-ease), transform var(--v2-dur) var(--v2-ease);
 }
+.v2 .v2-btn:active:not(:disabled):not([aria-disabled="true"]):not([data-lock]) { transform: scale(.98); }
 .v2 .v2-btn:hover { border-color: var(--v2-line-ctl-hover); color: var(--v2-text); text-decoration: none; }
 .v2-btn svg { width: 16px; height: 16px; flex: none; }
 .v2-btn--sm { min-height: 32px; padding: 0 var(--v2-sp-12); }
 .v2-btn--lg { min-height: 44px; padding: 0 var(--v2-sp-20); font-size: var(--v2-fs-body); }
+/* busy (Button.tsx `busy`): the label stays where it is, invisible, so the width never changes; a spinner sits in the middle */
+.v2-btn--primary { --v2-spin: var(--v2-ink-btn-text); }
+.v2-btn--quiet { --v2-spin: var(--v2-brand); }
+.v2 .v2-btn.v2-st-reset { --v2-spin: var(--v2-bad); }
+.v2 .v2-btn.is-busy, .v2 .v2-btn.is-busy:hover { color: transparent !important; cursor: progress; }  /* beats a page's own danger colours */
+.v2 .v2-btn.is-busy:disabled { opacity: 1; cursor: progress; }
+.v2 .v2-btn.is-busy > * { opacity: 0; }
+.v2-btn.is-busy::after {
+  content: ""; position: absolute; inset: 0; margin: auto; width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--v2-spin) 28%, transparent); border-top-color: var(--v2-spin); animation: v2-spin .8s linear infinite;
+}
 .v2-btn--primary { background: var(--v2-ink-btn); border-color: var(--v2-ink-btn); color: var(--v2-ink-btn-text); }
 .v2 .v2-btn--primary:hover { background: color-mix(in srgb, var(--v2-ink-btn) 86%, var(--v2-surface)); border-color: transparent; color: var(--v2-ink-btn-text); }
 .v2-btn--quiet { background: transparent; border-color: transparent; color: var(--v2-brand); }
@@ -73,17 +89,40 @@
 
 /* ---------- tabs */
 .v2-tabs__bar { display: flex; align-items: center; flex-wrap: wrap; column-gap: var(--v2-sp-20); border-bottom: 1px solid var(--v2-line); }
-.v2-tabs__list { display: flex; flex-wrap: wrap; }
+.v2-tabs__list { position: relative; display: flex; flex-wrap: wrap; }
 .v2-tabs__gap { flex-grow: 1; }
 .v2-tab {
   display: inline-flex; align-items: center; gap: 7px; padding: 9px 2px; margin-right: var(--v2-sp-18);
   border: 0; border-bottom: 2px solid transparent; background: none; color: var(--v2-muted);
   font-size: var(--v2-fs-body); font-weight: var(--v2-fw-medium); line-height: var(--v2-lh-body);
+  transition: color var(--v2-dur-fast) var(--v2-ease);
 }
 .v2-tab:hover { color: var(--v2-text); }
-.v2-tab[aria-selected="true"] { color: var(--v2-text); border-bottom-color: var(--v2-text); font-weight: var(--v2-fw-semibold); }
+.v2-tab[aria-selected="true"] { color: var(--v2-text); font-weight: var(--v2-fw-semibold); }
+/* the line under the active tab: one element, moved by Tabs.tsx (transform and width), so it slides from tab to tab */
+.v2-tabs__ind { position: absolute; left: 0; top: 0; height: 2px; background: var(--v2-text); pointer-events: none; will-change: transform, width; }
+.v2-tabs__ind.is-anim { transition: transform var(--v2-dur-slow) var(--v2-ease), width var(--v2-dur-slow) var(--v2-ease); }
 .v2-tab__t { display: inline-flex; flex-direction: column; align-items: center; }
 .v2-tab__t::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; font-weight: var(--v2-fw-semibold); }  /* reserves the bold width: no jump when selected */
+/* phone (M1): one row that scrolls sideways, tabs snap to its start, the edge that hides more tabs fades (Tabs.tsx sets data-more-start/-end),
+   the active tab is scrolled into view; the sliding line sits inside the strip, so it scrolls with it. 44 px tall to tap. */
+@media (max-width: 719.98px) {
+  .v2-tabs__list {
+    flex: 1 1 100%; flex-wrap: nowrap; min-width: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity; scroll-padding-inline: var(--v2-sp-4); scrollbar-width: none;
+  }
+  .v2-tabs__list::-webkit-scrollbar { display: none; }
+  .v2-tabs__list[data-more-end] { -webkit-mask-image: linear-gradient(to right, black calc(100% - 36px), transparent); mask-image: linear-gradient(to right, black calc(100% - 36px), transparent); }
+  .v2-tabs__list[data-more-start] { -webkit-mask-image: linear-gradient(to left, black calc(100% - 36px), transparent); mask-image: linear-gradient(to left, black calc(100% - 36px), transparent); }
+  .v2-tabs__list[data-more-start][data-more-end] {
+    -webkit-mask-image: linear-gradient(to right, transparent, black 36px, black calc(100% - 36px), transparent);
+    mask-image: linear-gradient(to right, transparent, black 36px, black calc(100% - 36px), transparent);
+  }
+  .v2-tab { flex: none; min-height: var(--v2-hit-phone); padding: 0 var(--v2-sp-4); margin-right: var(--v2-sp-12); white-space: nowrap; scroll-snap-align: start; }
+  .v2-tab:last-of-type { margin-right: 0; }
+  .v2-tab:focus-visible { outline-offset: -3px; }   /* the strip clips what sticks out of it */
+  .v2-tabs__gap { display: none; }
+}
 
 /* ---------- table and rows */
 .v2-table { --v2-cols: minmax(0, 1fr); }
@@ -110,6 +149,8 @@
 .v2-skel__dot { flex: none; width: 13px; height: 13px; border-radius: 3px; background: var(--v2-line); }
 .v2-skel__bar { flex: 1; height: 13px; border-radius: var(--v2-r-xs); background: var(--v2-count-bg); }
 .v2-skel__end { flex: none; width: 90px; height: 13px; border-radius: var(--v2-r-xs); background: var(--v2-hover); }
+/* the one placeholder bar (Skeleton.tsx SkBar): every page's loading shape is made of these; size and radius come from props */
+.v2-skel__b { display: block; max-width: 100%; border-radius: var(--v2-r-xs); background: var(--v2-count-bg); animation: v2-pulse 1.6s ease-in-out infinite; }
 @keyframes v2-pulse { 50% { opacity: .55; } }
 
 /* ---------- load error, stale banner, edit conflict */
@@ -175,7 +216,7 @@
 .v2-dots span:nth-child(2) { background: var(--v2-dot-idle); animation-delay: .2s; }
 .v2-dots span:nth-child(3) { animation-delay: .4s; }
 @keyframes v2-dot { 0%, 100% { background: var(--v2-dot-sep); } 35% { background: var(--v2-text); } }
-@media (prefers-reduced-motion: reduce) { .v2-dots span, .v2-skel__row { animation: none; } }  /* the static look is the three shades */
+@media (prefers-reduced-motion: reduce) { .v2-dots span, .v2-skel__row, .v2-skel__b { animation: none; } }  /* the static look is the three shades */
 
 .v2-agent--off { flex-wrap: wrap; padding: var(--v2-sp-10) var(--v2-sp-14); border: 1px solid var(--v2-line); border-radius: var(--v2-r-lg); background: var(--v2-surface); font-size: var(--v2-fs-meta); }
 .v2-agent--warn { border-color: var(--v2-warn-line); background: var(--v2-warn-bg); }
@@ -216,6 +257,10 @@
 .v2-sechead--sm { gap: var(--v2-sp-8); margin-bottom: var(--v2-sp-4); }
 .v2-sechead--sm .v2-sechead__t { font-size: var(--v2-fs-title); letter-spacing: 0; }
 .v2-arrowlink { font-size: var(--v2-fs-meta); }
+@media (max-width: 719.98px) {  /* M1: 44 px to tap; arrow links in rows were 20 px, the small icon buttons 32 */
+  .v2-arrowlink { display: inline-flex; align-items: center; column-gap: .3em; min-width: var(--v2-hit-phone); min-height: var(--v2-hit-phone); }
+  .v2-btn--icon.v2-btn--sm { flex: none; width: var(--v2-hit-phone); min-height: var(--v2-hit-phone); }
+}
 @media (max-width: 1023.98px) {  /* four tiles need ~720 px of main area: two by two below that */
   .v2-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .v2-stat:nth-child(odd) { padding-left: 0; border-left: 0; }
@@ -226,7 +271,9 @@
 .v2-dotmap { margin: 0; }
 .v2-dotmap__box { position: relative; width: 100%; margin: 0 auto; }
 .v2-dotmap__dots { position: absolute; inset: 0; width: 100%; height: 100%; }
-.v2-dotmap__dots path { fill: none; stroke: var(--v2-dot-sep); stroke-width: 3; stroke-linecap: round; }
+.v2-dotmap__dots path { fill: none; stroke: var(--v2-dot-sep); stroke-linecap: round; }  /* the dot size (stroke-width) is set on the svg: it follows the cell */
+.v2-dotmap__dots .is-soft { stroke: color-mix(in srgb, var(--v2-brand) 24%, var(--v2-dot-sep)); }  /* the home footprint: calm, a tint of the brand over the plain dot */
+.v2-dotmap__dots .is-tint { stroke: color-mix(in srgb, var(--v2-brand) 46%, var(--v2-dot-sep)); }
 .v2-dotmap__pt { position: absolute; width: 0; height: 0; --tone: var(--v2-muted); }
 .v2-dotmap__pt--bad { --tone: var(--v2-bad); }
 .v2-dotmap__pt--mixed { --tone: var(--v2-unusual); }
@@ -252,17 +299,52 @@
 /* ---------- dialog (board 15 B: "Start a new run?") and the "⋯" menu (board 09) */
 .v2.v2-dlg-scrim {
   position: fixed; inset: 0; z-index: 95; display: flex; justify-content: center; align-items: center;
-  padding: var(--v2-sp-16); overflow-y: auto; background: var(--v2-scrim);
+  padding: var(--v2-sp-16); background: var(--v2-scrim);
 }
+/* one layout (Dialog.tsx): header, a body that scrolls on its own, footer. S 400, M 560, L 760. */
 .v2-dlg {
-  width: 460px; max-width: 100%; max-height: 100%; overflow-y: auto; padding: var(--v2-sp-24) 26px; display: flex; flex-direction: column; gap: var(--v2-sp-12);
+  --v2-dlg-w: 400px;
+  width: min(var(--v2-dlg-w), 100%); max-height: 100%; display: flex; flex-direction: column; overflow: hidden;
   background: var(--v2-surface); border: 1px solid var(--v2-line); border-radius: var(--v2-r-panel); box-shadow: var(--v2-shadow-pop);
 }
-.v2-dlg.is-wide { width: 560px; }
+.v2-dlg.is-M { --v2-dlg-w: 560px; }
+.v2-dlg.is-L { --v2-dlg-w: 760px; }
 .v2 .v2-dlg:focus-visible { outline: none; }
-.v2-dlg__t { font-size: 18px; font-weight: var(--v2-fw-semibold); }
-.v2-dlg__body { display: flex; flex-direction: column; gap: var(--v2-sp-12); font-size: var(--v2-fs-body); line-height: var(--v2-lh-copy); color: var(--v2-text-2); }
-.v2-dlg__foot { display: flex; flex-wrap: wrap; gap: var(--v2-sp-8); justify-content: flex-end; margin-top: var(--v2-sp-4); }
+.v2-dlg__head { flex: none; display: flex; align-items: flex-start; gap: var(--v2-sp-12); padding: var(--v2-sp-24) 26px var(--v2-sp-4); }
+.v2-dlg__heads { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: var(--v2-sp-4); }
+.v2-dlg__t { font-size: 18px; font-weight: var(--v2-fw-semibold); line-height: 1.3; overflow-wrap: anywhere; }
+.v2-dlg__desc { font-size: var(--v2-fs-body); line-height: var(--v2-lh-copy); color: var(--v2-text-2); }
+.v2-dlg__mark { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--v2-bad-tint); color: var(--v2-bad); font-size: 12px; }
+.v2-dlg__body {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: var(--v2-sp-12);
+  padding: var(--v2-sp-12) 26px var(--v2-sp-20); font-size: var(--v2-fs-body); line-height: var(--v2-lh-copy); color: var(--v2-text-2);
+}
+.v2-dlg__body > * { flex: none; }
+.v2-dlg__foot {
+  flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--v2-sp-8);
+  padding: var(--v2-sp-14) 26px; border-top: 1px solid var(--v2-line);
+}
+/* on the far left of the footer: a quiet "Delete this item", a count, a note */
+.v2-dlg__aside { margin-right: auto; font-size: var(--v2-fs-cap); color: var(--v2-muted); }
+.v2-dlg .v2-dlg__aside.v2-btn { font-size: var(--v2-fs-meta); }
+.v2-dlg__foot .v2-dlg__aside.v2-btn--quiet { color: var(--v2-brand); }
+.v2-dlg__foot .v2-dlg__aside.is-danger { color: var(--v2-bad); }
+/* danger: the main action is red */
+.v2-dlg.is-danger .v2-dlg__foot .v2-btn--primary { --v2-spin: var(--v2-on-bad); background: var(--v2-bad); border-color: var(--v2-bad); color: var(--v2-on-bad); }
+.v2 .v2-dlg.is-danger .v2-dlg__foot .v2-btn--primary:hover { background: color-mix(in srgb, var(--v2-bad) 88%, var(--v2-text)); border-color: transparent; color: var(--v2-on-bad); }
+.v2 .v2-dlg.is-danger .v2-dlg__foot .v2-btn--primary:disabled:hover, .v2 .v2-dlg.is-danger .v2-dlg__foot .v2-btn--primary[data-lock]:hover { background: var(--v2-bad); border-color: var(--v2-bad); }
+/* a phone: a bottom sheet (full width, rounded on top), its buttons side by side with room for a thumb */
+@media (max-width: 719.98px) {
+  .v2.v2-dlg-scrim { align-items: flex-end; padding: 0; }
+  .v2-dlg { width: 100%; max-width: 100%; max-height: 92dvh; border-width: 1px 0 0; border-radius: var(--v2-r-panel) var(--v2-r-panel) 0 0; }
+  .v2-dlg__head { position: relative; padding: var(--v2-sp-24) var(--v2-sp-20) var(--v2-sp-4); }
+  .v2-dlg__head::before { content: ""; position: absolute; top: var(--v2-sp-8); left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: var(--v2-line-input); }
+  .v2-dlg__body { padding: var(--v2-sp-12) var(--v2-sp-20) var(--v2-sp-16); }
+  .v2-dlg__foot { padding: var(--v2-sp-12) var(--v2-sp-20) calc(var(--v2-sp-12) + env(safe-area-inset-bottom, 0px)); }
+  .v2-dlg__foot > .v2-btn { flex: 1 1 0; min-width: 120px; }
+  .v2-dlg__foot > .v2-dlg__aside { flex: 1 0 100%; order: 3; margin: 0; text-align: center; }
+  .v2-dlg__foot > .v2-dlg__aside.v2-btn { flex: 1 0 100%; min-width: 0; }
+}
 
 .v2-more { position: relative; display: inline-block; }
 .v2-more__menu {
@@ -276,3 +358,98 @@
 .v2 .v2-more__item:hover { background: var(--v2-hover); }
 .v2 .v2-more__item.is-danger { color: var(--v2-bad); }
 @media (max-width: 719.98px) { .v2-more__item { min-height: var(--v2-hit-phone); } }
+
+/* ---------- list and pane (components/v2/ListPane.tsx): Alerts, Radar, Monitors, Market series, Scenario Studio.
+   One layout: the list on the left, the open item on the right, 28 px between. Side by side when the page is wide enough (the
+   container, not the screen, so a narrow page beside the menu stacks sooner), otherwise one under the other. Whichever column is
+   shorter and fits the scrolling area stays in view (data-stick, set by ListPane); nothing scrolls inside the layout. */
+.v2-lp { container: lp / inline-size; min-width: 0; }
+.v2-lp__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--v2-sp-28); align-items: start; min-width: 0; }
+.v2-lp__list, .v2-lp__pane { min-width: 0; }
+.v2-lp__list { display: flex; flex-direction: column; gap: var(--v2-sp-6); }
+@container lp (min-width: 848px) {
+  .v2-lp__grid.has-pane:not(.is-wide) { grid-template-columns: minmax(0, clamp(340px, 34cqw, 400px)) minmax(0, 1fr); }
+}
+@container lp (min-width: 1040px) {  /* a table of several columns */
+  .v2-lp__grid.has-pane.is-wide { grid-template-columns: minmax(0, clamp(560px, 58cqw, 700px)) minmax(0, 1fr); }
+}
+.v2-lp[data-stick="pane"] .v2-lp__pane, .v2-lp[data-stick="list"] .v2-lp__list { position: sticky; top: var(--v2-sp-16); }
+
+/* the pane's first view */
+.v2-lp__panel { padding: 24px 28px; display: flex; flex-direction: column; gap: var(--v2-sp-14); min-width: 0; }
+@media (max-width: 719.98px) { .v2-lp__panel { padding: var(--v2-sp-20) var(--v2-sp-16); gap: var(--v2-sp-18); } }
+
+/* the details under it: closed folds */
+.v2-lp__folds { display: flex; flex-direction: column; }
+.v2-lp__fold { border-top: 1px solid var(--v2-line); font-size: var(--v2-fs-body); }
+.v2-lp__fold > summary {
+  display: flex; flex-wrap: wrap; align-items: baseline; align-content: center; gap: var(--v2-sp-2) var(--v2-sp-6); min-height: var(--v2-hit);
+  cursor: pointer; list-style: none;
+}
+.v2-lp__fold > summary::-webkit-details-marker { display: none; }
+.v2-lp__fold > summary::before { content: ""; flex: none; align-self: center; margin-right: var(--v2-sp-8); border-left: 6px solid var(--v2-text); border-top: 4.5px solid transparent; border-bottom: 4.5px solid transparent; }
+.v2-lp__fold[open] > summary::before { transform: rotate(90deg); }
+.v2-lp__fold-t { font-weight: var(--v2-fw-semibold); }
+.v2-lp__fold-n { color: var(--v2-muted); }
+.v2-lp__fold-b { padding: 0 0 var(--v2-sp-12) 14px; color: var(--v2-text-2); overflow-wrap: anywhere; }
+.v2-lp__fold-b > p { margin-bottom: var(--v2-sp-6); }
+@media (max-width: 719.98px) { .v2 .v2-lp__fold > summary { min-height: var(--v2-hit-phone); } }
+
+/* a phone shows the list, or one pane with a way back */
+.v2-lp__read { display: flex; flex-direction: column; gap: var(--v2-sp-14); min-width: 0; }
+.v2 .v2-lp__back { align-self: flex-start; display: inline-flex; align-items: center; gap: var(--v2-sp-6); min-height: var(--v2-hit-phone); padding: 0 var(--v2-sp-4); color: var(--v2-brand); font-weight: var(--v2-fw-semibold); }
+
+/* "Show 10 more · 24 left" */
+.v2-lp__more {
+  align-self: flex-start; min-height: var(--v2-hit); margin-top: var(--v2-sp-4); padding: 0 var(--v2-sp-14); border: 1px solid var(--v2-line-ctl); border-radius: var(--v2-r-pill);
+  background: var(--v2-surface); color: var(--v2-text); font: var(--v2-fw-semibold) var(--v2-fs-meta)/1.2 var(--v2-font);
+}
+.v2-lp__more:hover { border-color: var(--v2-line-ctl-hover); background: var(--v2-hover); }
+@media (max-width: 719.98px) { .v2 .v2-lp__more { min-height: var(--v2-hit-phone); } }
+
+/* ---------- motion (F3): calm and quick. Tokens: --v2-dur-fast 120 ms (hover, fades), --v2-dur 160 ms (press, menus, dialogs),
+   --v2-dur-slow 220 ms (folds, panels, the tab underline); one ease, one exit ease. base.css switches all of it off under prefers-reduced-motion
+   (and the JS that waits for an exit, or measures a height, checks the same setting). The dotted map is not touched. */
+@keyframes v2-fade-in { from { opacity: 0; } }
+@keyframes v2-fade-out { to { opacity: 0; } }
+@keyframes v2-pop-in { from { opacity: 0; transform: scale(.98); } }
+
+/* dialogs and the Go-to box: the scrim fades, the box fades and scales .98 to 1; on close a copy fades out (useExitGhost) */
+.v2.v2-dlg-scrim, .v2-goto-scrim { animation: v2-fade-in var(--v2-dur) var(--v2-ease); }
+.v2-dlg, .v2-goto { animation: v2-pop-in var(--v2-dur) var(--v2-ease); }
+@keyframes v2-sheet-in { from { transform: translateY(100%); } }
+@media (max-width: 719.98px) { .v2-dlg { animation: v2-sheet-in var(--v2-dur-slow) var(--v2-ease); } }
+.v2.v2-dlg-scrim.is-ghost, .v2-goto-scrim.is-ghost { animation: v2-fade-out var(--v2-dur-fast) var(--v2-ease-exit) forwards; pointer-events: none; }
+.is-ghost .v2-dlg, .is-ghost .v2-goto { animation: none; }
+
+/* the "⋯" menu: out of its corner */
+.v2-more__menu { transform-origin: top right; animation: v2-pop-in var(--v2-dur) var(--v2-ease); }
+.v2-more__menu.is-leaving { animation: v2-fade-out var(--v2-dur-fast) var(--v2-ease-exit) forwards; pointer-events: none; }
+
+/* a toast slides in (above); on dismiss it fades out */
+.v2-toast.is-leaving { animation: v2-fade-out var(--v2-dur-fast) var(--v2-ease-exit) forwards; pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) { .v2 .v2-btn:active { transform: none; } }  /* no press dip either */
+
+/* rows and links: the fill eases in (120 ms) */
+.v2-row, .v2-rowlink, .v2-st-item, .v2-goto__opt, .v2-more__item, .v2-lp__more, .v2-nav__a, .v2-in-tab, .v2-seg button, .v2-gobtn {
+  transition: background-color var(--v2-dur-fast) var(--v2-ease), border-color var(--v2-dur-fast) var(--v2-ease), color var(--v2-dur-fast) var(--v2-ease);
+}
+/* One rule for every list row that is a link (Alerts, Radar, Monitors, Studio, Needs you, the alert in an event): hovering or focusing
+   it never underlines its words (an underline on every line of a row reads as noise). The fill eases in and the focus ring marks the keyboard.
+   Triple class: the pages' own "links underline on hover" rules (0,4,1) must lose. */
+.v2 a.v2-rowlink.v2-rowlink.v2-rowlink, .v2 a.v2-rowlink.v2-rowlink.v2-rowlink:hover, .v2 a.v2-rowlink.v2-rowlink.v2-rowlink:focus-visible { text-decoration: none; }
+
+/* folds: a closed fold opens by growing its content (Chrome 129+; `interpolate-size` is on :root). Elsewhere it opens at once. The chevron turns.
+   Clipping is only on while the box moves (overflow flips at the end of opening, at the start of closing), so a focus ring is never cut. */
+.v2 details > summary::before { transition: transform var(--v2-dur) var(--v2-ease); }
+@supports selector(::details-content) {
+  .v2 details:not(.menu)::details-content {
+    block-size: 0; overflow: clip;
+    transition: block-size var(--v2-dur-slow) var(--v2-ease), content-visibility var(--v2-dur-slow) allow-discrete, overflow 0s allow-discrete;
+  }
+  .v2 details:not(.menu)[open]::details-content {
+    block-size: auto; overflow: visible;
+    transition: block-size var(--v2-dur-slow) var(--v2-ease), content-visibility var(--v2-dur-slow) allow-discrete, overflow 0s var(--v2-dur-slow) allow-discrete;
+  }
+}

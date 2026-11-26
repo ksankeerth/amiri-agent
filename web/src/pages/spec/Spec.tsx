@@ -120,7 +120,7 @@ export function SpecPage() {
       if (el) el.scrollIntoView({ block: "start" }); else if (h || where) document.querySelector("main")?.scrollTo({ top: 0 });
     });
     const name = catId ? s.categories.find(c => c.id === catId)?.name : chapterId ? chaptersOf(s).find(c => c.id === chapterId)?.title : null;
-    document.title = name ? `${name} · Metrics Spec · Amiri Agent` : "Metrics Spec · Amiri Agent";
+    document.title = name ? `${name} · Metrics Spec · AMIRI Agent` : "Metrics Spec · AMIRI Agent";
     return () => cancelAnimationFrame(t);
   }, [s, !!mine, where, hash]);  // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -147,8 +147,9 @@ export function SpecPage() {
         <section className="v2-sx-view" aria-labelledby="sx-title">
           <p className="v2-sr" role="status">{q ? "" : `Showing ${showName}`}</p>
           {q ? <Search s={s} q={q} onPick={() => setQuery("")} />
-            : cat ? <CategoryView key={cat.id} s={s} c={cat} yours={mine.names.get(cat.id) ?? []} open={view.kind === "category" ? view.open : undefined} />
-            : chapterId ? <ChapterView key={chapterId} s={s} id={chapterId} target={view.kind === "chapter" ? view.target : undefined} />
+            : cat ? <CategoryView key={cat.id} s={s} c={cat} yours={mine.names.get(cat.id) ?? []} open={view.kind === "category" ? view.open : undefined}
+              islamic={mine.islamic} home={mine.home} />
+            : chapterId ? <ChapterView key={chapterId} s={s} id={chapterId} target={view.kind === "chapter" ? view.target : undefined} islamic={mine.islamic} home={mine.home} />
             : <h2 id="sx-title" className="v2-sx-h2">No categories</h2>}
         </section>
       </div>

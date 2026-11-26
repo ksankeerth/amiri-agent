@@ -1,7 +1,7 @@
 // The boxes over the series page: add a series (search the provider, pick, name it, read its history), edit one, and stop
 // watching one. Same calls as before; the words and rules are in components/series.tsx (theme choices) and words.ts.
 // A refusal inside a box is shown inside it (the toasts sit under the dimmed page), with the server's own words.
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { ApiError } from "../../api/client";
 import { seriesApi, type Detector, type LookupItem, type Series, type Theme } from "../../api/series";
 import { parseJson, seriesOf } from "../../components/fillJson";
@@ -10,6 +10,8 @@ import { useDemoLock } from "../../components/lock";
 import { useToast } from "../../components/ui";
 import { Button } from "../../components/v2/Button";
 import { Dialog } from "../../components/v2/Dialog";
+import { Field, Input, Select } from "../../components/v2/Field";
+import { FileDrop } from "../../components/v2/FilePicker";
 import { Pill } from "../../components/v2/Pill";
 import { isEditConflict } from "../../components/v2/states";
 import { plural } from "../../format";
@@ -30,9 +32,7 @@ function JsonFill({ onFill }: { onFill: (x: Record<string, any>) => void }) {
   };
   return (
     <div className="v2-sr-json">
-      <label className="v2-btn v2-btn--secondary v2-btn--sm" htmlFor={id}>Fill from a JSON file</label>
-      <input id={id} type="file" accept="application/json,.json" className="v2-sr" aria-describedby={`${id}-m`}
-        onChange={e => { const f = e.target.files?.[0]; e.target.value = ""; if (f) load(f); }} />
+      <FileDrop accept="application/json,.json" noun="a JSON file" pickLabel="Fill from a JSON file" aria-describedby={`${id}-m`} onFile={load} onReject={setMsg} />
       <span id={`${id}-m`} role="status" className={msg ? "v2-sr-err" : "v2-meta"}>{msg ?? (file ? `Filled from ${file}: check it, then add.` : "")}</span>
     </div>
   );
@@ -51,6 +51,8 @@ export function AddSeriesDialog({ left, onClose, onAdded }: { left: number; onCl
   const [places, setPlaces] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [symErr, setSymErr] = useState<string | null>(null);
+  const symIn = useRef<HTMLInputElement>(null);
 
   const search = async () => {
     if (!q.trim()) return;
@@ -60,13 +62,13 @@ export function AddSeriesDialog({ left, onClose, onAdded }: { left: number; onCl
     finally { setSearching(false); }
   };
   const pick = (i: LookupItem) => {
-    setSymbol(i.symbol); setName(i.symbol === i.name || !i.name ? i.symbol : `${i.symbol} (${i.name})`.slice(0, 60));
+    setSymErr(null); setSymbol(i.symbol); setName(i.symbol === i.name || !i.name ? i.symbol : `${i.symbol} (${i.name})`.slice(0, 60));
     setTheme(COMMODITY[i.symbol.toUpperCase().split("/")[0]] ?? AUTO);   // gold, oil: their own meaning; else the server sets it from the symbol
   };
   // a file's series fills the form (to check and edit, then add); a theme that isn't one of the choices is set from the symbol
   const fillFrom = (x: Record<string, any>) => {
     const sym = String(x.symbol ?? "").trim();
-    setSymbol(sym); setName(typeof x.name === "string" ? x.name.slice(0, 60) : "");
+    setSymErr(null); setSymbol(sym); setName(typeof x.name === "string" ? x.name.slice(0, 60) : "");
     setPlaces(Array.isArray(x.places) ? x.places.join(", ") : typeof x.places === "string" ? x.places : "");
     const id = x.theme && typeof x.theme === "object" ? themeId(x.theme as Theme, sym) : "";
     setTheme(id && id !== "custom" && themePresets(sym).some(t => t.id === id) ? id : COMMODITY[sym.toUpperCase().split("/")[0]] ?? AUTO);
@@ -74,7 +76,7 @@ export function AddSeriesDialog({ left, onClose, onAdded }: { left: number; onCl
   };
   const add = async () => {
     if (locked) return;
-    if (!symbol.trim()) { setErr("Choose a symbol from the search, or type one (for example EUR/USD)."); return; }
+    if (!symbol.trim()) { setSymErr("Choose a symbol from the search, or type one (for example EUR/USD)."); symIn.current?.focus(); return; }
     setBusy(true); setErr(null);
     try {
       const s = await seriesApi.create({ symbol: symbol.trim(), name: name.trim() || undefined, places: parsePlaces(places),
@@ -84,21 +86,20 @@ export function AddSeriesDialog({ left, onClose, onAdded }: { left: number; onCl
     } catch (e) { setErr(sayError(e)); }
     finally { setBusy(false); }
   };
-  const idq = useId(), ids = useId(), idn = useId(), idt = useId(), idp = useId();
   const noSlots = left <= 0;
   return (
-    <Dialog title="Add a series" wide onClose={onClose} initialFocus="input[type=search]" footer={<>
-      <span className="v2-meta v2-sr-slots">{plural(Math.max(left, 0), "series slot")} left</span>
-      <Button variant="quiet" onClick={onClose}>Cancel</Button>
-      <Button variant="primary" locked={locked} disabled={busy || noSlots} onClick={add}>{busy ? "Reading history…" : "Add and read history"}</Button></>}>
-      <p className="v2-sr-dlg__p">Amiri Agent reads about 2,000 hours of history from Twelve Data now (1 credit), then pulls new prices every hour. A move far outside normal becomes a finding. No model is involved.</p>
+    <Dialog title="Add a series" size="L" onClose={onClose} initialFocus="input[type=search]" actions={<>
+      <span className="v2-dlg__aside">{plural(Math.max(left, 0), "series slot")} left</span>
+      <Button onClick={onClose}>Cancel</Button>
+      <Button variant="primary" locked={locked} disabled={busy || noSlots} busy={busy} busyLabel="Reading history…" onClick={add}>Add and read history</Button></>}>
+      <p className="v2-sr-dlg__p">AMIRI Agent reads about 2,000 hours of history from Twelve Data now (1 credit), then pulls new prices every hour. A move far outside normal becomes a finding. No model is involved.</p>
       {noSlots && <p className="v2-sr-alert is-warn" role="status">All the series slots are used. Stop watching one to add another.</p>}
       <JsonFill onFill={fillFrom} />
       <div className="v2-sr-lookup">
-        <div className="v2-sr-field"><label htmlFor={idq}>Find a symbol</label>
-          <input id={idq} type="search" className="v2-sr-input" value={q} onChange={e => setQ(e.target.value)} placeholder="EUR, gold, Brent"
-            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); search(); } }} /></div>
-        <Button onClick={search} disabled={searching || !q.trim()}>{searching ? "Searching…" : "Search"}</Button>
+        <Field label="Find a symbol" className="v2-sr-lookup__f">
+          <Input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="EUR, gold, Brent"
+            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); search(); } }} /></Field>
+        <Button onClick={search} disabled={searching || !q.trim()} busy={searching} busyLabel="Searching…">Search</Button>
       </div>
       <p className="v2-meta">Each search uses 1 Twelve Data credit; the same search is free for a day.</p>
       {results && (results.length ? (
@@ -111,15 +112,14 @@ export function AddSeriesDialog({ left, onClose, onAdded }: { left: number; onCl
             </button></li>))}</ul>
       ) : <p className="v2-meta" role="status">Nothing found for “{q}”.</p>)}
       <div className="v2-sr-grid">
-        <div className="v2-sr-field"><label htmlFor={ids}>Symbol</label><input id={ids} className="v2-sr-input v2-sr-input--mono" value={symbol} onChange={e => setSymbol(e.target.value)} placeholder="EUR/USD" /></div>
-        <div className="v2-sr-field"><label htmlFor={idn}>Name shown</label><input id={idn} className="v2-sr-input" value={name} maxLength={60} onChange={e => setName(e.target.value)} placeholder="Defaults to the symbol" /></div>
-        <div className="v2-sr-field"><label htmlFor={idt}>What a move means</label>
-          <select id={idt} className="v2-sr-input" value={theme} onChange={e => setTheme(e.target.value)}>
+        <Field req label="Symbol" error={symErr ?? undefined}><Input ref={symIn} mono value={symbol} onChange={e => { setSymbol(e.target.value); setSymErr(null); }} placeholder="EUR/USD" /></Field>
+        <Field label="Name shown"><Input value={name} maxLength={60} onChange={e => setName(e.target.value)} placeholder="Defaults to the symbol" /></Field>
+        <Field label="What a move means" hint="The investigation reads findings by theme, so it needs no model for them.">
+          <Select value={theme} onChange={e => setTheme(e.target.value)}>
             {!COMMODITY[symbol.trim().toUpperCase().split("/")[0]] && <option value={AUTO}>Set from the symbol</option>}
-            {themePresets(symbol.trim()).map(t => <option key={t.id} value={t.id}>{t.label}</option>)}</select>
-          <span className="v2-sr-hint">The investigation reads findings by theme, so it needs no model for them.</span></div>
-        <div className="v2-sr-field"><label htmlFor={idp}>Places (ISO codes)</label><input id={idp} className="v2-sr-input" value={places} onChange={e => setPlaces(e.target.value)} placeholder="LK, AE" />
-          <span className="v2-sr-hint">Where a move matters; findings carry them. Empty: an FX pair gets its currency's country.</span></div>
+            {themePresets(symbol.trim()).map(t => <option key={t.id} value={t.id}>{t.label}</option>)}</Select></Field>
+        <Field label="Places (ISO codes)" hint="Where a move matters; findings carry them. Empty: an FX pair gets its currency's country.">
+          <Input value={places} onChange={e => setPlaces(e.target.value)} placeholder="LK, AE" /></Field>
       </div>
       {err && <p className="v2-sr-alert" role="alert">{err}</p>}
     </Dialog>
@@ -152,29 +152,26 @@ export function EditSeriesDialog({ s, onClose, onSaved }: { s: Series; onClose: 
       setErr(e instanceof ApiError && (e.code === "conflict" || isEditConflict(e)) ? "Someone changed this series meanwhile. Close this box and edit again." : sayError(e));
     } finally { setBusy(false); }
   };
-  const id = useId();
-  const f = (k: string) => `${id}-${k}`;
   return (
-    <Dialog title={`Edit ${s.name}`} wide onClose={onClose} initialFocus="input" footer={<>
-      <Button variant="quiet" onClick={onClose}>Cancel</Button>
-      <Button variant="primary" locked={locked} disabled={busy} onClick={save}>{busy ? "Saving…" : "Save"}</Button></>}>
+    <Dialog title={`Edit ${s.name}`} size="L" onClose={onClose} initialFocus="input" actions={<>
+      <Button onClick={onClose}>Cancel</Button>
+      <Button variant="primary" locked={locked} disabled={busy} busy={busy} busyLabel="Saving…" onClick={save}>Save</Button></>}>
       <div className="v2-sr-grid">
-        <div className="v2-sr-field"><label htmlFor={f("n")}>Name shown</label><input id={f("n")} className="v2-sr-input" value={name} maxLength={60} onChange={e => setName(e.target.value)} /></div>
-        <div className="v2-sr-field"><label htmlFor={f("s")}>Symbol</label><input id={f("s")} className="v2-sr-input v2-sr-input--mono" value={s.symbol} disabled />
-          <span className="v2-sr-hint">To watch another symbol, add a series.</span></div>
-        <div className="v2-sr-field"><label htmlFor={f("t")}>What a move means</label>
-          <select id={f("t")} className="v2-sr-input" value={theme} onChange={e => setTheme(e.target.value)}>
+        <Field label="Name shown"><Input value={name} maxLength={60} onChange={e => setName(e.target.value)} /></Field>
+        <Field label="Symbol" hint="To watch another symbol, add a series."><Input mono value={s.symbol} disabled /></Field>
+        <Field label="What a move means">
+          <Select value={theme} onChange={e => setTheme(e.target.value)}>
             {themePresets(s.symbol).map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-            {themeId(s.theme, s.symbol) === "custom" && <option value="custom">{themeLabel(s.theme)}</option>}</select></div>
-        <div className="v2-sr-field"><label htmlFor={f("p")}>Places (ISO codes)</label><input id={f("p")} className="v2-sr-input" value={places} onChange={e => setPlaces(e.target.value)} /></div>
+            {themeId(s.theme, s.symbol) === "custom" && <option value="custom">{themeLabel(s.theme)}</option>}</Select></Field>
+        <Field label="Places (ISO codes)"><Input value={places} onChange={e => setPlaces(e.target.value)} /></Field>
       </div>
       <h3 className="v2-cap">When it flags a move</h3>
       <div className="v2-sr-grid">
-        <div className="v2-sr-field"><label htmlFor={f("z")}>Flags at (× a usual move)</label><input id={f("z")} className="v2-sr-input" type="number" step="0.5" min={1} max={10} value={d.z_threshold} onChange={num("z_threshold")} /></div>
-        <div className="v2-sr-field"><label htmlFor={f("w")}>Move lengths (trading days)</label><input id={f("w")} className="v2-sr-input" value={windows} onChange={e => setWindows(e.target.value)} /><span className="v2-sr-hint">Up to 4, each 1 to 20.</span></div>
-        <div className="v2-sr-field"><label htmlFor={f("g")}>A usual move from the last … trading days</label><input id={f("g")} className="v2-sr-input" type="number" min={20} max={250} value={d.sigma_days} onChange={num("sigma_days")} /></div>
-        <div className="v2-sr-field"><label htmlFor={f("c")}>Quiet after flagging (hours)</label><input id={f("c")} className="v2-sr-input" type="number" min={0} max={168} value={d.cooldown_hours} onChange={num("cooldown_hours")} /></div>
-        <div className="v2-sr-field"><label htmlFor={f("l")}>Late after (market hours without a price)</label><input id={f("l")} className="v2-sr-input" type="number" min={1} max={168} value={d.stale_after_hours} onChange={num("stale_after_hours")} /></div>
+        <Field label="Flags at (× a usual move)"><Input type="number" step="0.5" min={1} max={10} value={d.z_threshold} onChange={num("z_threshold")} /></Field>
+        <Field label="Move lengths (trading days)" hint="Up to 4, each 1 to 20."><Input value={windows} onChange={e => setWindows(e.target.value)} /></Field>
+        <Field label="A usual move from the last … trading days"><Input type="number" min={20} max={250} value={d.sigma_days} onChange={num("sigma_days")} /></Field>
+        <Field label="Quiet after flagging (hours)"><Input type="number" min={0} max={168} value={d.cooldown_hours} onChange={num("cooldown_hours")} /></Field>
+        <Field label="Waiting for prices after (market hours without a price)"><Input type="number" min={1} max={168} value={d.stale_after_hours} onChange={num("stale_after_hours")} /></Field>
       </div>
       {err && <p className="v2-sr-alert" role="alert">{err}</p>}
     </Dialog>
@@ -185,9 +182,9 @@ export function EditSeriesDialog({ s, onClose, onSaved }: { s: Series; onClose: 
 export function StopWatchingDialog({ s, onClose, onConfirm, busy }: { s: Series; onClose: () => void; onConfirm: () => void; busy: boolean }) {
   const locked = useDemoLock();
   return (
-    <Dialog title={`Stop watching ${s.name}?`} onClose={onClose} footer={<>
-      <Button variant="quiet" onClick={onClose}>Cancel</Button>
-      <Button variant="primary" locked={locked} disabled={busy} onClick={onConfirm}>{busy ? "Stopping…" : "Stop watching"}</Button></>}>
+    <Dialog tone="danger" title={`Stop watching ${s.name}?`} onClose={onClose} actions={<>
+      <Button onClick={onClose}>Cancel</Button>
+      <Button variant="primary" locked={locked} disabled={busy} busy={busy} busyLabel="Stopping…" onClick={onConfirm}>Stop watching</Button></>}>
       <p>Its stored prices and fetch log are removed and it frees a series slot. Moves it already flagged stay as findings.</p>
     </Dialog>
   );

@@ -2,8 +2,12 @@
 // grouped by what became of each one: waiting for the next investigation, being investigated, in an event (under the
 // event's name), couldn't be investigated, no impact found. Tabs by status and a Source filter. Reloads every 30 s; a
 // finding that is on its way is asked about every 3 s until it lands (UI_POLLING_NOTE.md). Refresh reloads now.
+import { seriesName } from "../series/words";
+import { Checkbox } from "../../components/v2/Choice";
+import { Select } from "../../components/v2/Field";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { peek } from "../../api/client";
 import { investigationApi, type EventRow, type FindingRow } from "../../api/investigation";
 import { monitorsApi } from "../../api/monitors";
 import { seriesApi } from "../../api/series";
@@ -17,7 +21,7 @@ import { LoadError } from "../../components/v2/LoadError";
 import { useCrumbs } from "../../components/v2/Shell";
 import { StaleBanner } from "../../components/v2/StaleBanner";
 import { TabPanel, Tabs } from "../../components/v2/Tabs";
-import { ago, plural, TIME_ZONE } from "../../format";
+import { ago, plural, TIME_ZONE, ZONE_LABEL } from "../../format";
 import { DAYS, useRecentFindings, useSandboxFindings } from "./recent";
 import { pollRun } from "../events/poll";
 import { useInvestigationStatus } from "../events/investigate";
@@ -48,10 +52,11 @@ export function FindingsPage() {
   const [sim, setSim] = useState(false);             // findings made by tests stay out of the live picture unless asked for
   const [more, setMore] = useState<Record<string, boolean>>({});  // groups opened to show every finding
   const [checking, setChecking] = useState<string | null>(null);
-  const [events, setEvents] = useState<Record<string, EventRow>>({});
-  const [eventsReady, setEventsReady] = useState(false);          // the group names wait for the events (or their failure)
-  const [monitorNames, setMonitorNames] = useState<Record<string, string>>({});
-  const [seriesNames, setSeriesNames] = useState<Record<string, string>>({});
+  const [seen] = useState(() => peek(() => investigationApi.events(LIST_LIMIT)));  // seen before: shown at once, refreshed below (F4)
+  const [events, setEvents] = useState<Record<string, EventRow>>(() => Object.fromEntries((seen ?? []).map(e => [e.event_id, e])));
+  const [eventsReady, setEventsReady] = useState(seen !== undefined);          // the group names wait for the events (or their failure)
+  const [monitorNames, setMonitorNames] = useState<Record<string, string>>(() => Object.fromEntries((peek(() => monitorsApi.list()) ?? []).map(m => [m.monitor_id, m.name])));
+  const [seriesNames, setSeriesNames] = useState<Record<string, string>>(() => Object.fromEntries((peek(() => seriesApi.list()) ?? []).map(s => [s.series_id, s.name])));
   const sourceId = useId();
 
   const { items, err, loadedAt } = live;
@@ -127,7 +132,7 @@ export function FindingsPage() {
 
   const names = usePlaceNames(useMemo(() => [...new Set(all.flatMap(f => f.places))], [all]));
   const ctx: RowContext = {
-    sourceName: f => (f.source === "monitor" ? monitorNames[f.source_ref?.monitor_id ?? ""] : f.source === "timeseries" ? seriesNames[f.source_ref?.series_id ?? ""] : null) ?? null,
+    sourceName: f => (f.source === "monitor" ? monitorNames[f.source_ref?.monitor_id ?? ""] : f.source === "timeseries" ? (() => { const n = seriesNames[f.source_ref?.series_id ?? ""]; return n ? seriesName(n) : null; })() : null) ?? null,
     placeName: names, now, timeZone: TIME_ZONE, targetId: target, checking, onCheck: check,
   };
 
@@ -166,13 +171,13 @@ export function FindingsPage() {
         <Tabs label="Status" tabs={tabs} value={tab} onChange={id => isTab(id) && setTab(id)} className="v2-fd-tabs"
           trailing={<div className="v2-fd-tools">
             <label className="v2-fd-source" htmlFor={sourceId}>Source
-              <select id={sourceId} className="v2-fd-select" value={source} onChange={e => isSourceFilter(e.target.value) && setSource(e.target.value)}>
+              <Select inline id={sourceId} value={source} onChange={e => isSourceFilter(e.target.value) && setSource(e.target.value)}>
                 {SOURCE_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
-              </select></label></div>}>
+              </Select></label></div>}>
           <TabPanel id={tab}>
             {nSim > 0 && (
               <div className="v2-fd-sim">
-                <label><input type="checkbox" checked={sim} onChange={e => setSim(e.target.checked)} /> Also show {plural(nSim, "test finding")} (from tests; not real)</label>
+                <Checkbox checked={sim} onChange={e => setSim(e.target.checked)} label={`Also show ${plural(nSim, "test finding")} (from tests; not real)`} />
                 {hasSim && <ClearSimulated onDone={refresh} />}
               </div>)}
             {loading ? (err == null && <FindingsSkeleton />)
@@ -186,7 +191,7 @@ export function FindingsPage() {
                 {(items?.length ?? 0) >= LIST_LIMIT && <p className="v2-meta v2-fd-cap">Showing the newest {LIST_LIMIT} findings.</p>}
                 <p className="v2-meta v2-fd-foot">
                   A finding is something a monitor, a market price or Radar noticed. The investigation links it to an event, or finds no impact on your products.
-                  Times are in the institution's time zone.
+                  Times are in {ZONE_LABEL}.
                 </p>
               </>}
           </TabPanel>

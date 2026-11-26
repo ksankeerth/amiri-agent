@@ -3,10 +3,11 @@
 import { useId, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { Custom, HeadlineIn, Mode, PriceMove, Scenario, Simulation } from "../../api/studio";
-import { guarded, lockAttrs } from "../../components/demoLock";
 import { useDemoLock } from "../../components/lock";
 import { Button } from "../../components/v2/Button";
+import { Checkbox, Segmented, Switch } from "../../components/v2/Choice";
 import { DirectionMark } from "../../components/v2/Direction";
+import { Field, Input, Select, Textarea } from "../../components/v2/Field";
 import { DIRECTIONS, directionOf } from "../../components/v2/directionWords";
 import { MoreMenu } from "../../components/v2/MoreMenu";
 import { Pill } from "../../components/v2/Pill";
@@ -22,60 +23,27 @@ export type Save = (body: SaveBody) => Promise<boolean>;
 
 const newId = () => `c-${Math.random().toString(36).slice(2, 8)}`;
 
-/** An on/off switch: a button with a state, so it works with Space and Enter. Locked: still focusable, says why. */
-function Switch({ on, label, locked, onToggle }: { on: boolean; label: string; locked: boolean; onToggle: () => void }) {
-  return (
-    <button type="button" role="switch" aria-checked={on} aria-label={label} className="v2-st-sw" {...lockAttrs(locked)} onClick={guarded(locked, onToggle)}>
-      <span className="v2-st-sw__knob" aria-hidden="true" />
-    </button>
-  );
-}
-
-/** A small set of choices in one box (Low, Medium, High): real radio buttons, so the arrow keys move between them. */
-function Segmented<T extends string>({ label, value, options, locked, onChange }: {
-  label: string; value: T; options: { value: T; label: string }[]; locked: boolean; onChange: (v: T) => void;
-}) {
-  const id = useId();
-  return (
-    <div className="v2-st-seg-wrap">
-      <div className="v2-cap" id={id}>{label}</div>
-      <div role="radiogroup" aria-labelledby={id} className="v2-st-seg">
-        {options.map(o => (
-          <label key={o.value} className="v2-st-seg__o" {...lockAttrs(locked)}>
-            <input type="radio" name={id} value={o.value} checked={value === o.value} aria-disabled={locked || undefined} onChange={() => { if (!locked) onChange(o.value); }} />
-            <span>{o.label}</span>
-          </label>))}
-      </div>
-    </div>
-  );
-}
-
 /** One headline, written or changed in place. Not a <form>: Enter never saves by accident. */
 function HeadlineForm({ value, dayLabel, locked, onSave, onCancel }: {
   value: HeadlineIn; dayLabel: (d: number) => string; locked: boolean; onSave: (h: HeadlineIn) => void; onCancel: () => void;
 }) {
   const [h, setH] = useState(value);
-  const ids = { t: useId(), d: useId(), at: useId(), e: useId() };
   const err = headlineError(h.title);
   return (
     <div className="v2-st-hform" role="group" aria-label={value.title ? "Change this headline" : "Write a headline"}>
-      <div className="v2-st-field">
-        <label htmlFor={ids.t}>Headline</label>
-        <textarea id={ids.t} className="v2-st-input" rows={2} autoFocus maxLength={200} value={h.title} placeholder="e.g. Dockworkers at the main port strike for a week"
-          aria-invalid={!!err} aria-describedby={err ? ids.e : undefined} onChange={e => setH({ ...h, title: e.target.value })} />
-        {err && <p id={ids.e} className="v2-st-err">{err}</p>}
-      </div>
+      <Field req label="Headline" error={err ?? undefined}>
+        <Textarea rows={2} autoFocus maxLength={200} value={h.title} placeholder="e.g. Dockworkers at the main port strike for a week"
+          onChange={e => setH({ ...h, title: e.target.value })} />
+      </Field>
       <div className="v2-st-hform__row">
-        <div className="v2-st-field v2-st-field--day">
-          <label htmlFor={ids.d}>Published on</label>
-          <select id={ids.d} className="v2-st-input" value={h.day} onChange={e => setH({ ...h, day: Number(e.target.value) })}>
+        <Field label="Published on" className="v2-st-field--day">
+          <Select value={h.day} onChange={e => setH({ ...h, day: Number(e.target.value) })}>
             {Array.from({ length: DAYS }, (_, i) => i + 1).map(d => <option key={d} value={d}>Day {d} · {dayLabel(d)}</option>)}
-          </select>
-        </div>
-        <div className="v2-st-field v2-st-field--time">
-          <label htmlFor={ids.at}>At</label>
-          <input id={ids.at} className="v2-st-input" type="time" value={h.time} onChange={e => setH({ ...h, time: e.target.value || "09:00" })} />
-        </div>
+          </Select>
+        </Field>
+        <Field label="At" className="v2-st-field--time">
+          <Input type="time" value={h.time} onChange={e => setH({ ...h, time: e.target.value || "09:00" })} />
+        </Field>
         <span className="v2-st-grow" />
         <Button variant="quiet" onClick={onCancel}>Cancel</Button>
         <Button locked={locked} disabled={!headlineOk(h.title)} onClick={() => onSave({ ...h, title: h.title.trim() })}>Save headline</Button>
@@ -105,10 +73,10 @@ function Headlines({ s, save, startOpen, own, locked }: { s: Scenario; save: Sav
         meta={<><span className="v2-chip">{onCount(all.length, nOff)}</span><span className="v2-meta">· simulated, marked as such</span></>}
         action={editing !== "new" && all.length < MAX_HEADLINES
           ? <Button variant="quiet" size="sm" locked={locked} onClick={() => setEditing("new")}>+ Add a headline</Button> : undefined} />
-      <p className="v2-meta v2-st-heads__note">{own ? "They never reach the live pages. Amiri Agent's monitor reads each one on its day." : "Switch one off to leave it out of the run. Their figures come from the price path; sizes are illustrative."}</p>
+      <p className="v2-meta v2-st-heads__note">{own ? "They never reach the live pages. AMIRI Agent's monitor reads each one on its day." : "Switch one off to leave it out of the run. Their figures come from the price path; sizes are illustrative."}</p>
       <ul className="v2-st-hlist">
         {all.length === 0 && editing !== "new" && (
-          <li className="v2-st-hnone">No headlines yet. Write what happens and on which day: Amiri Agent's monitor reads each headline the day it is published.{" "}
+          <li className="v2-st-hnone">No headlines yet. Write what happens and on which day: AMIRI Agent's monitor reads each headline the day it is published.{" "}
             <Button variant="quiet" size="sm" locked={locked} onClick={() => setEditing("new")}>Write the first headline</Button></li>)}
         {all.map((h, i) => editing === h.id
           ? <li key={h.id}><HeadlineForm value={{ id: h.id, title: h.title, day: h.day, time: h.time }} dayLabel={dayLabel} locked={locked} onSave={upsert} onCancel={() => setEditing(null)} /></li>
@@ -121,7 +89,7 @@ function Headlines({ s, save, startOpen, own, locked }: { s: Scenario; save: Sav
                 {(off.has(h.id) || (h.story === "custom" && b.template_id !== "blank")) && <span className="v2-st-hl__tag">
                   {[off.has(h.id) ? "switched off" : "", h.story === "custom" && b.template_id !== "blank" ? "added by you" : ""].filter(Boolean).join(", ")}</span>}
               </span>
-              <Switch on={!off.has(h.id)} locked={locked} label={`Include headline ${i + 1}: ${h.title}`} onToggle={() => toggle(h.id)} />
+              <Switch checked={!off.has(h.id)} locked={locked} aria-label={`Include headline ${i + 1}: ${h.title}`} onChange={() => toggle(h.id)} />
               <MoreMenu label={`More for headline ${i + 1}: ${h.title}`} items={[
                 { label: "Edit", locked, onSelect: () => setEditing(h.id) },
                 { label: "Remove", locked, danger: true, onSelect: () => remove(h.id) },
@@ -139,35 +107,31 @@ function Headlines({ s, save, startOpen, own, locked }: { s: Scenario; save: Sav
 function PriceMoveForm({ s, save, locked }: { s: Scenario; save: Save; locked: boolean }) {
   const cur = s.built.institution.currency === "USD" ? "US dollar" : s.built.institution.currency;
   const [m, setM] = useState<PriceMove>(s.built.prices.move ?? { direction: "none", size_pct: 0, ramp_days: 5 });
-  const ids = { d: useId(), s: useId(), r: useId(), e: useId() };
+  const errId = useId();
   const err = priceMoveError(m);
   const saved = sameMove(s.built.prices.move, m);
-  const ro = locked ? { readOnly: true, "aria-readonly": true } as const : {};
   return (
     <div className="v2-st-move" role="group" aria-label="The price move">
-      <div className="v2-st-field">
-        <label htmlFor={ids.d}>Exchange rate</label>
-        <select id={ids.d} className="v2-st-input" value={m.direction} {...lockAttrs(locked)}
+      <Field label="Exchange rate">
+        <Select value={m.direction} locked={locked}
           onChange={e => { if (!locked) setM({ ...m, direction: e.target.value as PriceMove["direction"], size_pct: m.size_pct || 5 }); }}>
           <option value="none">No price move</option>
           <option value="weaker">The {cur} weakens against the US dollar</option>
           <option value="stronger">The {cur} strengthens against the US dollar</option>
-        </select>
-      </div>
+        </Select>
+      </Field>
       {m.direction !== "none" && (
         <div className="v2-st-move__row">
-          <div className="v2-st-field">
-            <label htmlFor={ids.s}>By (%)</label>
-            <input id={ids.s} className="v2-st-input" type="number" min={0.5} max={30} step={0.5} value={m.size_pct} {...ro} aria-invalid={!!err}
-              aria-describedby={err ? ids.e : undefined} onChange={e => { if (!locked) setM({ ...m, size_pct: Number(e.target.value) }); }} />
-          </div>
-          <div className="v2-st-field">
-            <label htmlFor={ids.r}>Over (business days)</label>
-            <input id={ids.r} className="v2-st-input" type="number" min={1} max={15} value={m.ramp_days} {...ro} aria-invalid={!!err}
-              aria-describedby={err ? ids.e : undefined} onChange={e => { if (!locked) setM({ ...m, ramp_days: Number(e.target.value) }); }} />
-          </div>
+          <Field label="By (%)">
+            <Input type="number" min={0.5} max={30} step={0.5} value={m.size_pct} locked={locked} invalid={!!err} aria-describedby={err ? errId : undefined}
+              onChange={e => setM({ ...m, size_pct: Number(e.target.value) })} />
+          </Field>
+          <Field label="Over (business days)">
+            <Input type="number" min={1} max={15} value={m.ramp_days} locked={locked} invalid={!!err} aria-describedby={err ? errId : undefined}
+              onChange={e => setM({ ...m, ramp_days: Number(e.target.value) })} />
+          </Field>
         </div>)}
-      {err && <p id={ids.e} className="v2-st-err">{err}</p>}
+      {err && <p id={errId} className="v2-field__err" role="alert"><span aria-hidden="true">▲ </span>{err}</p>}
       {!saved && <Button locked={locked} disabled={!priceMoveOk(m)} onClick={() => save({ custom: { prices: m } })}>Save the price move</Button>}
     </div>
   );
@@ -195,7 +159,7 @@ export function Editor({ s, current, fresh, save, onAskDelete, onRun, starting, 
   const running = !!current;
   const [naming, setNaming] = useState<string | null>(null);
   const [record, setRecord] = useState(false);
-  const nameId = useId(), hintId = useId(), recId = useId();
+  const nameId = useId(), hintId = useId();
   const nameIn = useRef<HTMLInputElement>(null);
   const rename = async () => { if (naming?.trim() && await save({ title: naming.trim() })) setNaming(null); };
   const startFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: b.institution.time_zone });
@@ -213,8 +177,7 @@ export function Editor({ s, current, fresh, save, onAskDelete, onRun, starting, 
         {naming !== null ? (
           <>
             <div className="v2-st-field v2-st-grow">
-              <label htmlFor={nameId} className="v2-sr">Scenario name</label>
-              <input id={nameId} ref={nameIn} className="v2-st-input v2-st-name" autoFocus value={naming} maxLength={120} autoComplete="off"
+              <Input id={nameId} ref={nameIn} aria-label="Scenario name" className="v2-st-name" autoFocus value={naming} maxLength={120} autoComplete="off"
                 onChange={e => setNaming(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); rename(); } if (e.key === "Escape") setNaming(null); }} />
             </div>
             <Button locked={locked} disabled={!naming.trim()} onClick={rename}>Save</Button>
@@ -234,17 +197,15 @@ export function Editor({ s, current, fresh, save, onAskDelete, onRun, starting, 
       <div className="v2-st-set">
         {own ? <PriceMoveForm key={s.version} s={s} save={save} locked={locked} /> : (
           <>
-            <Segmented label="How hard it hits" value={s.intensity} locked={locked} onChange={v => save({ intensity: v })}
+            <Segmented caption label="How hard it hits" value={s.intensity} locked={locked} onChange={v => save({ intensity: v })}
               options={(["low", "medium", "high"] as const).map(v => ({ value: v, label: intensityWord(v) }))} />
-            <label className="v2-st-check" {...lockAttrs(locked)}>
-              <input type="checkbox" checked={!off.has("prices")} aria-disabled={locked || undefined}
-                onChange={() => { if (!locked) save({ switched_off: off.has("prices") ? s.switched_off.filter(x => x !== "prices") : [...s.switched_off, "prices"] }); }} />
-              <span>Move {b.prices.symbol} ({b.prices.shock.size_pct.toFixed(1)}% over {b.prices.shock.ramp_business_days} business days)</span>
-            </label>
+            <Checkbox checked={!off.has("prices")} locked={locked}
+              onChange={() => save({ switched_off: off.has("prices") ? s.switched_off.filter(x => x !== "prices") : [...s.switched_off, "prices"] })}
+              label={`Move ${b.prices.name || b.prices.symbol} by ${Number(b.prices.shock.size_pct.toFixed(1))}% over ${b.prices.shock.ramp_business_days} business days`} />
           </>)}
         {!own && stories.length > 0 && (
           <div className="v2-st-find">
-            <div className="v2-cap">What Amiri Agent should find</div>
+            <div className="v2-cap">What AMIRI Agent should find</div>
             <ul className="v2-st-pills">
               {stories.map(st => (
                 <li key={st.key}>
@@ -285,12 +246,9 @@ export function Editor({ s, current, fresh, save, onAskDelete, onRun, starting, 
           <Button size="lg" disabled={running || empty || !canReplay || starting} aria-describedby={hintId} onClick={() => onRun("replay")}>Replay instantly</Button>
           <span id={hintId} className="v2-st-run__hint">{replayHint ?? liveHint}</span>
           <div className="v2-st-run__live">
-            <label className="v2-st-check" htmlFor={recId}>
-              <input id={recId} type="checkbox" checked={record} onChange={e => setRecord(e.target.checked)} />
-              <span>Record this run</span>
-            </label>
-            <Button size="lg" variant="primary" disabled={running || empty || starting} onClick={() => onRun(liveMode(record))}>
-              {starting ? "Starting…" : <>Run with the live agents<span aria-hidden="true"> →</span></>}</Button>
+            <Checkbox checked={record} onChange={e => setRecord(e.target.checked)} label="Record this run" />
+            <Button size="lg" variant="primary" disabled={running || empty || starting} busy={starting} busyLabel="Starting…" onClick={() => onRun(liveMode(record))}>
+              Run with the live agents<span aria-hidden="true"> →</span></Button>
           </div>
         </div>
         {shared && <p className="v2-st-run__shared v2-meta" role="status">{shared}</p>}

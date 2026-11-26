@@ -22,6 +22,7 @@ import {
   STORY_WORD, statusPill, teamsOf, timeOfDay, timeRow, toneWords, type StoryRow, type TimeRow,
 } from "./runWords";
 import { findingsSplit, trackDays } from "./words";
+import { SkBar } from "../../components/v2/Skeleton";
 
 type Alert = Simulation["alerts"][number];
 
@@ -127,7 +128,7 @@ export function EndPanel({ sim, scenario, rows, busy, onStart }: EndProps) {
         {sim.status === "stopped" && hint && sim.mode === "record" && <p className="v2-meta">{hint}</p>}
       </div>
       <div className="v2-run-end__btns">
-        {again && <Button variant={done ? "secondary" : "primary"} disabled={busy} onClick={() => onStart(again)}>{busy ? "Starting…" : again === "record" ? "Record it again" : "Run again"}</Button>}
+        {again && <Button variant={done ? "secondary" : "primary"} disabled={busy} busy={busy} busyLabel="Starting…" onClick={() => onStart(again)}>{again === "record" ? "Record it again" : "Run again"}</Button>}
         {ready && <Button disabled={busy} onClick={() => onStart("replay")}>{done || !again ? "Replay" : "Replay instead"}</Button>}
         {back}
       </div>
@@ -138,8 +139,8 @@ export function EndPanel({ sim, scenario, rows, busy, onStart }: EndProps) {
 /** "Stop this run?" before the end of a run that can't be taken back. */
 export function StopDialog({ onCancel, onGo, busy }: { onCancel: () => void; onGo: () => void; busy: boolean }) {
   return (
-    <Dialog title="Stop this run?" onClose={onCancel}
-      footer={<><Button onClick={onCancel}>Keep it going</Button><Button variant="primary" onClick={onGo} disabled={busy}>{busy ? "Stopping…" : "Stop the run"}</Button></>}>
+    <Dialog tone="danger" title="Stop this run?" onClose={onCancel}
+      actions={<><Button onClick={onCancel}>Keep it going</Button><Button variant="primary" onClick={onGo} disabled={busy} busy={busy} busyLabel="Stopping…">Stop the run</Button></>}>
       <p>Pause keeps the run where it is. Stop ends it for good: its clock won't move again, and a recording being made won't be complete.</p>
       <p className="v2-meta">What it found so far stays on this page.</p>
     </Dialog>
@@ -293,9 +294,9 @@ export function Timeline({ timeline, tz, more, onMore }: { timeline: TimelineIte
 export function RunSkeleton() {
   return (
     <div className="v2-run-sk" aria-hidden="true">
-      <span className="v2-run-sk__b" style={{ width: 260, height: 24 }} />
-      <span className="v2-run-sk__b" style={{ width: "min(520px, 100%)", height: 44 }} />
-      <span className="v2-run-sk__b" style={{ width: "100%", height: 14 }} />
+      <SkBar w={260} h={24} r="var(--v2-r-sm)" />
+      <SkBar w="min(520px, 100%)" h={44} r="var(--v2-r-sm)" />
+      <SkBar w="100%" h={14} r="var(--v2-r-sm)" />
     </div>
   );
 }

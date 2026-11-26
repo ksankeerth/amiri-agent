@@ -33,8 +33,7 @@ export function DraftFromProfile({ onClose, only }: { onClose: () => void; only?
   if (only) return null;
   const groups = Object.keys(SECTION_WORDS).map(s => [s, (items ?? []).filter(i => i.section === s)] as const).filter(([, xs]) => xs.length);
   return (
-    <Dialog title="Draft a monitor from your profile" onClose={onClose} wide footer={<Button onClick={onClose}>Close</Button>}>
-      <p className="v2-mn-draft__lead">Pick something from your institution profile. Code drafts the name, the sentence, the "tell me if" lines, the names, the places and who it could reach; you check and edit them before submitting. Nothing runs until someone approves it.</p>
+    <Dialog size="L" title="Draft a monitor from your profile" description={<>Pick something from your institution profile. Code drafts the name, the sentence, the "tell me if" lines, the names, the places and who it could reach; you check and edit them before submitting. Nothing runs until someone approves it.</>} onClose={onClose} actions={<Button onClick={onClose}>Close</Button>}>
       {loadErr != null ? <LoadError error={loadErr} onRetry={loadItems} what="what can be drafted" />
         : items === null ? <p className="v2-meta" role="status">Loading…</p>
         : !groups.length ? <p className="v2-meta">The profile has no risks, regulators, rivals, flows or counterparties yet.</p>
@@ -43,8 +42,8 @@ export function DraftFromProfile({ onClose, only }: { onClose: () => void; only?
             <h3 className="v2-cap">{SECTION_WORDS[s]}</h3>
             <ul className="v2-mn-draft__l">{xs.map(i => (
               <li key={i.item_id}>
-                <Button size="sm" locked={locked} disabled={!!busy && busy !== i.item_id} onClick={() => draft(i)}>
-                  {busy === i.item_id ? "Drafting…" : i.label}{i.monitor_id && !busy && <span className="v2-meta"> · already watched</span>}</Button>
+                <Button size="sm" locked={locked} disabled={!!busy && busy !== i.item_id} busy={busy === i.item_id} busyLabel="Drafting…" onClick={() => draft(i)}>
+                  {i.label}{i.monitor_id && !busy && <span className="v2-meta"> · already watched</span>}</Button>
               </li>))}</ul>
           </div>))}
     </Dialog>

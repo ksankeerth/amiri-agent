@@ -3,6 +3,7 @@
 import { day, person, plural } from "../../format.ts";
 import { alertChangeText, cap, checkMove, splitCheckText, verdictWhy } from "../../plain.ts";
 import { dataSays, type TaskLike } from "../events/eventWords.ts";
+import { mergeEffects, type EffectKey } from "../events/mergeEffects.ts";
 import type { PillTone } from "../../components/v2/verdictWords.ts";
 
 interface Entry { at: string; change: string; text?: string | null; by?: string }
@@ -30,7 +31,7 @@ export function historySummary(history: Entry[], raisedAt: string, lastChecked?:
     }
     flush();
     if (h.change === "raised") { raised = true; parts.push(`raised ${day(h.at)}`); continue; }
-    const who = h.by && h.by !== "Amiri Agent" ? ` by ${person(h.by)}` : "";
+    const who = h.by && h.by !== "AMIRI Agent" ? ` by ${person(h.by)}` : "";
     parts.push(`${alertChangeText(h).toLowerCase()}${who} ${day(h.at)}`);
   }
   flush();
@@ -51,6 +52,12 @@ export const parseTab = (s: string | null | undefined): Tab => (s === "acknowled
 export const LEVELS: { id: "" | LevelKey; label: string }[] = [
   { id: "", label: "Any" }, { id: "warning", label: "Early warning" }, { id: "developing", label: "Developing" }, { id: "adverse", label: "Confirmed" },
 ];
+/** The phone's "Filter" button: how many filters are on, and the same in words beside it ("Retail banking · Early warning"). */
+export function filterState(team: string, level: "" | LevelKey): { n: number; label: string; summary: string } {
+  const lv = level ? LEVELS.find(l => l.id === level)?.label ?? "" : "";
+  const n = (team ? 1 : 0) + (lv ? 1 : 0);
+  return { n, label: n ? `Filter · ${n}` : "Filter", summary: [team, lv].filter(Boolean).join(" · ") };
+}
 export const parseLevel = (s: string | null | undefined): "" | LevelKey => (s === "warning" || s === "developing" || s === "adverse" ? s : "");
 
 /** An alert's level as a pill: the word says it; red for an early warning, amber while it develops, ink once your data confirms it. */
@@ -102,8 +109,26 @@ export function limitNote(total: number | undefined, shown: number): string | nu
 }
 
 // ---------------------------------------------------------------- the list
-/** "Texas power prices spike · 2 effects". */
-export const listMeta = (eventTitle: string, effects: number): string => `${eventTitle} · ${effects === 0 ? "no effects yet" : plural(effects, "effect")}`;
+/** "Texas power prices spike · +4 more effects": the list row names the first effect in its title, so the rest are "more". */
+export const listMeta = (eventTitle: string, effects: number): string =>
+  `${eventTitle} · ${effects === 0 ? "no effects yet" : effects === 1 ? "1 effect" : moreEffects(effects - 1)}`;
+
+/** The list's short title. The stored title names every product ("Tech Employee Savings: deposit inflow expected to fall (and 4
+ *  more effects on Data-Center Contractor Credit Lines, …)"): the row keeps the first product, metric and direction; the count is
+ *  in the meta line and the whole sentence stays in the pane's heading. With no tail to cut, the first effect is spelled out when
+ *  the title is long; a short title is left alone. */
+const TAIL = /\s*\(and \d+ more effects? on .*\)\s*$/;
+export function shortTitle(title: string, first?: { product: string; metric_name: string; direction: string } | null): string {
+  const cut = title.replace(TAIL, "");
+  if (cut !== title || !first || title.length <= 90) return cut;
+  const dir = first.direction === "rise" ? "rise" : first.direction === "fall" ? "fall" : "move";
+  return `${first.product}: ${first.metric_name} expected to ${dir}`;
+}
+/** The title the list row and the pane heading both show. The long server sentence stays on the heading's title attribute. */
+export const alertTitle = (a: { title: string; effects: { product: string; metric_name: string; direction: string }[] }): string => shortTitle(a.title, a.effects[0]);
+/** The "+N more effects" count: effects after the duplicates are merged, the same way the list and the pane count them. */
+export const effectCount = (effects: EffectKey[]): number => mergeEffects(effects).length;
+
 /** The line a person leaves on an alert: "Acknowledged by Dilan, 2 h ago" / "Resolved by Dilan, 3 days ago". */
 export function whoLine(a: { status: string; acknowledged_by: string | null; acknowledged_at: string | null; resolved_by: string | null; resolved_at: string | null },
   ago: (iso: string) => string): string | null {
@@ -147,17 +172,25 @@ export function effectSays(e: EffectLike, task: TaskLike | undefined, today: str
   return { verdict: null, word: "Not checked yet", off: false, line: null };
 }
 
-/** Effects with a result in: anything but "not published yet" (the Event page counts the same way). */
+/** Effects with a result in: anything but "waiting for your data" (the Event page counts the same way). */
 export const checkedCount = (effects: EffectLike[]): number => effects.filter(e => e.check && e.check.verdict !== "not_yet").length;
 
 /** "Checked against your data: 1 of 2." and what is left to say. `next` is the earliest next check ("next check 1 Dec"). */
 export function progressWords(done: number, total: number, next: string | null, checksOff: boolean): { strong: string; rest: string } | null {
   if (total === 0) return null;
-  if (checksOff) return { strong: "Checks are off.", rest: "Amiri Agent can't test these against your data." };
+  if (checksOff) return { strong: "Checks are off.", rest: "AMIRI Agent can't test these against your data." };
   if (done === 0) return { strong: "Not checked against your data yet.", rest: next ? `${cap(next)}.` : "It waits for your figures." };
   const left = total - done;
   return { strong: `Checked against your data: ${done} of ${total}.`, rest: left === 0 ? "" : left === 1 ? "The other waits for your figures." : `The other ${left} wait for your figures.` };
 }
+
+/** How many effects the pane shows before "+N more effects": three, and a longer list is folded. */
+export const EFFECTS_SHOWN = 3;
+export function effectsShown(total: number, all: boolean): { shown: number; hidden: number } {
+  const shown = all ? total : Math.min(total, EFFECTS_SHOWN);
+  return { shown, hidden: total - shown };
+}
+export const moreEffects = (n: number): string => `+${n} more ${n === 1 ? "effect" : "effects"}`;
 
 /** "Evidence · 3 findings". */
 export const evidenceTitle = (findings: number): string => `Evidence · ${plural(findings, "finding")}`;

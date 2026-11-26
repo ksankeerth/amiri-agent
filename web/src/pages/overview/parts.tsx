@@ -1,7 +1,8 @@
 // The Overview's parts (board 00): the hero with the map, the numbered tiles, the open events, findings and Radar,
 // what needs you, and the prices. Page logic stays in ../Overview.tsx; the words and rules are in ./words.ts.
-import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Link } from "react-router-dom";
+import type { Profile } from "../../api/institutions";
 import type { Attention, Overview, OverviewEvent } from "../../api/overview";
 import { Icon } from "../../components/Icon";
 import { ArrowLink } from "../../components/v2/ArrowLink";
@@ -11,7 +12,7 @@ import { DotMap, type DotPlace } from "../../components/v2/DotMap";
 import { Empty } from "../../components/v2/Empty";
 import { Pill } from "../../components/v2/Pill";
 import { SectionHead } from "../../components/v2/SectionHead";
-import { Skeleton } from "../../components/v2/Skeleton";
+import { SkBar, Skeleton } from "../../components/v2/Skeleton";
 import { Sparkline } from "../../components/v2/Sparkline";
 import { StatTile, StatTiles } from "../../components/v2/StatTile";
 import { Cell, Row, Table } from "../../components/v2/Table";
@@ -19,8 +20,9 @@ import { TabPanel, Tabs } from "../../components/v2/Tabs";
 import { WorldMark } from "../../components/v2/WorldMark";
 import { pct, placeName, plural, price, when } from "../../format";
 import { eventTitle, metricWords } from "../../plain";
+import { friendlySeriesText, seriesName } from "../series/words";
 import {
-  actMeta, ageText, arrowOf, effectsText, findingPill, foundMeta, greetingText, headlineKind, headlineText, lateSince, mapMarks, moreLine,
+  actMeta, ageText, arrowOf, effectsText, findingPill, foundMeta, greetingText, headlineKind, headlineText, footprintView, lateSince, mapMarks, markLabel, moreLine,
   needAction, needLevelWord, othersText, placesText, plainNote, priceRows, sourceWord, storyPill, tracedMeta, watchingMeta, type HeadlineKind,
 } from "./words";
 
@@ -34,7 +36,7 @@ const nameOf = (places: Places, code: string) => places[code]?.name ?? placeName
 
 // ---------------------------------------------------------------- the map's width
 /** The width of an element, in whole tens of pixels, so the dotted map is drawn at the size it is shown (its names stay 12 px). */
-function useWidth<T extends HTMLElement>(): [RefObject<T | null>, number] {
+function useWidth<T extends HTMLElement>(on = true): [RefObject<T | null>, number] {
   const ref = useRef<T>(null);
   const [w, setW] = useState(511);
   useEffect(() => {
@@ -45,7 +47,7 @@ function useWidth<T extends HTMLElement>(): [RefObject<T | null>, number] {
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(fit) : null;
     ro?.observe(el);
     return () => ro?.disconnect();
-  }, []);
+  }, [on]);  // the element may mount later than the component (the map waits for the profile)
   return [ref, w];
 }
 
@@ -56,21 +58,32 @@ export interface HeroProps {
   now: Date;
   name: string;
   timeZone: string;
+  /** The institution's profile, for the footprint on the map: undefined while it loads (no map yet), null when it can't be read (events only). */
+  profile?: Profile | null;
 }
-export function Hero({ o, events, now, name, timeZone }: HeroProps) {
+export function Hero({ o, events, now, name, timeZone, profile }: HeroProps) {
   const alerts = o.counts.alerts_to_review;
   const kind = headlineKind({ alerts, events: events.length, tickOk: o.services.tick.ok });
   const text = headlineText(kind, alerts);
   const worst = events.find(e => e.tone === "bad");
   const sources = o.counts.monitors_live + o.counts.series_watched + (o.services.radar.connected ? 1 : 0);
 
-  const marks = mapMarks(events);
-  const [mapRef, mapW] = useWidth<HTMLDivElement>();
-  const places: DotPlace[] = marks.flatMap(m => {
-    const info = o.map.places[m.code];
-    if (!info || info.lat == null || info.lon == null) return [];
-    return [{ label: nameOf(o.map.places, m.code), lon: info.lon, lat: info.lat, tone: m.tone, strong: m.first, halo: m.first }];
-  });
+  // the map: the home footprint (from the profile) shaded and framed, the events marked on their most specific place
+  const map = useMemo(() => {
+    const all = { ...profile?.places, ...o.map.places };
+    const home = o.institution?.home_country ?? "";
+    const fp = footprintView(home, (profile?.sections.footprint ?? []).map(i => ({ code: String(i.code), role: i.role, branch_count: i.branch_count })), all);
+    const marks = mapMarks(events.map(e => ({ title: eventTitle(e), tone: e.tone, places: e.places })), { places: all, home, anchor: fp.anchor?.code ?? null });
+    const places: DotPlace[] = marks.flatMap(m => {
+      const info = all[m.code];
+      if (!info || info.lat == null || info.lon == null) return [];
+      return [{ label: markLabel(m, info.name ?? placeName(m.code)), lon: info.lon, lat: info.lat, tone: m.tone, strong: m.first, halo: m.first }];
+    });
+    return { places, shade: { countries: fp.countries, halos: fp.halos, names: fp.names } };
+  }, [o, events, profile]);
+  const places = map.places;
+  const showMap = places.length > 0 && profile !== undefined;
+  const [mapRef, mapW] = useWidth<HTMLDivElement>(showMap);
 
   return (
     <section className="v2-ov-hero" aria-label="Where things stand">
@@ -88,9 +101,9 @@ export function Hero({ o, events, now, name, timeZone }: HeroProps) {
           {(kind === "clear" || kind === "stopped") && <Button as="link" to="/studio" variant="primary" size="lg">See how it responds: try a what-if →</Button>}
         </div>
       </div>
-      {places.length > 0 && (
+      {showMap && (
         <div className="v2-ov-hero__map" ref={mapRef}>
-          <DotMap places={places} width={mapW} height={Math.round(mapW * 224 / 511)} intro="Where today's events are" />
+          <DotMap places={places} shade={map.shade} width={mapW} height={Math.round(mapW * 224 / 511)} intro="Where today's events are" />
         </div>
       )}
     </section>
@@ -104,8 +117,8 @@ function HeroLine({ kind, worst, sources, events, tickAt, now }: { kind: Headlin
         {worst.effects ? <>, with {plural(worst.effects, "possible effect")} on your products.</> : <>, bad for you.</>}</p>
       : <p className="v2-lead v2-ov-line">Early warnings for products your teams own.</p>;
   }
-  if (kind === "quiet") return <p className="v2-lead v2-ov-line">Amiri Agent is following {plural(events, "open event")}; none needs a team yet.</p>;
-  if (kind === "clear") return <p className="v2-lead v2-ov-line">No alerts and no open events. Amiri Agent is watching {plural(sources, "source")}.</p>;
+  if (kind === "quiet") return <p className="v2-lead v2-ov-line">AMIRI Agent is following {plural(events, "open event")}; none needs a team yet.</p>;
+  if (kind === "clear") return <p className="v2-lead v2-ov-line">No alerts and no open events. AMIRI Agent is watching {plural(sources, "source")}.</p>;
   return (
     <p className="v2-lead v2-ov-line v2-ov-line--warn"><span aria-hidden="true">⚠ </span>Updates aren't running, so no news or prices arrive.
       {tickAt ? <> Last ran {ageText(tickAt, now)}.</> : <> They haven't run yet.</>}</p>
@@ -130,7 +143,7 @@ export function Tiles({ o, events, teams }: { o: Overview; events: OverviewEvent
 // ---------------------------------------------------------------- a scenario is running
 export function ScenarioRow({ studio }: { studio: NonNullable<Overview["studio"]> }) {
   return (
-    <Link to={`/studio/run/${studio.sim_id}`} className="v2-ov-sim">
+    <Link to={`/studio/run/${studio.sim_id}`} className="v2-rowlink v2-ov-sim">
       <WorldMark world="studio" />
       <span className="v2-ov-sim__t">{studio.title} · day {studio.step} of {studio.steps} · nothing here reaches live counts</span>
       <b className="v2-ov-sim__go">Watch it →</b>
@@ -147,7 +160,7 @@ export function OpenEvents({ events, places, now }: { events: OverviewEvent[]; p
     <section aria-labelledby={`${base}-h`} className="v2-ov-events">
       <SectionHead id={`${base}-h`} title="Open events" count={events.length || undefined} countLabel="open events" action={<ArrowLink to="/events">All events</ArrowLink>} />
       {!events.length
-        ? <Empty title="No open events">When Amiri Agent traces news or a price move to your products, it appears here.</Empty>
+        ? <Empty title="No open events">When AMIRI Agent traces news or a price move to your products, it appears here.</Empty>
         : <ul className="v2-ov-evlist">{events.slice(0, 6).map(e => {
           const isOpen = open === e.event_id;
           const panel = `${base}-p-${e.event_id}`;
@@ -208,7 +221,7 @@ export function Latest({ o, now }: { o: Overview; now: Date }) {
                 return (
                   <Row key={f.finding_id} to={f.event_id ? `/events/${f.event_id}` : `/findings#f-${f.finding_id}`} label={f.title}>
                     <Cell muted className="v2-ov-src"><Icon name={SOURCE_ICON[f.source] ?? "monitor"} />{sourceWord(f.source)}</Cell>
-                    <Cell>{f.title}</Cell>
+                    <Cell>{f.title}{p.why && <span className="v2-meta v2-ov-why">{p.word} · {p.why}</span>}</Cell>
                     <Cell phoneHide><Pill tone={p.tone}>{p.word}</Pill></Cell>
                     <Cell align="right" muted className="v2-ov-when">{when(f.created_at, now)}</Cell>
                   </Row>);
@@ -247,8 +260,8 @@ export function needRows(attention: Attention[]): Attention[] {
   return [
     ...attention.filter(a => a.kind !== "alerts" && a.kind !== "series"),
     ...(late.length ? [{
-      kind: "series", audience: "user", level: "warn", link: "/series", at: null,
-      title: late.length === 1 ? plainNote(late[0].title) : `${plural(late.length, "market price")} stopped updating`,
+      kind: "series", audience: "user", level: "info", link: "/series", at: null,
+      title: late.length === 1 ? plainNote(late[0].title) : `${plural(late.length, "market price")} waiting for a new price`,
       detail: late.length === 1 ? null : late.map(a => a.title.split(":")[0]).join(", "),
     } as Attention] : []),
   ];
@@ -262,17 +275,17 @@ export function NeedsYou({ rows, more, adminNotes, hasAlerts }: { rows: Attentio
     <section aria-labelledby={`${id}-h`} className="v2-ov-needs">
       <SectionHead id={`${id}-h`} size="sm" title="Needs you" count={rows.length + more || undefined} countLabel="things that need you" />
       {!rows.length
-        ? <Empty plain title={hasAlerts ? "Nothing else needs you" : "Nothing needs you right now"}>Approvals, failed checks, prices that stop updating and gaps in your profile appear here.</Empty>
+        ? <Empty plain title={hasAlerts ? "Nothing else needs you" : "Nothing needs you right now"}>Approvals, failed checks, prices waiting for an update and gaps in your profile appear here.</Empty>
         : <ul className="v2-ov-needlist">{list.map((a, n) => {
           const inner = <>
             <span className={`v2-ov-need__dot is-${a.level}`} aria-hidden="true" />
             <span className="v2-ov-need__t">
               <span className="v2-ov-need__title"><span className="v2-sr">{needLevelWord(a.level)}</span>{plainNote(a.title)}</span>
-              {a.detail && <span className="v2-ov-need__detail" title={a.detail}>{a.detail}</span>}
+              {a.detail && <span className="v2-ov-need__detail" title={friendlySeriesText(a.detail)}>{friendlySeriesText(a.detail)}</span>}
             </span>
             {a.link && <span className="v2-ov-need__go">{needAction(a.kind)}</span>}
           </>;
-          return <li key={n}>{a.link ? <Link to={a.link} className="v2-ov-need">{inner}</Link> : <div className="v2-ov-need">{inner}</div>}</li>;
+          return <li key={n}>{a.link ? <Link to={a.link} className="v2-rowlink v2-ov-need">{inner}</Link> : <div className="v2-ov-need">{inner}</div>}</li>;
         })}</ul>}
       {(hidden > 0 || more > 0) && (
         <p className="v2-ov-needmore v2-meta">
@@ -280,7 +293,7 @@ export function NeedsYou({ rows, more, adminNotes, hasAlerts }: { rows: Attentio
           {more > 0 && <span>{hidden > 0 ? " · " : ""}and {more} more not listed here</span>}
         </p>
       )}
-      {adminNotes > 0 && <p className="v2-meta v2-ov-needmore">{plural(adminNotes, "note")} about Amiri Agent's own services {adminNotes === 1 ? "is" : "are"} with your Platform Admin.</p>}
+      {adminNotes > 0 && <p className="v2-meta v2-ov-needmore">{plural(adminNotes, "note")} about AMIRI Agent's own services {adminNotes === 1 ? "is" : "are"} with your Platform Admin.</p>}
     </section>
   );
 }
@@ -293,21 +306,21 @@ export function Prices({ markets }: { markets: Overview["markets"] }) {
   return (
     <section aria-labelledby={`${id}-h`} className="v2-ov-prices">
       <SectionHead id={`${id}-h`} size="sm" title="Prices"
-        meta={<>{r.unusual > 0 && <Pill tone="unusual" mark="◆">{r.unusual} unusual</Pill>}{r.late > 0 && <Pill>{r.late} late</Pill>}</>}
-        action={<span className="v2-meta">1 day</span>} />
+        meta={<>{r.unusual > 0 && <Pill tone="unusual" mark="◆">{r.unusual} unusual</Pill>}{r.late > 0 && <Pill>{r.late} waiting for prices</Pill>}</>}
+        action={<span className="v2-meta">change over 1 day</span>} />
       <Table label="Prices that need a look" cols="minmax(0,1fr) 80px 64px" colsPhone="minmax(0,1fr) 64px" className="v2-ov-prices__t">
         {r.shown.map(m => {
           const late = m.state === "stale";
           const since = late ? lateSince(m.state_reason) : null;
           return (
-            <Row key={m.series_id} to={`/series/${m.series_id}`} label={`${m.name}: ${late ? "late" : "price and change"}`} className={`v2-ov-price${late ? " is-late" : ""}`}
+            <Row key={m.series_id} to={`/series/${m.series_id}`} label={`${seriesName(m.name)}: ${late ? "waiting for a new price" : "price and change"}`} className={`v2-ov-price${late ? " is-late" : ""}`}
               cols={late ? "minmax(0,1fr) auto" : undefined} colsPhone={late ? "minmax(0,1fr) auto" : undefined}>
               <Cell>
-                <span className="v2-ov-price__name">{m.name}</span>
+                <span className="v2-ov-price__name">{seriesName(m.name)}</span>
                 <span className="v2-mono v2-muted v2-ov-price__px">{price(m.close)}</span>
                 {late && <span className="v2-meta v2-ov-price__late">{since ? `No new price since ${since}` : "No new price lately"}</span>}
               </Cell>
-              {late ? <Cell><Pill>Late</Pill></Cell> : <>
+              {late ? <Cell><Pill>Waiting for prices</Pill></Cell> : <>
                 <Cell phoneHide><Sparkline values={m.spark} tone={m.state === "moved" ? "unusual" : "neutral"} /></Cell>
                 <Cell align="right" num className="v2-ov-price__chg"><b>{pct(m.change_1d_pct, 1)}</b></Cell>
               </>}
@@ -326,10 +339,10 @@ export function OverviewSkeleton(): ReactNode {
       <h1 className="v2-sr">Overview</h1>
       <div className="v2-ov-hero" aria-hidden="true">
         <div className="v2-ov-hero__text">
-          <span className="v2-ov-sk" style={{ width: 240, height: 13 }} />
-          <span className="v2-ov-sk" style={{ width: "min(420px, 100%)", height: 56 }} />
-          <span className="v2-ov-sk" style={{ width: "min(340px, 100%)", height: 56 }} />
-          <span className="v2-ov-sk" style={{ width: "min(460px, 100%)", height: 17 }} />
+          <SkBar w={240} h={13} />
+          <SkBar w="min(420px, 100%)" h={56} />
+          <SkBar w="min(340px, 100%)" h={56} />
+          <SkBar w="min(460px, 100%)" h={17} />
         </div>
       </div>
       <Skeleton rows={6} label="Loading the Overview" />

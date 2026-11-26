@@ -2,20 +2,21 @@
 // readiness checks, loaded together. A proposal applied in the setup agent's panel changes the profile under the page,
 // so the page loads it again when "amiri:profile-changed" fires.
 import { useCallback, useEffect, useState } from "react";
-import { ApiError } from "../../api/client";
+import { ApiError, peek } from "../../api/client";
 import { inst, type InstitutionSummary, type Profile, type Readiness } from "../../api/institutions";
 import type { Ctx } from "./forms";
 
 export const INSTITUTION_KEY = "amiri.institution";
 
 export function useInstitution() {
-  const [list, setList] = useState<InstitutionSummary[] | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [readiness, setReadiness] = useState<Readiness | null>(null);
+  // seen before: the last answers show at once and are refreshed below (F4)
+  const [id, setId] = useState<string | null>(() => { try { return localStorage.getItem(INSTITUTION_KEY); } catch { return null; } });
+  const [list, setList] = useState<InstitutionSummary[] | null>(() => peek(() => inst.list()) ?? null);
+  const [profile, setProfile] = useState<Profile | null>(() => (id ? peek(() => inst.profile(id)) ?? null : null));
+  const [readiness, setReadiness] = useState<Readiness | null>(() => (id ? peek(() => inst.readiness(id)) ?? null : null));
   const [error, setError] = useState<unknown>(null);
   /** When the profile on screen was loaded (ms since the epoch): the stale banner says how old it is. */
   const [loadedAt, setLoadedAt] = useState<number | null>(null);
-  const [id, setId] = useState<string | null>(() => { try { return localStorage.getItem(INSTITUTION_KEY); } catch { return null; } });
   const loadList = useCallback(async () => {
     try {
       const l = await inst.list();

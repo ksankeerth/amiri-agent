@@ -18,18 +18,18 @@ import { Empty } from "../../components/v2/Empty";
 import { LoadError } from "../../components/v2/LoadError";
 import { MoreMenu, type MoreItem } from "../../components/v2/MoreMenu";
 import { Pill } from "../../components/v2/Pill";
-import { useCrumbs, usePhone } from "../../components/v2/Shell";
+import { useCrumbs } from "../../components/v2/Shell";
 import { Skeleton } from "../../components/v2/Skeleton";
 import { StaleBanner } from "../../components/v2/StaleBanner";
 import { plural, zoneName } from "../../format";
 import { placeName } from "../../format";
-import { DeleteDialog, ResetDialog } from "./dialogs";
 import { DetailsDialog } from "./edit";
 import { AgentsView, History } from "./extra";
 import { NoteLine, PANEL_ID, ProfileStrip, tabId } from "./head";
 import { Overview } from "./overview";
 import { downloadJson, pickCreate } from "./profileFile";
-import { SetupAgent, useAgentPanel } from "./SetupAgent";
+import { ResetFromJson } from "../admin/ResetFromJson";
+import { SetupAgent, SetupAgentButton, useAgentPanel } from "./SetupAgent";
 import { LinkGrid, SectionBlock } from "./tables";
 import { useInstitution } from "./useInstitution";
 import { statusLook, subLine, toReview, topicTab, viewForTopic, viewName, viewOf, viewPath, type View } from "./words";
@@ -56,12 +56,10 @@ export function InstitutionPage() {
   const nav = useNavigate();
   const toast = useToast(), refuse = useRefusalToast();
   const locked = useDemoLock();
-  const phone = usePhone();
   const now = useNow(30_000);
   const installation = useInstallation();
-  const panel = useAgentPanel();
+  const panel = useAgentPanel("page");
   const [editing, setEditing] = useState(false);
-  const [confirm, setConfirm] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [drafting, setDrafting] = useState<{ section: string; item_id: string } | null>(null);
   const { profile, readiness, list, loadedAt } = S;
@@ -92,7 +90,7 @@ export function InstitutionPage() {
   const names = profile?.place_names ?? {};
   const agent = <SetupAgent panel={panel} institutionId={profile?.institution.institution_id ?? null} onTrack={follow as (t: TrackDef) => void} onApplied={applied}
     at={{ tab: topicTab(shown) }} profileVersion={profile?.institution.profile_version ?? null} names={names} />;
-  const agentBtn = !panel.open && <Button onClick={() => panel.setOpen(true)} aria-haspopup={phone ? "dialog" : undefined}>Setup agent</Button>;
+  const agentBtn = <SetupAgentButton panel={panel} />;
 
   // ---------------------------------------------------------------- loading, failing, nothing yet
   if (S.error != null && !profile) {
@@ -112,7 +110,7 @@ export function InstitutionPage() {
           <Empty title="No institution yet" action={<>
             <Button as="link" to="/institution/setup" variant="primary">Guided setup</Button>
             <Button as="link" to="/institution/new">Fill in the form</Button></>}>
-            Everything Amiri Agent watches and checks starts from this profile: who you are, where you operate, your customers, products, flows, rules, rivals and risks. The guided setup, the form and the Setup agent all work; you check everything before it is saved.
+            Everything AMIRI Agent watches and checks starts from this profile: who you are, where you operate, your customers, products, flows, rules, rivals and risks. The guided setup, the form and the Setup agent all work; you check everything before it is saved.
           </Empty>
         </div>
         {agent}
@@ -129,17 +127,12 @@ export function InstitutionPage() {
   const mine = installation?.institution_id === i.institution_id && !archived;
 
   const act = async (a: "activate" | "restore") => {
-    try { await inst.status(i.institution_id, a); toast(a === "activate" ? "Active: Amiri Agent now uses this profile." : "Restored."); S.reload(); }
+    try { await inst.status(i.institution_id, a); toast(a === "activate" ? "Active: AMIRI Agent now uses this profile." : "Restored."); S.reload(); }
     catch (e) { refuse(e, a === "activate" ? "Couldn't activate it" : "Couldn't restore it"); }
-  };
-  const remove = async () => {
-    try { await inst.remove(i.institution_id); toast("Deleted."); setConfirm(false); S.reloadList(); }
-    catch (e) { refuse(e, "Couldn't delete it"); setConfirm(false); }
   };
   const more: MoreItem[] = [
     { label: "Export the profile (JSON)", onSelect: () => downloadJson(`${i.institution_id}-profile.json`, { institution: pickCreate(i as any), sections: profile!.sections }) },
-    ...(installation?.prototype_reset !== false ? [{ label: "Reset the prototype…", locked, danger: true, onSelect: () => setResetting(true) }] : []),
-    ...(setup ? [{ label: "Delete this institution…", locked, danger: true, onSelect: () => setConfirm(true) }] : []),
+    ...(installation?.prototype_reset !== false ? [{ label: "Start again from a JSON file…", locked, danger: true, onSelect: () => setResetting(true) }] : []),
   ];
   const ctx = S.ctx;
   const grid = (rows: "products" | "flows", title: string, summary: string) => <LinkGrid ctx={ctx} rows={rows} cols="segments" field="segments" reload={S.reload} title={title} summary={summary} />;
@@ -174,30 +167,29 @@ export function InstitutionPage() {
           <div className="v2-in-head__btns">
             <Button as="link" to="/institution/setup">Guided setup{review > 0 && <Pill tone="unusual" className="v2-in-pill">{review} to review</Pill>}</Button>
             {!archived && <Button locked={locked} onClick={() => setEditing(true)}>Edit details</Button>}
-            <MoreMenu label="More: export, reset or delete" items={more} />
+            <MoreMenu label="More: export or start again" items={more} />
             {agentBtn}
           </div>
         </header>
 
         {archived && (
-          <div className="v2-in-banner" role="status"><span aria-hidden="true">◆</span><span><b>Archived.</b> Amiri Agent does not use this profile and it can't be changed. Restore it to edit.</span>
+          <div className="v2-in-banner" role="status"><span aria-hidden="true">◆</span><span><b>Archived.</b> AMIRI Agent does not use this profile and it can't be changed. Restore it to edit.</span>
             <Button variant="primary" size="sm" locked={locked} onClick={() => act("restore")}>Restore</Button></div>)}
         {setup && (!r.ready
           ? <div className="v2-in-banner" role="status"><span aria-hidden="true">◆</span><span><b>{plural(r.missing_required, "required part")} missing</b> before it can go live. <Link className="v2-arrowlink" to="/institution/setup">Continue the guided setup<span aria-hidden="true"> →</span></Link></span></div>
-          : shown !== "overview" && <div className="v2-in-banner" role="status"><span aria-hidden="true">●</span><span>Everything required is there. Activate to let Amiri Agent use this profile{r.open_recommendations ? `; ${plural(r.open_recommendations, "recommendation")} still open` : ""}.</span>
+          : shown !== "overview" && <div className="v2-in-banner" role="status"><span aria-hidden="true">●</span><span>Everything required is there. Activate to let AMIRI Agent use this profile{r.open_recommendations ? `; ${plural(r.open_recommendations, "recommendation")} still open` : ""}.</span>
               <Button variant="primary" size="sm" locked={locked} onClick={() => act("activate")}>Activate</Button></div>)}
 
         <ProfileStrip counts={i.counts} checks={r.checks} view={shown} onPick={s => nav(viewPath(s))} />
         <NoteLine counts={i.counts} checks={r.checks} view={shown} />
 
-        <div id={PANEL_ID} className="v2-in-panel" {...(isSectionView ? { role: "tabpanel", "aria-labelledby": tabId(shown) } : { role: "region", "aria-label": viewName(shown) })}>{part}</div>
+        <div key={shown} id={PANEL_ID} className="v2-in-panel" {...(isSectionView ? { role: "tabpanel", "aria-labelledby": tabId(shown) } : { role: "region", "aria-label": viewName(shown) })}>{part}</div>
       </div>
       {agent}
 
       {drafting && <DraftFromProfile only={drafting} onClose={() => setDrafting(null)} />}
       {editing && <DetailsDialog profile={profile!} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); S.reload(); }} />}
-      {resetting && <ResetDialog onClose={() => setResetting(false)} />}
-      {confirm && <DeleteDialog name={i.name} onClose={() => setConfirm(false)} onDelete={remove} />}
+      {resetting && <ResetFromJson onClose={() => setResetting(false)} />}
     </div>
   );
 }

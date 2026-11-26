@@ -3,8 +3,10 @@
 //   refusal   the server said no: its `detail` is the message, its `code` small in mono for support; role=alert
 // A toast never closes while the pointer is over it or focus is inside it, and Esc closes the one that has focus.
 // <ToastHost> draws a list of them; the provider in components/ui.tsx owns the list and its timers' lengths.
+// Motion (F3): a toast slides in (160 ms); when it is dismissed or times out it fades out (120 ms) before it leaves the stack.
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Icon } from "../Icon";
+import { exitDelay, prefersReducedMotion, withLeaving, type Leaving } from "./motion";
 
 export interface ToastData {
   id: number;
@@ -37,15 +39,17 @@ export interface ToastProps extends Omit<ToastData, "id" | "kind"> {
   onClose: () => void;
   /** How long it stays when nobody is looking at it; 0 keeps it (the gallery's specimens). */
   ms?: number;
+  /** Fading out: its entry is already gone from the list. Can't be clicked or read again. */
+  leaving?: boolean;
 }
 
 /** One toast. A refusal is announced at once (role=alert); an info toast waits in the polite region of its host. */
-export function Toast({ kind = "info", message, code, title, action, onClose, ms }: ToastProps) {
+export function Toast({ kind = "info", message, code, title, action, onClose, ms, leaving }: ToastProps) {
   const [hover, setHover] = useState(false), [focus, setFocus] = useState(false);
   useCloseTimer(ms ?? (kind === "refusal" ? 9000 : action ? 8000 : 4200), hover || focus, onClose);
   const esc = (e: KeyboardEvent) => { if (e.key === "Escape") { e.stopPropagation(); onClose(); } };
   return (
-    <div className={`v2-toast v2-toast--${kind}`} {...(kind === "refusal" ? { role: "alert" } : {})}
+    <div className={`v2-toast v2-toast--${kind}${leaving ? " is-leaving" : ""}`} {...(kind === "refusal" ? { role: "alert" } : {})} {...(leaving ? { inert: true, "aria-hidden": true } : {})}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}
       onFocus={() => setFocus(true)} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocus(false); }} onKeyDown={esc}>
       <span className="v2-toast__dot" aria-hidden="true" />
@@ -65,16 +69,24 @@ export function RefusalToast(props: Omit<ToastProps, "kind">) {
   return <Toast {...props} kind="refusal" />;
 }
 
-/** The stack at the bottom of the screen. Info toasts share one polite live region; each refusal is its own alert. */
+/** The stack at the bottom of the screen. Info toasts share one polite live region; each refusal is its own alert.
+ *  A toast that leaves the list stays for 120 ms, fading, then goes. */
 export function ToastHost({ items, onClose }: { items: ToastData[]; onClose: (id: number) => void }) {
-  const info = items.filter(t => t.kind === "info"), refusals = items.filter(t => t.kind === "refusal");
+  const [shown, setShown] = useState<Leaving<ToastData>[]>(() => items.map(item => ({ item, leaving: false })));
+  useEffect(() => { setShown(prev => withLeaving(prev, items)); }, [items]);
+  useEffect(() => {
+    if (!shown.some(s => s.leaving)) return;
+    const t = setTimeout(() => setShown(prev => prev.filter(s => !s.leaving)), exitDelay(prefersReducedMotion()));
+    return () => clearTimeout(t);
+  }, [shown]);
+  const info = shown.filter(s => s.item.kind === "info"), refusals = shown.filter(s => s.item.kind === "refusal");
   return (
     <div className="v2 v2-toasts">
       <div role="status" aria-live="polite" className="v2-toasts__list">
-        {info.map(t => <Toast key={t.id} message={t.message} action={t.action} onClose={() => onClose(t.id)} />)}
+        {info.map(({ item: t, leaving }) => <Toast key={t.id} message={t.message} action={t.action} leaving={leaving} onClose={() => onClose(t.id)} />)}
       </div>
       <div className="v2-toasts__list">
-        {refusals.map(t => <Toast key={t.id} kind="refusal" message={t.message} code={t.code} title={t.title} onClose={() => onClose(t.id)} />)}
+        {refusals.map(({ item: t, leaving }) => <Toast key={t.id} kind="refusal" message={t.message} code={t.code} title={t.title} leaving={leaving} onClose={() => onClose(t.id)} />)}
       </div>
     </div>
   );

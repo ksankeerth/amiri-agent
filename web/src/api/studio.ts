@@ -12,7 +12,7 @@ export interface Built {
   institution: { institution_id: string; name: string; country: string; currency: string; time_zone: string };
   clock: { start_at: string; steps: number; step_hours: number; step_time: string; first_step_at: string };
   headlines: Headline[]; all_headlines: Headline[];
-  prices: { symbol: string; level: number; sigma_daily_pct: number; shock: { shape: string; size_pct: number; ramp_business_days: number }; off?: boolean;
+  prices: { symbol: string; name?: string | null; level: number; sigma_daily_pct: number; shock: { shape: string; size_pct: number; ramp_business_days: number }; off?: boolean;
     move?: PriceMove };
   monitor: { key: string; spec: { about: { name: string }; public: { in_one_sentence: string; tell_me_if: string[] } } };
   stories: Story[]; expected_findings: Record<string, number>;
@@ -63,7 +63,7 @@ export const studioApi = {
   remove: (id: string) => api<void>(`${B}/scenarios/${enc(id)}`, { method: "DELETE" }),
   start: (scenario_id: string, mode: Mode) => api<Simulation>(`${B}/simulations`, { method: "POST", json: { scenario_id, mode } }),
   current: () => api<{ simulation: Simulation | null }>(`${B}/simulations/current`).then(r => r.simulation),
-  get: (id: string, since = 0) => api<Simulation>(`${B}/simulations/${enc(id)}?since=${since}`),
+  get: (id: string, since = 0) => api<Simulation>(`${B}/simulations/${enc(id)}?since=${since}`, { fresh: true }),  // a run in progress is asked about again and again
   step: (id: string, expected_step: number) => api<Simulation>(`${B}/simulations/${enc(id)}:step`, { method: "POST", json: { expected_step } }),
   stop: (id: string) => api<Simulation>(`${B}/simulations/${enc(id)}:stop`, { method: "POST" }),
 };

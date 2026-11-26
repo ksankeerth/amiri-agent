@@ -1,4 +1,4 @@
-// Monitors (board 06; states: board 16 section G, board 13 sections 3 and 6): the questions Amiri Agent asks the web for you, as a
+// Monitors (board 06; states: board 16 section G, board 13 sections 3 and 6): the questions AMIRI Agent asks the web for you, as a
 // list grouped by what each needs, and the open one beside it. /monitors opens the busiest live monitor; /monitors/:id opens
 // that one; /monitors/new is the form. On a phone the list is the page and a monitor opens as its own view with a back link.
 //
@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useInstallation } from "../../App";
+import { peek, quietly } from "../../api/client";
 import { inst, type Profile } from "../../api/institutions";
 import { investigationApi } from "../../api/investigation";
 import { monitorsApi, type MonitorRow, type MonitorsStatus } from "../../api/monitors";
@@ -16,6 +17,7 @@ import { useNow, useRole } from "../../components/ui";
 import { AgentState } from "../../components/v2/AgentState";
 import { Button } from "../../components/v2/Button";
 import { Empty } from "../../components/v2/Empty";
+import { ListPane, PaneBack, PaneView } from "../../components/v2/ListPane";
 import { LoadError } from "../../components/v2/LoadError";
 import { useCrumbs, usePhone } from "../../components/v2/Shell";
 import { Skeleton } from "../../components/v2/Skeleton";
@@ -44,12 +46,13 @@ export function MonitorsPage() {
   const installation = useInstallation();
   const iid = installation?.profile ? installation.institution_id : null;
 
-  const [items, setItems] = useState<MonitorRow[] | null>(null);
-  const [status, setStatus] = useState<MonitorsStatus | null>(null);
+  // seen before: the last answers show at once and are refreshed below (F4)
+  const [items, setItems] = useState<MonitorRow[] | null>(() => peek(() => monitorsApi.list()) ?? null);
+  const [status, setStatus] = useState<MonitorsStatus | null>(() => peek(() => monitorsApi.status()) ?? null);
   const [err, setErr] = useState<unknown>(null);
   const [loadedAt, setLoadedAt] = useState<number | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [titles, setTitles] = useState<Record<string, string>>({});
+  const [profile, setProfile] = useState<Profile | null>(() => (iid ? peek(() => inst.profile(iid)) ?? null : null));
+  const [titles, setTitles] = useState<Record<string, string>>(() => Object.fromEntries((peek(() => investigationApi.events(200)) ?? []).map(e => [e.event_id, eventTitle(e)])));
   const [drafting, setDrafting] = useState(false);
   const [liveOpen, setLiveOpen] = useState(false);
   const [retiredOpen, setRetiredOpen] = useState(false);
@@ -70,8 +73,8 @@ export function MonitorsPage() {
   }, []);
   useEffect(() => {
     load();
-    const t = setInterval(() => { if (!document.hidden) load(); }, REFRESH_MS);
-    const vis = () => { if (!document.hidden && Date.now() - loaded.current > 30_000) load(); };   // back on the tab: catch up, but not in a burst
+    const t = setInterval(() => { if (!document.hidden) quietly(load); }, REFRESH_MS);
+    const vis = () => { if (!document.hidden && Date.now() - loaded.current > 30_000) quietly(load); };   // back on the tab: catch up, but not in a burst
     document.addEventListener("visibilitychange", vis);
     return () => { clearInterval(t); document.removeEventListener("visibilitychange", vis); };
   }, [load]);
@@ -115,9 +118,9 @@ export function MonitorsPage() {
   }, [id]);
 
   const lede = status
-    ? <>Questions Amiri Agent asks the web for you · <b>{nLive} live</b> of {status.live_max}{nWaiting > 0 && <> · {nWaiting} waiting for your approval</>}
+    ? <>Questions AMIRI Agent asks the web for you · <b>{nLive} live</b> of {status.live_max}{nWaiting > 0 && <> · {nWaiting} waiting for your approval</>}
         {status.next_check_at && status.connected && <> · next check {nextAt(status.next_check_at, now)}</>}</>
-    : "Questions Amiri Agent asks the web for you";
+    : "Questions AMIRI Agent asks the web for you";
 
   const head = (
     <header className={`v2-mn-head${reading ? " v2-sr" : ""}`}>
@@ -136,9 +139,7 @@ export function MonitorsPage() {
   const pane = openId && (
     <MonitorPane key={openId} id={openId} status={status} profile={profile} eventTitles={titles} askEventTitles={askTitles} onChanged={load} onDraft={() => setDrafting(true)} listStale={stale} />
   );
-  const back = (
-    <Link to="/monitors" className="v2-mn-back"><span aria-hidden="true">←</span>All monitors</Link>
-  );
+  const back = <PaneBack to="/monitors">All monitors</PaneBack>;
 
   return (
     <div className="v2-mn">
@@ -153,10 +154,8 @@ export function MonitorsPage() {
 
       {items === null && err != null && <LoadError error={err} onRetry={load} what="the monitors" safe="Your monitors are safe; this page just couldn't reach them." />}
       {items === null && err == null && (
-        <div className="v2-mn-body">
-          {!phone && <div className="v2-mn-col"><Skeleton rows={6} label="Loading the monitors" /></div>}
-          <div className="v2-mn-pane-wrap"><div className="v2-panel v2-mn-pane"><Skeleton rows={5} label="Loading the monitor" /></div></div>
-        </div>)}
+        <ListPane list={!phone && <Skeleton rows={6} label="Loading the monitors" />}
+          pane={<div className="v2-panel v2-lp__panel"><Skeleton rows={5} label="Loading the monitor" /></div>} />)}
 
       {items !== null && empty && !isNew && (
         <Empty title="No monitors yet" className="v2-mn-empty" action={<>
@@ -167,18 +166,15 @@ export function MonitorsPage() {
         </Empty>)}
 
       {items !== null && (reading ? (
-        <div className="v2-mn-read">{back}{pane}</div>
+        <PaneView back={back}>{pane}</PaneView>
       ) : isNew && empty ? (
-        <div className="v2-mn-read">{back}{pane}</div>
+        <PaneView back={back}>{pane}</PaneView>
       ) : !empty && (
-        <div className="v2-mn-body">
-          {(!phone || !id) && (
-            <div className="v2-mn-col">
-              <MonitorList groups={groups} selectedId={phone ? null : openId} now={now} liveOpen={liveOpen} onLiveOpen={() => setLiveOpen(true)}
-                retiredOpen={retiredOpen} onRetiredToggle={() => setRetiredOpen(o => !o)} />
-            </div>)}
-          {!phone && pane && <div className="v2-mn-pane-wrap">{pane}</div>}
-        </div>))}
+        <ListPane
+          list={(!phone || !id) && (
+            <MonitorList groups={groups} selectedId={phone ? null : openId} now={now} liveOpen={liveOpen} onLiveOpen={() => setLiveOpen(true)}
+              retiredOpen={retiredOpen} onRetiredToggle={() => setRetiredOpen(o => !o)} />)}
+          pane={!phone && pane} itemKey={openId} />))}
 
       <p className="v2-meta v2-mn-note">Monitors watch the news. Price and rate moves are watched by <Link to="/series">market series</Link>, without a monitor.</p>
       {drafting && <DraftFromProfile onClose={() => setDrafting(false)} />}

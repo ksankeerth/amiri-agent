@@ -1,10 +1,10 @@
-/* Amiri Agent UI v2: the app shell (components/v2/Shell.tsx, LivePill.tsx, GoTo.tsx).
+/* AMIRI Agent UI v2: the app shell (components/v2/Shell.tsx, LivePill.tsx, GoTo.tsx).
    Sidebar 232 px, top bar, main; under 720 px the sidebar is a sheet behind a Menu button (A8).
    Only --v2- tokens. The sidebar's off-white is a mix of the two surface tokens, so it follows the theme. */
 
 .v2-shell {
   display: grid; grid-template-columns: 232px minmax(0, 1fr);
-  height: 100vh; height: 100dvh; overflow: hidden;
+  height: 100vh; height: 100dvh; overflow: hidden; position: relative;
 }
 .v2-sr {
   position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
@@ -41,6 +41,8 @@
   font-size: var(--v2-fs-cap); line-height: 1.4; color: var(--v2-text-2);
 }
 .v2-live b { color: var(--v2-text); font-weight: var(--v2-fw-semibold); }
+.v2-live b + .v2-live__why::before { content: "· "; }
+.v2-live.is-compact b + .v2-live__why::before { content: none; }
 .v2-live__dot { flex: none; width: 8px; height: 8px; border-radius: 4px; background: var(--v2-dot-idle); box-shadow: 0 0 0 3px var(--v2-halo-idle); }
 .v2-live.is-live .v2-live__dot { background: var(--v2-dot-live); box-shadow: 0 0 0 3px var(--v2-halo-live); }
 .v2-live.is-late .v2-live__dot { background: var(--v2-dot-warn); box-shadow: 0 0 0 3px var(--v2-halo-warn); }
@@ -109,8 +111,12 @@
 }
 .v2-iconbtn:hover { border-color: var(--v2-line-ctl-hover); }
 
-.v2-main { flex: 1 1 auto; min-height: 0; overflow: auto; padding: var(--v2-page-pad); }
+/* The one scroll area of the app. `position: relative` makes it the containing block of every absolutely positioned
+   descendant (.v2-sr, stretched row links, chevrons, switches), so none of them can stretch the document (F1). */
+.v2-main { position: relative; flex: 1 1 auto; min-height: 0; overflow: auto; padding: var(--v2-page-pad); }
 .v2 .v2-main:focus-visible { outline: none; }  /* a landmark that takes focus after navigation or the skip link, not a control */
+
+/* The pane beside a list (Alerts, Radar, Monitors, Series, Studio): ListPane's layout and its "stays in view" rule are in components.css (F2). */
 
 /* ---------- Go to */
 .v2-goto-scrim {
@@ -149,7 +155,7 @@
     flex: none; display: flex; align-items: center; gap: var(--v2-sp-10); padding: var(--v2-sp-8) var(--v2-sp-16);
     border-bottom: 1px solid var(--v2-line); background: color-mix(in srgb, var(--v2-surface) 55%, var(--v2-page));
   }
-  .v2 .v2-mbar__logo { display: flex; border-radius: var(--v2-r-nav); }
+  .v2 .v2-mbar__logo { display: flex; align-items: center; justify-content: center; min-width: var(--v2-hit-phone); min-height: var(--v2-hit-phone); margin-left: calc(-1 * var(--v2-sp-6)); border-radius: var(--v2-r-nav); }  /* M1: the mark stays 30 px, the target is 44 */
   .v2-mbar .v2-live { flex: 0 1 auto; min-width: 0; padding: var(--v2-sp-6) var(--v2-sp-10); }
   .v2-live.is-compact .v2-live__why { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .v2-live.is-compact .v2-live__t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -199,3 +205,57 @@
 .lock-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
 .lock-fields:disabled :is(input, select, textarea) { cursor: not-allowed; color: var(--v2-text-2); opacity: 1; -webkit-text-fill-color: var(--v2-text-2); }
 .lock-fields:disabled :is(input[type="checkbox"], input[type="radio"], select) { opacity: .6; }
+
+/* ---------- F4: moving between pages */
+/* The progress line: a zero-height strip between the top bar and `main`, its 2 px line on `main`'s top edge. */
+.v2-busy { position: relative; flex: none; height: 0; z-index: 6; pointer-events: none; }
+.v2-busy > span { position: absolute; left: 0; right: 0; top: 0; height: 2px; overflow: hidden; opacity: 1; transition: opacity var(--v2-dur-fast) linear; }
+.v2-busy.is-leaving > span { opacity: 0; }
+.v2-busy > span::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 38%; border-radius: 2px; background: var(--v2-brand);
+  animation: v2-busy 1.1s var(--v2-ease) infinite;
+}
+@keyframes v2-busy { from { transform: translateX(-100%); } to { transform: translateX(270%); } }
+@media (prefers-reduced-motion: reduce) {
+  .v2-busy > span { transition: none; }
+  .v2-busy > span::before { animation: none !important; width: 100%; opacity: .5; }  /* holds still: busy, not moving */
+}
+
+/* F4b, another page: fade through. RouteStage names `main` and the breadcrumbs while it swaps (the name is never left on).
+   The old page fades out (exit ease), then the new one fades in with a small rise (ease-out), starting before the old one is quite
+   gone but never overlapping it above about a third. Not a cross-fade: the default blends both images with `plus-lighter`, so the two
+   half-visible pages add up and the text flickers. Everything else in the window (the menu, the top bar, the clock) is the `root`
+   image: no animation, no old copy, so nothing outside `main` and the crumbs can blink. Under reduced motion RouteStage doesn't start
+   a transition at all (the rule at the end is only a net). */
+::view-transition-group(root), ::view-transition-image-pair(root), ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+::view-transition-old(root) { display: none; }
+::view-transition-new(root) { mix-blend-mode: normal; }
+::view-transition-group(v2-main), ::view-transition-group(v2-crumbs) { animation: none; }  /* same box before and after: nothing to move or resize */
+::view-transition-old(v2-main), ::view-transition-new(v2-main), ::view-transition-old(v2-crumbs), ::view-transition-new(v2-crumbs) { mix-blend-mode: normal; }
+::view-transition-old(v2-main), ::view-transition-old(v2-crumbs) { animation: v2-vt-out var(--v2-dur-page-out) var(--v2-ease-exit) both; }
+::view-transition-new(v2-main), ::view-transition-new(v2-crumbs) { animation: v2-vt-in var(--v2-dur-page-in) var(--v2-ease) var(--v2-dur-page-delay) both; }
+@keyframes v2-vt-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes v2-vt-in { from { opacity: 0; transform: translateY(var(--v2-sp-page-rise)); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
+/* A browser without View Transitions: after the same wait for data, the new page's content fades in the same way (RouteStage puts
+   `is-settling` while the page's own first requests land, then `is-arriving`). */
+.v2-main.is-settling > * { visibility: hidden; }
+.v2-main.is-arriving > * { animation: v2-vt-in var(--v2-dur-page-in) var(--v2-ease) both; }
+
+/* The same page showing another item (a row picked beside its pane, an event next to another): the pane's content fades in, a
+   little rise. useItemFade restarts it by toggling the class. */
+.v2-item-in { animation: v2-item-in var(--v2-dur-item) var(--v2-ease) backwards; }
+@keyframes v2-item-in { from { opacity: 0; transform: translateY(var(--v2-sp-item-rise)); } to { opacity: 1; transform: none; } }
+
+/* A placeholder replaced by the real thing: the content fades in (contentIn.ts marks it). Only that; a refresh that replaces
+   cached numbers never gets the class, so a quiet refresh doesn't flicker. */
+.v2-in { animation: v2-in var(--v2-dur-content) var(--v2-ease) backwards; }
+@keyframes v2-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* The item a Go to choice found: a tint that fades out over 1.2 s (held still, then removed, under reduced motion). */
+.v2-found { animation: v2-found 1200ms var(--v2-ease) both; }
+@keyframes v2-found { from { box-shadow: inset 0 0 0 999px color-mix(in srgb, var(--v2-brand) 16%, transparent); } to { box-shadow: inset 0 0 0 999px transparent; } }
+@media (prefers-reduced-motion: reduce) { .v2-found { animation: none !important; box-shadow: inset 0 0 0 999px color-mix(in srgb, var(--v2-brand) 16%, transparent); } }

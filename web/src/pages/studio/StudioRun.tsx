@@ -1,4 +1,4 @@
-// A simulation as it runs (board 10; states: board 15 B): the title, the day and the controls, what Amiri Agent has done so far
+// A simulation as it runs (board 10; states: board 15 B): the title, the day and the controls, what AMIRI Agent has done so far
 // (four tiles), the stories the scenario expected beside what was found, the alerts it would raise, the price and the timeline.
 // Nothing here is saved or sent: the run is in the Studio's own world. The page drives the run: Next day and Play ask the server
 // to step (POST :step), again and again while agents work, until the day moves (or, for Play, the run ends). A run that nobody

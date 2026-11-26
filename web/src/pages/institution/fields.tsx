@@ -1,8 +1,10 @@
 // Form controls for the institution profile. Every control is controlled: value + onChange.
-import { cloneElement, createContext, isValidElement, useContext, useEffect, useId, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Item, PlaceInfo } from "../../api/institutions";
 import { ref, type Dimension } from "../../api/reference";
 import { Icon } from "../../components/Icon";
+import { Button } from "../../components/v2/Button";
+import { asControl, Field, Input, Select } from "../../components/v2/Field";
 import { dimWord, monthsText, MONTHS, usdText, valueWord } from "./fieldWords";
 
 export { dimWord, monthsText, usdText, valueWord };
@@ -18,30 +20,7 @@ export function useLoad<T>(f: () => Promise<T>, deps: unknown[] = []): T | null 
   return v;
 }
 
-/** A labelled control. A single input, select or textarea is tied to its label and to the hint or error, so a screen reader
- *  announces "Name, edit text, <hint>"; anything composite (chips, several controls) is a named group. */
-/** The label of the Field a composite control sits in, for the control inside (a select in a wrapper component). */
-const FieldLabel = createContext<string | undefined>(undefined);
-export const useFieldLabel = () => useContext(FieldLabel);
-
-/** A required field's mark: a star to see, "required" to hear. The forms say once that * means required. */
-export const Req = () => <><span className="req" aria-hidden="true"> *</span><span className="sr"> (required)</span></>;
-
-export function Field({ label, hint, error, children, full, req }: { label: string; hint?: ReactNode; error?: string; children: ReactNode; full?: boolean; req?: boolean }) {
-  const id = useId();
-  const note = error || hint ? `${id}-note` : undefined;
-  const single = isValidElement(children) && typeof children.type === "string" && ["input", "select", "textarea"].includes(children.type);
-  const body = single
-    ? cloneElement(children as ReactElement<Record<string, unknown>>, { id, "aria-describedby": note, "aria-invalid": error ? true : undefined })
-    : children;
-  return (
-    <div className="field" role={single ? undefined : "group"} aria-labelledby={single ? undefined : `${id}-label`} style={full ? { gridColumn: "1 / -1" } : undefined}>
-      {single ? <label htmlFor={id}>{label}{req && <Req />}</label> : <span id={`${id}-label`}>{label}{req && <Req />}</span>}
-      <FieldLabel.Provider value={single ? undefined : `${id}-label`}>{body}</FieldLabel.Provider>
-      {error ? <span className="errtext" id={note} role="alert">{error}</span> : hint ? <span className="hint" id={note}>{hint}</span> : null}
-    </div>
-  );
-}
+export { Field };
 
 // ---------------------------------------------------------------- places
 
@@ -59,7 +38,6 @@ const NONE: string[] = [];
 export function PlacePicker({ onPick, scope = "any", placeholder = "Search a country, region, city, port or strait…", exclude = NONE }: {
   onPick: (p: PlaceInfo) => void; scope?: PlaceScope; placeholder?: string; exclude?: string[];
 }) {
-  const fieldLabel = useFieldLabel();
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<PlaceInfo[]>([]);
   const [open, setOpen] = useState(false);
@@ -83,7 +61,7 @@ export function PlacePicker({ onPick, scope = "any", placeholder = "Search a cou
   }, [q, scope, excluded]);
   return (
     <div style={{ position: "relative" }}>
-      <input className="input" aria-labelledby={fieldLabel} aria-label={fieldLabel ? undefined : placeholder} value={q} placeholder={placeholder} onChange={e => setQ(e.target.value)}
+      <Input aria-label={placeholder} value={q} placeholder={placeholder} onChange={e => setQ(e.target.value)} autoComplete="off"
         onFocus={() => hits.length && setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)} />
       {open && hits.length > 0 && (
         <div className="results" style={{ position: "absolute", zIndex: 20, left: 0, right: 0, top: 38, background: "var(--v2-surface)", boxShadow: "var(--v2-shadow-pop)" }}>
@@ -118,69 +96,66 @@ export function PlaceField({ value, onChange, scope = "any", names }: { value: s
   if (value) return (
     <div className="row" style={{ gap: 8 }}>
       <span className="chip sel"><PlaceName code={value} names={names} /> <span className="mono" style={{ fontSize: 10 }}>{value}</span></span>
-      <button className="btn btn--sm btn--ghost" type="button" onClick={() => onChange(null)}>Change</button>
+      <Button size="sm" variant="quiet" onClick={() => onChange(null)}>Change</Button>
     </div>
   );
   return <PlacePicker scope={scope} onPick={p => onChange(p.code)} placeholder={scope === "country" ? "Search a country…" : undefined} />;
 }
 
-export function CountrySelect({ value, onChange, allowEmpty = false, home = false }: { value: string | null; onChange: (v: string | null) => void; allowEmpty?: boolean; home?: boolean }) {
-  const fieldLabel = useFieldLabel();
+export const CountrySelect = asControl(function CountrySelect({ value, onChange, allowEmpty = false, home = false }: { value: string | null; onChange: (v: string | null) => void; allowEmpty?: boolean; home?: boolean }) {
   const all = useLoad(() => (home ? Promise.resolve(null) : ref.countries()));
   const homes = useLoad(() => (home ? ref.homeCountries() : Promise.resolve(null)));
   const countries: { code: string; name: string | null }[] | null = home ? homes?.items ?? null : all;
   return (
     <>
-      <select className="input" aria-labelledby={fieldLabel} value={value ?? ""} onChange={e => onChange(e.target.value || null)}>
+      <Select value={value ?? ""} onChange={e => onChange(e.target.value || null)}>
         {(allowEmpty || !value) && <option value="">{allowEmpty ? "— none (global) —" : "Choose a country…"}</option>}
         {(countries ?? (value ? [{ code: value, name: value }] : [])).map(c => <option key={c.code} value={c.code}>{c.name} ({c.code})</option>)}
-      </select>
-      {homes?.region && <span className="hint">The prototype covers {homes.region.label} only.</span>}
+      </Select>
+      {homes?.region && <span className="v2-field__hint">The prototype covers {homes.region.label} only.</span>}
     </>
   );
-}
+});
 
 // ---------------------------------------------------------------- currencies, time zones
 
-export function CurrencySelect({ value, onChange, allowEmpty = false, home = false }: { value: string | null; onChange: (v: string | null) => void; allowEmpty?: boolean; home?: boolean }) {
-  const fieldLabel = useFieldLabel();
+export const CurrencySelect = asControl(function CurrencySelect({ value, onChange, allowEmpty = false, home = false }: { value: string | null; onChange: (v: string | null) => void; allowEmpty?: boolean; home?: boolean }) {
   const all = useLoad(() => (home ? Promise.resolve(null) : ref.currencies()));
   const homes = useLoad(() => (home ? ref.homeCurrencies() : Promise.resolve(null)));
   const cur = home ? homes?.items ?? null : all;
   return (
     <>
-      <select className="input" aria-labelledby={fieldLabel} value={value ?? ""} onChange={e => onChange(e.target.value || null)}>
+      <Select value={value ?? ""} onChange={e => onChange(e.target.value || null)}>
         {(allowEmpty || !value) && <option value="">{allowEmpty ? "—" : "Choose…"}</option>}
         {(cur ?? (value ? [{ code: value, name: "" }] : [])).map(c => <option key={c.code} value={c.code}>{c.code} · {c.name}</option>)}
-      </select>
-      {homes?.region && <span className="hint">Currencies of {homes.region.label} only.</span>}
+      </Select>
+      {homes?.region && <span className="v2-field__hint">Currencies of {homes.region.label} only.</span>}
     </>
   );
-}
+});
 
 export function CurrenciesField({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
   const cur = useLoad(() => ref.currencies());
   return (
-    <div className="row wrap" style={{ gap: 6 }}>
-      {value.map(c => <span key={c} className="chip">{c}<button type="button" onClick={() => onChange(value.filter(x => x !== c))}>×</button></span>)}
-      <select className="input" aria-label="Add a currency" style={{ width: 160 }} value="" onChange={e => e.target.value && onChange([...value, e.target.value])}>
+    <div className="v2-cur">
+      {value.map(c => <span key={c} className="chip">{c}<button type="button" aria-label={`Remove ${c}`} onClick={() => onChange(value.filter(x => x !== c))}>×</button></span>)}
+      <Select inline aria-label="Add a currency" value="" onChange={e => e.target.value && onChange([...value, e.target.value])}>
         <option value="">+ currency</option>
         {(cur ?? []).filter(c => !value.includes(c.code)).map(c => <option key={c.code} value={c.code}>{c.code} · {c.name}</option>)}
-      </select>
+      </Select>
     </div>
   );
 }
 
-export function TimeZoneInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export const TimeZoneInput = asControl(function TimeZoneInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const tz = useLoad(() => ref.timeZones());
-  const fieldLabel = useFieldLabel();
   return (
     <>
-      <input className="input" aria-labelledby={fieldLabel} list="amiri-tz" value={value} placeholder="e.g. Europe/London" onChange={e => onChange(e.target.value)} />
+      <Input list="amiri-tz" value={value} placeholder="e.g. Europe/London" onChange={e => onChange(e.target.value)} />
       <datalist id="amiri-tz">{(tz ?? []).map(z => <option key={z} value={z} />)}</datalist>
     </>
   );
-}
+});
 
 // ---------------------------------------------------------------- lists of values
 
@@ -190,8 +165,8 @@ export function ChipsInput({ value, onChange, placeholder = "Type and press Ente
   return (
     <div className="col" style={{ gap: 6 }}>
       {value.length > 0 && <div className="row wrap" style={{ gap: 6 }}>{value.map(v => (
-        <span key={v} className="chip">{v}<button type="button" onClick={() => onChange(value.filter(x => x !== v))}>×</button></span>))}</div>}
-      <input className="input" value={t} placeholder={placeholder} onChange={e => setT(e.target.value)}
+        <span key={v} className="chip">{v}<button type="button" aria-label={`Remove ${v}`} onClick={() => onChange(value.filter(x => x !== v))}>×</button></span>))}</div>}
+      <Input value={t} placeholder={placeholder} onChange={e => setT(e.target.value)}
         onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }} onBlur={add} />
     </div>
   );
@@ -236,20 +211,20 @@ export function SpecField({ value, onChange }: { value: { dimension: string; val
         const d = dimOf(m.dimension);
         return (
           <div key={i} className="row" style={{ gap: 6 }}>
-            <select className="input" style={{ width: 230 }} value={m.dimension} onChange={e => set(i, { dimension: e.target.value, value: "" })}>
+            <Select aria-label={`Data value ${i + 1}: what it describes`} className="pf-w230" value={m.dimension} onChange={e => set(i, { dimension: e.target.value, value: "" })}>
               {(dims ?? []).map(x => <option key={x.dimension} value={x.dimension}>{dimWord(x.dimension)}</option>)}
-            </select>
+            </Select>
             {d?.values ? (
-              <select className="input" value={m.value} onChange={e => set(i, { value: e.target.value })}>
+              <Select aria-label={`Data value ${i + 1}: the value`} value={m.value} onChange={e => set(i, { value: e.target.value })}>
                 <option value="">Choose…</option>{d.values.map(v => <option key={v} value={v}>{valueWord(v)}</option>)}
-              </select>
-            ) : <input className="input" value={m.value} placeholder={d?.format ?? "value"} onChange={e => set(i, { value: e.target.value })} />}
-            <button className="btn btn--ghost btn--icon" type="button" aria-label="Remove" onClick={() => onChange(value.filter((_, j) => j !== i))}><Icon name="x" /></button>
+              </Select>
+            ) : <Input aria-label={`Data value ${i + 1}: the value`} value={m.value} placeholder={d?.format ?? "value"} onChange={e => set(i, { value: e.target.value })} />}
+            <Button variant="quiet" icon label="Remove" onClick={() => onChange(value.filter((_, j) => j !== i))}><Icon name="x" /></Button>
           </div>
         );
       })}
-      {value.length < 6 && <button className="btn btn--sm" type="button" style={{ alignSelf: "flex-start" }}
-        onClick={() => onChange([...value, { dimension: "segment", value: "" }])}><Icon name="plus" />Add a data value</button>}
+      {value.length < 6 && <Button size="sm" style={{ alignSelf: "flex-start" }}
+        onClick={() => onChange([...value, { dimension: "segment", value: "" }])}><Icon name="plus" />Add a data value</Button>}
     </div>
   );
 }
@@ -260,10 +235,10 @@ export function MoneyField({ value, onChange }: { value: { amount: number; curre
   const v = value ?? { amount: 0, currency: "", as_of: null };
   return (
     <div className="row" style={{ gap: 6 }}>
-      <input className="input" type="number" min={0} step="any" style={{ width: 170 }} value={value ? v.amount : ""} placeholder="amount"
+      <Input aria-label="Amount" type="number" min={0} step="any" style={{ width: 170 }} value={value ? v.amount : ""} placeholder="amount"
         onChange={e => e.target.value === "" ? onChange(null) : onChange({ ...v, amount: Number(e.target.value) })} />
-      <div style={{ width: 150 }}><CurrencySelect value={v.currency || null} onChange={c => onChange(c ? { ...v, currency: c } : null)} /></div>
-      <input className="input" type="date" style={{ width: 160 }} value={v.as_of ?? ""} onChange={e => value && onChange({ ...v, as_of: e.target.value || null })} title="As of" aria-label="As of" />
+      <div style={{ width: 170 }}><CurrencySelect value={v.currency || null} onChange={c => onChange(c ? { ...v, currency: c } : null)} /></div>
+      <Input type="date" style={{ width: 170 }} value={v.as_of ?? ""} onChange={e => value && onChange({ ...v, as_of: e.target.value || null })} title="As of" aria-label="As of" />
     </div>
   );
 }
@@ -273,10 +248,10 @@ export function FlowValueField({ value, onChange }: { value: { amount: number; c
   const year = value?.year ?? new Date().getFullYear() - 1;
   return (
     <div className="row" style={{ gap: 6, alignItems: "center" }}>
-      <input className="input" type="number" min={0} step="any" style={{ width: 150 }} value={value ? +(value.amount / 1e6).toFixed(3) : ""} placeholder="USD million"
+      <Input aria-label="Figure in USD million a year" type="number" min={0} step="any" style={{ width: 150 }} value={value ? +(value.amount / 1e6).toFixed(3) : ""} placeholder="USD million"
         onChange={e => e.target.value === "" ? onChange(null) : onChange({ amount: Math.round(Number(e.target.value) * 1e6), currency: "USD", year })} />
       <span className="small muted">USD million a year, in</span>
-      <input className="input" type="number" min={1990} max={2100} style={{ width: 100 }} value={year}
+      <Input aria-label="Year of the figure" type="number" min={1990} max={2100} style={{ width: 110 }} value={year}
         onChange={e => value && onChange({ ...value, year: Number(e.target.value) })} />
       {value && <span className="small muted">= {usdText(value.amount)}</span>}
     </div>
@@ -293,11 +268,11 @@ export function KVField({ value, onChange }: { value: Record<string, string | nu
     <div className="col" style={{ gap: 6 }}>
       {entries.map(([a, b]) => (
         <div key={a} className="row small" style={{ gap: 8 }}><span className="mono">{a}</span><span className="muted">=</span><span>{String(b)}</span>
-          <button className="btn btn--ghost btn--icon" type="button" onClick={() => { const n = { ...value }; delete n[a]; onChange(n); }}><Icon name="x" /></button></div>))}
+          <Button variant="quiet" icon label={`Remove ${a}`} onClick={() => { const n = { ...value }; delete n[a]; onChange(n); }}><Icon name="x" /></Button></div>))}
       <div className="row" style={{ gap: 6 }}>
-        <input className="input" style={{ width: 170 }} value={k} placeholder="detail, e.g. tenor_months" onChange={e => setK(e.target.value)} />
-        <input className="input" value={v} placeholder="value" onChange={e => setV(e.target.value)} onKeyDown={e => e.key === "Enter" && (e.preventDefault(), add())} />
-        <button className="btn btn--sm" type="button" onClick={add}>Add</button>
+        <Input aria-label="Detail name" style={{ width: 200 }} value={k} placeholder="detail, e.g. tenor_months" onChange={e => setK(e.target.value)} />
+        <Input aria-label="Detail value" value={v} placeholder="value" onChange={e => setV(e.target.value)} onKeyDown={e => e.key === "Enter" && (e.preventDefault(), add())} />
+        <Button size="sm" onClick={add}>Add</Button>
       </div>
     </div>
   );

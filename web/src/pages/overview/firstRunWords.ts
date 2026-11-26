@@ -13,10 +13,10 @@ type Inst = Overview["institution"];
 export function firstSteps(i: Inst, monitorsLive: number): FirstStep[] {
   const done = [!!i, !!i && i.readiness.ready && i.status === "active", monitorsLive > 0];
   const base = [
-    { title: "Tell Amiri Agent about your institution", body: "Where you operate, your customers, products, flows, regulators, rivals and risks. Talk to the setup agent, or use the forms.",
+    { title: "Tell AMIRI Agent about your institution", body: "Where you operate, your customers, products, flows, regulators, rivals and risks. Talk to the setup agent, or use the forms.",
       to: i ? "/institution/setup" : "/institution/new", label: i ? "Continue setup" : "Start setup" },
     { title: "Check it and go live",
-      body: i ? (i.readiness.ready ? "Everything required is there. Activate the profile so Amiri Agent starts using it." : `${plural(i.readiness.missing_required, "required item")} still missing.`)
+      body: i ? (i.readiness.ready ? "Everything required is there. Activate the profile so AMIRI Agent starts using it." : `${plural(i.readiness.missing_required, "required item")} still missing.`)
         : "Once the profile has what's required, activate it so the agents use it.",
       to: "/institution/setup/review", label: "Review" },
     { title: "Choose what to watch", body: "Draft monitors from your profile; a Risk Manager approves each one.", to: "/monitors", label: "Monitors" },
