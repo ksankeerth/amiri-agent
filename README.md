@@ -99,15 +99,16 @@ Commercial Bank** (invented, Sri Lanka only).
 | 8 | **Data connections** (Platform Admin) | The institution's own figures, imported as one JSON file in the **Metrics Spec**'s shape: checked, approved, and feeding Verification |
 | 9 | **Metrics Spec** | The open standard for a bank's or insurer's summary figures, with its PDF guide |
 
-**Want the insurer instead?** Settings › **Reset the prototype…** › **Demo insurer: Samudra Raya General
-Insurance** (invented, Indonesia only). The demo files and how to load them are in [`demo/`](demo).
+**Want the insurer instead?** Settings › **Start again from a JSON file…**, then choose
+`demo/samudra-raya-general-insurance/01 Tell Amiri Agent about your institution/profile.json` (invented, Indonesia
+only). The demo files and how to load them are in [`demo/`](demo).
 
 ## Prototype limitations
 
 | Area | Today |
 |---|---|
 | **Data** | Two invented institutions with sample data. Real firms appear only as rivals, regulators and partners. |
-| **Access** | No login. Anyone with the link uses it as Risk Manager or Platform Admin, including **Reset the prototype**, which reloads a demo. Bots are kept out by a reCAPTCHA check when it's switched on. |
+| **Access** | No login. Anyone with the link uses it as Risk Manager or Platform Admin, including **Start again from a JSON file**, which wipes the institution and loads the profile you choose. Bots are kept out by a reCAPTCHA check when it's switched on. |
 | **Users** | One installation serves one institution. One demo user records every action. |
 | **Verification** | Verdicts arrive once the institution publishes the period's figures. A fresh alert shows *"not published yet"* until then. |
 | **News** | Radar reads English news. Monitors also read other languages (tested on Tagalog and Bahasa pages). |
@@ -292,7 +293,9 @@ context. Another test fails if any migration or API contract changes.
 
 **A US bank:** Austin Tech Bank, [`demo/austin-tech-bank/`](demo/austin-tech-bank/), on a deployment with `SUPPORTED_REGION=japac,us`,
 loaded with `python3 demo/load_bundle.py --file demo/austin-tech-bank/bundle.json`. A
-deployment holds one institution and its data at a time.
+deployment holds one institution and its data at a time. If another institution is set up, start again from
+`demo/austin-tech-bank/profile.json` (Settings › **Start again from a JSON file…**) and then run the script, or run
+it with `--reset --yes`, which does both. Running it again on the same bank adds nothing twice.
 
 ## Measured, not estimated
 

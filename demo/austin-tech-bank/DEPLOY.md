@@ -93,8 +93,8 @@ Copy `infra/terraform/terraform.tfvars.example` to `terraform.tfvars` (git ignor
 - [ ] **The tick** is Cloud Scheduler `amiri-tick`, every 15 minutes (fixed in `run.tf`). Leave it.
 - [ ] **Radar's daily slot:** leave `radar_every_minutes = 1440` and `radar_run_at = "06:00"`. `radar_run_at`
       is read in the bank's time zone, and the bundle sets `America/Chicago`. So `06:00` is already Austin time.
-- [ ] While you load the bank, keep `prototype_reset = true` (the example has it). It lets you reset to
-      empty and retry. Set it `false` afterwards if the URL is public.
+- [ ] While you load the bank, keep `prototype_reset = true` (the example has it). It lets you start
+      again (`--reset --yes`, or Settings › Start again from a JSON file with `profile.json`) and retry. Set it `false` afterwards if the URL is public.
 
 ## 4. Quotas
 
@@ -147,7 +147,9 @@ Follow [`infra/SETUP.md`](../../infra/SETUP.md) in order. Your own project, your
 
 ## 7. Load the bank
 
-The platform must be **empty** (no institution). A fresh deployment is. The script refuses otherwise.
+A fresh deployment has no institution, and the script loads everything. If Austin Tech Bank is already there, it loads
+the rest onto it and skips what exists. If a *different* institution is set up, it refuses: start again from
+`demo/austin-tech-bank/profile.json` (Settings › Start again from a JSON file), or add `--reset --yes` to the command.
 
 - [ ] **Let the script's calls through: the login window.** With `auth_mode = "prototype"` (the default),
       every `/api/` call needs the browser cookie from the reCAPTCHA box, or a Google ID token.
@@ -170,8 +172,9 @@ The platform must be **empty** (no institution). A fresh deployment is. The scri
       `--skip-after-load` to load without them, and keep the window shorter. A second person to approve is
       optional: add `--approver Maya`.
 - [ ] Expect `Loaded: institution_id austin-tech-bank, series_added 4, monitors 7, monitors_live 7`.
-      If a step fails, it stops and lists what it wrote. Reset the prototype to "empty" in the app (it needs
-      `prototype_reset = true`) and run it again, still inside the window. If you have to stop, close the
+      If a step fails, it stops and lists what it wrote. Run the same command again, still inside the window:
+      what is loaded is kept and the rest is added. (To wipe and start over, add `--reset --yes`; it needs
+      `prototype_reset = true`.) If you have to stop, close the
       window first (steps 4 and 5) and open it again later.
 - [ ] Open question: do QQQ, UNG, USO and IEF work on the free Twelve Data plan? Add them (the load does) and
       press Refresh on Market series. If a series stays `pending`, tell the team lead.
@@ -226,6 +229,7 @@ monitors. Tell the team lead before you demo such a bank.
 - [ ] **Pause when nobody needs it:** `infra/scripts/awake.sh off`. It stops the database and pauses the tick.
       The app opens and says "paused". Storage, backups and the IP are still charged. Say yes to the plan it shows.
 - [ ] **Back on:** `infra/scripts/awake.sh on` (the database takes a few minutes; nothing is lost).
-- [ ] **Undo only the load:** reset the prototype to "empty" in the app, then load again.
+- [ ] **Undo only the load:** start again from `demo/austin-tech-bank/profile.json` (Settings › Start again from a JSON
+      file), then run the load again; or run it with `--reset --yes`.
 - [ ] **Take it all down:** `infra/README.md` §5 (`protect_database = false`, `deploy.sh`, `terraform destroy`),
       or delete the project.

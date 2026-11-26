@@ -17,11 +17,11 @@ dates and sources.
 ![Start with a demo, on the empty first screen](images/start-with-a-demo.png)
 
 - **Empty platform:** on the **Home** page, under **Start with a demo**, press **Demo bank** or **Demo insurer**.
-- **Platform already in use:** **Settings › Reset the prototype…** opens the **Reset the prototype** dialog. Choose
-  **Demo bank** or **Demo insurer**, type RESET, then press **Reset**. This removes the current institution and
-  everything made for it.
-
-![The Reset the prototype dialog](images/reset-the-prototype.png)
+- **Platform already in use:** **Settings › Start again from a JSON file…**. Choose the institution's `profile.json`
+  (in its `01 Tell Amiri Agent about your institution` folder; for Austin Tech Bank,
+  [`austin-tech-bank/profile.json`](austin-tech-bank/profile.json)), check what it will load, type RESET, then press
+  **Reset and load this file**. This removes the current institution and everything made for it (market series and prices stay),
+  then loads and activates the file's institution. An empty platform can no longer be made.
 
 Either way loads the whole profile (steps 01 to 10 below) and makes it live. Market series, monitors and scenarios
 (steps 11 to 13) are yours to add from the files, and the institution's data comes from the example file (below).

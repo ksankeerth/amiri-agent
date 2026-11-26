@@ -1,7 +1,7 @@
 # Austin Tech Bank (US region pack)
 
 Austin Tech Bank: a synthetic mid-size Austin bank, built from the public product mix of US technology lenders and
-Texas commercial banks. Book sizes are illustrative. Load once, on an empty platform.
+Texas commercial banks. Book sizes are illustrative. Load it on an empty platform, or onto the bank itself (running it again adds nothing twice).
 
 It is **invented**: no real bank has this name, and the profile names no real bank, not even as a rival (rivals are
 empty). Radar's named actors come from its regulators and two counterparties: ERCOT and the Fedwire Funds Service.
@@ -12,11 +12,15 @@ One file with everything a platform needs:
 
 | Part | What |
 |---|---|
-| `institution`, `sections` | The profile, as `POST /api/v1/institutions:import` takes it. Footprint: the US home market, Texas and part of California. Watch places: Silicon Valley (San Jose), Austin, Dallas-Fort Worth, the Permian Basin (Midland). Six customer groups and twelve products. The US regulators from the rule table, plus FinCEN. |
+| `institution`, `sections` | The profile, as `POST /api/v1/institutions:import` takes it (also written alone as `profile.json`, below). Footprint: the US home market, Texas and part of California. Watch places: Silicon Valley (San Jose), Austin, Dallas-Fort Worth, the Permian Basin (Midland). Six customer groups and twelve products. The US regulators from the rule table, plus FinCEN. |
 | `series` | Four market series: Nasdaq-100, natural gas, oil and 7-10 year Treasury funds (no single stocks). |
 | `monitors` | Seven live monitors: tech layoffs, Austin housing, bank-level evidence, data centers, Texas power, fund stress, startup funding. None watches elections or party politics. |
 | `sample_data` | Imports the example data file (the sample bank shaped by this profile), so Verification has figures to compare. |
 | `after_load` | Activate, one Radar run, one check per live monitor. |
+
+`profile.json` is the same profile alone (`{institution, sections}`), the shape Settings › Start again from a JSON file
+takes and the one **Download the current profile (.json)** writes. It is `institution` and `sections` copied from
+`bundle.json`; a test checks they match, so regenerate it when the bundle changes.
 
 The source is `global-support/us-bank/` (outside the repository). `make_bundle.py` builds this file and validates it
 with the server's own models. Change the source and rebuild; don't edit only this copy.
@@ -25,7 +29,9 @@ with the server's own models. Change the source and rebuild; don't edit only thi
 
 The deployment needs `SUPPORTED_REGION=japac,us` (or `us` alone). The default (`japac`) refuses a US home country.
 A deployment holds one institution and its data at a time, so the US bank runs in its own deployment, or replaces the
-Sri Lankan one after a reset. The platform must be empty (Settings › Reset the prototype… › Empty).
+Sri Lankan one after a reset. An empty platform is no longer possible after the first institution, so to move a
+platform that holds another institution to this bank, start again from [`profile.json`](profile.json): Settings ›
+**Start again from a JSON file…**, choose `demo/austin-tech-bank/profile.json`, then run `demo/load_bundle.py`.
 
 Load it with [`demo/load_bundle.py`](../load_bundle.py) (Python 3.10+, standard library only), against a running
 server:
@@ -36,15 +42,29 @@ python3 demo/load_bundle.py --file demo/austin-tech-bank/bundle.json \
     --base-url http://localhost:8000 --skip-after-load                                 # load, no model calls
 ```
 
-It refuses unless the platform is empty. Then it imports the profile under the installation's own id
-(`INSTITUTION_ID`), activates it, adds the series (a symbol already watched is skipped), writes the monitors, and
+It looks at the platform first:
+
+- **Empty:** it imports the profile under the installation's own id (`INSTITUTION_ID`) and activates it.
+- **Austin Tech Bank is already there:** it keeps it and loads the rest onto it. Run it twice and nothing doubles: a
+  monitor with the same name, a series already watched, and example data already imported are skipped.
+- **A different institution:** it stops and says: "A different institution is set up. Start again from a JSON file
+  (Settings) with this bundle's profile: `demo/austin-tech-bank/profile.json`, then run this again." Or add
+  `--reset`: it posts the profile to `/api/v1/prototype:reset`, which wipes the institution and everything made for it
+  (market series and prices stay), then loads the rest. It prints what it will wipe and needs `--yes` (or, at a
+  terminal, typing RESET):
+
+  ```bash
+  python3 demo/load_bundle.py --file demo/austin-tech-bank/bundle.json --reset --yes --skip-after-load
+  ```
+
+After the profile it adds the series (a symbol already watched is skipped), writes the monitors, and
 imports the example data file (check and approve it on Data connections). Live monitors are submitted by `--actor` (default John) and approved by
 `--approver` (default the same person; the server allows that, so give a second name, for example
 `--approver Maya`, to record one). Without `--skip-after-load` it also starts one Radar run and checks every live
-monitor once. Those call Gemini, BigQuery and web search, so they cost money. Once the monitors are live, the
+monitor it wrote once (a run that added nothing starts nothing). Those call Gemini, BigQuery and web search, so they cost money. Once the monitors are live, the
 deployment's tick checks them on their own schedule too.
 
-If a step fails, it stops and lists what it wrote; reset the prototype to "empty" and run it again.
+If a step fails, it stops and lists what it wrote; run it again: what is loaded is kept and the rest is added.
 
 By hand instead: import `institution` and `sections` (Institution › Import a whole profile), activate it, add the
 series on Market series, enter the monitors (Monitors › New monitor), and on Data connections download the
