@@ -236,12 +236,11 @@ async def patch_institution(request: Request, institution_id: str, body: Institu
     return out
 
 
-@router.delete("/institutions/{institution_id}", status_code=204,
-               summary="Delete an institution still in setup (archive an active one instead)")
-async def delete_institution(request: Request, institution_id: str):
+@router.delete("/institutions/{institution_id}", status_code=403,
+               summary="Not allowed: the only way to start over is the prototype reset with a JSON profile")
+async def delete_institution(institution_id: str):
     demo_lock.guard()
-    await svc(request).delete(institution_id)
-    return Response(status_code=204)
+    raise Problem(403, "use_reset", "To start over, use Start again from a JSON file (Settings).")
 
 
 @router.post("/institutions/{institution_id}:activate", response_model=InstitutionView,

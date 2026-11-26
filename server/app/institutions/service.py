@@ -137,17 +137,14 @@ class Institutions:
     async def get(self, institution_id: str) -> dict:
         return self.inst_view(await self.state(institution_id))
 
-    async def create(self, body: InstitutionCreate, actor: str, source: str,
-                     sections: dict[str, list[dict]] | None = None, proposal_id: str | None = None) -> dict:
-        """Creates an institution with its home footprint entry, then (import) its sections."""
+    def _plan_create(self, body: InstitutionCreate, sections: dict[str, list[dict]] | None) -> tuple[dict, list[Operation]]:
+        """The institution's fields and the operations that build it (its home footprint entry first, then the
+        imported sections). Raises the 422 for what the schema or the create rules refuse; writes nothing."""
         fields = body.model_dump(mode="json", exclude={"institution_id"})
         if errs := create_errors(fields):
             raise _err(errs)
         defaults = {"islamic": False, "clearing_currencies": [], "fiscal_year_start_month": 1}
         fields = {**defaults, **{k: v for k, v in fields.items() if v is not None}}
-        iid = body.institution_id or (settings.raw("INSTITUTION_ID") if settings.flag("SINGLE_INSTITUTION") else "") \
-            or slugify(body.name)
-        now = self.clock.now()
         ops = [Operation(op="create", section="footprint",
                          data={"code": fields["home_country"], "role": "home", "scope": "all"})]
         ops_import = []
@@ -160,23 +157,55 @@ class Institutions:
                     ops[0] = Operation(op="create", section="footprint", data=data)
                     continue
                 ops_import.append(Operation(op="create", section=sec, id=it.get("id"), data=data))
+        return fields, [*ops, *ops_import]
+
+    async def _create_in(self, conn, iid: str, fields: dict, ops: list[Operation], actor: str, source: str,
+                         proposal_id: str | None = None) -> None:
+        st = State(inst={"institution_id": iid, "fields": fields})
+        try:
+            await store.write_institution(conn, st, self.clock.now(), False, 1, insert=True)
+        except pg_errors.UniqueViolation as e:
+            raise Problem(409, "institution_exists", f"An institution with id {iid} exists.") from e
+        await self._apply(conn, iid, ops, actor, source, dry_run=False, if_profile_version=None, initial=True,
+                          proposal_id=proposal_id)
+
+    async def create(self, body: InstitutionCreate, actor: str, source: str,
+                     sections: dict[str, list[dict]] | None = None, proposal_id: str | None = None) -> dict:
+        """Creates an institution with its home footprint entry, then (import) its sections."""
+        fields, ops = self._plan_create(body, sections)
+        iid = body.institution_id or (settings.raw("INSTITUTION_ID") if settings.flag("SINGLE_INSTITUTION") else "") \
+            or slugify(body.name)
         async with self.pool.connection() as conn, conn.transaction():
             if settings.flag("SINGLE_INSTITUTION"):
                 cur = await conn.execute("SELECT name FROM core.institutions WHERE status <> 'archived' LIMIT 1")
                 if other := await cur.fetchone():
                     raise Problem(409, "one_institution", f"This platform holds one institution ({other['name']}). "
-                                  "Reset the prototype to start again with another.")
+                                  "To start again with another, use Start again from a JSON file (Settings).")
             cur = await conn.execute("SELECT 1 FROM core.institutions WHERE institution_id = %s", (iid,))
             if await cur.fetchone():
                 raise Problem(409, "institution_exists", f"An institution with id {iid} exists; give another institution_id.")
-            st = State(inst={"institution_id": iid, "fields": fields})
-            try:
-                await store.write_institution(conn, st, now, False, 1, insert=True)
-            except pg_errors.UniqueViolation as e:
-                raise Problem(409, "institution_exists", f"An institution with id {iid} exists.") from e
-            await self._apply(conn, iid, [*ops, *ops_import], actor, source, dry_run=False,
-                              if_profile_version=None, initial=True, proposal_id=proposal_id)
+            await self._create_in(conn, iid, fields, ops, actor, source, proposal_id)
         return await self.get(iid)
+
+    async def validate_profile(self, body: InstitutionCreate, sections: dict[str, list[dict]] | None, actor: str) -> None:
+        """Whether `create` followed by `activate` would succeed, without leaving anything behind: the same checks
+        (create rules, every section and item rule, the database's own constraints) run in a transaction that is
+        always rolled back, under a throwaway id, ignoring the one-institution rule (the reset removes the old one).
+        Raises the 422 Problem create would raise, or not_ready when the profile could not go live."""
+        fields, ops = self._plan_create(body, sections)
+        iid = "validate-" + uuid.uuid4().hex[:10]
+        try:
+            async with self.pool.connection() as conn, conn.transaction(force_rollback=True):
+                await self._create_in(conn, iid, fields, ops, actor, "import")
+                await conn.execute("SET CONSTRAINTS ALL IMMEDIATE")  # deferred links are checked here, not at a commit that never comes
+                rd = self.readiness(await self._load(conn, iid, lock=False))
+        except (pg_errors.ForeignKeyViolation, pg_errors.UniqueViolation, pg_errors.CheckViolation) as e:
+            raise Problem(422, "database_rule", f"The database refused the profile: {e.diag.message_primary}",
+                          constraint=e.diag.constraint_name) from e
+        if not rd["ready"]:
+            missing = [c for c in rd["checks"] if c["level"] == "required" and not c["ok"]]
+            raise Problem(422, "not_ready", "The profile is not complete enough to go live: "
+                          + "; ".join(f"{c['message']} ({c['fix'] or 'missing'})" for c in missing), missing=missing)
 
     async def set_status(self, institution_id: str, action: str, actor: str) -> dict:
         now = self.clock.now()
@@ -210,13 +239,6 @@ class Institutions:
                 (institution_id, pv, now, actor, uuid.uuid4().hex[:12], Jsonb({"status": cur_status}), Jsonb({"status": new})),
             )
         return await self.get(institution_id)
-
-    async def delete(self, institution_id: str) -> None:
-        async with self.pool.connection() as conn, conn.transaction():
-            state = await self._load(conn, institution_id, lock=True)
-            if state.inst["status"] != "setup":
-                raise Problem(409, "cannot_delete", "Only an institution still in setup can be deleted; archive it instead.")
-            await conn.execute("DELETE FROM core.institutions WHERE institution_id = %s", (institution_id,))
 
     # ------------------------------------------------ the batch
 

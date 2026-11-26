@@ -263,7 +263,7 @@ async def test_section_limit(client, monkeypatch):
 # ---------------------------------------------------------------- lifecycle and readiness
 
 
-async def test_readiness_activate_archive_delete(client):
+async def test_readiness_activate_archive_and_no_delete(client):
     iid = (await new(client))["institution_id"]
     rd = (await client.get(f"{B}/{iid}/readiness")).json()
     assert rd["ready"] is False and rd["missing_required"] == 2
@@ -278,14 +278,18 @@ async def test_readiness_activate_archive_delete(client):
     assert not reg["ok"] and "suggested by the rule table" in reg["message"]
     r = await client.post(f"{B}/{iid}:activate")
     assert r.status_code == 200 and r.json()["status"] == "active" and r.json()["activated_at"]
-    assert (await client.delete(f"{B}/{iid}")).status_code == 409
     assert (await client.post(f"{B}/{iid}:archive")).json()["status"] == "archived"
     r = await client.post(f"{B}/{iid}/rivals", json={"name": "A"})
     assert r.status_code == 409 and r.json()["code"] == "institution_archived"
     assert (await client.post(f"{B}/{iid}:restore")).json()["status"] == "active"
+
+    # the whole institution can't be deleted through the API, in setup or live: the way to start over is the reset
     other = (await new(client, INSURER))["institution_id"]
-    assert (await client.delete(f"{B}/{other}")).status_code == 204
-    assert (await client.get(f"{B}/{other}")).status_code == 404
+    for target in (iid, other):
+        r = await client.delete(f"{B}/{target}")
+        assert r.status_code == 403 and r.json()["code"] == "use_reset"
+        assert "Start again from a JSON file" in r.json()["detail"]
+        assert (await client.get(f"{B}/{target}")).status_code == 200  # still there
 
 
 # ---------------------------------------------------------------- suggestions
@@ -533,10 +537,10 @@ async def test_risk_finder(client):
     assert r.status_code == 409 and r.json()["code"] == "duplicate"  # one exposure per hazard
 
 
-async def test_delete_a_full_institution_in_setup(client, sql):
+async def test_removing_a_full_institution_in_setup_leaves_no_links(client, sql):
     await seed(client)  # imported: still in setup, with links between items
-    r = await client.delete(f"{B}/serendib-bank")
-    assert r.status_code == 204
+    assert (await client.delete(f"{B}/serendib-bank")).status_code == 403  # not through the API any more
+    await sql("DELETE FROM core.institutions WHERE institution_id = 'serendib-bank'")  # the database cascades
     assert (await sql("SELECT count(*) AS n FROM core.exposure_watch_places"))[0]["n"] == 0
     # deleting an item that is in use is still refused
     await seed(client)

@@ -70,7 +70,7 @@ async def test_every_edit_delete_and_reset_is_refused(client, env):
         ("DELETE", f"{S}/scenarios/{sc['scenario_id']}", None),
         # clearing the simulated findings, the reset, loading a demo
         ("DELETE", "/api/v1/sandbox", None),
-        ("POST", "/api/v1/prototype:reset", {"confirm": "RESET"}),
+        ("POST", "/api/v1/prototype:reset", {"confirm": "RESET", "profile": {"institution": SEED["institution"], "sections": SEED["sections"]}}),
         ("POST", "/api/v1/prototype:demo", {"kind": "bank"}),
     ]
     for method, url, body in calls:
