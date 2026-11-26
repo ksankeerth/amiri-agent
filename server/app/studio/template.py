@@ -1,7 +1,7 @@
 """Scenario templates, built by code for whichever institution runs them.
 
 A template is a what-if written by people: when it starts, which headlines arrive when, how a
-price moves, the monitor that watches for it, and the stories it expects Amiri Agent to find. Building
+price moves, the monitor that watches for it, and the stories it expects AMIRI Agent to find. Building
 it for an institution fills in that institution's currency, country, central bank and products;
 numbers in headlines come from the price path, so they match the chart. No model is used.
 
@@ -57,7 +57,7 @@ TEMPLATES = {
     },
     "blank": {
         "title": "Your own scenario",
-        "summary": "Write the headlines yourself and choose how the exchange rate moves, if at all. Amiri Agent's monitor "
+        "summary": "Write the headlines yourself and choose how the exchange rate moves, if at all. AMIRI Agent's monitor "
                    "reads your headlines and the investigation traces them to your products.",
         "tags": ["your headlines", "your price move"],
     },
@@ -188,7 +188,7 @@ def _blank_monitor(ctx: dict, cur_name: str, country: str, bank: str) -> dict:
 
 def _custom_headlines(custom: dict, at, given: list[dict]) -> list[dict]:
     """The scenario's own headline list (edited, added, removed) in place of the template's; a template
-    headline keeps its story, so "what Amiri Agent should find" still knows it."""
+    headline keeps its story, so "what AMIRI Agent should find" still knows it."""
     story = {h["id"]: h["story"] for h in given}
     return [{"id": h["id"], "story": story.get(h["id"], "custom"), "at": at(h["day"], *(int(x) for x in h["time"].split(":"))),
              "title": h["title"], "day": h["day"], "time": h["time"]} for h in custom["headlines"]]

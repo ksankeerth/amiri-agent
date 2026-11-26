@@ -86,5 +86,5 @@ class Asleep(BaseHTTPMiddleware):
             return await call_next(request)
         if await wake(app, app.state.database_url):
             return await call_next(request)
-        return problem_response(Problem(503, "asleep", "Amiri Agent is paused to save costs: its database is stopped. "
+        return problem_response(Problem(503, "asleep", "AMIRI Agent is paused to save costs: its database is stopped. "
                                                        "Ask the person who runs it to wake it up.", retry_after=60))

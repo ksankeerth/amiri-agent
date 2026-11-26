@@ -98,7 +98,7 @@ def build_file(profile: dict, kind: str, today: date, conditions: list[dict], so
                + ")" for i, a in active.items()]
     return {
         "format": FORMAT, "metrics_spec": SPEC_VERSION, "as_of": as_of.isoformat(),
-        "about": (f"Synthetic data from Amiri Agent's sample {kind}, shaped by {inst.name} "
+        "about": (f"Synthetic data from AMIRI Agent's sample {kind}, shaped by {inst.name} "
                   f"({'your profile' if source == 'installation' else 'the bundled demo profile'}). "
                   + (f"Planted: {'; '.join(planted)}." if planted else "Nothing planted.")),
         "catalog": _catalog(inst, active, today, vintages_from),

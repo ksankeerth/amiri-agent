@@ -1,4 +1,4 @@
-"""Alerts (/api/v1/alerts): what Amiri Agent found for each team's products, and
+"""Alerts (/api/v1/alerts): what AMIRI Agent found for each team's products, and
 who has looked at it. Any Risk Manager acknowledges or resolves; every step is recorded."""
 
 from typing import Annotated, Literal

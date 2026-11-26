@@ -136,7 +136,7 @@ async def sync(conn, event_id: str, now: datetime, why: str = "", checked: bool 
                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'new', %s, %s, %s)""",
                 (f"al-{uuid.uuid4().hex[:10]}", ev["institution_id"], event_id, team, level, title, Jsonb(xs),
                  a["product_ids"], hyp_ids, findings, a["via_monitor"],
-                 Jsonb([{"at": now.isoformat(), "change": "raised", "by": "Amiri Agent",
+                 Jsonb([{"at": now.isoformat(), "change": "raised", "by": "AMIRI Agent",
                          "text": f"From the event \u201c{ev['title']}\u201d."}]), now, now))
             changed += 1
             continue
@@ -147,7 +147,7 @@ async def sync(conn, event_id: str, now: datetime, why: str = "", checked: bool 
             if moved:  # checked, the level as it was: the history says so, the alert stays where it is
                 await conn.execute(
                     "UPDATE core.alerts SET effects = %s, history = history || %s, updated_at = %s WHERE alert_id = %s",
-                    (Jsonb(xs), Jsonb([{"at": now.isoformat(), "change": "checked", "by": "Amiri Agent",
+                    (Jsonb(xs), Jsonb([{"at": now.isoformat(), "change": "checked", "by": "AMIRI Agent",
                                         "text": "; ".join(x["check"]["line"] for x in moved)}]), now, old["alert_id"]))
             continue
         rose, fell = RANK[level] > RANK[old["level"]], RANK[level] < RANK[old["level"]]
@@ -157,7 +157,7 @@ async def sync(conn, event_id: str, now: datetime, why: str = "", checked: bool 
                      finding_ids = %s, status = CASE WHEN %s THEN 'new' ELSE status END, history = history || %s,
                      updated_at = %s WHERE alert_id = %s""",
                 (level, title, Jsonb(xs), a["product_ids"], hyp_ids, findings, rose,
-                 Jsonb([{"at": now.isoformat(), "by": "Amiri Agent",
+                 Jsonb([{"at": now.isoformat(), "by": "AMIRI Agent",
                          "change": ("confirmed" if level == "adverse" else "escalated") if rose else "withdrawn",
                          "text": "; ".join(x["check"]["line"] for x in (moved or xs) if x.get("check"))
                                  or f"now {level}"}]), now, old["alert_id"]))
@@ -175,7 +175,7 @@ async def sync(conn, event_id: str, now: datetime, why: str = "", checked: bool 
                  finding_ids = %s, status = CASE WHEN status = 'resolved' THEN status WHEN %s THEN 'new' ELSE status END,
                  history = history || %s, updated_at = %s WHERE alert_id = %s""",
             (level, title, Jsonb(xs), a["product_ids"], hyp_ids, findings, bool(new_effects),
-             Jsonb([{"at": now.isoformat(), "change": "escalated", "by": "Amiri Agent", "text": what}]), now, old["alert_id"]))
+             Jsonb([{"at": now.isoformat(), "change": "escalated", "by": "AMIRI Agent", "text": what}]), now, old["alert_id"]))
         changed += 1
     return changed
 
@@ -184,10 +184,10 @@ async def resolve_events(conn, event_ids: list[str], now: datetime) -> None:
     if not event_ids:
         return
     await conn.execute(
-        """UPDATE core.alerts SET status = 'resolved', resolved_by = 'Amiri Agent', resolved_at = %s,
+        """UPDATE core.alerts SET status = 'resolved', resolved_by = 'AMIRI Agent', resolved_at = %s,
              resolved_note = 'The event closed: no new findings for its open period.', updated_at = %s,
              history = history || %s WHERE event_id = ANY(%s) AND status <> 'resolved'""",
-        (now, now, Jsonb([{"at": now.isoformat(), "change": "resolved", "by": "Amiri Agent", "text": "The event closed."}]),
+        (now, now, Jsonb([{"at": now.isoformat(), "change": "resolved", "by": "AMIRI Agent", "text": "The event closed."}]),
          event_ids))
 
 

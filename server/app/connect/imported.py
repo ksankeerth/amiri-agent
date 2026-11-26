@@ -182,7 +182,7 @@ async def openapi(request: Request):
     if request.headers.get(IN_PROCESS_HEADER) != IN_PROCESS_TOKEN:
         return JSONResponse({"detail": "Not Found"}, status_code=404)
     doc = dict(spec.reference_openapi())
-    doc["servers"] = [{"url": PREFIX, "description": "The institution's imported data, served by Amiri Agent."}]
+    doc["servers"] = [{"url": PREFIX, "description": "The institution's imported data, served by AMIRI Agent."}]
     return doc
 
 
@@ -300,7 +300,7 @@ async def series(request: Request, expected: Version = None):
                          "suppression_reason": r.get("suppression_reason"), "published_at": r.get("published_at"),
                          "backfilled": bool(r.get("backfilled")), "data_as_of": read.isoformat(), "vintage": vintage,
                          "revised": revised, "revision_held": False, "extras": r.get("extras") or {}})
-        # closed periods after the file's last row: not published (to Amiri Agent) by known_through
+        # closed periods after the file's last row: not published (to AMIRI Agent) by known_through
         after = max(start, last_until or date.fromisoformat(m["history_from"]))
         if after < end:
             unpublished += _grid(h, m, after, end)

@@ -99,7 +99,7 @@ async def test_resolve_reopen_and_the_event_closing(client, env, sql, clock, age
     clock.advance(days=15)
     await client.post("/internal/tick")
     a = (await client.get(f"{A}/{a['alert_id']}")).json()
-    assert a["status"] == "resolved" and a["resolved_by"] == "Amiri Agent" and a["event_status"] == "closed"
+    assert a["status"] == "resolved" and a["resolved_by"] == "AMIRI Agent" and a["event_status"] == "closed"
     assert (await client.get(A, params={"status": "new"})).json()["items"] == []
 
 

@@ -125,7 +125,7 @@ class Gate(BaseHTTPMiddleware):
                                      headers={"X-Robots-Tag": "noindex, nofollow, noarchive"})
         gated = gate_on() and path.startswith(GATED_PREFIX) and not path.startswith(PUBLIC_API)
         if gated and not (session(request) or _local_agent(request) or await _agent_token(request)):
-            resp = _problem(401, "signed_out", "Tick the box to show you're a person, then Amiri Agent opens.")
+            resp = _problem(401, "signed_out", "Tick the box to show you're a person, then AMIRI Agent opens.")
         else:
             resp = await call_next(request)
         resp.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive, nosnippet"
