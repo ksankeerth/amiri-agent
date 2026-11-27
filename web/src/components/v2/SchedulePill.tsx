@@ -30,10 +30,18 @@ function useMonitorsStatus() {
   return st;
 }
 
-export function SchedulePill({ ov, now }: { ov: Overview | null; now: Date }) {
+/** `phone`: in the phone bar; a tap opens it as a full-width panel under the bar. */
+export function SchedulePill({ ov, now, phone }: { ov: Overview | null; now: Date; phone?: boolean }) {
   const mon = useMonitorsStatus();
   const [open, setOpen] = useState(false);
-  const btn = useRef<HTMLButtonElement>(null);
+  const btn = useRef<HTMLButtonElement>(null), box = useRef<HTMLDivElement>(null);
+  const back = useRef(false);  // focus coming back after Escape: don't open again
+  useEffect(() => {  // a tap or click anywhere else closes it (a touch screen has no "leave")
+    if (!open) return;
+    const away = (e: Event) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("pointerdown", away);
+    return () => document.removeEventListener("pointerdown", away);
+  }, [open]);
   if (!ov || ov.first_run) return <span aria-hidden="true" />;  // keeps the bar's middle column
 
   const c = ov.counts, r = ov.radar;
@@ -56,12 +64,12 @@ export function SchedulePill({ ov, now }: { ov: Overview | null; now: Date }) {
   ].join("; ");
 
   const hover = (on: boolean) => (e: PointerEvent) => { if (e.pointerType === "mouse") setOpen(on); };
-  const key = (e: KeyboardEvent) => { if (e.key === "Escape" && open) { e.stopPropagation(); setOpen(false); btn.current?.focus(); } };
+  const key = (e: KeyboardEvent) => { if (e.key === "Escape" && open) { e.stopPropagation(); setOpen(false); back.current = true; btn.current?.focus(); back.current = false; } };
   const done = () => setOpen(false);
 
   return (
-    <div className="v2-sched" onPointerEnter={hover(true)} onPointerLeave={hover(false)} onKeyDown={key}
-      onFocus={e => { if (e.target.matches(":focus-visible")) setOpen(true); }} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false); }}>
+    <div ref={box} className={`v2-sched${phone ? " is-phone" : ""}`} onPointerEnter={hover(true)} onPointerLeave={hover(false)} onKeyDown={key}
+      onFocus={e => { if (!back.current && e.target.matches(":focus-visible")) setOpen(true); }} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false); }}>
       <button ref={btn} type="button" className="v2-sched__pill" aria-expanded={open} aria-controls="v2-sched-line"
         aria-label={`Schedules: ${said}`} onClick={() => setOpen(o => !o)}>
         {([["monitor", monTone], ["radar", radarTone], ["series", seriesTone]] as const).map(([icon, tone]) => (

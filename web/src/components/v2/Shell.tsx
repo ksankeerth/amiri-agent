@@ -245,6 +245,7 @@ export function Shell({ inst, children }: { inst: Installation; children: ReactN
           <header className="v2-mbar" inert={sheet}>
             <Link className="v2-mbar__logo" to="/home" aria-label="AMIRI Agent home"><span className="v2-logo" aria-hidden="true">A</span></Link>
             <LivePill live={live} compact />
+            {phone && <SchedulePill ov={ov} now={now} phone />}
             <button ref={menuBtn} type="button" className="v2-menubtn" aria-expanded={sheet} aria-controls="v2-side" onClick={() => setMenu(m => !m)}>
               <Icon name="menu" />Menu
             </button>
@@ -314,7 +315,7 @@ export function Shell({ inst, children }: { inst: Installation; children: ReactN
                   ))}
                 </ol>
               </nav>
-              <SchedulePill ov={ov} now={now} />
+              {phone ? <span aria-hidden="true" /> : <SchedulePill ov={ov} now={now} />}
               <div className="v2-top__end">
                 {goBtn(topGo)}
                 <span className="v2-clock">{clock}</span>
