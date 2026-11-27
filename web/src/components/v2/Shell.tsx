@@ -16,6 +16,7 @@ import { isDown, useNow, useRole } from "../ui";
 import { BusyLine } from "./BusyLine";
 import { GoTo } from "./GoTo";
 import { LivePill, liveState } from "./LivePill";
+import { SchedulePill } from "./SchedulePill";
 import { EXIT_MS, prefersReducedMotion } from "./motion";
 import { GROUPS, navFor, pageOf } from "./nav";
 import { foundState, getDrawnPath, subscribeDrawnPath } from "./routeMotion";
@@ -313,9 +314,12 @@ export function Shell({ inst, children }: { inst: Installation; children: ReactN
                   ))}
                 </ol>
               </nav>
-              {goBtn(topGo)}
-              <span className="v2-clock">{clock}</span>
-              {themeBtn}
+              <SchedulePill ov={ov} now={now} />
+              <div className="v2-top__end">
+                {goBtn(topGo)}
+                <span className="v2-clock">{clock}</span>
+                {themeBtn}
+              </div>
             </header>
             <BusyLine />
             <main className="v2-main" id="main" tabIndex={-1}>{children}</main>

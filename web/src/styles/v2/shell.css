@@ -86,8 +86,9 @@
 
 /* ---------- column: top bar and main */
 .v2-col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+/* three columns: breadcrumbs, the schedules pill (centred while both sides fit), Go to + clock + theme */
 .v2-top {
-  flex: none; display: flex; align-items: center; flex-wrap: wrap; gap: var(--v2-sp-14);
+  flex: none; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--v2-sp-14);
   padding: var(--v2-sp-14) var(--v2-sp-36); border-bottom: 1px solid var(--v2-line); background: var(--v2-page);
 }
 .v2-crumbs { flex-grow: 1; min-width: 0; font-size: var(--v2-fs-meta); color: var(--v2-muted); }
@@ -95,6 +96,13 @@
 .v2-crumbs__sep { margin: 0 var(--v2-sp-6); }
 .v2 .v2-crumbs li > a { color: var(--v2-muted); font-weight: var(--v2-fw-regular); text-decoration: none; }
 .v2 .v2-crumbs li > a:hover { color: var(--v2-text); text-decoration: underline; }
+/* when space runs out the Go to label shortens to "…" first; below that the bar gives up exact centring, never overlaps */
+.v2-top .v2-crumbs ol { flex-wrap: nowrap; overflow: hidden; white-space: nowrap; }
+.v2-top .v2-crumbs li { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.v2-top__end { display: flex; align-items: center; justify-content: flex-end; gap: var(--v2-sp-14); }
+.v2-top__end > * { flex: none; }
+.v2-top__end > .v2-gobtn { flex: 1 1 0; min-width: 0; max-width: 280px; }  /* fills the room it has, up to its full label */
+.v2-top__end .v2-gobtn__t { flex: 1 1 0; min-width: 0; contain: inline-size; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
 .v2-clock { font-size: var(--v2-fs-meta); color: var(--v2-text-2); white-space: nowrap; }
 
 .v2-gobtn {

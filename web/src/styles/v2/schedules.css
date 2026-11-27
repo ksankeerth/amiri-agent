@@ -1,0 +1,58 @@
+/* AMIRI Agent UI v2: the schedules pill in the middle of the top bar (components/v2/SchedulePill.tsx).
+   Closed: three icons with a state dot each. Open: the full line floats over the bar, centred on the pill. */
+
+.v2-sched { position: relative; display: flex; justify-content: center; }
+
+.v2-sched__pill {
+  display: inline-flex; align-items: center; gap: var(--v2-sp-14); height: 34px; padding: 0 var(--v2-sp-14);
+  border: 1px solid var(--v2-line-ctl); border-radius: var(--v2-r-pill); background: var(--v2-surface); color: var(--v2-text-2);
+  cursor: pointer;
+}
+.v2-sched__pill:hover { border-color: var(--v2-line-ctl-hover); }
+.v2-sched__ic { position: relative; display: inline-flex; }
+.v2-sched__ic svg { width: 16px; height: 16px; }
+.v2-sched__dot {
+  position: absolute; top: -3px; right: -4px; width: 7px; height: 7px; border-radius: 4px;
+  border: 2px solid var(--v2-surface); box-sizing: content-box;
+}
+.v2-sched__dot.is-ok { background: var(--v2-dot-live); }
+.v2-sched__dot.is-wait { background: var(--v2-brand); }
+.v2-sched__dot.is-warn { background: var(--v2-dot-warn); }
+
+.v2-sched__line {
+  position: absolute; z-index: 20; top: 0; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; height: 34px; padding: 0 var(--v2-sp-4);
+  border: 1px solid var(--v2-line-ctl); border-radius: var(--v2-r-pill); background: var(--v2-surface);
+  box-shadow: var(--v2-shadow-pop); white-space: nowrap;
+  animation: v2-sched-grow var(--v2-dur-slow) var(--v2-ease);
+}
+@keyframes v2-sched-grow {
+  from { opacity: 0; clip-path: inset(0 42% round var(--v2-r-pill)); }
+  to { opacity: 1; clip-path: inset(0 0 round var(--v2-r-pill)); }
+}
+.v2 .v2-sched__seg {
+  display: inline-flex; align-items: center; gap: var(--v2-sp-6); height: 26px; padding: 0 var(--v2-sp-10);
+  border-radius: var(--v2-r-pill); color: var(--v2-text-2); font-size: var(--v2-fs-meta); font-weight: var(--v2-fw-regular);
+  text-decoration: none;
+}
+.v2 .v2-sched__seg:hover { background: var(--v2-hover); color: var(--v2-text-2); text-decoration: none; }
+.v2-sched__seg svg { width: 16px; height: 16px; flex: none; }
+.v2-sched__seg b { color: var(--v2-text); font-weight: var(--v2-fw-semibold); }
+.v2-sched__sub { color: var(--v2-muted); }
+.v2-sched__seg:hover .v2-sched__sub { color: var(--v2-text-2); }  /* A1: muted text is for the page and surface only */
+.v2-sched__t { font-family: var(--v2-mono); font-size: var(--v2-fs-cap); color: var(--v2-text-2); }
+.v2-sched__wait { color: var(--v2-brand); font-weight: var(--v2-fw-semibold); }
+.v2-sched__warn { color: var(--v2-unusual); font-weight: var(--v2-fw-semibold); }
+.v2-sched__sep { flex: none; width: 1px; height: 14px; background: var(--v2-line); }
+
+/* too narrow for one line: the open state drops down as a panel, one row per schedule */
+@media (max-width: 1099.98px) {
+  .v2-sched__line {
+    flex-direction: column; align-items: stretch; height: auto; padding: var(--v2-sp-4);
+    border-radius: var(--v2-r-lg); animation-name: v2-sched-drop;
+  }
+  .v2 .v2-sched__seg { height: 34px; border-radius: var(--v2-r-nav); }
+  .v2-sched__sep { display: none; }
+}
+@keyframes v2-sched-drop { from { opacity: 0; translate: 0 -4px; } to { opacity: 1; translate: 0 0; } }
+@media (prefers-reduced-motion: reduce) { .v2-sched__line { animation: none; } }
