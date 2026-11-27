@@ -315,7 +315,7 @@ export function Shell({ inst, children }: { inst: Installation; children: ReactN
                   ))}
                 </ol>
               </nav>
-              {phone ? <span aria-hidden="true" /> : <SchedulePill ov={ov} now={now} />}
+              {phone ? <span className="v2-top__mid" aria-hidden="true" /> : <SchedulePill ov={ov} now={now} />}
               <div className="v2-top__end">
                 {goBtn(topGo)}
                 <span className="v2-clock">{clock}</span>
