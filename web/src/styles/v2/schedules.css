@@ -71,7 +71,11 @@
   height: var(--v2-hit-phone); gap: var(--v2-sp-10); padding: 0 var(--v2-sp-10);
 }
 .v2-sched.is-phone .v2-sched__pill[aria-expanded="true"] { --v2-sched-under: var(--v2-hover); }  /* tighter: leaves the Live pill room */
-.v2-sched.is-phone .v2-sched__line { top: calc(100% + var(--v2-sp-6)); left: var(--v2-sp-8); right: var(--v2-sp-8); transform: none; z-index: 50; }
+/* as wide as its rows, under the pill at the right; on a narrow screen it may take the full width and the rows wrap */
+.v2-sched.is-phone .v2-sched__line {
+  top: calc(100% + var(--v2-sp-6)); left: auto; right: var(--v2-sp-8); width: max-content; max-width: calc(100% - 2 * var(--v2-sp-8));
+  transform: none; z-index: 50;
+}
 .v2 .v2-sched.is-phone .v2-sched__seg {
   height: auto; min-height: var(--v2-hit-phone); flex-wrap: wrap; white-space: normal;
   padding: var(--v2-sp-8) var(--v2-sp-12); column-gap: var(--v2-sp-6); row-gap: 0;
