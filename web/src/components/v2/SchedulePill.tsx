@@ -67,11 +67,8 @@ export function SchedulePill({ ov, now, phone }: { ov: Overview | null; now: Dat
   const c = ov.counts, r = ov.radar;
   const moved = (ov.markets ?? []).filter(m => m.state === "moved");
   const stale = (ov.markets ?? []).filter(m => m.state === "stale");
-  // Radar is late when its last run is more than two intervals old
-  const radarLate = !!r.last_run_at && now.getTime() - new Date(r.last_run_at).getTime() > 2 * r.every_minutes * 60_000;
 
   const monTone: Tone = c.monitors_waiting_approval > 0 ? "wait" : null;
-  const radarTone: Tone = radarLate ? "warn" : null;
   const seriesTone: Tone = moved.length + stale.length > 0 ? "warn" : null;
   const seriesNote = moved.length > 0
     ? `${shortName(moved[0])}${moved.length > 1 ? ` +${moved.length - 1}` : ""} unusual`
@@ -79,7 +76,7 @@ export function SchedulePill({ ov, now, phone }: { ov: Overview | null; now: Dat
 
   const said = [
     `Monitors ${c.monitors_live}${c.monitors_waiting_approval ? `, ${plural(c.monitors_waiting_approval, "approval")} waiting` : ""}`,
-    `Radar ${radarLate ? "late" : "on time"}`,
+    `Radar${r.last_run_at ? `, last read ${ago(r.last_run_at, now)}` : ""}`,  // no dot: a stalled schedule is the Live pill's to say
     `Series ${c.series_watched}${seriesNote ? `, ${seriesNote}` : ""}`,
   ].join("; ");
 
@@ -94,7 +91,7 @@ export function SchedulePill({ ov, now, phone }: { ov: Overview | null; now: Dat
       onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false); }}>
       <button ref={btn} type="button" className="v2-sched__pill" aria-expanded={open} aria-controls="v2-sched-line"
         aria-label={`Schedules: ${said}`} onClick={() => (open ? setOpen(false) : show())}>
-        {([["monitor", monTone], ["radar", radarTone], ["series", seriesTone]] as const).map(([icon, tone]) => (
+        {([["monitor", monTone], ["radar", null], ["series", seriesTone]] as const).map(([icon, tone]) => (
           <span key={icon} className="v2-sched__ic"><Icon name={icon} />{tone && <span className={`v2-sched__dot is-${tone}`} />}</span>
         ))}
       </button>
