@@ -271,25 +271,57 @@
 .v2-dotmap { margin: 0; }
 .v2-dotmap__box { position: relative; width: 100%; margin: 0 auto; }
 .v2-dotmap__dots { position: absolute; inset: 0; width: 100%; height: 100%; }
-.v2-dotmap__dots path { fill: none; stroke: var(--v2-dot-sep); stroke-linecap: round; }  /* the dot size (stroke-width) is set on the svg: it follows the cell */
-.v2-dotmap__dots .is-soft { stroke: color-mix(in srgb, var(--v2-brand) 24%, var(--v2-dot-sep)); }  /* the home footprint: calm, a tint of the brand over the plain dot */
-.v2-dotmap__dots .is-tint { stroke: color-mix(in srgb, var(--v2-brand) 46%, var(--v2-dot-sep)); }
+.v2-dotmap__dots path { fill: none; stroke: var(--v2-dot-sep); stroke-linecap: round; stroke-width: var(--dot); }  /* --dot (the dot size) is set on the svg: it follows the cell */
+/* a map without outlines: a soft land shape under the dots, a gap along borders (no dots there), the coast's dots smaller and lighter */
+.v2-dotmap__dots .is-land { fill: color-mix(in srgb, var(--v2-dot-sep) 22%, transparent); stroke: none; }
+.v2-dotmap__dots .is-coast { stroke-width: calc(var(--dot) * .62); stroke: color-mix(in srgb, var(--v2-dot-sep) 75%, transparent); }
+/* the home footprint: the brand green, clearly its own; a soft glow under its shape (no line) so even a small island shows */
+.v2-dotmap__dots .is-home { fill: color-mix(in srgb, var(--v2-brand) 16%, transparent); stroke: color-mix(in srgb, var(--v2-brand) 22%, transparent); stroke-width: 10px; stroke-linejoin: round; }
+.v2-dotmap__dots .is-soft { stroke: color-mix(in srgb, var(--v2-brand) 45%, var(--v2-dot-sep)); }
+.v2-dotmap__dots .is-tint { stroke: color-mix(in srgb, var(--v2-brand) 82%, var(--v2-dot-sep)); stroke-width: calc(var(--dot) * 1.15); }
+/* the footprint's name, in green; the marks' place names beside them */
+.v2-dotmap__fp { position: absolute; width: 0; height: 0; }
+.v2-dotmap__fp > span { position: absolute; white-space: nowrap; font-size: var(--v2-fs-cap); font-weight: var(--v2-fw-semibold); line-height: 1; color: var(--v2-brand); }
+.v2-dotmap__fp.is-right > span { left: 19px; top: 0; transform: translateY(-50%); }
+.v2-dotmap__fp.is-left > span { right: 19px; top: 0; transform: translateY(-50%); }
+.v2-dotmap__fp.is-top > span { bottom: 19px; left: 0; transform: translateX(-50%); }
+.v2-dotmap__fp.is-bottom > span { top: 19px; left: 0; transform: translateX(-50%); }
 .v2-dotmap__pt { position: absolute; width: 0; height: 0; --tone: var(--v2-muted); }
 .v2-dotmap__pt--bad { --tone: var(--v2-bad); }
 .v2-dotmap__pt--mixed { --tone: var(--v2-unusual); }
 .v2-dotmap__pt--good { --tone: var(--v2-good); }
-.v2-dotmap__pt .v2-dir { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); }
-.v2-dotmap__pt:not(.is-strong) .v2-dir { opacity: .8; }
+.v2-dotmap__pt .v2-dir { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); pointer-events: none; }
+.v2-dotmap__pt:not(.is-strong) > .v2-dir { opacity: .85; }
 .v2-dotmap__name { position: absolute; white-space: nowrap; font-size: var(--v2-fs-cap); line-height: 1; color: var(--v2-text-2); }
-.v2-dotmap__pt.is-strong .v2-dotmap__name { font-weight: var(--v2-fw-semibold); color: var(--v2-text); }
-.v2-dotmap__pt.is-right .v2-dotmap__name { left: 11px; top: 0; transform: translateY(-50%); }
-.v2-dotmap__pt.is-left .v2-dotmap__name { right: 11px; top: 0; transform: translateY(-50%); }
-.v2-dotmap__pt.is-top .v2-dotmap__name { bottom: 11px; left: 0; transform: translateX(-50%); }
-.v2-dotmap__pt.is-bottom .v2-dotmap__name { top: 11px; left: 0; transform: translateX(-50%); }
+/* the name just outside the ring (--ring: its radius plus a little room) */
+.v2-dotmap__pt { --ring: 19px; }
+.v2-dotmap__pt.is-strong { --ring: 25px; }
+.v2-dotmap__pt.is-right .v2-dotmap__name { left: var(--ring); top: 0; transform: translateY(-50%); }
+.v2-dotmap__pt.is-left .v2-dotmap__name { right: var(--ring); top: 0; transform: translateY(-50%); }
+.v2-dotmap__pt.is-top .v2-dotmap__name { bottom: var(--ring); left: 0; transform: translateX(-50%); }
+.v2-dotmap__pt.is-bottom .v2-dotmap__name { top: var(--ring); left: 0; transform: translateX(-50%); }
+/* a still ring round every event's place, in its colour; the most serious one's a little bigger */
 .v2-dotmap__halo {
-  position: absolute; left: 0; top: 0; width: 60px; height: 60px; transform: translate(-50%, -50%); border-radius: 50%;
+  position: absolute; left: 0; top: 0; width: 30px; height: 30px; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
   background: color-mix(in srgb, var(--tone) 10%, transparent); border: 1px dashed color-mix(in srgb, var(--tone) 50%, transparent);
 }
+.v2-dotmap__pt.is-strong .v2-dotmap__halo { width: 42px; height: 42px; background: color-mix(in srgb, var(--tone) 13%, transparent); }
+.v2-dotmap__hit { position: absolute; left: -12px; top: -12px; width: 24px; height: 24px; border-radius: 50%; cursor: default; }
+/* hover a mark: the place and its events */
+.v2-dotmap__pt:hover { z-index: 3; }
+.v2-dotmap__tip {
+  position: absolute; bottom: 14px; left: 0; transform: translateX(-50%); display: none; flex-direction: column; gap: var(--v2-sp-4);
+  width: max-content; max-width: 260px; padding: var(--v2-sp-8) var(--v2-sp-10); border-radius: var(--v2-r-xs);
+  background: var(--v2-surface); border: 1px solid var(--v2-dot-sep); box-shadow: 0 4px 14px rgb(0 0 0 / .12);
+  font-size: var(--v2-fs-cap); line-height: 1.35; color: var(--v2-text); white-space: normal; pointer-events: none;
+}
+.v2-dotmap__tip.is-below { bottom: auto; top: 14px; }  /* a mark near the top opens its card downwards, onto the map */
+.v2-dotmap__tip.is-start { left: -12px; transform: none; }
+.v2-dotmap__tip.is-end { left: auto; right: -12px; transform: none; }
+.v2-dotmap__pt:hover .v2-dotmap__tip { display: flex; }
+.v2-dotmap__pt:hover > .v2-dir { transform: translate(-50%, -50%) scale(1.25); }
+.v2-dotmap__tipline { display: flex; align-items: baseline; gap: var(--v2-sp-6); }
+.v2-dotmap__tipline .v2-dir { position: static; transform: none; flex: none; align-self: center; }
 .v2-dotmap__legend { display: flex; gap: var(--v2-sp-16); justify-content: center; margin-top: var(--v2-sp-10); font-size: var(--v2-fs-cap); color: var(--v2-muted); }
 .v2-dotmap__legend span { display: inline-flex; align-items: center; gap: var(--v2-sp-4); }
 

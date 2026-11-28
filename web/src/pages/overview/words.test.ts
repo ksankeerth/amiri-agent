@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
-  actMeta, ageText, arrowOf, findingPill, footprintView, foundMeta, greetingText, headlineKind, headlineText, lateSince, mapMarks, markLabel, moreLine, mostSpecific,
+  actMeta, ageText, arrowOf, findingPill, footprintView, foundMeta, greetingText, headlineKind, headlineText, lateSince, mapMarks, moreLine, mostSpecific,
   needAction, needLevelWord, othersText, placesText, plainNote, priceRows, storyPill, tracedMeta, watchingMeta,
 } from "./words.ts";
 
@@ -113,6 +113,8 @@ test("an event tagged only with the home country is marked on the home anchor as
   ], ctx);
   assert.deepEqual(marks.map(m => [m.code, m.tone, m.nationwide, m.specific]), [["US-TX", "bad", 2, false], ["AE", "bad", 0, true], ["chk:hormuz", "bad", 0, true]]);
   assert.equal(marks[0].first, true);
+  // the hover lists every event at a mark, worst first
+  assert.deepEqual(marks[0].events, [{ title: "Rates rose", tone: "bad" }, { title: "Prices down", tone: "mixed" }]);
   // never the country's middle
   assert.ok(!marks.some(m => m.code === "US"));
   // an event with a state of its own marks that state, not "nationwide"
@@ -132,15 +134,6 @@ test("nationwide and specific events at one place share one mark; a place with n
   assert.deepEqual(m.map(x => [x.code, x.tone, x.nationwide, x.specific]), [["US-TX", "bad", 1, true]]);
 });
 
-test("a mark's name: the place, or the country-wide event in whole words, never cut", () => {
-  assert.equal(markLabel({ nationwide: 0, titles: [], specific: true }, "Texas"), "Texas");
-  assert.equal(markLabel({ nationwide: 1, titles: ["Rates rose"], specific: false }, "Texas"), "Rates rose · nationwide");
-  assert.equal(markLabel({ nationwide: 1, titles: ["Rates rose (0.25%)"], specific: false }, "Texas"), "Rates rose · nationwide");
-  assert.equal(markLabel({ nationwide: 1, titles: ["The economic outlook worsened"], specific: false }, "Texas"), "1 event · nationwide");
-  assert.equal(markLabel({ nationwide: 3, titles: ["a", "b", "c"], specific: false }, "Texas"), "3 events · nationwide");
-  assert.equal(markLabel({ nationwide: 1, titles: ["Rates rose"], specific: true }, "Texas"), "Texas · nationwide");
-});
-
 test("the footprint: a country is shaded, states get halos and the busiest home state is the anchor", () => {
   const us = footprintView("US", [{ code: "US", role: "home" }, { code: "US-TX", role: "branches", branch_count: 22 }, { code: "US-CA", role: "branches", branch_count: 2 }], US_PLACES);
   assert.deepEqual(us.countries, []);  // the US has states listed: halos, not the whole country
@@ -152,13 +145,14 @@ test("the footprint: a country is shaded, states get halos and the busiest home 
   assert.deepEqual(lk.halos, []);
   assert.equal(lk.anchor?.code, "LK");
   assert.deepEqual(lk.names, ["Sri Lanka"]);
+  assert.deepEqual(lk.labels.map(l => l.name), ["Sri Lanka"]);  // the footprint's name is written on the map
   const two = footprintView("AE", [{ code: "AE", role: "home" }, { code: "LK", role: "branches" }], US_PLACES);
   assert.deepEqual(two.countries, ["784", "144"]);
   assert.equal(two.anchor?.code, "AE");
   const city = footprintView("US", [{ code: "city:austin", role: "home" }], US_PLACES);
   assert.deepEqual(city.halos.map(h => h.r), [1.2]);
   assert.equal(city.anchor?.code, "city:austin");
-  assert.deepEqual(footprintView("ZZ", [], {}), { countries: [], halos: [], anchor: null, names: [] });
+  assert.deepEqual(footprintView("ZZ", [], {}), { countries: [], halos: [], anchor: null, names: [], labels: [] });
 });
 
 test("a finding's status as a pill", () => {

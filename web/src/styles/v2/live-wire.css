@@ -1,0 +1,50 @@
+/* AMIRI Agent UI v2: the Live wire on the Overview (components/v2/LiveWire.tsx), the earlier design in v2 tokens. */
+.v2-wire {
+  display: flex; align-items: stretch; min-height: 38px; min-width: 0;
+  border-radius: var(--v2-r-ctl); border: 1px solid color-mix(in srgb, var(--v2-brand) 22%, transparent);
+  background: var(--v2-surface); overflow: hidden;
+}
+.v2 .v2-wire__badge {
+  display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 6px 12px;
+  border-right: 1px solid color-mix(in srgb, var(--v2-brand) 22%, transparent); background: var(--v2-good-tint);
+  font-size: var(--v2-fs-cap); font-weight: 700; letter-spacing: .05em; color: var(--v2-brand); text-decoration: none; white-space: nowrap;
+}
+.v2 .v2-wire__badge:hover { color: var(--v2-good); text-decoration: none; }
+.v2-wire__dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--v2-dot-live); box-shadow: 0 0 0 3.5px var(--v2-halo-live); }
+.v2-wire__dot.is-live { animation: v2-wire-pulse 2.4s ease-in-out infinite; }
+.v2-wire__dot.is-warn { background: var(--v2-dot-warn); box-shadow: 0 0 0 3.5px var(--v2-halo-warn); }
+@keyframes v2-wire-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px var(--v2-halo-live); }
+  50% { box-shadow: 0 0 0 5.5px color-mix(in srgb, var(--v2-dot-live) 20%, transparent); }
+}
+.v2-wire__strip {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 4px 12px; overflow: hidden;
+  animation: v2-wire-in 220ms var(--v2-ease);
+}
+@keyframes v2-wire-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.v2 .v2-wire__item {
+  display: inline-flex; align-items: center; gap: 6px; flex: 1 1 0; min-width: 0; padding: 4px 8px; border-radius: var(--v2-r-sm);
+  font-size: 12.5px; font-weight: var(--v2-fw-regular); color: var(--v2-text-2); text-decoration: none;
+  transition: background-color 140ms var(--v2-ease), color 140ms var(--v2-ease);
+}
+.v2 .v2-wire__item:hover { background: var(--v2-hover); color: var(--v2-text); text-decoration: none; }
+.v2-wire__tag { flex-shrink: 0; padding: 1px 6px; border-radius: var(--v2-r-xs); font-family: var(--v2-mono); font-size: var(--v2-fs-cap); font-weight: 700; letter-spacing: .03em; white-space: nowrap; }
+.v2-wire__tag.is-ok { background: var(--v2-good-tint); color: var(--v2-good); }
+.v2-wire__tag.is-crit { background: var(--v2-bad-tint); color: var(--v2-bad); }
+.v2-wire__tag.is-warn { background: var(--v2-unusual-tint); color: var(--v2-warn-ink); }
+.v2-wire__tag.is-info { background: var(--v2-info-tint); color: var(--v2-info-ink); }
+.v2-wire__txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; color: var(--v2-text); }
+.v2-wire__meta { flex-shrink: 0; white-space: nowrap; font-size: var(--v2-fs-cap); color: var(--v2-muted); font-variant-numeric: tabular-nums; }
+.v2-wire__item:hover .v2-wire__meta { color: var(--v2-text-2); }  /* A1: muted text only on the page and surface */
+.v2-wire__pager { display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; padding: 0 8px 0 6px; border-left: 1px solid var(--v2-line); }
+.v2-wire__pos { margin-right: 2px; font-family: var(--v2-mono); font-size: var(--v2-fs-cap); color: var(--v2-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.v2-wire__nav {
+  display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: var(--v2-r-sm);
+  border: 1px solid var(--v2-line-ctl); background: var(--v2-surface); color: var(--v2-text-2); font-size: 15px; line-height: 1; cursor: pointer;
+  transition: background-color 140ms var(--v2-ease), color 140ms var(--v2-ease), border-color 140ms var(--v2-ease);
+}
+.v2-wire__nav:hover { background: var(--v2-hover); color: var(--v2-text); border-color: var(--v2-line-ctl-hover); }
+.v2-wire__nav:focus-visible, .v2 .v2-wire__item:focus-visible, .v2 .v2-wire__badge:focus-visible { outline: 2px solid var(--v2-focus); outline-offset: -2px; }
+@media (max-width: 1120px) { .v2-wire__item:nth-child(n+3) { display: none; } }
+@media (max-width: 680px) { .v2-wire__item:nth-child(n+2) { display: none; } .v2-wire__meta { display: none; } }
+@media (prefers-reduced-motion: reduce) { .v2-wire__strip, .v2-wire__dot.is-live { animation: none; } }

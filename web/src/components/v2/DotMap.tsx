@@ -1,5 +1,6 @@
 // The still dotted map (board 00, top right): a grid of dots where there is land, and the events' places marked with a
-// shape (▲ bad ◆ mixed ▼ good) and a name. No animation, light and dark. A picture, so it is role="img" with a label
+// shape (▲ bad ◆ mixed ▼ good) and the place's name; hovering a mark shows its events. The home footprint's names are
+// written in green (a mark there doesn't repeat them). No animation, light and dark. A picture, so it is role="img" with a label
 // that names the places (A7); the page says the same places in its text.
 // The dots come from the world shapes the app already ships (world-atlas), drawn once on an off-screen canvas (at the
 // screen's pixel density) and read back over each cell. The picture is framed on what it is about (F5): the home footprint
@@ -19,12 +20,10 @@ export interface DotPlace {
   lon: number;
   lat: number;
   tone: DirectionTone | string;
-  /** The place the picture is about: full-strength mark, bold name. */
+  /** The place the picture is about (the most serious event's): a full-strength, slightly bigger mark and a bigger ring. */
   strong?: boolean;
-  /** A dashed ring round it (the focus of an event). */
-  halo?: boolean;
-  /** Where the name sits (default: the first of right, left, top, bottom that stays on the picture and clear of other names). */
-  side?: "right" | "left" | "top" | "bottom";
+  /** The events here, shown on hover (worst first). */
+  events?: { title: string; tone: string }[];
 }
 /** The home footprint, shaded lightly and framed with the events' places. */
 export interface DotShade {
@@ -34,6 +33,8 @@ export interface DotShade {
   halos?: { lat: number; lon: number; r: number; within?: string | null }[];
   /** The names, for the picture's words. */
   names?: string[];
+  /** The footprint's names written on the map, where each place is. */
+  labels?: { name: string; lat: number; lon: number }[];
 }
 export interface DotMapProps {
   places: DotPlace[];
@@ -67,7 +68,10 @@ function loadWorld(): Promise<World> {
 
 const MARGIN = 10, PAD = 0.18, LAND_HITS = 3;  // a cell is land when 3 of 9 points sampled in it are
 const cache = new Map<string, Dots>();
-interface Dots { base: string; soft: string; tint: string; stroke: number }
+/** The dots by kind (each a path of zero-length segments, drawn with round caps): inland, on a coast, on a border between
+ *  countries; and the home footprint's soft ring and inner part. `land` and `home` are the shapes, drawn softly under the dots.
+ *  It reads as a map without outlines: the land a soft shape, a one-dot gap along borders, the coast's dots smaller. */
+interface Dots { base: string; coast: string; soft: string; tint: string; land: string; home: string; stroke: number }
 
 const polygonsOf = (f: Feature<Geometry>): number[][][][] =>
   f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.type === "MultiPolygon" ? f.geometry.coordinates : [];
@@ -82,52 +86,65 @@ function countryBox(world: World, numeric: string): [[number, number], [number, 
 }
 
 interface HaloPx { x: number; y: number; r: number; within: string | null }
-/** The dots as paths (a zero-length segment per dot, drawn with round caps): the plain ones, and the ones in the soft ring and
- *  the inner part of the footprint. */
+type Sampler = (cx: number, cy: number) => { hits: number; ids: number };
+/** Draws `features` on an off-screen canvas and returns, for a cell, how many of its 9 sample points are on land and how
+ *  many different countries they fall in (each country is painted in its own colour band; a pixel blended between two countries counts as one more). */
+function sampler(features: Feature<Geometry>[], projection: ReturnType<typeof geoNaturalEarth1>, w: number, h: number, cell: number, byCountry = false): Sampler | null {
+  const dpr = Math.min(3, Math.max(1, window.devicePixelRatio || 1));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(w * dpr); canvas.height = Math.ceil(h * dpr);
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.scale(dpr, dpr);
+  const path = geoPath(projection, ctx);
+  if (byCountry) features.forEach((f, i) => { ctx.beginPath(); path(f); const n = (i + 1) & 255; ctx.fillStyle = `rgb(${((n & 15) << 4) + 8},${((n >> 4) << 4) + 8},128)`; ctx.fill(); });
+  else { ctx.beginPath(); path({ type: "FeatureCollection", features }); ctx.fill(); }
+  const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  const o = cell / 3;
+  return (cx, cy) => {
+    let hits = 0;
+    const seen = new Set<number>();
+    for (const dy of [-o, 0, o]) for (const dx of [-o, 0, o]) {
+      const x = Math.min(canvas.width - 1, Math.max(0, Math.floor((cx + dx) * dpr))), y = Math.min(canvas.height - 1, Math.max(0, Math.floor((cy + dy) * dpr)));
+      const k = (y * canvas.width + x) * 4;
+      if (px[k + 3] > 127) { hits++; if (byCountry) seen.add((px[k] >> 4) | ((px[k + 1] >> 4) << 4)); }  // 16-step bands: an edge pixel's ±1 rounding keeps its country
+    }
+    return { hits, ids: seen.size };
+  };
+}
+
 function dotPaths(world: World, projection: ReturnType<typeof geoNaturalEarth1>, w: number, h: number, cell: number,
   countries: string[], halos: HaloPx[]): Omit<Dots, "stroke"> {
-  const dpr = Math.min(3, Math.max(1, window.devicePixelRatio || 1));
-  const layer = (features: Feature<Geometry>[]) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.ceil(w * dpr); canvas.height = Math.ceil(h * dpr);
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return null;
-    ctx.scale(dpr, dpr);
-    ctx.beginPath();
-    geoPath(projection, ctx)({ type: "FeatureCollection", features });
-    ctx.fill();
-    const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    const o = cell / 3;
-    return (cx: number, cy: number) => {
-      let hits = 0;
-      for (const dy of [-o, 0, o]) for (const dx of [-o, 0, o]) {
-        const x = Math.min(canvas.width - 1, Math.max(0, Math.floor((cx + dx) * dpr))), y = Math.min(canvas.height - 1, Math.max(0, Math.floor((cy + dy) * dpr)));
-        if (px[(y * canvas.width + x) * 4 + 3] > 127) hits++;
-      }
-      return hits >= LAND_HITS;
-    };
-  };
-  const land = layer(world.features);
-  if (!land) return { base: "", soft: "", tint: "" };
+  const empty = { base: "", coast: "", soft: "", tint: "", land: "", home: "" };
+  const land = sampler(world.features, projection, w, h, cell, true);
+  if (!land) return empty;
   const ids = new Set(countries);
-  const home = ids.size ? layer(world.features.filter(f => ids.has(String(f.id)))) : null;
-  const inside = new Map<string, ReturnType<typeof layer>>();
-  for (const id of new Set(halos.map(x => x.within).filter((x): x is string => !!x))) inside.set(id, layer(world.features.filter(f => String(f.id) === id)));
-  let base = "", soft = "", tint = "";
+  const homeF = world.features.filter(f => ids.has(String(f.id)));
+  const home = ids.size ? sampler(homeF, projection, w, h, cell) : null;
+  const inside = new Map<string, Sampler | null>();
+  for (const id of new Set(halos.map(x => x.within).filter((x): x is string => !!x))) inside.set(id, sampler(world.features.filter(f => String(f.id) === id), projection, w, h, cell));
+  const out = { ...empty };
   const cols = Math.round(w / cell), rows = Math.floor(h / cell);
   for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
     const x = col * cell + cell / 2, y = row * cell + cell / 2;
-    if (!land(x, y)) continue;
-    let level = home?.(x, y) ? 2 : 0;
+    const seg = `M${+x.toFixed(2)} ${+y.toFixed(2)}h0`;
+    const at = land(x, y);
+    if (at.hits < LAND_HITS) continue;
+    let level = (home?.(x, y).hits ?? 0) >= LAND_HITS ? 2 : 0;
     for (const hl of halos) {
       if (level === 2) break;
-      if (hl.within && !inside.get(hl.within)?.(x, y)) continue;
+      if (hl.within && (inside.get(hl.within)?.(x, y).hits ?? 0) < LAND_HITS) continue;
       level = Math.max(level, haloLevel(x - hl.x, y - hl.y, hl.r)) as 0 | 1 | 2;
     }
-    const seg = `M${+x.toFixed(2)} ${+y.toFixed(2)}h0`;
-    if (level === 2) tint += seg; else if (level === 1) soft += seg; else base += seg;
+    if (at.ids > 1) continue;  // on a border between countries: a gap, so each country reads as its own shape
+    if (level === 2) out.tint += seg; else if (level === 1) out.soft += seg; else out[at.hits < 9 ? "coast" : "base"] += seg;
   }
-  return { base, soft, tint };
+  // the shapes, under the dots: clipped to the picture, so the path is the size of what shows
+  const clip = geoNaturalEarth1().scale(projection.scale()).translate(projection.translate()).clipExtent([[0, 0], [w, h]]);
+  const svgPath = geoPath(clip);
+  out.land = svgPath({ type: "FeatureCollection", features: world.features }) ?? "";
+  out.home = homeF.length ? svgPath({ type: "FeatureCollection", features: homeF }) ?? "" : "";
+  return out;
 }
 
 export function DotMap({ places, fit, minSpan, shade, width = 511, height = 224, intro, description, legend = true, className }: DotMapProps) {
@@ -174,26 +191,41 @@ export function DotMap({ places, fit, minSpan, shade, width = 511, height = 224,
 
   const marks = places.map(p => ({ p, xy: projection([p.lon, p.lat]), tone: directionOf(p.tone) })).filter((m): m is { p: DotPlace; xy: [number, number]; tone: DirectionTone } => !!m.xy);
   const label = description ?? describePlaces(marks.map(m => ({ label: m.p.label, tone: m.tone })), intro, shade?.names?.join(", "));
-  // strongest first, so the place the picture is about gets the best spot for its name
-  const order = marks.map((_, i) => i).sort((a, b) => Number(!!marks[b].p.strong) - Number(!!marks[a].p.strong) || a - b);
-  const picked = pickSides(order.map(i => ({ label: marks[i].p.label, x: marks[i].xy[0], y: marks[i].xy[1], side: marks[i].p.side })), width, height);
-  const sideOf = new Map(order.map((i, n) => [i, picked[n]]));
+  // words on the map: the footprint's names, and each mark's place (unless it is a footprint name already); each goes on the
+  // first side clear of the other names and the marks. The events show on hover.
+  const names = (shade?.labels ?? []).map(l => ({ name: l.name, xy: projection([l.lon, l.lat]) })).filter((n): n is { name: string; xy: [number, number] } => !!n.xy);
+  const fpNames = new Set(names.map(n => n.name));
+  const shown = (p: DotPlace) => (fpNames.has(p.label) ? "" : p.label);
+  const sides = pickSides([...names.map(n => ({ label: n.name, x: n.xy[0], y: n.xy[1] })), ...marks.map(m => ({ label: shown(m.p), x: m.xy[0], y: m.xy[1] }))], width, height);
+  const pct = (xy: [number, number]) => ({ left: `${(xy[0] / width) * 100}%`, top: `${(xy[1] / height) * 100}%` });
   return (
     <figure className={`v2-dotmap${className ? ` ${className}` : ""}`}>
       <div className="v2-dotmap__box" role="img" aria-label={label} style={{ aspectRatio: `${width} / ${height}`, maxWidth: width }}>
-        <svg className="v2-dotmap__dots" viewBox={`0 0 ${width} ${height}`} strokeWidth={dots?.stroke ?? stroke} aria-hidden="true" focusable="false">
+        <svg className="v2-dotmap__dots" viewBox={`0 0 ${width} ${height}`} style={{ ["--dot" as string]: `${dots?.stroke ?? stroke}px` }} aria-hidden="true" focusable="false">
+          <path className="is-land" d={dots?.land ?? ""} />
+          <path className="is-home" d={dots?.home ?? ""} />
           <path d={dots?.base ?? ""} />
+          <path className="is-coast" d={dots?.coast ?? ""} />
           <path className="is-soft" d={dots?.soft ?? ""} />
           <path className="is-tint" d={dots?.tint ?? ""} />
         </svg>
-        {marks.map(({ p, xy, tone }, i) => (
-          <span key={`${p.label}:${i}`} className={`v2-dotmap__pt is-${sideOf.get(i) ?? "right"}${p.strong ? " is-strong" : ""} v2-dotmap__pt--${tone}`}
-            style={{ left: `${(xy[0] / width) * 100}%`, top: `${(xy[1] / height) * 100}%` }} aria-hidden="true">
-            {p.halo && <span className="v2-dotmap__halo" />}
-            <DirectionMark tone={tone} size={p.strong ? 14 : 13} />
-            <span className="v2-dotmap__name">{p.label}</span>
-          </span>
+        {names.map((n, i) => (
+          <span key={`fp:${n.name}`} className={`v2-dotmap__fp is-${sides[i]}`} style={pct(n.xy)} aria-hidden="true"><span>{n.name}</span></span>
         ))}
+        {marks.map(({ p, xy, tone }, i) => {
+          const fx = xy[0] / width;
+          return (
+            <span key={`${p.label}:${i}`} className={`v2-dotmap__pt is-${sides[names.length + i]}${p.strong ? " is-strong" : ""} v2-dotmap__pt--${tone}`} style={pct(xy)} aria-hidden="true">
+              <span className="v2-dotmap__halo" />
+              <span className="v2-dotmap__hit" />
+              <DirectionMark tone={tone} size={p.strong ? 11 : 10} />
+              {shown(p) && <span className="v2-dotmap__name">{p.label}</span>}
+              {!!p.events?.length && <span className={`v2-dotmap__tip${fx > 0.62 ? " is-end" : fx < 0.38 ? " is-start" : ""}${xy[1] / height < 0.4 ? " is-below" : ""}`}>
+                {p.events.map((e, j) => <span key={j} className="v2-dotmap__tipline"><DirectionMark tone={e.tone} size={10} />{e.title}</span>)}
+              </span>}
+            </span>
+          );
+        })}
       </div>
       {legend && (
         <figcaption className="v2-dotmap__legend">
