@@ -117,10 +117,10 @@ export interface MapMark {
   first: boolean;
   /** How many of the events here are country-wide (tagged only with the home country). */
   nationwide: number;
-  /** Those events' titles. */
-  titles: string[];
   /** Whether an event is tagged with this very place too. */
   specific: boolean;
+  /** Every event at this mark, worst first (for the mark's hover). */
+  events: { title: string; tone: MapMark["tone"] }[];
 }
 
 const isCountry = (code: string, places: Places) => (places[code] ? places[code]!.kind === "country" : /^[A-Z]{2}$/.test(code));
@@ -156,26 +156,15 @@ export function mapMarks(events: MapEvent[], ctx?: MapContext): MapMark[] {
     for (const raw of ctx ? mostSpecific(e.places, ctx.places) : e.places) {
       const wide = !!ctx && raw === ctx.home && isCountry(raw, ctx.places);
       const code = !ctx ? raw : wide && ctx.anchor ? ctx.anchor : located(raw, ctx.places);
-      const cur = marks.get(code) ?? { code, tone: t, first: false, nationwide: 0, titles: [], specific: false };
+      const cur = marks.get(code) ?? { code, tone: t, first: false, nationwide: 0, specific: false, events: [] };
+      if (e.title && !cur.events.some(x => x.title === e.title)) cur.events.push({ title: e.title, tone: t });
       if (RANK[t] < RANK[cur.tone]) cur.tone = t;
-      if (wide) { cur.nationwide++; if (e.title) cur.titles.push(e.title); } else cur.specific = true;
+      if (wide) cur.nationwide++; else cur.specific = true;
       marks.set(code, cur);
       if (firstCode === null) firstCode = code;
     }
   }
-  return [...marks.values()].map(m => ({ ...m, first: m.code === firstCode }));
-}
-
-/** An event title short enough for a map label: no trailing "(4.42%)". */
-const shortTitle = (t: string) => t.replace(/\s*\([^)]*\)\s*$/, "").trim();
-const LABEL_TITLE_MAX = 22;
-/** The name shown by a mark: the place; for country-wide events "<event> · nationwide" (or "3 events · nationwide" when there
- *  are several or the title is long), and "Texas · nationwide" when the place has events of its own too. Whole words only. */
-export function markLabel(m: Pick<MapMark, "nationwide" | "titles" | "specific">, name: string): string {
-  if (m.nationwide === 0) return name;
-  if (m.specific) return `${name} · nationwide`;
-  const only = m.titles.length === 1 ? shortTitle(m.titles[0]) : "";
-  return only && only.length <= LABEL_TITLE_MAX ? `${only} · nationwide` : `${plural(m.nationwide, "event")} · nationwide`;
+  return [...marks.values()].map(m => ({ ...m, first: m.code === firstCode, events: [...m.events].sort((a, b) => RANK[a.tone] - RANK[b.tone]) }));
 }
 
 // ---------------------------------------------------------------- the home footprint on the map
@@ -191,6 +180,8 @@ export interface FootprintView {
   anchor: PlaceLite | null;
   /** The footprint's place names, for the picture's words. */
   names: string[];
+  /** The footprint's names to write on the map, where each place is. */
+  labels: { name: string; lat: number; lon: number }[];
 }
 /** What of the profile's footprint the map shows: a country footprint is shaded as a country; a state or city footprint gets a
  *  soft halo (a country that has states of its own listed is not shaded whole). */
@@ -207,6 +198,7 @@ export function footprintView(home: string, items: FootprintItem[], places: Plac
     halos: sub.map(s => ({ code: s.p.code, lat: s.p.lat!, lon: s.p.lon!, r: s.p.kind === "city" ? HALO_DEGREES.city : HALO_DEGREES.state, within: (s.p.country && places[s.p.country]?.numeric) || null })),
     anchor,
     names: [...countries, ...sub].map(x => x.p.name ?? x.p.code),
+    labels: [...countries, ...sub].filter(x => x.p.lat != null && x.p.lon != null).map(x => ({ name: x.p.name ?? x.p.code, lat: x.p.lat!, lon: x.p.lon! })),
   };
 }
 

@@ -55,15 +55,15 @@ const EVENTS: { title: string; tone: string; word?: string; n: number; where: st
 ];
 const US_FIT: [number, number][] = [[-125, 24], [-66, 50]];
 const US_PLACES: DotPlace[] = [
-  { label: "Austin", lon: -97.74, lat: 30.27, tone: "bad", strong: true, halo: true },
-  { label: "Texas", lon: -99.3, lat: 31.5, tone: "bad", side: "top" },
-  { label: "Permian", lon: -102.1, lat: 31.9, tone: "good", side: "left" },
+  { label: "Austin", lon: -97.74, lat: 30.27, tone: "bad", strong: true },
+  { label: "Texas", lon: -99.3, lat: 31.5, tone: "bad" },
+  { label: "Permian", lon: -102.1, lat: 31.9, tone: "good" },
   { label: "Silicon Valley", lon: -122.1, lat: 37.4, tone: "mixed" },
 ];
 const LK_PLACES: DotPlace[] = [
-  { label: "Colombo", lon: 79.86, lat: 6.93, tone: "bad", strong: true, halo: true, side: "left" },
-  { label: "Hambantota", lon: 81.12, lat: 6.12, tone: "good", side: "bottom" },
-  { label: "Jaffna", lon: 80.0, lat: 9.67, tone: "mixed", side: "right" },
+  { label: "Colombo", lon: 79.86, lat: 6.93, tone: "bad", strong: true },
+  { label: "Hambantota", lon: 81.12, lat: 6.12, tone: "good" },
+  { label: "Jaffna", lon: 80.0, lat: 9.67, tone: "mixed" },
 ];
 
 // ---- layout helpers

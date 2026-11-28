@@ -22,7 +22,7 @@ import { pct, placeName, plural, price, when } from "../../format";
 import { eventTitle, metricWords } from "../../plain";
 import { friendlySeriesText, seriesName } from "../series/words";
 import {
-  actMeta, ageText, arrowOf, effectsText, findingPill, foundMeta, greetingText, headlineKind, headlineText, footprintView, lateSince, mapMarks, markLabel, moreLine,
+  actMeta, ageText, arrowOf, effectsText, findingPill, foundMeta, greetingText, headlineKind, headlineText, footprintView, lateSince, mapMarks, moreLine,
   needAction, needLevelWord, othersText, placesText, plainNote, priceRows, sourceWord, storyPill, tracedMeta, watchingMeta, type HeadlineKind,
 } from "./words";
 
@@ -77,9 +77,9 @@ export function Hero({ o, events, now, name, timeZone, profile }: HeroProps) {
     const places: DotPlace[] = marks.flatMap(m => {
       const info = all[m.code];
       if (!info || info.lat == null || info.lon == null) return [];
-      return [{ label: markLabel(m, info.name ?? placeName(m.code)), lon: info.lon, lat: info.lat, tone: m.tone, strong: m.first, halo: m.first }];
+      return [{ label: info.name ?? placeName(m.code), lon: info.lon, lat: info.lat, tone: m.tone, strong: m.first, events: m.events }];
     });
-    return { places, shade: { countries: fp.countries, halos: fp.halos, names: fp.names } };
+    return { places, shade: { countries: fp.countries, halos: fp.halos, names: fp.names, labels: fp.labels } };
   }, [o, events, profile]);
   const places = map.places;
   const showMap = places.length > 0 && profile !== undefined;
