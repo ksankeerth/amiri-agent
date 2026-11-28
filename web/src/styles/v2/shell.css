@@ -86,8 +86,10 @@
 
 /* ---------- column: top bar and main */
 .v2-col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+/* breadcrumbs | the schedules pill, centred in the space between them | Go to, clock, theme.
+   When space runs out the breadcrumb and the Go to label shorten to "…"; nothing overlaps. */
 .v2-top {
-  flex: none; display: flex; align-items: center; flex-wrap: wrap; gap: var(--v2-sp-14);
+  flex: none; display: flex; align-items: center; gap: var(--v2-sp-14);
   padding: var(--v2-sp-14) var(--v2-sp-36); border-bottom: 1px solid var(--v2-line); background: var(--v2-page);
 }
 .v2-crumbs { flex-grow: 1; min-width: 0; font-size: var(--v2-fs-meta); color: var(--v2-muted); }
@@ -95,6 +97,20 @@
 .v2-crumbs__sep { margin: 0 var(--v2-sp-6); }
 .v2 .v2-crumbs li > a { color: var(--v2-muted); font-weight: var(--v2-fw-regular); text-decoration: none; }
 .v2 .v2-crumbs li > a:hover { color: var(--v2-text); text-decoration: underline; }
+.v2-top > .v2-crumbs { flex: 0 1 auto; }
+.v2-top .v2-crumbs ol { flex-wrap: nowrap; overflow: hidden; white-space: nowrap; }
+.v2-top .v2-crumbs li { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.v2-top__mid { flex: 1 0 auto; }
+.v2-top__end { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--v2-sp-14); }
+.v2-top__end > * { flex: none; }
+.v2-top__end > .v2-gobtn { flex: 0 1 auto; min-width: 46px; overflow: hidden; }
+.v2-top__end .v2-gobtn__t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v2-top__end .v2-gobtn__k { flex: none; }
+@media (max-width: 799.98px) {  /* just above the phone layout: a little more room */
+  .v2-top { padding-inline: var(--v2-sp-20); }
+  .v2-top__end .v2-gobtn__k { display: none; }
+  .v2-top__end > .v2-clock { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+}
 .v2-clock { font-size: var(--v2-fs-meta); color: var(--v2-text-2); white-space: nowrap; }
 
 .v2-gobtn {

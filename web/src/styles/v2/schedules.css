@@ -1,0 +1,84 @@
+/* AMIRI Agent UI v2: the schedules pill in the top bar (components/v2/SchedulePill.tsx).
+   .v2-sched is the space between the breadcrumbs and Go to; the pill is centred in it.
+   Open: .is-line (the full line in place, only when it fits that space) or .is-panel (a panel under the bar). */
+
+.v2-sched { position: relative; display: flex; justify-content: center; min-width: 0; }
+
+/* no box: the icons sit on the bar itself; a soft tint shows only on hover and focus */
+.v2-sched__pill {
+  --v2-sched-under: var(--v2-page);  /* what the dots' rings cut out of: the colour behind the icons */
+  display: inline-flex; align-items: center; gap: var(--v2-sp-14); height: 34px; padding: 0 var(--v2-sp-12);
+  border: 0; border-radius: var(--v2-r-pill); background: transparent; color: var(--v2-text-2); cursor: pointer;
+  transition: background-color var(--v2-dur-fast) var(--v2-ease);
+}
+.v2-sched__pill:hover, .v2-sched__pill[aria-expanded="true"] { --v2-sched-under: var(--v2-hover); background: var(--v2-hover); color: var(--v2-text); }
+.v2-sched__ic { position: relative; display: inline-flex; }
+.v2-sched__ic svg { width: 16px; height: 16px; }
+.v2-sched__dot {
+  position: absolute; top: -3px; right: -4px; width: 7px; height: 7px; border-radius: 4px;
+  border: 2px solid var(--v2-sched-under); box-sizing: content-box;
+}
+.v2-sched__dot.is-wait { background: var(--v2-brand); }
+.v2-sched__dot.is-warn { background: var(--v2-dot-warn); }
+
+/* both open forms */
+.v2-sched__line {
+  position: absolute; z-index: 20; left: 50%; transform: translateX(calc(-50% + var(--v2-sched-shift, 0px)));
+  display: flex; border: 1px solid var(--v2-line-ctl); background: var(--v2-surface); box-shadow: var(--v2-shadow-pop);
+}
+.v2 .v2-sched__seg {
+  display: inline-flex; align-items: center; gap: var(--v2-sp-6); padding: 0 var(--v2-sp-10);
+  color: var(--v2-text-2); font-size: var(--v2-fs-meta); font-weight: var(--v2-fw-regular); text-decoration: none; white-space: nowrap;
+}
+.v2 .v2-sched__seg:hover { background: var(--v2-hover); color: var(--v2-text-2); text-decoration: none; }
+.v2-sched__seg svg { width: 16px; height: 16px; flex: none; }
+.v2-sched__seg b { color: var(--v2-text); font-weight: var(--v2-fw-semibold); }
+.v2-sched__sub { color: var(--v2-muted); }
+.v2-sched__seg:hover .v2-sched__sub { color: var(--v2-text-2); }  /* A1: muted text is for the page and surface only */
+.v2-sched__t { font-family: var(--v2-mono); font-size: var(--v2-fs-cap); color: var(--v2-text-2); }
+.v2-sched__wait { color: var(--v2-brand); font-weight: var(--v2-fw-semibold); }
+.v2-sched__warn { color: var(--v2-unusual); font-weight: var(--v2-fw-semibold); }
+.v2-sched__sep { flex: none; align-self: center; width: 1px; height: 14px; background: var(--v2-line); }
+
+/* the line in place: opens only when it fits the free space, so it covers nothing and sits flat on the bar */
+.v2-sched__line.is-line {
+  top: 0; align-items: center; height: 34px; padding: 0; border-color: transparent; border-radius: var(--v2-r-pill);
+  background: var(--v2-page); box-shadow: none;
+  animation: v2-sched-grow var(--v2-dur-slow) var(--v2-ease);
+}
+.v2 .is-line .v2-sched__seg { height: 26px; border-radius: var(--v2-r-pill); }
+@keyframes v2-sched-grow {
+  from { opacity: 0; clip-path: inset(0 42% round var(--v2-r-pill)); }
+  to { opacity: 1; clip-path: inset(0 0 round var(--v2-r-pill)); }
+}
+
+/* the panel: under the pill, one row per schedule; the strip above it bridges the gap so the mouse can cross it */
+.v2-sched__line.is-panel {
+  top: calc(100% + var(--v2-sp-8)); flex-direction: column; padding: var(--v2-sp-4); border-radius: var(--v2-r-lg);
+  animation: v2-sched-drop var(--v2-dur) var(--v2-ease);
+}
+.v2-sched__line.is-panel::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: calc(var(--v2-sp-8) + 2px); }
+.v2 .is-panel .v2-sched__seg { height: 34px; border-radius: var(--v2-r-nav); }
+.is-panel .v2-sched__sep { display: none; }
+@keyframes v2-sched-drop { from { opacity: 0; translate: 0 -4px; } to { opacity: 1; translate: 0 0; } }
+
+/* phone bar: the pill sits before Menu; a tap opens a full-width panel under the bar with 44 px rows */
+.v2-mbar:has(.v2-sched) { position: relative; }
+.v2-sched.is-phone { position: static; flex: none; margin-left: auto; }
+.v2-sched.is-phone + .v2-menubtn { margin-left: 0; }
+.v2-sched.is-phone .v2-sched__pill {
+  --v2-sched-under: color-mix(in srgb, var(--v2-surface) 55%, var(--v2-page));  /* the phone bar's own colour */
+  height: var(--v2-hit-phone); gap: var(--v2-sp-10); padding: 0 var(--v2-sp-10);
+}
+.v2-sched.is-phone .v2-sched__pill[aria-expanded="true"] { --v2-sched-under: var(--v2-hover); }  /* tighter: leaves the Live pill room */
+/* as wide as its rows, under the pill at the right; on a narrow screen it may take the full width and the rows wrap */
+.v2-sched.is-phone .v2-sched__line {
+  top: calc(100% + var(--v2-sp-6)); left: auto; right: var(--v2-sp-8); width: max-content; max-width: calc(100% - 2 * var(--v2-sp-8));
+  transform: none; z-index: 50;
+}
+.v2 .v2-sched.is-phone .v2-sched__seg {
+  height: auto; min-height: var(--v2-hit-phone); flex-wrap: wrap; white-space: normal;
+  padding: var(--v2-sp-8) var(--v2-sp-12); column-gap: var(--v2-sp-6); row-gap: 0;
+}
+
+@media (prefers-reduced-motion: reduce) { .v2-sched__line { animation: none; } .v2-sched__pill { transition: none; } }
