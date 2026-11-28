@@ -16,6 +16,7 @@ import { FirstRun } from "./overview/FirstRun";
 import { Hero, Latest, NeedsYou, needRows, OpenEvents, OverviewSkeleton, Prices, rankEvents, ScenarioRow, Tiles } from "./overview/parts";
 import { usePolling } from "../components/usePolling";
 import "../styles/v2/overview.css";
+import { LiveWire } from "../components/v2/LiveWire";
 
 const REFRESH_MS = 60_000;
 const CRUMBS = [{ label: "Overview" }];
@@ -65,6 +66,7 @@ export function OverviewPage() {
       <Hero o={o} events={events} now={now} name={NAME} timeZone={o.institution?.time_zone || TIME_ZONE} profile={profile?.institution.institution_id === instId ? profile : profile === null ? null : undefined} />
       <Tiles o={o} events={events} teams={teams} />
       {o.studio && <ScenarioRow studio={o.studio} />}
+      <LiveWire ov={o} now={now} />
       <div className="v2-ov-cols">
         <div className="v2-ov-main">
           <OpenEvents events={events} places={o.map.places} now={now} />

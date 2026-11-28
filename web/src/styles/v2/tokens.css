@@ -82,6 +82,7 @@
   --v2-bad:#BE321B;     --v2-bad-tint:#FBEAE6;     --v2-bad-line:#F2C7BD;
   --v2-unusual:#A85A0A; --v2-unusual-tint:#FCF0E1;
   --v2-good:#137A47;    --v2-good-tint:#E3F2E9;
+  --v2-info-ink:#1E4F86; --v2-info-tint:#E7F0FA;   /* the Live wire's EVENT / RADAR / MONITOR tags */
   --v2-on-bad:#FFFFFF;         /* text on a solid --v2-bad badge */
   --v2-neutral-ink:#4F5A55;     --v2-neutral-tint:#EDEFEC;
   --v2-sim-ink:#5B47B8;         --v2-sim-tint:#EDE9FB;     /* Simulated world mark */
@@ -136,6 +137,7 @@
     --v2-bad:#F07A62;     --v2-bad-tint:#3A1A14;     --v2-bad-line:#5C2B21;
     --v2-unusual:#E9A24D; --v2-unusual-tint:#33230F;
     --v2-good:#5BC48A;    --v2-good-tint:#16291F;
+    --v2-info-ink:#A6C9EE; --v2-info-tint:rgba(127,178,229,.18);
     --v2-on-bad:#0E1311;
     --v2-neutral-ink:#B7C0BA;     --v2-neutral-tint:#232B27;
     --v2-sim-ink:#B6A9F2;         --v2-sim-tint:#251F3F;
@@ -182,6 +184,7 @@
   --v2-bad:#F07A62;     --v2-bad-tint:#3A1A14;     --v2-bad-line:#5C2B21;
   --v2-unusual:#E9A24D; --v2-unusual-tint:#33230F;
   --v2-good:#5BC48A;    --v2-good-tint:#16291F;
+  --v2-info-ink:#A6C9EE; --v2-info-tint:rgba(127,178,229,.18);
   --v2-on-bad:#0E1311;
   --v2-neutral-ink:#B7C0BA;     --v2-neutral-tint:#232B27;
   --v2-sim-ink:#B6A9F2;         --v2-sim-tint:#251F3F;
